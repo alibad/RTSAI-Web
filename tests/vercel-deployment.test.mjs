@@ -15,14 +15,12 @@ test("ships the Vinext runtime through Vercel's build output API", async () => {
   assert.equal("outputDirectory" in vercelConfig, false, "Nitro owns .vercel/output through the Build Output API");
   assert.match(viteConfig, /process\.env\.VERCEL === "1"/);
   assert.match(viteConfig, /nitro\/vite/);
-  assert.match(viteConfig, /tailwindcss\(\), vinext\(\), nitro\(\)/);
+  assert.match(viteConfig, /tailwindcss\(\), vinext\(\), nitro\(\{ routeRules: vercelRouteRules \}\)/);
 });
 
 test("preserves immutable faction media caching on Vercel", async () => {
-  const vercelConfig = JSON.parse(await readFile(resolve(projectRoot, "vercel.json"), "utf8"));
-  const mediaRule = vercelConfig.headers.find((rule) => rule.source === "/game-media/:path*");
-  const manifestRule = vercelConfig.headers.find((rule) => rule.source === "/game-media/manifest.json");
+  const viteConfig = await readFile(resolve(projectRoot, "vite.config.ts"), "utf8");
 
-  assert.match(mediaRule.headers[0].value, /max-age=31536000, immutable/);
-  assert.match(manifestRule.headers[0].value, /max-age=300, must-revalidate/);
+  assert.match(viteConfig, /"\/game-media\/\*\*"[\s\S]*max-age=31536000, immutable/);
+  assert.match(viteConfig, /"\/game-media\/manifest\.json"[\s\S]*max-age=300, must-revalidate/);
 });

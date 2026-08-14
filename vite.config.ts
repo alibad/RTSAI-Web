@@ -13,6 +13,15 @@ const { d1, r2 } = hostingConfig;
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const isVercelBuild = process.env.VERCEL === "1" || process.env.NITRO_PRESET === "vercel";
 
+const vercelRouteRules = {
+  "/game-media/manifest.json": {
+    headers: { "cache-control": "public, max-age=300, must-revalidate" },
+  },
+  "/game-media/**": {
+    headers: { "cache-control": "public, max-age=31536000, immutable" },
+  },
+};
+
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
@@ -52,7 +61,7 @@ export default defineConfig(async () => {
     const { nitro } = await import("nitro/vite");
     return {
       server,
-      plugins: [tailwindcss(), vinext(), nitro()],
+      plugins: [tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
