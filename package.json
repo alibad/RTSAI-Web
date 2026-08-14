@@ -9,6 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
+    "sync:game-media": "node scripts/sync-game-media.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck && npm run build && node --import tsx --test tests/*.test.*",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"

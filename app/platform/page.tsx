@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Blocks, Bot, BrainCircuit, Globe2, MonitorDown } from "lucide-react";
 import { CurrentShowcase } from "../components/CurrentShowcase";
+import { CapabilitySlice } from "../components/CapabilitySlice";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { currentShowcase, developmentTracks, productLayers } from "../../lib/product-plan";
 import { getWindowsRelease } from "../../lib/release";
@@ -48,6 +49,12 @@ export default async function PlatformPage() {
             <p className="showcase-context">The current showcase is {currentShowcase.title}. The platform plan is deliberately release-agnostic so the next theatre can replace it without rewriting the product story.</p>
           </div>
         </section>
+        <CapabilitySlice
+          eyebrow="PLATFORM DEPTH"
+          title="The foundation already reaches beyond two demos."
+          intro="Authored theatres, bounded agents, and a provider-neutral AI layer extend the same product without turning the homepage into documentation."
+          ids={["red-sea-2026", "original-theatre-assets", "headless-commander", "agent-learning-loop", "provider-neutral-routing"]}
+        />
       </main>
       <SiteFooter />
     </>

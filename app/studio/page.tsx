@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { MissionStudio } from "../components/MissionStudio";
+import { CapabilitySlice } from "../components/CapabilitySlice";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getWindowsRelease } from "../../lib/release";
 
@@ -24,6 +25,13 @@ export default async function StudioPage() {
           <Link className="text-action" href="/platform">How Earth becomes playable <ArrowRight size={16} /></Link>
         </header>
         <MissionStudio windowsRelease={windowsRelease} />
+        <CapabilitySlice
+          light
+          eyebrow="EARTH → OPENRA"
+          title="A visible translation, not a magic button."
+          intro="The studio keeps the source, transformation, validation, and editable output legible at every stage."
+          ids={["earth-recon", "terrain-understanding", "map-validation", "editor-handoff"]}
+        />
       </main>
       <SiteFooter />
     </>

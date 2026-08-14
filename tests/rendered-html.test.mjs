@@ -53,17 +53,20 @@ test("renders a focused homepage with the product promise, two experiences, play
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/);
 });
 
-test("renders focused companion, studio, platform, and download routes", async () => {
-  const [companion, studio, platform, download] = await Promise.all([
+test("renders focused companion, studio, platform, capabilities, and download routes", async () => {
+  const [companion, studio, platform, capabilityAtlas, download] = await Promise.all([
     render("/companion").then((response) => response.text()),
     render("/studio").then((response) => response.text()),
     render("/platform").then((response) => response.text()),
+    render("/capabilities").then((response) => response.text()),
     render("/download").then((response) => response.text()),
   ]);
 
   assert.match(companion, /AI GAME COMPANION/);
   assert.match(companion, /Helpful enough to speak/);
   assert.match(companion, /AI layer/);
+  assert.match(companion, /From a useful sentence to safe command/);
+  assert.match(companion, /href="\/capabilities#safe-actions"/);
   assert.match(studio, /EARTH TO BATTLEFIELD/);
   assert.match(studio, /Mission studio/);
   assert.match(studio, /Point anywhere/);
@@ -73,10 +76,36 @@ test("renders focused companion, studio, platform, and download routes", async (
   assert.match(studio, /Reroll/);
   assert.match(studio, /Read geometry/);
   assert.match(studio, /Build terrain/);
+  assert.match(studio, /A visible translation, not a magic button/);
+  assert.match(studio, /href="\/capabilities#map-validation"/);
   assert.match(platform, /THE PRODUCT PLAN/);
   assert.match(platform, /Discover \+ launch/);
   assert.match(platform, /New theatres \+ mods/);
   assert.match(platform, /Agents that play \+ learn/);
+  assert.match(platform, /PLATFORM DEPTH/);
+  assert.match(platform, /href="\/capabilities#headless-commander"/);
+  assert.match(capabilityAtlas, /CAPABILITY ATLAS/);
+  assert.match(capabilityAtlas, /Search voice, local models, maps, agents/);
+  assert.match(capabilityAtlas, /Adaptive battlefield briefings/);
+  assert.match(capabilityAtlas, /Passability \+ connectivity validation/);
+  assert.match(capabilityAtlas, /Red Sea 2026 campaign/);
+  assert.match(capabilityAtlas, /Iran distributed-denial faction/);
+  assert.match(capabilityAtlas, /Türkiye combined-arms faction/);
+  assert.match(capabilityAtlas, /China networked-force faction/);
+  assert.match(capabilityAtlas, /Headless autonomous commander/);
+  assert.match(capabilityAtlas, /Provider-neutral AI routing/);
+  assert.match(capabilityAtlas, /Verified Windows release/);
+  assert.match(capabilityAtlas, /Product boundary/);
+  assert.match(capabilityAtlas, /Playable now/);
+  assert.match(capabilityAtlas, /Research track/);
+  assert.match(capabilityAtlas, /THE BUILD ARCHIVE/);
+  assert.match(capabilityAtlas, /See the factions/);
+  assert.match(capabilityAtlas, /216<\/b> optimized visual artifacts/);
+  assert.match(capabilityAtlas, /Red Sea 2026 key art/);
+  assert.match(capabilityAtlas, /Türkiye/);
+  assert.match(capabilityAtlas, /China/);
+  assert.match(capabilityAtlas, /Open public manifest/);
+  assert.doesNotMatch(capabilityAtlas, /BeTenshi/i);
   assert.match(download, /Locally built and smoke-tested/);
   assert.match(download, /Download Windows setup/);
   assert.match(download, /Portable ZIP/);
@@ -128,6 +157,7 @@ test("ships crawl, install, and brand assets", async () => {
 
   assert.match(robots, /sitemap: "https:\/\/rtsai\.net\/sitemap\.xml"/);
   assert.match(sitemap, /url: "https:\/\/rtsai\.net\/"/);
+  assert.match(sitemap, /url: "https:\/\/rtsai\.net\/capabilities"/);
   assert.match(manifest, /short_name: "RTS AI"/);
   assert.match(manifest, /purpose: "maskable"/);
   assert.ok(favicon.byteLength > 1000);

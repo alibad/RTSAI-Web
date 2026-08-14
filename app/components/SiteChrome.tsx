@@ -23,7 +23,7 @@ export function SiteHeader() {
         <div className="nav-links">
           <Link href="/companion">Companion</Link>
           <Link href="/studio">Earth studio</Link>
-          <Link href="/platform">Platform</Link>
+          <Link href="/capabilities">Capabilities</Link>
           <Link href="/download">Download</Link>
         </div>
         <div className="nav-actions">
@@ -42,6 +42,8 @@ export function SiteFooter() {
       <Brand footer />
       <p>EA has not endorsed and does not support this product. OpenRA AI is an independent GPL-3.0 project.</p>
       <div>
+        <Link href="/capabilities">Capabilities</Link>
+        <Link href="/platform">Platform plan</Link>
         <a href={gameSource}>Game source</a>
         <a href={`${gameSource}/blob/main/LICENSE`}>License</a>
         <Link href="/privacy">Privacy</Link>
