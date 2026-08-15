@@ -1,13 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
-import hostingConfig from "./.openai/hosting.json";
-import { sites } from "./build/sites-vite-plugin";
-
-const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
-  "00000000-0000-4000-8000-000000000000";
-
-const { d1, r2 } = hostingConfig;
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -25,23 +18,8 @@ const vercelRouteRules = {
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: "site-creator-d1",
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: "site-creator-r2",
-        },
-      ]
-    : [],
+  d1_databases: [],
+  r2_buckets: [],
 };
 
 export default defineConfig(async () => {
@@ -55,8 +33,8 @@ export default defineConfig(async () => {
     ? { watch: { useFsEvents: false, usePolling: true } }
     : undefined;
 
-  // Vinext targets Cloudflare/Sites natively. Vercel needs Nitro to package the
-  // same application as a Vercel-compatible server and static asset bundle.
+  // Vercel is the canonical production host. Nitro packages the Vinext
+  // application as a Vercel-compatible server and static asset bundle.
   if (isVercelBuild) {
     const { nitro } = await import("nitro/vite");
     return {
@@ -72,7 +50,6 @@ export default defineConfig(async () => {
     server,
     plugins: [
       vinext(),
-      sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: localBindingConfig,

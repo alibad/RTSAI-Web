@@ -111,8 +111,10 @@ Firebase analytics layer.
 
 ## Deployment
 
-The production site is published through OpenAI Sites. Its custom domain is
-`rtsai.net`; runtime values and analytics credentials belong in the host's
-environment settings, never in source control.
+The production site is hosted by Vercel at `rtsai.net` and `www.rtsai.net`.
+The GitHub repository's `main` branch is the production branch, and Vercel's
+native Git integration deploys it automatically. Runtime values and analytics
+credentials belong in Vercel environment settings, never in source control.
 
-There are no GitHub Actions or hosted release workflows in this repository.
+There are no GitHub Actions or separate hosted release workflows in this
+repository.

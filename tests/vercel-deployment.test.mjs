@@ -16,6 +16,8 @@ test("ships the Vinext runtime through Vercel's build output API", async () => {
   assert.match(viteConfig, /process\.env\.VERCEL === "1"/);
   assert.match(viteConfig, /nitro\/vite/);
   assert.match(viteConfig, /tailwindcss\(\), vinext\(\), nitro\(\{ routeRules: vercelRouteRules \}\)/);
+  assert.doesNotMatch(viteConfig, /\.openai\/hosting\.json/);
+  assert.doesNotMatch(viteConfig, /sites\(\)/);
 });
 
 test("preserves immutable faction media caching on Vercel", async () => {
