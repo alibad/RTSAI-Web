@@ -234,12 +234,12 @@ export const capabilities: Capability[] = [
     proofPoints: ["Google sign-in", "Mission package export", "Contextual feedback"], docsUrl: "https://rtsai.net/privacy", docsLabel: "Privacy details",
   },
   {
-    id: "macos-release", category: "delivery", status: "In progress", surface: "Download", title: "Signed macOS release",
-    summary: "The packaging path supports Apple silicon and Intel builds, with signing and notarization still required for public release.",
-    playerExperience: "When complete, macOS players will get the same direct, verified download experience as Windows players.",
-    howItWorks: "Release discovery already recognizes native DMG assets; the remaining work is reproducible packaging, signing, notarization, and smoke testing.",
-    boundary: "The download remains clearly labeled pending until a real signed asset exists.",
-    proofPoints: ["Apple silicon target", "Intel target", "DMG discovery"], docsUrl: `${source}/releases`, docsLabel: "Release status",
+    id: "macos-release", category: "delivery", status: "Playable now", surface: "Download", title: "Signed macOS release",
+    summary: "A signed, Apple-notarized, and stapled Apple silicon DMG provides a direct path into the native game.",
+    playerExperience: "Download the disk image, copy OpenRA AI to Applications, and launch the same companion and creation experience available on Windows.",
+    howItWorks: "Release discovery exposes the published arm64 DMG, version, size, and checksum alongside the Windows packages.",
+    boundary: "Only the published Apple silicon package is labeled ready; an Intel build is not advertised until a real artifact exists.",
+    proofPoints: ["Developer ID signature", "Apple notarization", "Published checksum"], docsUrl: `${source}/releases`, docsLabel: "Game releases",
   },
 ];
 

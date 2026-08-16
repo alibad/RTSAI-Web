@@ -7,7 +7,7 @@ import { getGameRelease } from "../../lib/release";
 
 export const metadata: Metadata = {
   title: "Download OpenRA AI | RTS AI",
-  description: "Download the verified OpenRA AI game for Windows, check macOS availability, and optionally install the private local AI model pack.",
+  description: "Download the verified OpenRA AI game for Windows or Apple silicon macOS, and optionally install the private local AI model pack on Windows.",
   alternates: { canonical: "/download" },
 };
 
@@ -62,7 +62,7 @@ export default async function DownloadPage() {
 
             <article className={`platform-card ${gameRelease.macos ? "is-ready" : "is-pending"}`}>
               <div className="platform-card-heading"><span className="platform-icon"><Apple size={23} /></span><div><span className="platform-kicker">Apple desktop</span><h3>macOS</h3></div><span className={`release-status ${gameRelease.macos ? "is-ready" : "is-pending"}`}>{gameRelease.macos ? "Ready" : "Signing"}</span></div>
-              {gameRelease.macos ? <><p>A native signed disk image. Choose the build that matches your Mac.</p><div className="mac-download-actions">{appleSiliconRelease && <a className="primary-action platform-primary" href={appleSiliconRelease.url} data-analytics-event="game-download" data-platform="macos-arm64"><Download size={17} /> Apple silicon</a>}{intelMacRelease && <a className="secondary-download" href={intelMacRelease.url} data-analytics-event="game-download" data-platform="macos-x64">Intel Mac</a>}</div><div className="platform-meta"><span>Version {gameRelease.macos.version}</span>{appleSiliconRelease?.checksumUrl && <a href={appleSiliconRelease.checksumUrl}>Apple silicon checksum</a>}{intelMacRelease?.checksumUrl && <a href={intelMacRelease.checksumUrl}>Intel checksum</a>}</div></> : <><p>The native app and DMG packaging path is complete. Its public download stays locked until the artifact is built, signed, and notarized on a Mac.</p><span className="pending-download" aria-disabled="true">Signed macOS download pending</span><div className="platform-meta"><span>Apple silicon + Intel pipeline</span><span>No placeholder download</span></div></>}
+              {gameRelease.macos ? <><p>{intelMacRelease ? "Native signed and notarized disk images. Choose the build that matches your Mac." : "A native signed and notarized disk image for Apple silicon."}</p><div className="mac-download-actions">{appleSiliconRelease && <a className="primary-action platform-primary" href={appleSiliconRelease.url} data-analytics-event="game-download" data-platform="macos-arm64"><Download size={17} /> Apple silicon</a>}{intelMacRelease && <a className="secondary-download" href={intelMacRelease.url} data-analytics-event="game-download" data-platform="macos-x64">Intel Mac</a>}</div><div className="platform-meta"><span>Version {gameRelease.macos.version}</span>{appleSiliconRelease?.checksumUrl && <a href={appleSiliconRelease.checksumUrl}>Apple silicon checksum</a>}{intelMacRelease?.checksumUrl && <a href={intelMacRelease.checksumUrl}>Intel checksum</a>}</div></> : <><p>The native app and DMG packaging path is complete. Its public download stays locked until the artifact is built, signed, and notarized on a Mac.</p><span className="pending-download" aria-disabled="true">Signed macOS download pending</span><div className="platform-meta"><span>Apple silicon + Intel pipeline</span><span>No placeholder download</span></div></>}
             </article>
           </div>
 

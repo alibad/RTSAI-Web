@@ -109,7 +109,9 @@ test("renders focused companion, studio, platform, capabilities, and download ro
   assert.match(download, /Locally built and smoke-tested/);
   assert.match(download, /Download Windows setup/);
   assert.match(download, /Portable ZIP/);
-  assert.match(download, /Signed macOS download pending|Apple silicon/);
+  assert.match(download, /Apple silicon/);
+  assert.match(download, /signed and notarized disk image/);
+  assert.doesNotMatch(download, /Signed macOS download pending/);
   assert.match(download, /Install or extract/);
   assert.match(download, /Play-Red-Sea-2026\.cmd/);
   assert.match(download, /Optional Local AI Pack/);
@@ -185,6 +187,9 @@ test("discovers native Windows and macOS release assets", async () => {
   assert.match(source, /installerChecksumUrl/);
   assert.match(source, /AI-Pack-/);
   assert.match(source, /aiPackChecksumUrl/);
+  assert.match(source, /fallbackMacOSRelease/);
+  assert.match(source, /0\.1\.0-alpha\.13/);
+  assert.doesNotMatch(source, /0\.1\.0-alpha\.(?:9|12)/);
   assert.match(page, /No placeholder download/);
 });
 
