@@ -30,20 +30,32 @@ export type GameRelease = {
   macos: MacOSRelease | null;
 };
 
-const releaseBase = "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.9";
+const fallbackVersion = "0.1.0-alpha.13";
+const releaseBase = `https://github.com/alibad/OpenRA-AI/releases/download/v${fallbackVersion}`;
 
 export const fallbackWindowsRelease: WindowsRelease = {
-  version: "0.1.0-alpha.9",
-  url: `${releaseBase}/OpenRA-AI-0.1.0-alpha.9-windows-x64.zip`,
-  checksumUrl: `${releaseBase}/OpenRA-AI-0.1.0-alpha.9-windows-x64.zip.sha256`,
-  sizeBytes: 101805947,
-  publishedAt: "2026-08-11T10:00:18Z",
-  installerUrl: `${releaseBase}/OpenRA-AI-0.1.0-alpha.9-windows-x64-setup.exe`,
-  installerChecksumUrl: `${releaseBase}/OpenRA-AI-0.1.0-alpha.9-windows-x64-setup.exe.sha256`,
-  installerSizeBytes: 84171300,
-  aiPackUrl: `${releaseBase}/OpenRA-AI-AI-Pack-0.1.0-alpha.9.zip`,
-  aiPackChecksumUrl: `${releaseBase}/OpenRA-AI-AI-Pack-0.1.0-alpha.9.zip.sha256`,
-  aiPackSizeBytes: 1821005604,
+  version: fallbackVersion,
+  url: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64.zip`,
+  checksumUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64.zip.sha256`,
+  sizeBytes: 255785312,
+  publishedAt: "2026-08-16T00:13:21Z",
+  installerUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64-setup.exe`,
+  installerChecksumUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64-setup.exe.sha256`,
+  installerSizeBytes: 229737279,
+  aiPackUrl: `${releaseBase}/OpenRA-AI-AI-Pack-${fallbackVersion}-windows-x64.zip`,
+  aiPackChecksumUrl: `${releaseBase}/OpenRA-AI-AI-Pack-${fallbackVersion}-windows-x64.zip.sha256`,
+  aiPackSizeBytes: 1889097650,
+};
+
+export const fallbackMacOSRelease: MacOSRelease = {
+  version: fallbackVersion,
+  publishedAt: "2026-08-16T00:13:21Z",
+  assets: [{
+    architecture: "arm64",
+    url: `${releaseBase}/OpenRA-AI-${fallbackVersion}-macos-arm64.dmg`,
+    checksumUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-macos-arm64.dmg.sha256`,
+    sizeBytes: 179277140,
+  }],
 };
 
 type GitHubAsset = {
@@ -73,7 +85,7 @@ export async function getGameRelease(): Promise<GameRelease> {
       },
       next: { revalidate: 900 },
     });
-    if (!response.ok) return { windows: fallbackWindowsRelease, macos: null };
+    if (!response.ok) return { windows: fallbackWindowsRelease, macos: fallbackMacOSRelease };
 
     const releases = (await response.json()) as GitHubRelease[];
     let windows: WindowsRelease | null = null;
@@ -122,10 +134,10 @@ export async function getGameRelease(): Promise<GameRelease> {
       if (windows && macos) break;
     }
 
-    return { windows: windows ?? fallbackWindowsRelease, macos };
+    return { windows: windows ?? fallbackWindowsRelease, macos: macos ?? fallbackMacOSRelease };
   } catch {
-    // Keep the known-good Windows downloads visible if GitHub is temporarily unavailable.
-    return { windows: fallbackWindowsRelease, macos: null };
+    // Keep the known-good downloads visible if GitHub is temporarily unavailable.
+    return { windows: fallbackWindowsRelease, macos: fallbackMacOSRelease };
   }
 }
 
