@@ -30,9 +30,9 @@ game.
 
 ## Run locally
 
-Use the pinned Node.js 22.22.x and npm 11.19.x toolchain. `.nvmrc`,
-`.node-version`, `packageManager`, and `engines` all describe the same clean-install
-environment.
+Use Node.js 22 (minimum 22.22.0) and npm 11.19.x. `.nvmrc` and `.node-version`
+pin local development to Node 22.22.0, `engines` accepts compatible Node 22 patch
+releases, and `packageManager` pins npm 11.19.1.
 
 Vercel uses the same npm version through the committed `installCommand`; Node
 22 otherwise defaults to npm 10 in Vercel's build image.
