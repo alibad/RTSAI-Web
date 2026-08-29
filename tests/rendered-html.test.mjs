@@ -28,6 +28,8 @@ test("renders a focused homepage with the product promise, two experiences, play
   assert.match(html, /"SoftwareApplication"/);
   assert.match(html, /"VideoGame"/);
   assert.match(html, /Your battlefield/);
+  assert.match(html, /Latest public build \/ (?:<!-- -->)?0\.1\.0-alpha\.13/);
+  assert.match(html, /Download (?:<!-- -->)?0\.1\.0-alpha\.13/);
   assert.match(html, /TWO CORE EXPERIENCES/);
   assert.match(html, /Companion \+ command/);
   assert.match(html, /Earth to battlefield/);
@@ -116,6 +118,9 @@ test("renders focused companion, studio, platform, capabilities, and download ro
   assert.match(download, /Play-Red-Sea-2026\.cmd/);
   assert.match(download, /Optional Local AI Pack/);
   assert.match(download, /Qwen3-VL/);
+  assert.match(download, /PUBLIC BUILDS/);
+  assert.match(download, /WINDOWS 0\.1\.0-alpha\.13 \/ MACOS 0\.1\.0-alpha\.13/);
+  assert.match(download, /Red Alert 2 and Yuri/);
 });
 
 test("keeps account identity out of Analytics event parameters", async () => {

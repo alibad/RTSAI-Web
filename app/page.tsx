@@ -12,6 +12,7 @@ const experienceIcons = { companion: BrainCircuit, world: Globe2 };
 export default async function Home() {
   const gameRelease = await getGameRelease();
   const windowsRelease = gameRelease.windows;
+  const latestPublicVersion = gameRelease.macos?.version ?? windowsRelease.version;
   const primaryWindowsUrl = windowsRelease.installerUrl ?? windowsRelease.url;
   const coreExperiences = productLayers.filter((layer) => layer.id !== "distribution");
   const structuredData = {
@@ -50,11 +51,11 @@ export default async function Home() {
         <header className="hero" id="top">
           <div className="hero-radar" aria-hidden="true"><i /><i /><i /><span /></div>
           <div className="hero-copy">
-            <Link className="eyebrow hero-release-link" href="/platform"><span className="live-dot" /> Playable alpha / built as a platform <ArrowRight size={13} /></Link>
+            <Link className="eyebrow hero-release-link" href="/download"><span className="live-dot" /> Latest public build / {latestPublicVersion} <ArrowRight size={13} /></Link>
             <h1>Your battlefield.<br /><em>Now it talks back.</em></h1>
             <p className="hero-lede">OpenRA rebuilt around human + AI play: an interruptible companion in the match and a mission studio that turns real places into playable battlefields.</p>
             <div className="hero-actions">
-              <Link className="primary-action" href="/download"><Download size={17} /> Download the game</Link>
+              <Link className="primary-action" href="/download"><Download size={17} /> Download {latestPublicVersion}</Link>
               <Link className="text-action" href="/studio">Build a mission <ArrowRight size={17} /></Link>
             </div>
             <div className="hero-proof">

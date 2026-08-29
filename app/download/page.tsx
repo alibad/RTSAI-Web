@@ -31,13 +31,16 @@ export default async function DownloadPage() {
   const aiPackSize = formatBytes(windowsRelease.aiPackSizeBytes);
   const appleSiliconRelease = gameRelease.macos?.assets.find((asset) => asset.architecture === "arm64");
   const intelMacRelease = gameRelease.macos?.assets.find((asset) => asset.architecture === "x64");
+  const publicBuilds = gameRelease.macos
+    ? `WINDOWS ${windowsRelease.version} / MACOS ${gameRelease.macos.version}`
+    : `WINDOWS ${windowsRelease.version}`;
 
   return (
     <>
       <SiteHeader />
       <main id="main-content">
         <header className="route-hero download-route-hero">
-          <span className="eyebrow">PLAYABLE BUILD / {windowsRelease.version}</span>
+          <span className="eyebrow">PUBLIC BUILDS / {publicBuilds}</span>
           <h1>Install. Launch.<br /><em>Command.</em></h1>
           <p>The current release includes the engine, companion, AUTO strategy layer, Earth tools, and the latest playable vertical slice.</p>
           <div className="release-trust" aria-label="Release details">
@@ -75,6 +78,7 @@ export default async function DownloadPage() {
             <li><span>03</span><div><b>Hold your Ask shortcut</b><p>Use Ctrl+Space on Windows or Option+Space on macOS. The in-game hint always follows your remapped AI Assistant hotkey.</p></div></li>
           </ol>
           <div className="download-footnote"><FileArchive size={15} /><span>Checksums are published beside every downloadable artifact. The current Windows alpha is explicitly marked unsigned; a future setup will only be marked signed after Authenticode verification.</span></div>
+          <div className="download-footnote"><FileArchive size={15} /><span>Red Alert 2 and Yuri&apos;s Revenge are not bundled. OpenRA AI ships original modern factions and separately licensed reusable capability code—not proprietary RA2 factions, maps, art, audio, or game data.</span></div>
         </section>
       </main>
       <SiteFooter />
