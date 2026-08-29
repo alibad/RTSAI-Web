@@ -25,6 +25,7 @@ function formatDate(value: string | null) {
 export default async function DownloadPage() {
   const gameRelease = await getGameRelease();
   const windowsRelease = gameRelease.windows;
+  const windowsSigned = windowsRelease.authenticode === "verified";
   const primaryWindowsUrl = windowsRelease.installerUrl ?? windowsRelease.url;
   const primaryWindowsSize = formatBytes(windowsRelease.installerSizeBytes ?? windowsRelease.sizeBytes);
   const aiPackSize = formatBytes(windowsRelease.aiPackSizeBytes);
@@ -53,9 +54,9 @@ export default async function DownloadPage() {
             <p>OpenRA AI remains playable when the model layer is offline. Add cloud routes or the local AI pack when you want companion vision, transcription, and speech.</p>
           </div>
           <div className="platform-downloads" aria-label="Platform downloads">
-            <article className="platform-card is-ready">
-              <div className="platform-card-heading"><span className="platform-icon"><MonitorDown size={23} /></span><div><span className="platform-kicker">Windows 10 / 11</span><h3>Windows x64</h3></div><span className="release-status is-ready">Ready</span></div>
-              <p>A normal per-user setup with the RTS AI app icon, Start menu entry, desktop shortcut, uninstaller, and included scenario launchers.</p>
+            <article className={`platform-card ${windowsSigned ? "is-ready" : "is-pending"}`}>
+              <div className="platform-card-heading"><span className="platform-icon"><MonitorDown size={23} /></span><div><span className="platform-kicker">Windows 10 / 11</span><h3>Windows x64</h3></div><span className={`release-status ${windowsSigned ? "is-ready" : "is-pending"}`}>{windowsSigned ? "Signed" : "Unsigned alpha"}</span></div>
+              <p>{windowsSigned ? "A verified Authenticode-signed per-user setup with shortcuts, an uninstaller, and included scenario launchers." : "This alpha setup is checksum-verified but not Authenticode-signed, so Windows or SmartScreen may warn before launch."}</p>
               <a className="primary-action platform-primary" href={primaryWindowsUrl} data-analytics-event="game-download" data-platform="windows-x64-setup"><Download size={17} /> Download Windows setup</a>
               <div className="platform-meta"><span>{primaryWindowsSize ?? "Setup executable"}</span>{windowsRelease.installerChecksumUrl && <a href={windowsRelease.installerChecksumUrl}>Setup checksum</a>}<a href={windowsRelease.url} data-analytics-event="game-download" data-platform="windows-x64-portable">Portable ZIP</a><a href={windowsRelease.checksumUrl}>ZIP checksum</a></div>
             </article>
@@ -71,9 +72,9 @@ export default async function DownloadPage() {
           <ol className="play-steps">
             <li><span>01</span><div><b>Install or extract</b><p>Use Windows setup for shortcuts and uninstall support, or keep the ZIP fully portable.</p></div></li>
             <li><span>02</span><div><b>Choose your battlefield</b><p>Launch OpenRA AI normally, or run <code>{currentShowcase.launcher}</code> to open the current authored vertical slice.</p></div></li>
-            <li><span>03</span><div><b>Hold Ctrl+Space to ask</b><p>Release to hear the answer. Ctrl+Shift+M mutes; Ctrl+Shift+A disables or enables the companion.</p></div></li>
+            <li><span>03</span><div><b>Hold your Ask shortcut</b><p>Use Ctrl+Space on Windows or Option+Space on macOS. The in-game hint always follows your remapped AI Assistant hotkey.</p></div></li>
           </ol>
-          <div className="download-footnote"><FileArchive size={15} /><span>Checksums are published beside every downloadable artifact. The model-backed companion expects your private AI layer on this machine; the game itself still runs if that layer is offline.</span></div>
+          <div className="download-footnote"><FileArchive size={15} /><span>Checksums are published beside every downloadable artifact. The current Windows alpha is explicitly marked unsigned; a future setup will only be marked signed after Authenticode verification.</span></div>
         </section>
       </main>
       <SiteFooter />

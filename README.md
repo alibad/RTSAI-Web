@@ -30,10 +30,12 @@ game.
 
 ## Run locally
 
-Node.js 22.13 or newer is required.
+Use the pinned Node.js 22.22.x and npm 11.19.x toolchain. `.nvmrc`,
+`.node-version`, `packageManager`, and `engines` all describe the same clean-install
+environment.
 
 ```powershell
-npm install
+npm ci
 npm run dev
 ```
 
@@ -101,10 +103,22 @@ boundary, and compiles a deterministic OpenRA map fixture.
 
 ## Release boundary
 
-The site reads public GitHub Release metadata at runtime and falls back to a
-known-good package when GitHub is temporarily unavailable. Do not commit game
-ZIPs here. Game packages, checksums, source, and GPL obligations remain in the
-public game repository.
+The site reads download metadata only from the committed
+`data/openra-ai-release.json` manifest, so public rendering never waits on the
+GitHub Releases API. Do not commit game ZIPs here. Game packages, checksums,
+source, and GPL obligations remain in the public game repository.
+
+After a release is fully published and its platform signatures have been
+verified, update the committed manifest explicitly:
+
+```powershell
+npm run sync:release -- v0.1.0-alpha.14 --windows-authenticode=verified
+npm test
+```
+
+The sync command requires an explicit Authenticode status because GitHub asset
+metadata cannot prove a PE signature. Never mark Windows `verified` until the
+official release smoke test has passed `signtool verify`.
 
 Download links carry provider-neutral event attributes for the configured
 Firebase analytics layer.

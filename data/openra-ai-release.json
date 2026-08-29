@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "productCommit": "778258dbd67f9dd1e3500de323da97ecd7bf5249",
+  "engineCommit": "9bf10fc7e8b8db02b8e27e2ddc3391874c3d8149",
+  "windows": {
+    "version": "0.1.0-alpha.13",
+    "url": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-0.1.0-alpha.13-windows-x64.zip",
+    "checksumUrl": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-0.1.0-alpha.13-windows-x64.zip.sha256",
+    "sizeBytes": 255785312,
+    "publishedAt": "2026-08-16T00:13:21Z",
+    "installerUrl": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-0.1.0-alpha.13-windows-x64-setup.exe",
+    "installerChecksumUrl": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-0.1.0-alpha.13-windows-x64-setup.exe.sha256",
+    "installerSizeBytes": 229737279,
+    "aiPackUrl": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-AI-Pack-0.1.0-alpha.13-windows-x64.zip",
+    "aiPackChecksumUrl": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-AI-Pack-0.1.0-alpha.13-windows-x64.zip.sha256",
+    "aiPackSizeBytes": 1889097650,
+    "authenticode": "unsigned"
+  },
+  "macos": {
+    "version": "0.1.0-alpha.13",
+    "publishedAt": "2026-08-16T00:13:21Z",
+    "developerIdSigned": true,
+    "notarized": true,
+    "stapled": true,
+    "assets": [
+      {
+        "architecture": "arm64",
+        "url": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-0.1.0-alpha.13-macos-arm64.dmg",
+        "checksumUrl": "https://github.com/alibad/OpenRA-AI/releases/download/v0.1.0-alpha.13/OpenRA-AI-0.1.0-alpha.13-macos-arm64.dmg.sha256",
+        "sizeBytes": 179277140
+      }
+    ]
+  }
+}

@@ -179,17 +179,19 @@ test("ships a real browser-side OpenRA package compiler", async () => {
   assert.match(source, /\/api\/earth-features/);
 });
 
-test("discovers native Windows and macOS release assets", async () => {
+test("serves committed native Windows and macOS release assets", async () => {
   const source = await readFile(new URL("../lib/release.ts", import.meta.url), "utf8");
+  const manifest = JSON.parse(await readFile(new URL("../data/openra-ai-release.json", import.meta.url), "utf8"));
   const page = await readFile(new URL("../app/download/page.tsx", import.meta.url), "utf8");
-  assert.match(source, /windows-x64-setup\\\.exe/);
-  assert.match(source, /macos-\(arm64\|x64\)\\\.dmg/);
-  assert.match(source, /installerChecksumUrl/);
-  assert.match(source, /AI-Pack-/);
-  assert.match(source, /aiPackChecksumUrl/);
-  assert.match(source, /fallbackMacOSRelease/);
-  assert.match(source, /0\.1\.0-alpha\.13/);
-  assert.doesNotMatch(source, /0\.1\.0-alpha\.(?:9|12)/);
+  assert.match(manifest.windows.installerUrl, /windows-x64-setup\.exe$/);
+  assert.match(manifest.macos.assets[0].url, /macos-arm64\.dmg$/);
+  assert.match(manifest.windows.installerChecksumUrl, /setup\.exe\.sha256$/);
+  assert.match(manifest.windows.aiPackUrl, /AI-Pack-/);
+  assert.match(manifest.windows.aiPackChecksumUrl, /\.zip\.sha256$/);
+  assert.equal(manifest.windows.version, "0.1.0-alpha.13");
+  assert.equal(manifest.windows.authenticode, "unsigned");
+  assert.match(source, /openra-ai-release\.json/);
+  assert.doesNotMatch(source, /api\.github\.com|fetch\(/);
   assert.match(page, /No placeholder download/);
 });
 

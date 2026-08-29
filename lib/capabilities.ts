@@ -41,7 +41,7 @@ export const capabilities: Capability[] = [
   {
     id: "voice-tactical-feed", category: "companion", status: "Playable now", surface: "In match", title: "Push-to-talk + tactical feed",
     summary: "Ask naturally, see what was heard, and keep a compact history of advice and orders.",
-    playerExperience: "Hold Ctrl+Space to ask. The transcript appears in game, followed by a concise answer you can interrupt.",
+    playerExperience: "Hold Ctrl+Space on Windows or Option+Space on macOS to ask. The transcript appears in game, followed by a concise answer you can interrupt.",
     howItWorks: "Audio routes through the configured transcription capability while the feed records advice, alerts, transcripts, orders, and execution results.",
     boundary: "Voice can be muted independently and the feed remains available without speech output.",
     proofPoints: ["Visible transcription", "80-entry tactical log", "Interruptible speech"], docsUrl: `${source}#in-game-companion-controls`, docsLabel: "Voice controls",

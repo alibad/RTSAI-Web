@@ -1,3 +1,5 @@
+import releaseManifest from "../data/openra-ai-release.json";
+
 export type WindowsRelease = {
   version: string;
   url: string;
@@ -10,6 +12,7 @@ export type WindowsRelease = {
   aiPackUrl: string | null;
   aiPackChecksumUrl: string | null;
   aiPackSizeBytes: number | null;
+  authenticode: "verified" | "unsigned";
 };
 
 export type MacOSReleaseAsset = {
@@ -22,125 +25,40 @@ export type MacOSReleaseAsset = {
 export type MacOSRelease = {
   version: string;
   publishedAt: string | null;
+  developerIdSigned: boolean;
+  notarized: boolean;
+  stapled: boolean;
   assets: MacOSReleaseAsset[];
 };
 
 export type GameRelease = {
+  productCommit: string;
+  engineCommit: string;
   windows: WindowsRelease;
   macos: MacOSRelease | null;
 };
 
-const fallbackVersion = "0.1.0-alpha.13";
-const releaseBase = `https://github.com/alibad/OpenRA-AI/releases/download/v${fallbackVersion}`;
+type ReleaseManifest = GameRelease & { schemaVersion: 1 };
 
-export const fallbackWindowsRelease: WindowsRelease = {
-  version: fallbackVersion,
-  url: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64.zip`,
-  checksumUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64.zip.sha256`,
-  sizeBytes: 255785312,
-  publishedAt: "2026-08-16T00:13:21Z",
-  installerUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64-setup.exe`,
-  installerChecksumUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-windows-x64-setup.exe.sha256`,
-  installerSizeBytes: 229737279,
-  aiPackUrl: `${releaseBase}/OpenRA-AI-AI-Pack-${fallbackVersion}-windows-x64.zip`,
-  aiPackChecksumUrl: `${releaseBase}/OpenRA-AI-AI-Pack-${fallbackVersion}-windows-x64.zip.sha256`,
-  aiPackSizeBytes: 1889097650,
-};
+function committedRelease(): GameRelease {
+  const manifest = releaseManifest as ReleaseManifest;
+  if (manifest.schemaVersion !== 1) throw new Error("Unsupported OpenRA AI release manifest");
+  if (manifest.windows.authenticode !== "verified" && manifest.windows.authenticode !== "unsigned") {
+    throw new Error("Invalid Windows Authenticode status in release manifest");
+  }
 
-export const fallbackMacOSRelease: MacOSRelease = {
-  version: fallbackVersion,
-  publishedAt: "2026-08-16T00:13:21Z",
-  assets: [{
-    architecture: "arm64",
-    url: `${releaseBase}/OpenRA-AI-${fallbackVersion}-macos-arm64.dmg`,
-    checksumUrl: `${releaseBase}/OpenRA-AI-${fallbackVersion}-macos-arm64.dmg.sha256`,
-    sizeBytes: 179277140,
-  }],
-};
-
-type GitHubAsset = {
-  name: string;
-  browser_download_url: string;
-  size: number;
-};
-
-type GitHubRelease = {
-  draft: boolean;
-  tag_name: string;
-  published_at: string | null;
-  assets: GitHubAsset[];
-};
-
-function checksumFor(asset: GitHubAsset, assets: GitHubAsset[]) {
-  return assets.find((candidate) => candidate.name === `${asset.name}.sha256`)?.browser_download_url ?? null;
+  return {
+    productCommit: manifest.productCommit,
+    engineCommit: manifest.engineCommit,
+    windows: manifest.windows,
+    macos: manifest.macos,
+  };
 }
 
 export async function getGameRelease(): Promise<GameRelease> {
-  try {
-    const response = await fetch("https://api.github.com/repos/alibad/OpenRA-AI/releases?per_page=20", {
-      headers: {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "rtsai.net",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-      next: { revalidate: 900 },
-    });
-    if (!response.ok) return { windows: fallbackWindowsRelease, macos: fallbackMacOSRelease };
-
-    const releases = (await response.json()) as GitHubRelease[];
-    let windows: WindowsRelease | null = null;
-    let macos: MacOSRelease | null = null;
-
-    for (const release of releases) {
-      if (release.draft) continue;
-
-      if (!windows) {
-        const archive = release.assets.find((asset) => /windows-x64\.zip$/i.test(asset.name));
-        if (archive) {
-          const installer = release.assets.find((asset) => /windows-x64-setup\.exe$/i.test(asset.name));
-          const aiPack = release.assets.find((asset) => /AI-Pack-.*\.zip$/i.test(asset.name));
-          windows = {
-            version: release.tag_name.replace(/^v/, ""),
-            url: archive.browser_download_url,
-            checksumUrl: checksumFor(archive, release.assets) ?? fallbackWindowsRelease.checksumUrl,
-            sizeBytes: archive.size,
-            publishedAt: release.published_at,
-            installerUrl: installer?.browser_download_url ?? null,
-            installerChecksumUrl: installer ? checksumFor(installer, release.assets) : null,
-            installerSizeBytes: installer?.size ?? null,
-            aiPackUrl: aiPack?.browser_download_url ?? null,
-            aiPackChecksumUrl: aiPack ? checksumFor(aiPack, release.assets) : null,
-            aiPackSizeBytes: aiPack?.size ?? null,
-          };
-        }
-      }
-
-      if (!macos) {
-        const diskImages = release.assets.filter((asset) => /macos-(arm64|x64)\.dmg$/i.test(asset.name));
-        if (diskImages.length) {
-          macos = {
-            version: release.tag_name.replace(/^v/, ""),
-            publishedAt: release.published_at,
-            assets: diskImages.map((asset) => ({
-              architecture: /macos-arm64\.dmg$/i.test(asset.name) ? "arm64" : "x64",
-              url: asset.browser_download_url,
-              checksumUrl: checksumFor(asset, release.assets),
-              sizeBytes: asset.size,
-            })),
-          };
-        }
-      }
-
-      if (windows && macos) break;
-    }
-
-    return { windows: windows ?? fallbackWindowsRelease, macos: macos ?? fallbackMacOSRelease };
-  } catch {
-    // Keep the known-good downloads visible if GitHub is temporarily unavailable.
-    return { windows: fallbackWindowsRelease, macos: fallbackMacOSRelease };
-  }
+  return committedRelease();
 }
 
 export async function getWindowsRelease(): Promise<WindowsRelease> {
-  return (await getGameRelease()).windows;
+  return committedRelease().windows;
 }
