@@ -12,6 +12,7 @@ test("ships the Vinext runtime through Vercel's build output API", async () => {
 
   assert.equal(packageJson.scripts["vercel-build"], "vite build");
   assert.equal(vercelConfig.buildCommand, "npm run vercel-build");
+  assert.equal(vercelConfig.installCommand, "npx --yes npm@11.19.1 ci");
   assert.equal(vercelConfig.ignoreCommand, null);
   assert.equal("outputDirectory" in vercelConfig, false, "Nitro owns .vercel/output through the Build Output API");
   assert.match(viteConfig, /process\.env\.VERCEL === "1"/);

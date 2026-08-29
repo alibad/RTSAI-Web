@@ -34,6 +34,9 @@ Use the pinned Node.js 22.22.x and npm 11.19.x toolchain. `.nvmrc`,
 `.node-version`, `packageManager`, and `engines` all describe the same clean-install
 environment.
 
+Vercel uses the same npm version through the committed `installCommand`; Node
+22 otherwise defaults to npm 10 in Vercel's build image.
+
 ```powershell
 npm ci
 npm run dev
