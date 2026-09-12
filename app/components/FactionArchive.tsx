@@ -9,6 +9,7 @@ import {
   gameMedia,
   mediaCategoryLabels,
   factionContent,
+  experiences,
   type FactionId,
   type GameMedia,
   type GameMediaCategory,
@@ -33,6 +34,7 @@ export function FactionArchive() {
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(18);
   const [selectedAsset, setSelectedAsset] = useState<GameMedia | null>(null);
+  const [experienceId, setExperienceId] = useState<(typeof experiences)[number]["id"]>("world-war-iii");
   const profile = factionProfiles.find((item) => item.id === factionId) ?? factionProfiles[0];
   const hero = gameMedia.find((asset) => asset.id === profile.heroAssetId) ?? gameMedia[0];
 
@@ -108,9 +110,36 @@ export function FactionArchive() {
           <p>{profile.doctrine}</p>
           {factionContent[profile.id] && (
             <div className="faction-story-thread">
-              <span>STORY THREAD · WORLD WAR III</span>
-              <p>{factionContent[profile.id].story.premise}</p>
-              <small>{factionContent[profile.id].story.objective}</small>
+              <div className="faction-mode-switcher" role="tablist" aria-label="Choose faction experience">
+                {experiences.map((experience) => {
+                  const variant = factionContent[profile.id].variants[experience.id];
+                  const available = variant?.status === "available";
+                  return (
+                    <button
+                      key={experience.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={experienceId === experience.id}
+                      aria-controls="faction-experience-detail"
+                      onClick={() => setExperienceId(experience.id)}
+                    >
+                      {experience.title}
+                      <small>{available ? "Available" : "Not available"}</small>
+                    </button>
+                  );
+                })}
+              </div>
+              <div id="faction-experience-detail" className="faction-experience-detail" role="tabpanel">
+                <span>{experiences.find((item) => item.id === experienceId)?.title}</span>
+                {factionContent[profile.id].variants[experienceId]?.status === "available" ? (
+                  <>
+                    <p>{factionContent[profile.id].story.premise}</p>
+                    <small>{factionContent[profile.id].story.objective}</small>
+                  </>
+                ) : (
+                  <p>This faction is not part of the Classic Red Alert ruleset. Explore its World War III dossier for the playable version.</p>
+                )}
+              </div>
             </div>
           )}
           <div className="faction-metrics">

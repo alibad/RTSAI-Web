@@ -122,6 +122,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .unit { position: absolute; width: 10px; height: 10px; transform: rotate(45deg); z-index: 2; }
 .unit::after { content: ""; position: absolute; width: 22px; height: 22px; border: 1px solid currentColor; inset: -7px; opacity: .25; }
 .unit.friendly { background: var(--gold); color: var(--gold); }.unit.hostile { background: var(--red); color: var(--red); }
+.faction-mode-switcher { display: flex; gap: 6px; margin: 18px 0 12px; flex-wrap: wrap; }
+.faction-mode-switcher button { border: 1px solid color-mix(in srgb, var(--faction-accent) 55%, transparent); background: transparent; color: inherit; padding: 8px 10px; text-align: left; cursor: pointer; font: inherit; }
+.faction-mode-switcher button[aria-selected="true"] { background: var(--faction-accent); color: #171514; }
+.faction-mode-switcher button small { display: block; opacity: .72; font-size: 10px; margin-top: 3px; }
+.faction-experience-detail > span { display: block; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; opacity: .72; }
+.faction-experience-detail p { margin: 6px 0; }
 .unit.a { left: 23%; top: 65%; }.unit.b { left: 38%; top: 51%; }.unit.c { right: 19%; top: 24%; }.unit.d { right: 31%; top: 37%; }
 .sweep { position: absolute; inset: -30%; border-radius: 50%; background: conic-gradient(from 35deg, transparent 0 80%, rgba(241,210,139,.11) 96%, transparent); animation: sweep 7s linear infinite; }
 @keyframes sweep { to { transform: rotate(360deg); } }

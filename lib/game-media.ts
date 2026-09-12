@@ -1,5 +1,5 @@
 import { gameMedia } from "./game-media.generated";
-import { factionContent, mechanicContent, missionContent, unitContent } from "./game-content";
+import { experiences, factionContent, mechanicContent, missionContent, unitContent } from "./game-content";
 
 export type FactionId = "red-sea" | "iran" | "turkey" | "china";
 export type GameMedia = (typeof gameMedia)[number];
@@ -88,4 +88,4 @@ export const factionProfiles = [
 ] as const;
 
 export { gameMedia };
-export { factionContent, mechanicContent, missionContent, unitContent };
+export { experiences, factionContent, mechanicContent, missionContent, unitContent };

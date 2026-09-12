@@ -19,6 +19,19 @@ export type FactionContent = {
   }>>;
 };
 
+export const experiences = [
+  {
+    id: "classic-red-alert" as const,
+    title: "Classic Red Alert",
+    description: "The original OpenRA Red Alert ruleset, factions, and roster.",
+  },
+  {
+    id: "world-war-iii" as const,
+    title: "World War III",
+    description: "The modern RA2-inspired experience with expanded factions and mechanics.",
+  },
+] as const;
+
 export type UnitContent = {
   id: string;
   factionId: string;
