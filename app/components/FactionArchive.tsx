@@ -8,6 +8,7 @@ import {
   factionProfiles,
   gameMedia,
   mediaCategoryLabels,
+  factionContent,
   type FactionId,
   type GameMedia,
   type GameMediaCategory,
@@ -105,6 +106,13 @@ export function FactionArchive() {
           <div className="faction-dossier-meta"><span>{profile.subtitle}</span><i>{profile.status}</i></div>
           <h3>{profile.title}</h3>
           <p>{profile.doctrine}</p>
+          {factionContent[profile.id] && (
+            <div className="faction-story-thread">
+              <span>STORY THREAD · WORLD WAR III</span>
+              <p>{factionContent[profile.id].story.premise}</p>
+              <small>{factionContent[profile.id].story.objective}</small>
+            </div>
+          )}
           <div className="faction-metrics">
             {profile.metrics.map(([value, label]) => <div key={label}><b>{value}</b><span>{label}</span></div>)}
           </div>
