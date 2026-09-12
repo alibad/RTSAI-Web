@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "windows": {
+    "version": "0.1.0-alpha.13",
+    "engineCommit": "9bf10fc7e8b8db02b8e27e2ddc3391874c3d8149",
+    "productCommit": "778258dbd67f9dd1e3500de323da97ecd7bf5249",
+    "evidence": "Existing public Red Sea 2026 release documentation; other faction and mode coverage is not certified by the legacy release index.",
+    "modes": {
+      "ra": {
+        "factionIds": [
+          "saudi-arabia",
+          "yemen"
+        ]
+      },
+      "ra2": {
+        "factionIds": []
+      }
+    }
+  },
+  "macos": {
+    "status": "unconfirmed",
+    "note": "Windows content coverage must not imply macOS parity."
+  },
+  "development": {
+    "version": "0.1.0-windows-dual.3",
+    "published": false,
+    "verification": "OpenRA-AI/docs/windows-dual-game-verification.md",
+    "note": "Local dual-mode smoke tests; clean-machine install, upgrade, uninstall and public release promotion remain gated."
+  }
+}

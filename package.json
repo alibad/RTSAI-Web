@@ -13,6 +13,8 @@
     "vercel-build": "vite build",
     "start": "vinext start",
     "sync:game-media": "node scripts/sync-game-media.mjs",
+    "sync:content": "node scripts/sync-content-catalog.mjs",
+    "check:content": "node scripts/sync-content-catalog.mjs --check",
     "sync:release": "node scripts/sync-release-manifest.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck && npm run build && node --import tsx --test tests/*.test.*",

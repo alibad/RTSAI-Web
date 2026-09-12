@@ -4,6 +4,8 @@ import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { currentShowcase } from "../../lib/product-plan";
 import { getGameRelease } from "../../lib/release";
+import { availability, factionById, resolveMode } from "../../lib/game-content";
+import releaseContent from "../../data/release-content.json";
 
 export const metadata: Metadata = {
   title: "Download OpenRA AI | RTS AI",
@@ -22,7 +24,11 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default async function DownloadPage() {
+export default async function DownloadPage({ searchParams }: { searchParams: Promise<{ faction?: string | string[]; mode?: string | string[] }> }) {
+  const selection = await searchParams;
+  const mode = resolveMode(selection.mode);
+  const faction = typeof selection.faction === "string" ? factionById(selection.faction) : undefined;
+  const selectionStatus = faction ? availability(faction, mode) : undefined;
   const gameRelease = await getGameRelease();
   const windowsRelease = gameRelease.windows;
   const windowsSigned = windowsRelease.authenticode === "verified";
@@ -39,10 +45,18 @@ export default async function DownloadPage() {
     <>
       <SiteHeader />
       <main id="main-content">
+        <aside className="release-selection" aria-label="Selected game and release availability">
+          <span className="section-number">{faction ? `${faction.name} / ${mode === "ra" ? "Classic" : "Red Alert 2"}` : "PUBLIC RELEASE ≠ DEVELOPMENT BUILD"}</span>
+          <h2>{selectionStatus ?? (mode === "ra2" ? "RA2 release not yet certified" : "Know which battlefield you’re installing.")}</h2>
+          <p>{selectionStatus === "Not in this mode" ? "There is no RA2 implementation of this faction in the current overlay. The installer below does not add one." : selectionStatus === "In public Windows release" ? "Your Classic faction is part of the documented Windows Red Sea release below. Mac faction parity has not been separately certified." : "The public downloads below are alpha.13. They are not the newer local dual-mode build. Do not download them expecting the development RA2 experience shown in the faction guide."}</p>
+          <p>Dual-mode Windows development build: {releaseContent.development.version}. Locally smoke-tested, not published. Its installer defaults to local AI and detects owned RA2 content; clean-machine release approval is still pending.</p>
+          <Link href={faction ? `/factions/${faction.id}?mode=${mode}` : `/factions?mode=${mode}`}>Back to the faction guide →</Link>
+        </aside>
         <header className="route-hero download-route-hero">
           <span className="eyebrow">PUBLIC BUILDS / {publicBuilds}</span>
           <h1>Install. Launch.<br /><em>Command.</em></h1>
-          <p>The current release includes the engine, companion, AUTO strategy layer, Earth tools, and the latest playable vertical slice.</p>
+          <p>The public alpha includes the engine, companion, AUTO strategy layer, Earth tools, and the Red Sea playable vertical slice. Development-only content is identified separately above.</p>
+          <a className="primary-action" href={primaryWindowsUrl} data-analytics-event="game-download" data-platform="windows-x64-setup"><Download size={17} /> Download public Windows {windowsRelease.version}</a>
           <div className="release-trust" aria-label="Release details">
             <span><CheckCircle2 size={15} /> Locally built and smoke-tested</span>
             <span><CalendarDays size={15} /> Released {formatDate(windowsRelease.publishedAt)}</span>
@@ -53,8 +67,8 @@ export default async function DownloadPage() {
         <section className="download-section download-route-section" aria-labelledby="download-title">
           <div className="download-intro">
             <span className="section-number">CHOOSE YOUR PLATFORM</span>
-            <h2 id="download-title">The game first.<br />Models optional.</h2>
-            <p>OpenRA AI remains playable when the model layer is offline. Add cloud routes or the local AI pack when you want companion vision, transcription, and speech.</p>
+            <h2 id="download-title">Start with setup.<br />Choose your AI.</h2>
+            <p>Windows setup is the recommended entry point. The engine remains playable with AI offline. For private local inference, use the matching model pack; external providers are a separate, explicit choice.</p>
           </div>
           <div className="platform-downloads" aria-label="Platform downloads">
             <article className={`platform-card ${windowsSigned ? "is-ready" : "is-pending"}`}>
@@ -72,6 +86,11 @@ export default async function DownloadPage() {
 
           {windowsRelease.aiPackUrl && <div className="ai-pack-callout"><span className="platform-icon"><BrainCircuit size={22} /></span><div><b>Optional Local AI Pack</b><p>Qwen3-VL, Whisper, and Kokoro—the pinned model payload for private local vision, transcription, and speech.</p></div><span>{aiPackSize ?? "Model bundle"}</span><a href={windowsRelease.aiPackUrl} data-analytics-event="ai-pack-download" data-platform="windows-x64"><Download size={15} /> Download AI Pack</a>{windowsRelease.aiPackChecksumUrl && <a className="checksum-link" href={windowsRelease.aiPackChecksumUrl}>Checksum</a>}</div>}
 
+          <section className="install-contract" aria-labelledby="first-run-title">
+            <h3 id="first-run-title">First-run setup belongs in the product.</h3>
+            <ul><li>Public Windows download: {primaryWindowsSize} setup, plus {aiPackSize} if you choose the local AI pack. Allow additional space for extraction, game content and models.</li><li>Classic content is downloaded during first-run setup. The newer development launcher also looks for owned RA2 files in Steam libraries, including secondary drives, and imports them locally.</li><li>If owned RA2 content cannot be found, RA2 setup must explain what is missing and offer import or retry. Commercial game data is never part of our download.</li><li>Local AI needs additional memory and storage; performance depends on your machine. A validated minimum-hardware matrix is still pending, so we do not promise a model speed.</li></ul>
+            <p>The newer installer defaults to local AI. Choosing an external provider can involve credentials and provider charges; it should never happen silently. Existing public alpha behavior is not presented as proof of the newer installer.</p>
+          </section>
           <ol className="play-steps">
             <li><span>01</span><div><b>Install or extract</b><p>Use Windows setup for shortcuts and uninstall support, or keep the ZIP fully portable.</p></div></li>
             <li><span>02</span><div><b>Choose your battlefield</b><p>Launch OpenRA AI normally, or run <code>{currentShowcase.launcher}</code> to open the current authored vertical slice.</p></div></li>

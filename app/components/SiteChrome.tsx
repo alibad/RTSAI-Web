@@ -21,6 +21,7 @@ export function SiteHeader() {
       <nav className="site-nav" aria-label="Primary navigation">
         <Brand />
         <div className="nav-links">
+          <Link href="/factions">Factions</Link>
           <Link href="/companion">Companion</Link>
           <Link href="/studio">Earth studio</Link>
           <Link href="/capabilities">Capabilities</Link>

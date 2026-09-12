@@ -5,6 +5,7 @@ import { CurrentShowcase } from "./components/CurrentShowcase";
 import { gameSource, SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { getGameRelease } from "../lib/release";
 import { productLayers } from "../lib/product-plan";
+import { CatalogImage } from "./components/ContentGuide";
 
 const canonicalUrl = "https://rtsai.net";
 const experienceIcons = { companion: BrainCircuit, world: Globe2 };
@@ -96,6 +97,10 @@ export default async function Home() {
           </div>
         </section>
 
+        <section className="home-faction-entry" aria-labelledby="faction-entry-title">
+          <CatalogImage id="red-sea-key-art" />
+          <div><span className="section-number">FACTIONS / CLASSIC + RED ALERT 2</span><h2 id="faction-entry-title">A side worth knowing.<br />A force worth mastering.</h2><p>Meet five modern factions through their stories and signature units. Compare Classic and RA2 variants, with clear labels for what is in development and what you can download.</p><Link className="primary-action" href="/factions">Explore the factions <ArrowRight size={17} /></Link></div>
+        </section>
         <section className="home-proof" aria-labelledby="proof-title">
           <div className="home-section-heading home-proof-heading">
             <span className="section-number">CURRENT PLAYABLE PROOF</span>

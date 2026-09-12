@@ -1,13 +1,15 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { verifyEvidence } from "./release-evidence.mjs";
 
-const [tag, signatureArgument] = process.argv.slice(2);
-const signatureStatus = signatureArgument?.replace("--windows-authenticode=", "");
-if (!/^v[0-9]/.test(tag ?? "") || !["verified", "unsigned"].includes(signatureStatus)) {
+const [tag, evidenceArgument] = process.argv.slice(2);
+if (!/^v[0-9A-Za-z.-]+$/.test(tag ?? "") || !evidenceArgument?.startsWith("--verification=")) {
   throw new Error(
-    "Usage: npm run sync:release -- v0.1.0-alpha.14 --windows-authenticode=verified|unsigned",
+    "Usage: npm run sync:release -- v0.1.0-alpha.14 --verification=path/to/verification.json",
   );
 }
+const evidence = JSON.parse(await readFile(resolve(evidenceArgument.slice(15)), "utf8"));
+const previous = JSON.parse(await readFile(resolve("data/openra-ai-release.json"), "utf8"));
 
 const headers = {
   Accept: "application/vnd.github+json",
@@ -51,7 +53,7 @@ const installerChecksum = record(`OpenRA-AI-${version}-windows-x64-setup.exe.sha
 const aiPack = record(`OpenRA-AI-AI-Pack-${version}-windows-x64.zip`);
 const aiPackChecksum = record(`OpenRA-AI-AI-Pack-${version}-windows-x64.zip.sha256`);
 const macAssets = release.assets
-  .filter((asset) => new RegExp(`OpenRA-AI-${version}-macos-(arm64|x64)\\.dmg$`).test(asset.name))
+  .filter((asset) => ["arm64", "x64"].some(arch => asset.name === `OpenRA-AI-${version}-macos-${arch}.dmg`))
   .map((asset) => {
     const architecture = asset.name.endsWith("-arm64.dmg") ? "arm64" : "x64";
     const checksum = requiredAsset(`${asset.name}.sha256`);
@@ -62,6 +64,17 @@ const macAssets = release.assets
       sizeBytes: asset.size,
     };
   });
+
+const payloads = release.assets.filter(asset => [archive.url, installer.url, aiPack.url, ...macAssets.map(mac => mac.url)].includes(asset.browser_download_url));
+verifyEvidence(evidence, index, version, payloads);
+for (const asset of payloads) {
+  const checksum = requiredAsset(`${asset.name}.sha256`);
+  const response = await fetch(checksum.browser_download_url, { headers });
+  if (!response.ok) throw new Error(`Cannot verify published checksum: ${asset.name}`);
+  const digest = (await response.text()).trim().split(/\s+/)[0].toLowerCase();
+  if (digest !== evidence.artifacts[asset.name].sha256) throw new Error(`Checksum differs from verified artifact: ${asset.name}`);
+}
+const signatureStatus = evidence.artifacts[`OpenRA-AI-${version}-windows-x64-setup.exe`].authenticode;
 
 const manifest = {
   schemaVersion: 1,
@@ -88,7 +101,7 @@ const manifest = {
     notarized: true,
     stapled: true,
     assets: macAssets,
-  } : null,
+  } : previous.macos,
 };
 
 const output = resolve("data/openra-ai-release.json");

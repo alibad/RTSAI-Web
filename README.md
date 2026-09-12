@@ -115,13 +115,35 @@ After a release is fully published and its platform signatures have been
 verified, update the committed manifest explicitly:
 
 ```powershell
-npm run sync:release -- v0.1.0-alpha.14 --windows-authenticode=verified
+npm run sync:release -- v0.1.0-alpha.14 --verification=path/to/verification.json
 npm test
 ```
 
-The sync command requires an explicit Authenticode status because GitHub asset
-metadata cannot prove a PE signature. Never mark Windows `verified` until the
-official release smoke test has passed `signtool verify`.
+The sync command requires exact-artifact verification evidence, not a signing flag.
+Its schema is documented in `docs/faction-install-milestone.md`. It checks release
+commits, acceptance results, artifact sizes, published checksums and GitHub digests
+when available. Windows signing must come from the signature check; Mac assets
+require successful signing, notarization and stapling evidence. A Windows-only
+release preserves the previous Mac download instead of implying version parity.
+
+## Shared faction guide
+
+Author stories and signature-unit identities in `OpenRA-AI/catalog/factions.json`.
+The product packagers validate actor references and include the same catalog bytes.
+The website consumes a committed generated snapshot, not an independent authored copy.
+
+```powershell
+npm run sync:content
+npm run check:content
+npm test
+```
+
+The sync defaults to sibling `../OpenRA-AI` and canonical `../OpenRA` checkouts.
+Use `--product=...`, `--engine=...` and `CATALOG_PYTHON` to override development paths.
+Ordinary web builds use the snapshot and do not require a game checkout or Python.
+`/factions`, `/factions/[id]` and `/units/[id]` preserve the `ra`/`ra2` mode in links.
+Release coverage is separately pinned in `data/release-content.json`; catalog presence
+alone must never be advertised as a public download. Unknown coverage fails closed.
 
 Download links carry provider-neutral event attributes for the configured
 Firebase analytics layer.

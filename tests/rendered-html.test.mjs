@@ -123,6 +123,33 @@ test("renders focused companion, studio, platform, capabilities, and download ro
   assert.match(download, /Red Alert 2 and Yuri/);
 });
 
+test("faction-to-unit-to-install journey retains mode and refuses unsupported combinations", async () => {
+  const directory = await (await render("/factions?mode=ra2")).text();
+  assert.match(directory, /3(?:<!-- -->)? faction variants/);
+  assert.match(directory, /\/factions\/china\?mode=ra2/);
+  assert.match(directory, /Saudi Arabia(?:<!-- -->)? · Classic/);
+  const dossier = await (await render("/factions/china?mode=ra2")).text();
+  assert.match(dossier, /\/units\/cnqilin\?mode=ra2/);
+  assert.match(dossier, /not screenshots of RA2 gameplay/);
+  const unit = await (await render("/units/cnqilin?mode=ra2")).text();
+  assert.match(unit, /<code>r2qilin<\/code>/);
+  assert.match(unit, /\/download\?faction=china&amp;mode=ra2/);
+  const classic = await (await render("/units/cnqilin?mode=ra")).text();
+  assert.match(classic, /<code>CNQILIN<\/code>/);
+  const unavailable = await (await render("/factions/yemen?mode=ra2")).text();
+  assert.match(unavailable, /No roster in this mode yet/);
+  assert.doesNotMatch(unavailable, /\/units\/tech\?mode=ra2/);
+  const download = await (await render("/download?faction=china&mode=ra2")).text();
+  assert.match(download, /China \/ Red Alert 2/);
+  assert.match(download, /not the newer local dual-mode build/);
+  assert.match(download, /v0\.1\.0-alpha\.13/);
+  assert.doesNotMatch(download, /href="[^"]*windows-dual/);
+  for (const path of ["/factions/nonexistent", "/units/nonexistent"]) {
+    const response = await render(path);
+    assert.equal(response.status, 404, path);
+  }
+});
+
 test("keeps account identity out of Analytics event parameters", async () => {
   const analytics = await readFile(new URL("../lib/firebase-client.ts", import.meta.url), "utf8");
   const auth = await readFile(new URL("../app/components/AuthProvider.tsx", import.meta.url), "utf8");
