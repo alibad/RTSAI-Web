@@ -60,6 +60,22 @@ type ValidationResult =
   | { ok: true; value: FeedbackSubmission }
   | { ok: false; error: string };
 
+/**
+ * A one-line summary taken from the report, for when the reporter left the
+ * title blank. First sentence or first line, whichever ends sooner, cut on a
+ * word boundary so the issue list never fills with half-words.
+ */
+function deriveTitle(description: string) {
+  const firstLine = description.split(/\n/, 1)[0] ?? "";
+  const sentence = firstLine.split(/(?<=[.!?])\s/, 1)[0] ?? firstLine;
+  const summary = (sentence || firstLine).replace(/\s+/g, " ").trim();
+  if (!summary) return "Feedback";
+  if (summary.length <= 120) return summary;
+  const cut = summary.slice(0, 120);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > 60 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
   return value.replace(/\r\n?/g, "\n").trim().slice(0, maxLength + 1);
@@ -162,13 +178,16 @@ export function validateFeedbackPayload(input: unknown): ValidationResult {
   if (!feedbackCategories.includes(category as FeedbackCategory))
     return { ok: false, error: "Choose a feedback category" };
 
-  const title = cleanText(record.title, 120);
-  if (title.length < 4) return { ok: false, error: "Add a short title" };
-  if (title.length > 120) return { ok: false, error: "Keep the title under 120 characters" };
-
   const description = cleanText(record.description, 4_000);
   if (description.length < 10) return { ok: false, error: "Add at least 10 characters of detail" };
   if (description.length > 4_000) return { ok: false, error: "Keep feedback under 4,000 characters" };
+
+  // Only one text box is ever required, and it is the note: a title can be
+  // derived from a report, a report cannot be derived from a title. Demanding
+  // both asked the reporter to say the same thing twice.
+  const givenTitle = cleanText(record.title, 120);
+  if (givenTitle.length > 120) return { ok: false, error: "Keep the title under 120 characters" };
+  const title = givenTitle.length >= 4 ? givenTitle : deriveTitle(description);
 
   const rating = record.rating === null || record.rating === undefined || record.rating === ""
     ? null

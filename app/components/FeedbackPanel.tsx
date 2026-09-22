@@ -24,6 +24,7 @@ import {
   initDiagnostics,
 } from "../../lib/feedback/diagnostics";
 import { useFeedbackStore } from "../../lib/stores/feedback-store";
+import { DictationButton, useFeedbackDictation } from "./useFeedbackDictation";
 
 function describeElement(element: Element) {
   const tag = element.tagName.toLowerCase();
@@ -93,6 +94,19 @@ function FeedbackSettings({ onClose }: { onClose: () => void }) {
 
 export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth: (reason?: string) => void }) {
   const store = useFeedbackStore();
+
+  // Speaking instead of typing, per field. Fills the box; attaches nothing.
+  const dictation = useFeedbackDictation({
+    getText: (field) =>
+      field === "title"
+        ? useFeedbackStore.getState().title
+        : useFeedbackStore.getState().description,
+    setText: (field, value) =>
+      field === "title"
+        ? useFeedbackStore.getState().setTitle(value)
+        : useFeedbackStore.getState().setDescription(value),
+    limits: { title: 120, description: 4000 },
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{ receipt: string; issueUrl?: string; notificationQueued: boolean } | null>(null);
@@ -221,9 +235,9 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
                 </div>
                 <div className="feedback-form-grid">
                   <label className="feedback-field"><span>Category</span><select value={store.category} onChange={(event) => store.setCategory(event.target.value as FeedbackCategory)}>{feedbackCategories.map((category) => <option key={category}>{category}</option>)}</select></label>
-                  <label className="feedback-field"><span>Short title</span><input ref={titleRef} value={store.title} onChange={(event) => store.setTitle(event.target.value)} minLength={4} maxLength={120} placeholder="What needs attention?" required /></label>
+                  <label className="feedback-field"><span>Short title <small>optional</small></span><span style={{ position: "relative", display: "block" }}><input ref={titleRef} value={store.title} onChange={(event) => store.setTitle(event.target.value)} maxLength={120} placeholder="Optional — we'll take one from your note" style={dictation.supported ? { paddingRight: 44 } : undefined} />{dictation.supported ? <DictationButton field="title" listening={dictation.listening} onToggle={dictation.toggle} /> : null}</span></label>
                 </div>
-                <label className="feedback-field"><span>What happened—or what should we build?</span><textarea value={store.description} onChange={(event) => store.setDescription(event.target.value)} minLength={10} maxLength={4000} placeholder="Include what you expected, what you saw, and why it matters." required /><small>{store.description.length} / 4,000</small></label>
+                <label className="feedback-field"><span>What happened—or what should we build?</span><span style={{ position: "relative", display: "block" }}><textarea value={store.description} onChange={(event) => store.setDescription(event.target.value)} minLength={10} maxLength={4000} placeholder="Include what you expected, what you saw, and why it matters." required style={dictation.supported ? { paddingRight: 44 } : undefined} />{dictation.supported ? <DictationButton field="description" listening={dictation.listening} onToggle={dictation.toggle} /> : null}</span><small>{store.description.length} / 4,000</small></label>
                 <div className="feedback-context-bar">
                   <button type="button" onClick={beginSelection}><Crosshair size={16} /> Select page element</button>
                   <span><MonitorCog size={14} /> Page path + {store.includeMetadata ? "browser metadata" : "no browser metadata"}</span>
@@ -232,7 +246,7 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
                 <fieldset className="feedback-rating"><legend>How useful is RTS AI so far? <small>Optional</small></legend><div>{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" className={store.rating === value ? "is-active" : ""} aria-pressed={store.rating === value} onClick={() => store.setRating(store.rating === value ? null : value)}><Star size={13} fill={store.rating === value ? "currentColor" : "none"} /><b>{value}</b></button>)}</div></fieldset>
                 <label className="feedback-honeypot" aria-hidden="true">Company<input tabIndex={-1} autoComplete="off" value={company} onChange={(event) => setCompany(event.target.value)} /></label>
                 {error && <p className="feedback-error" role="alert">{error}</p>}
-                <div className="feedback-footer"><p><ShieldCheck size={14} /> Signed in as {user?.email || user?.displayName || "a verified user"}. Written feedback and diagnostics are never sent to Google Analytics.</p><button type="submit" disabled={busy || store.title.trim().length < 4 || store.description.trim().length < 10}>{busy ? "Saving…" : <><Send size={15} /> Save privately</>}</button></div>
+                <div className="feedback-footer"><p><ShieldCheck size={14} /> Signed in as {user?.email || user?.displayName || "a verified user"}. Written feedback and diagnostics are never sent to Google Analytics.</p><button type="submit" disabled={busy || store.description.trim().length < 10}>{busy ? "Saving…" : <><Send size={15} /> Save privately</>}</button></div>
               </form>
             )}
           </section>
