@@ -21,6 +21,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .vercel"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "fflate": "^0.8.2",
     "firebase": "^12.17.1",
     "jose": "^6.2.8",
