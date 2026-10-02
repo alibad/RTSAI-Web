@@ -64,9 +64,11 @@ export function hostedAiConfig(): HostedAiConfig {
     maxImageBytes: numberEnv("RTSAI_AI_MAX_IMAGE_BYTES", 400_000, 10_000, 3_750_000),
     maxTotalImageBytes: numberEnv("RTSAI_AI_MAX_TOTAL_IMAGE_BYTES", 600_000, 10_000, 3_000_000),
     maxBodyBytes: numberEnv("RTSAI_AI_MAX_BODY_BYTES", 2_000_000, 64_000, BODY_LIMIT_CEILING),
-    upstreamTimeoutMs: numberEnv("RTSAI_AI_UPSTREAM_TIMEOUT_MS", 18_000, 2_000, 60_000),
+    // Below the game gateway's 18 s and the companion's 20 s budgets, so a slow
+    // upstream turns into a clean 503 (and a local fallback) instead of a hang.
+    upstreamTimeoutMs: numberEnv("RTSAI_AI_UPSTREAM_TIMEOUT_MS", 15_000, 2_000, 60_000),
     // Every Vercel deployment persists quotas in Firestore unless told otherwise;
-    // production refuses the memory store outright (see selectUsageStore).
+    // production refuses the memory store outright (see selectStore in service.ts).
     store: configuredStore === "firestore" || (configuredStore !== "memory" && Boolean(process.env.VERCEL))
       ? "firestore"
       : "memory",

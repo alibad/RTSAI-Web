@@ -56,7 +56,8 @@ function selectStore(config: HostedAiConfig): UsageStore {
 function anthropicClient(config: HostedAiConfig) {
   if (overrides.anthropic) return overrides.anthropic();
   // The SDK reads ANTHROPIC_API_KEY (and ANTHROPIC_BASE_URL for local mocks) from the server environment.
-  return new Anthropic({ maxRetries: 1, timeout: config.upstreamTimeoutMs });
+  // No SDK retries: the game falls back immediately and retries after a short backoff.
+  return new Anthropic({ maxRetries: 0, timeout: config.upstreamTimeoutMs });
 }
 
 function allowanceMicros(config: HostedAiConfig, install: InstallRecord) {
