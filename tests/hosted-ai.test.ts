@@ -4,8 +4,10 @@ import { POST as chatCompletions } from "../app/api/ai/v1/chat/completions/route
 import { POST as install } from "../app/api/ai/v1/install/route";
 import { GET as models } from "../app/api/ai/v1/models/route";
 import { GET as status } from "../app/api/ai/v1/status/route";
+import { hostedAiConfig } from "../lib/hosted-ai/config";
 import { costMicros } from "../lib/hosted-ai/pricing";
-import { handleLink, setHostedAiOverrides, utcDay } from "../lib/hosted-ai/service";
+import { handleLink, missingProductionSettings, setHostedAiOverrides, utcDay } from "../lib/hosted-ai/service";
+import { reachedThresholds, resetSpendAlertMemo } from "../lib/hosted-ai/spend-alerts";
 import { MemoryUsageStore } from "../lib/hosted-ai/store";
 import { sanitizeSchema } from "../lib/hosted-ai/translate";
 import { startMockAnthropic } from "../scripts/mock-anthropic.mjs";
@@ -20,8 +22,16 @@ const tunables = [
   "RTSAI_AI_INSTALLS_PER_IP_PER_DAY",
   "RTSAI_AI_MAX_BODY_BYTES",
   "RTSAI_AI_STORE",
+  "RTSAI_AI_LINKED_DAILY_USD",
+  "RTSAI_AI_FIREBASE_SERVICE_ACCOUNT",
   "VERCEL_ENV",
+  "MAIL_FIREBASE_PROJECT_ID",
+  "MAIL_FIREBASE_API_KEY",
+  "MAIL_GROUP",
+  "FEEDBACK_ADMIN_EMAIL",
 ];
+const MODEL_KEY = "test-placeholder-not-a-real-key";
+const TOKEN_SECRET = "test-secret-0123456789abcdef0123456789abcdef";
 
 let mock: Awaited<ReturnType<typeof startMockAnthropic>>;
 let store: MemoryUsageStore;
@@ -29,8 +39,8 @@ let store: MemoryUsageStore;
 before(async () => {
   mock = await startMockAnthropic();
   process.env.ANTHROPIC_BASE_URL = mock.url;
-  process.env.ANTHROPIC_API_KEY = "test-placeholder-not-a-real-key";
-  process.env.RTSAI_AI_TOKEN_SECRET = "test-secret-0123456789abcdef0123456789abcdef";
+  process.env.ANTHROPIC_API_KEY = MODEL_KEY;
+  process.env.RTSAI_AI_TOKEN_SECRET = TOKEN_SECRET;
 });
 
 after(async () => {
@@ -39,6 +49,9 @@ after(async () => {
 
 beforeEach(() => {
   for (const name of tunables) delete process.env[name];
+  process.env.ANTHROPIC_API_KEY = MODEL_KEY;
+  process.env.RTSAI_AI_TOKEN_SECRET = TOKEN_SECRET;
+  resetSpendAlertMemo();
   store = new MemoryUsageStore();
   setHostedAiOverrides({ store, now: () => NOW });
   mock.requests.length = 0;
@@ -301,4 +314,127 @@ test("model catalogue, cost math and schema sanitizing", async () => {
     sanitizeSchema({ type: "object", properties: { a: { type: "string", maxLength: 4, format: "regex" }, b: { type: "array", items: { type: "object", properties: {} }, maxItems: 3 } } }),
     { type: "object", properties: { a: { type: "string" }, b: { type: "array", items: { type: "object", properties: {}, additionalProperties: false } } }, additionalProperties: false },
   );
+});
+
+test("unset or blank spend settings default to a $0.25 install allowance and a $10 global cap", async () => {
+  let config = hostedAiConfig();
+  assert.equal(config.anonymousDailyUsd, 0.25);
+  assert.equal(config.globalDailyCapUsd, 10);
+  assert.equal(config.linkedDailyUsd, 1);
+  process.env.RTSAI_AI_ANON_DAILY_USD = " ";
+  process.env.RTSAI_AI_GLOBAL_DAILY_CAP_USD = "";
+  config = hostedAiConfig();
+  assert.equal(config.anonymousDailyUsd, 0.25, "a blank value counts as unset");
+  assert.equal(config.globalDailyCapUsd, 10);
+  process.env.RTSAI_AI_ANON_DAILY_USD = "0.5";
+  process.env.RTSAI_AI_GLOBAL_DAILY_CAP_USD = "25";
+  config = hostedAiConfig();
+  assert.equal(config.anonymousDailyUsd, 0.5, "explicit values still win");
+  assert.equal(config.globalDailyCapUsd, 25);
+});
+
+test("production refuses every route until the model key, token secret and durable store are set", async () => {
+  setHostedAiOverrides({ now: () => NOW });
+  process.env.VERCEL_ENV = "production";
+  process.env.RTSAI_AI_STORE = "firestore";
+  const fakeAccount = { project_id: "demo-rtsai", client_email: "proxy@demo-rtsai.iam.gserviceaccount.com", private_key: "not-a-key" };
+  const codeOf = async (response: Response) => {
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get("x-rtsai-ai-state"), "unavailable");
+    return (await response.json()).error.code;
+  };
+  const statusRequest = () => status(new Request("https://rtsai.net/api/ai/v1/status", { headers: { authorization: "Bearer x" } }));
+  const installRequest = () => install(new Request("https://rtsai.net/api/ai/v1/install", { method: "POST" }));
+
+  assert.deepEqual(missingProductionSettings(hostedAiConfig()), ["RTSAI_AI_FIREBASE_SERVICE_ACCOUNT"]);
+  assert.equal(await codeOf(await installRequest()), "store_unavailable");
+
+  process.env.RTSAI_AI_FIREBASE_SERVICE_ACCOUNT = JSON.stringify(fakeAccount);
+  delete process.env.RTSAI_AI_TOKEN_SECRET;
+  delete process.env.ANTHROPIC_API_KEY;
+  assert.deepEqual(missingProductionSettings(hostedAiConfig()), ["RTSAI_AI_TOKEN_SECRET", "ANTHROPIC_API_KEY"]);
+  assert.equal(await codeOf(await installRequest()), "token_secret_not_configured");
+
+  process.env.RTSAI_AI_TOKEN_SECRET = TOKEN_SECRET;
+  assert.equal(await codeOf(await installRequest()), "upstream_not_configured", "no install tokens are issued without the model key");
+  assert.equal(await codeOf(await statusRequest()), "upstream_not_configured");
+  assert.equal(await codeOf(await chat("x", simple)), "upstream_not_configured");
+
+  process.env.ANTHROPIC_API_KEY = MODEL_KEY;
+  assert.deepEqual(missingProductionSettings(hostedAiConfig()), [], "nothing else is required: spend settings have defaults");
+  assert.equal(mock.requests.length, 0);
+});
+
+test("spend alerts queue one email per threshold per day at 50% and 80% of the global cap", async () => {
+  const mails: { to: string | string[]; subject: string; text: string; html: string }[] = [];
+  setHostedAiOverrides({ store, now: () => NOW, sendMail: async (mail) => { mails.push(mail); return "mail-id"; } });
+  process.env.MAIL_FIREBASE_PROJECT_ID = "demo-mail";
+  process.env.MAIL_FIREBASE_API_KEY = "test-placeholder";
+  process.env.FEEDBACK_ADMIN_EMAIL = "ops@example.com";
+  process.env.RTSAI_AI_GLOBAL_DAILY_CAP_USD = "1";
+  const day = utcDay(NOW);
+  const { token, install_id } = await newInstall();
+
+  store.seedSpend("someone-else", day, 499_990);
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(mails.length, 1, "crossing 50% queues one alert");
+  assert.deepEqual(mails[0].to, "ops@example.com");
+  assert.match(mails[0].subject, /passed 50% of today's cap \(\$0\.50 of \$1\.00\)/);
+  assert.match(mails[0].text, /RTSAI_AI_GLOBAL_DAILY_CAP_USD/);
+  assert.equal(`${mails[0].text}${mails[0].html}`.includes(install_id), false, "alerts carry totals only, no install ids");
+  assert.equal(`${mails[0].text}${mails[0].html}`.includes("Status?"), false, "alerts never include prompts");
+
+  assert.equal((await chat(token, simple)).status, 200);
+  resetSpendAlertMemo(); // a fresh server instance still sees the store's claim
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(mails.length, 1, "the 50% alert is sent once per day");
+
+  store.seedSpend("someone-else", day, 300_000);
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(mails.length, 2);
+  assert.match(mails[1].subject, /passed 80%/);
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(mails.length, 2, "no third email: there are only two thresholds");
+  assert.deepEqual(reachedThresholds(999_999, 1_000_000), [50, 80]);
+  assert.deepEqual(reachedThresholds(499_999, 1_000_000), []);
+  assert.deepEqual(reachedThresholds(5, 0), [], "a zero cap never alerts");
+});
+
+test("a failed alert email releases the claim for a later retry; alerts stay off without mail settings", async () => {
+  let attempts = 0;
+  const sent: string[] = [];
+  let clock = NOW;
+  setHostedAiOverrides({
+    store,
+    now: () => clock,
+    sendMail: async (mail) => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("Firebase mail write failed (503)");
+      sent.push(mail.subject.match(/passed (\d+)%/)?.[1] ?? "?");
+      return "mail-id";
+    },
+  });
+  process.env.RTSAI_AI_GLOBAL_DAILY_CAP_USD = "1";
+  const day = utcDay(NOW);
+  const { token } = await newInstall();
+  store.seedSpend("someone-else", day, 799_990);
+
+  assert.equal((await chat(token, simple)).status, 200, "without mail settings the answer is served and nothing is sent");
+  assert.equal(attempts, 0);
+
+  process.env.MAIL_FIREBASE_PROJECT_ID = "demo-mail";
+  process.env.MAIL_FIREBASE_API_KEY = "test-placeholder";
+  process.env.MAIL_GROUP = "archive@example.com, second@example.com";
+  assert.equal((await chat(token, simple)).status, 200, "a failing mail backend never fails the player's call");
+  assert.equal(attempts, 2, "the 50% send failed, the 80% send went out");
+  assert.deepEqual(sent, ["80"]);
+
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(attempts, 2, "this instance backs off before retrying");
+  clock = NOW + 5 * 60_000 + 1;
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(attempts, 3);
+  assert.deepEqual(sent, ["80", "50"], "the released 50% claim is retried and sent once");
+  assert.equal((await chat(token, simple)).status, 200);
+  assert.equal(attempts, 3);
 });

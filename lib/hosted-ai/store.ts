@@ -25,6 +25,12 @@ export type SettledUsage = { costMicros: number; inputTokens: number; outputToke
 
 export type UsageSnapshot = { installMicros: number; globalMicros: number; calls: number };
 
+/** Totals after a settlement. `globalSpentMicros` is today's settled spend across every install (null when unknown). */
+export type SettleResult = { globalSpentMicros: number | null };
+
+/** Facts recorded with a claimed spend alert, for the operator's audit trail. */
+export type SpendAlertClaim = { spentMicros: number; capMicros: number; claimedAt: number };
+
 export interface UsageStore {
   readonly kind: "memory" | "firestore";
   /** Counts the install against its IP's daily limit, then records it. Returns false when the IP is over the limit. */
@@ -34,7 +40,14 @@ export interface UsageStore {
   linkInstall(installId: string, uid: string): Promise<boolean>;
   usage(installId: string, day: string): Promise<UsageSnapshot>;
   reserve(installId: string, day: string, minute: string, amountMicros: number, limits: QuotaLimits): Promise<ReserveOutcome>;
-  settle(installId: string, day: string, reservedMicros: number, usage: SettledUsage): Promise<void>;
+  settle(installId: string, day: string, reservedMicros: number, usage: SettledUsage): Promise<SettleResult>;
+  /**
+   * Claims the one alert email for a spend threshold (percent of the daily cap) on a UTC day.
+   * Resolves true for exactly one caller per day and threshold, across every server instance.
+   */
+  claimSpendAlert(day: string, thresholdPercent: number, claim: SpendAlertClaim): Promise<boolean>;
+  /** Gives a claim back after the email could not be queued, so a later call can retry it. */
+  releaseSpendAlert(day: string, thresholdPercent: number): Promise<void>;
 }
 
 export function decideReservation(
@@ -53,6 +66,7 @@ export class MemoryUsageStore implements UsageStore {
   readonly kind = "memory" as const;
   private installs = new Map<string, InstallRecord>();
   private counters = new Map<string, number>();
+  private spendAlerts = new Map<string, SpendAlertClaim>();
 
   private add(key: string, amount: number) {
     const value = (this.counters.get(key) ?? 0) + amount;
@@ -109,11 +123,24 @@ export class MemoryUsageStore implements UsageStore {
     this.add(`install:${installId}:${day}`, delta);
     this.add(`global:${day}`, delta);
     if (usage.costMicros > 0) this.add(`calls:${installId}:${day}`, 1);
+    return { globalSpentMicros: this.add(`spent:${day}`, Math.max(0, usage.costMicros)) };
+  }
+
+  async claimSpendAlert(day: string, thresholdPercent: number, claim: SpendAlertClaim) {
+    const key = `${day}_${thresholdPercent}`;
+    if (this.spendAlerts.has(key)) return false;
+    this.spendAlerts.set(key, { ...claim });
+    return true;
+  }
+
+  async releaseSpendAlert(day: string, thresholdPercent: number) {
+    this.spendAlerts.delete(`${day}_${thresholdPercent}`);
   }
 
   /** Test helper: pretend part of today's allowance is already spent. */
   seedSpend(installId: string, day: string, micros: number, global = micros) {
     this.add(`install:${installId}:${day}`, micros);
     this.add(`global:${day}`, global);
+    this.add(`spent:${day}`, global);
   }
 }

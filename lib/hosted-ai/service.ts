@@ -4,12 +4,13 @@ import { errorResponse, HostedAiError, invalid, noStore } from "./errors";
 import { FirestoreUsageStore } from "./firestore-store";
 import { serviceAccount } from "./google-auth";
 import { costMicros, reservationMicros } from "./pricing";
+import { sendSpendAlerts, type SendMail } from "./spend-alerts";
 import { MemoryUsageStore, type InstallRecord, type UsageStore } from "./store";
 import { bearerToken, issueInstallToken, verifyInstallToken } from "./tokens";
 import { translateRequest, translateResponse } from "./translate";
 
 /** Injection points for tests and local mocks. Production uses the defaults. */
-type Overrides = { store?: UsageStore; anthropic?: () => Anthropic; now?: () => number };
+type Overrides = { store?: UsageStore; anthropic?: () => Anthropic; now?: () => number; sendMail?: SendMail };
 let overrides: Overrides = {};
 export function setHostedAiOverrides(next: Overrides) {
   overrides = next;
@@ -37,6 +38,42 @@ function secondsUntilUtcMidnight(ms: number) {
 
 function resetsAt(ms: number) {
   return new Date(Date.parse(`${utcDay(ms)}T00:00:00Z`) + 86_400_000).toISOString();
+}
+
+/**
+ * Names (never values) of the settings production cannot run without: the
+ * model key, the install-token secret and the durable quota store. Other
+ * tunables have safe defaults in config.ts.
+ */
+export function missingProductionSettings(config: HostedAiConfig): string[] {
+  const missing: string[] = [];
+  if (!overrides.store && (config.store !== "firestore" || !serviceAccount())) {
+    missing.push(config.store === "firestore" ? "RTSAI_AI_FIREBASE_SERVICE_ACCOUNT" : "RTSAI_AI_STORE=firestore");
+  }
+  if (config.tokenSecret.length < 32) missing.push("RTSAI_AI_TOKEN_SECRET");
+  if (!upstreamConfigured()) missing.push("ANTHROPIC_API_KEY");
+  return missing;
+}
+
+let reportedMissing = "";
+
+/** Production refuses every hosted-AI route (503, game falls back) until all three are configured. */
+function requireProductionReady(config: HostedAiConfig) {
+  if (!config.production) return;
+  const missing = missingProductionSettings(config);
+  if (!missing.length) return;
+  if (reportedMissing !== missing.join(",")) {
+    reportedMissing = missing.join(",");
+    console.error("Hosted AI refused: production settings missing", { missing });
+  }
+  const [first] = missing;
+  if (first.startsWith("RTSAI_AI_FIREBASE") || first.startsWith("RTSAI_AI_STORE")) {
+    throw new HostedAiError(503, "store_unavailable", "Hosted AI quota storage is not configured.", "unavailable", 300);
+  }
+  if (first === "RTSAI_AI_TOKEN_SECRET") {
+    throw new HostedAiError(503, "token_secret_not_configured", "Hosted AI is not configured yet.", "unavailable", 300);
+  }
+  throw new HostedAiError(503, "upstream_not_configured", "Hosted AI is not configured yet.", "unavailable", 300);
 }
 
 function selectStore(config: HostedAiConfig): UsageStore {
@@ -139,6 +176,7 @@ export async function handleChatCompletion(request: Request): Promise<Response> 
   const config = hostedAiConfig();
   try {
     if (config.killSwitch) throw paused();
+    requireProductionReady(config);
     const text = await readBody(request, config.maxBodyBytes);
     const store = selectStore(config);
     const install = await authenticate(request, config, store);
@@ -180,17 +218,28 @@ export async function handleChatCompletion(request: Request): Promise<Response> 
     }
 
     const cost = costMicros(message.usage);
+    let globalSpentMicros: number | null = null;
     try {
-      await store.settle(install.installId, day, reserved, {
+      ({ globalSpentMicros } = await store.settle(install.installId, day, reserved, {
         costMicros: cost,
         inputTokens: message.usage.input_tokens,
         outputTokens: message.usage.output_tokens,
         cacheReadTokens: message.usage.cache_read_input_tokens ?? 0,
         cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0,
-      });
+      }));
     } catch (cause) {
       // The reservation already exceeds the real cost, so a failed settlement only over-counts.
       console.error("Hosted AI settlement failed", { message: cause instanceof Error ? cause.message.slice(0, 200) : "unknown" });
+    }
+    if (globalSpentMicros !== null && cost > 0) {
+      await sendSpendAlerts({
+        store,
+        day,
+        spentMicros: globalSpentMicros,
+        capMicros: microsFromUsd(config.globalDailyCapUsd),
+        now: now(),
+        sendMail: overrides.sendMail,
+      });
     }
     const used = outcome.installMicros - reserved + cost;
     const remaining = Math.max(0, allowance - used);
@@ -243,6 +292,7 @@ async function ipKey(ip: string, secret: string) {
 export async function handleInstall(request: Request): Promise<Response> {
   const config = hostedAiConfig();
   try {
+    requireProductionReady(config);
     await readBody(request, 4_000);
     const store = selectStore(config);
     const installId = crypto.randomUUID();
@@ -280,6 +330,7 @@ export async function handleInstall(request: Request): Promise<Response> {
 export async function handleStatus(request: Request): Promise<Response> {
   const config = hostedAiConfig();
   try {
+    requireProductionReady(config);
     const store = selectStore(config);
     const install = await authenticate(request, config, store);
     const started = now();
@@ -323,6 +374,7 @@ export async function handleStatus(request: Request): Promise<Response> {
 export async function handleLink(request: Request, verifyFirebase: (idToken: string) => Promise<{ uid: string } | null>) {
   const config = hostedAiConfig();
   try {
+    requireProductionReady(config);
     const store = selectStore(config);
     const install = await authenticate(request, config, store);
     let body: unknown;

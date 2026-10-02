@@ -12,6 +12,15 @@ export const HOSTED_MODEL = "claude-haiku-4-5";
 /** Model names the game may send. Every one is served by {@link HOSTED_MODEL}. */
 export const ALLOWED_MODEL_ALIASES = new Set([HOSTED_MODEL, "rtsai-hosted", "hosted-brain"]);
 
+/**
+ * Spend defaults used whenever the variable is unset or blank, so a first
+ * production deploy is bounded even if the owner sets only the three required
+ * secrets (ANTHROPIC_API_KEY, RTSAI_AI_TOKEN_SECRET, RTSAI_AI_FIREBASE_SERVICE_ACCOUNT).
+ */
+export const DEFAULT_ANON_DAILY_USD = 0.25;
+export const DEFAULT_LINKED_DAILY_USD = 1;
+export const DEFAULT_GLOBAL_DAILY_CAP_USD = 10;
+
 /** Vercel rejects request bodies above 4.5 MB; stay clear of it even if misconfigured. */
 const BODY_LIMIT_CEILING = 4_000_000;
 
@@ -53,9 +62,9 @@ export function hostedAiConfig(): HostedAiConfig {
   return {
     killSwitch: flagEnv("RTSAI_AI_KILL_SWITCH"),
     tokenSecret: process.env.RTSAI_AI_TOKEN_SECRET ?? "",
-    anonymousDailyUsd: numberEnv("RTSAI_AI_ANON_DAILY_USD", 0.25, 0, 100),
-    linkedDailyUsd: numberEnv("RTSAI_AI_LINKED_DAILY_USD", 1, 0, 1_000),
-    globalDailyCapUsd: numberEnv("RTSAI_AI_GLOBAL_DAILY_CAP_USD", 10, 0, 100_000),
+    anonymousDailyUsd: numberEnv("RTSAI_AI_ANON_DAILY_USD", DEFAULT_ANON_DAILY_USD, 0, 100),
+    linkedDailyUsd: numberEnv("RTSAI_AI_LINKED_DAILY_USD", DEFAULT_LINKED_DAILY_USD, 0, 1_000),
+    globalDailyCapUsd: numberEnv("RTSAI_AI_GLOBAL_DAILY_CAP_USD", DEFAULT_GLOBAL_DAILY_CAP_USD, 0, 100_000),
     requestsPerMinute: numberEnv("RTSAI_AI_REQUESTS_PER_MINUTE", 12, 1, 600),
     installsPerIpPerDay: numberEnv("RTSAI_AI_INSTALLS_PER_IP_PER_DAY", 5, 1, 1_000),
     maxTokens: numberEnv("RTSAI_AI_MAX_TOKENS", 1_024, 16, 4_096),

@@ -4,6 +4,7 @@ import {
   type InstallRecord,
   type QuotaLimits,
   type SettledUsage,
+  type SpendAlertClaim,
   type UsageSnapshot,
   type UsageStore,
 } from "./store";
@@ -21,6 +22,7 @@ import {
  *   aiUsage/{installId}_{day}         per-install daily spend and tokens (TTL)
  *   aiSpend/{day}                     global daily spend and tokens (TTL 60 days)
  *   aiRate/{installId}_{minute}       per-minute request counter (TTL)
+ *   aiSpendAlerts/{day}_{percent}     one claimed operator spend alert per day and threshold (TTL)
  */
 
 type Value = Record<string, unknown>;
@@ -51,14 +53,15 @@ export class FirestoreUsageStore implements UsageStore {
     return `projects/${this.account.project_id}/databases/(default)/documents/${path}`;
   }
 
-  private async call(suffix: string, init: RequestInit & { allow404?: boolean } = {}) {
+  private async call(suffix: string, init: RequestInit & { allowStatus?: number } = {}) {
     const account = this.account;
     const token = await googleAccessToken(account);
+    const { allowStatus, ...request } = init;
     const response = await fetch(
       `https://firestore.googleapis.com/v1/projects/${account.project_id}/databases/(default)/documents${suffix}`,
-      { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...init.headers } },
+      { ...request, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...request.headers } },
     );
-    if (init.allow404 && response.status === 404) return null;
+    if (allowStatus !== undefined && response.status === allowStatus) return null;
     if (!response.ok) {
       const detail = (await response.text()).replace(/[A-Za-z0-9_-]{32,}/g, "[redacted]").slice(0, 300);
       throw new Error(`Firestore request failed (${response.status}): ${detail}`);
@@ -105,7 +108,7 @@ export class FirestoreUsageStore implements UsageStore {
   }
 
   async getInstall(installId: string): Promise<InstallRecord | null> {
-    const document = await this.call(`/aiInstalls/${installId}`, { allow404: true });
+    const document = await this.call(`/aiInstalls/${installId}`, { allowStatus: 404 });
     if (!document) return null;
     const fields = (document.fields ?? {}) as Record<string, Record<string, unknown>>;
     return {
@@ -181,6 +184,39 @@ export class FirestoreUsageStore implements UsageStore {
         cacheWriteTokens: usage.cacheWriteTokens,
       });
     }
-    await this.commit(this.usageWrites(installId, day, null, counters));
+    // usageWrites returns [aiUsage, aiSpend]; transform results follow the counter order.
+    const [, global] = await this.commit(this.usageWrites(installId, day, null, counters));
+    const spentIndex = Object.keys(counters).indexOf("spentMicros");
+    return { globalSpentMicros: spentIndex >= 0 && global?.[spentIndex] !== undefined ? global[spentIndex] : null };
+  }
+
+  async claimSpendAlert(day: string, thresholdPercent: number, claim: SpendAlertClaim) {
+    const dayStart = Date.parse(`${day}T00:00:00Z`);
+    // Create-if-absent: the precondition makes Firestore answer 409 ALREADY_EXISTS to every later claimer.
+    const result = await this.call(":commit", {
+      method: "POST",
+      allowStatus: 409,
+      body: JSON.stringify({
+        writes: [{
+          update: {
+            name: this.documentName(`aiSpendAlerts/${day}_${thresholdPercent}`),
+            fields: {
+              day: { stringValue: day },
+              thresholdPercent: { integerValue: String(thresholdPercent) },
+              spentMicros: { integerValue: String(Math.round(claim.spentMicros)) },
+              capMicros: { integerValue: String(Math.round(claim.capMicros)) },
+              claimedAt: timestamp(claim.claimedAt),
+              expireAt: timestamp(dayStart + 60 * DAY_MS),
+            },
+          },
+          currentDocument: { exists: false },
+        }],
+      }),
+    });
+    return result !== null;
+  }
+
+  async releaseSpendAlert(day: string, thresholdPercent: number) {
+    await this.commit([{ delete: this.documentName(`aiSpendAlerts/${day}_${thresholdPercent}`) }]);
   }
 }
