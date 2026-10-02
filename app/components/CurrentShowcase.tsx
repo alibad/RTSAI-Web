@@ -17,7 +17,7 @@ export function CurrentShowcase({ downloadUrl, version, compact = false }: { dow
         <p>{currentShowcase.description}</p>
         {!compact && <ul>{currentShowcase.highlights.map((highlight) => <li key={highlight}><CheckCircle2 size={14} /> {highlight}</li>)}</ul>}
         <div className="showcase-actions">
-          <a className="primary-action" href={downloadUrl} data-analytics-event="game-download" data-platform="current-showcase"><Download size={17} /> Play current build</a>
+          <a className="primary-action" href={downloadUrl} data-analytics-event="game_download" data-platform="current-showcase"><Download size={17} /> Play current build</a>
           <a className="text-action" href={`${gameSource}${currentShowcase.docsPath}`} target="_blank" rel="noreferrer">See the vertical slice <ArrowRight size={16} /></a>
         </div>
       </div>

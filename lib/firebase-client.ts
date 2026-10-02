@@ -58,7 +58,8 @@ export async function trackAnalyticsEvent(name: string, parameters: AnalyticsPar
   const analytics = await getFirebaseAnalytics();
   if (!analytics) return;
   const safeParameters = Object.fromEntries(Object.entries(parameters).filter(([, value]) => value !== undefined));
-  logEvent(analytics, name, safeParameters);
+  // GA4 accepts only letters, digits and underscores in event names and silently drops the rest.
+  logEvent(analytics, name.replace(/[^A-Za-z0-9_]/g, "_"), safeParameters);
 }
 
 export async function identifyAnalyticsUser(uid: string | null) {

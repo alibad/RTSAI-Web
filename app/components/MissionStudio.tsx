@@ -400,7 +400,7 @@ export function MissionStudio({ windowsRelease }: { windowsRelease: WindowsRelea
                   <button onClick={() => void copyBlueprint()}><Share2 size={14} />{shareStatus === "copied" ? "Link copied" : shareStatus === "error" ? "Copy failed" : "Share setup"}</button>
                   <button onClick={generateVariation}><RefreshCw size={14} />New variation</button>
                 </div>
-                <small className="install-note">Already have the Windows alpha? Drag this file onto <b>Play-OpenRAAI.cmd</b>. <a href={windowsRelease.url} data-analytics-event="game-download" data-platform="windows-x64">Get the game bundle.</a></small>
+                <small className="install-note">Already have the Windows alpha? Drag this file onto <b>Play-OpenRAAI.cmd</b>. <a href={windowsRelease.url} data-analytics-event="game_download" data-platform="windows-x64">Get the game bundle.</a></small>
               </div>
             </div>
           ) : (

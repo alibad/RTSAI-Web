@@ -118,7 +118,7 @@ test("renders companion and download routes; parked routes stay reachable but un
   assert.match(download, /Previous Classic alpha/);
   assert.match(download, /PREVIOUS CLASSIC ALPHA \/ 0\.1\.0-alpha\.13/);
   assert.match(download, /not Red Alert 2/);
-  assert.match(download, /data-analytics-event="game-download"/);
+  assert.match(download, /data-analytics-event="game_download"/);
   assert.match(download, /windows-x64-setup\.exe/);
   assert.match(download, /Portable ZIP/);
   assert.match(download, /Apple silicon/);
