@@ -22,7 +22,8 @@ test("shared catalog has complete faction, unit, mode and media relationships", 
 });
 test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(availability(factionById("saudi-arabia")!, "ra"), "In public Windows release");
-  assert.equal(availability(factionById("saudi-arabia")!, "ra2"), "Not in this mode");
+  // RA2 exists in the mod but no public RA2 release certifies it yet.
+  assert.equal(availability(factionById("saudi-arabia")!, "ra2"), "Development · release unconfirmed");
   assert.equal(availability(factionById("china")!, "ra2"), "Development · release unconfirmed");
   assert.equal(resolveMode("ra2"), "ra2");
   assert.equal(resolveMode("ra"), "ra");

@@ -126,11 +126,12 @@ test("renders companion and download routes; parked routes stay reachable but un
 
 test("faction-to-unit-to-install journey retains mode and refuses unsupported combinations", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
-  assert.match(directory, /3(?:<!-- -->)? faction variants/);
+  assert.match(directory, /5(?:<!-- -->)? faction variants/);
   const defaultDirectory = await (await render("/factions")).text();
   assert.match(defaultDirectory, /\/factions\/china\?mode=ra2/);
   assert.match(directory, /\/factions\/china\?mode=ra2/);
-  assert.match(directory, /Saudi Arabia(?:<!-- -->)? · Classic/);
+  assert.match(directory, /\/factions\/yemen\?mode=ra2/);
+  assert.doesNotMatch(directory, /Coming to Red Alert 2/);
   const dossier = await (await render("/factions/china?mode=ra2")).text();
   assert.match(dossier, /\/units\/cnqilin\?mode=ra2/);
   assert.match(dossier, /not screenshots of RA2 gameplay/);
@@ -141,9 +142,12 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   const classic = await (await render("/units/cnqilin?mode=ra")).text();
   assert.match(classic, /<code>CNQILIN<\/code>/);
   assert.match(classic, /<h1>Qilin Main Battle Tank<\/h1>/);
-  const unavailable = await (await render("/factions/yemen?mode=ra2")).text();
-  assert.match(unavailable, /No roster in this mode yet/);
-  assert.doesNotMatch(unavailable, /\/units\/tech\?mode=ra2/);
+  const yemen = await (await render("/factions/yemen?mode=ra2")).text();
+  assert.match(yemen, /\/units\/tech\?mode=ra2/);
+  assert.doesNotMatch(yemen, /No roster in this mode yet/);
+  const saudiUnit = await (await render("/units/sang?mode=ra2")).text();
+  assert.match(saudiUnit, /<code>r2sang<\/code>/);
+  assert.match(saudiUnit, /<h1>Saudi National Guard<\/h1>/);
   const download = await (await render("/download?faction=china&mode=ra2")).text();
   assert.match(download, /China \/ Red Alert 2/);
   assert.match(download, /not the newer local dual-mode build/);
