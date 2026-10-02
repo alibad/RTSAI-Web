@@ -285,11 +285,14 @@ export async function handleStatus(request: Request): Promise<Response> {
     const usage = await storeCall(() => store.usage(install.installId, utcDay(started)));
     const allowance = allowanceMicros(config, install);
     const remaining = Math.max(0, allowance - usage.installMicros);
+    // A call reserves its worst case before it runs, so a remainder smaller than
+    // a typical call (2,000 characters, full output clamp) is already "used up" for the player.
+    const typicalCall = reservationMicros(2_000, 0, config.maxTokens);
     const state = config.killSwitch
       ? "paused"
       : usage.globalMicros >= microsFromUsd(config.globalDailyCapUsd)
         ? "budget"
-        : remaining <= 0
+        : remaining < typicalCall
           ? "allowance"
           : "ok";
     return Response.json(

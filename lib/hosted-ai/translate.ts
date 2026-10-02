@@ -252,6 +252,13 @@ export function translateRequest(body: unknown, config: HostedAiConfig): Transla
   }
 
   if (system.length) params.system = system.join("\n\n");
+  if (params.tools?.length) {
+    // Agent tool loops resend the same tools + instructions every turn (the MCP
+    // planner sends ~12K characters of schemas). Automatic prompt caching makes
+    // later turns read that prefix at 0.1x. Single-shot chat stays uncached:
+    // it is below Haiku 4.5's 4,096-token minimum and would never be reused.
+    params.cache_control = { type: "ephemeral" };
+  }
 
   return { params, requestedModel, maxTokens, textCharacters, imageCount, imageBytes, imageTokens, structuredOutput };
 }

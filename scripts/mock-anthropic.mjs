@@ -73,12 +73,13 @@ export function respond(body, counter) {
   const choice = body.tool_choice?.type;
   let content;
   let stopReason = "end_turn";
-  if (body.output_config?.format?.schema) {
-    content = [{ type: "text", text: JSON.stringify(sample(body.output_config.format.schema, body.output_config.format.schema)) }];
-  } else if (body.tools?.length && (choice === "any" || choice === "tool")) {
+  if (body.tools?.length && (choice === "any" || choice === "tool")) {
+    // A forced tool choice always produces a tool call, as the real API does.
     const tool = choice === "tool" ? body.tools.find((item) => item.name === body.tool_choice.name) : body.tools[0];
     content = [{ type: "tool_use", id: `toolu_mock_${counter}`, name: tool.name, input: sample(tool.input_schema, tool.input_schema) ?? {} }];
     stopReason = "tool_use";
+  } else if (body.output_config?.format?.schema) {
+    content = [{ type: "text", text: JSON.stringify(sample(body.output_config.format.schema, body.output_config.format.schema)) }];
   } else {
     const subject = lastText.replace(/\s+/g, " ").slice(0, 60);
     content = [{ type: "text", text: `Mock Haiku reply (${images} image${images === 1 ? "" : "s"}): hold the ore field and scout east. [${subject}]` }];

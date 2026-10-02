@@ -85,6 +85,7 @@ test("install issues a zero-click token that authorizes a translated Haiku chat 
   assert.equal(upstream.system, "One sentence.");
   assert.equal("thinking" in upstream, false, "Haiku 4.5 runs without extended thinking");
   assert.equal("output_config" in upstream, false, "no effort parameter for Haiku 4.5");
+  assert.equal("cache_control" in upstream, false, "single-shot chat is not cached");
   assert.deepEqual(upstream.messages, [{ role: "user", content: [{ type: "text", text: "Status?" }] }]);
 });
 
@@ -130,6 +131,7 @@ test("function tools, tool_choice and tool results round-trip through Anthropic 
   assert.deepEqual(JSON.parse(call.function.arguments), { detail: "mock" });
   assert.deepEqual(mock.requests[0].tool_choice, { type: "any", disable_parallel_tool_use: true });
   assert.equal(mock.requests[0].tools[0].input_schema.type, "object");
+  assert.deepEqual(mock.requests[0].cache_control, { type: "ephemeral" }, "tool loops cache their stable prefix");
 
   const second = await chat(token, {
     model: "claude-haiku-4-5",
@@ -203,6 +205,12 @@ test("an exhausted daily allowance returns 429 with a reset time and never calls
   const report = await (await status(new Request("https://rtsai.net/api/ai/v1/status", { headers: { authorization: `Bearer ${token}` } }))).json();
   assert.equal(report.state, "allowance");
   assert.equal(report.remaining_usd, 0);
+
+  const second = await newInstall("203.0.113.8");
+  store.seedSpend(second.install_id, utcDay(NOW), 246_000, 0);
+  const nearlyUsed = await (await status(new Request("https://rtsai.net/api/ai/v1/status", { headers: { authorization: `Bearer ${second.token}` } }))).json();
+  assert.equal(nearlyUsed.state, "allowance", "a remainder smaller than a typical call reads as used up");
+  assert.equal(nearlyUsed.remaining_usd, 0.004);
 });
 
 test("the global spend cap and the kill switch stop all model calls with 503", async () => {
