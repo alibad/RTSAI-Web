@@ -589,3 +589,59 @@ footer p { text-align: center; } footer > div { display: flex; justify-content: 
   .asset-archive { padding: 82px 15px 88px; }.archive-heading h2 { font-size: 43px; }.faction-tabs { margin-top: 40px; grid-template-columns: 1fr 1fr; }.faction-tabs button { min-height: 135px; border-bottom: 1px solid #3c4039; }.faction-tabs button:nth-child(2) { border-right: 0; }.faction-tabs button:nth-last-child(-n+2) { border-bottom: 0; }.faction-panel { min-height: 0; }.faction-hero { min-height: 280px; }.faction-dossier { min-height: 0; padding: 30px 22px; }.faction-dossier h3 { margin-top: 42px; }.faction-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }.faction-dossier ul { grid-template-columns: 1fr; }.archive-library-heading { margin-top: 70px; align-items: flex-start; flex-direction: column; gap: 15px; }.archive-controls { display: flex; flex-direction: column; }.archive-filters { order: 2; }.archive-grid { grid-template-columns: 1fr 1fr; }.archive-card-copy { min-height: 128px; padding: 14px; }.archive-card-copy b { margin-top: 16px; font-size: 12px; }.archive-provenance { padding: 16px; align-items: flex-start; flex-direction: column; gap: 11px; }.archive-provenance a { margin-left: 0; }.asset-lightbox { padding: 0; place-items: stretch; }.asset-lightbox-panel { width: 100%; max-height: 100vh; border: 0; }.asset-lightbox-image { min-height: 42vh; }.asset-lightbox-copy { min-height: 58vh; padding: 65px 22px 28px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .sweep, .spin, .pulse { animation: none; } * { transition: none !important; } }
+
+/* RTS AI mod download: the RA2 requirement first, the installer's AI choice, requirements, files, then the Classic alpha. */
+.mod-download-hero { padding-bottom: 64px; }
+.ra2-requirement { max-width: 780px; margin: 0 0 30px; padding: 18px 20px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 14px; align-items: start; border: 1px solid rgba(241,210,139,.45); border-left: 4px solid var(--gold); background: rgba(241,210,139,.07); color: var(--gold); }
+.ra2-requirement b { display: block; color: #f6e7bd; font: 640 11px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.ra2-requirement p { margin: 7px 0 0; color: #f0eee6; font-size: 18px; line-height: 1.5; }
+.mod-coming-soon { max-width: 780px; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 14px; padding: 18px 20px; border: 1px dashed #5b5f56; color: #a7aaa0; }
+.mod-coming-soon b { display: block; color: var(--paper); font-size: 18px; font-weight: 620; }
+.mod-coming-soon p { margin: 7px 0 12px; color: #a7a99f; font-size: 14px; line-height: 1.6; }
+.mod-setup, .mod-downloads, .classic-alpha { padding: 80px 0; border-top: 1px solid var(--line); }
+.ai-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ai-choice { min-width: 0; padding: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.018); display: flex; flex-direction: column; }
+.ai-choice.is-default { border-color: rgba(241,210,139,.5); background: rgba(241,210,139,.045); }
+.ai-choice .platform-card-heading { grid-template-columns: 44px minmax(0, 1fr); }
+.ai-choice .release-status { grid-column: 2; justify-self: start; }
+.ai-choice h3 { margin: 4px 0 0; color: #f0eee6; font-size: 17px; font-weight: 600; }
+.ai-choice p { margin: 18px 0 12px; color: #a3a59b; font-size: 13px; line-height: 1.6; }
+.ai-choice small { margin-top: auto; color: #8a8e84; font: 500 10px/1.5 var(--font-mono); }
+.mod-requirements { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; border-top: 1px solid var(--line); }
+.mod-requirements > div { min-width: 0; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.mod-requirements dt { display: flex; align-items: center; gap: 8px; color: var(--gold); font: 560 9px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.mod-requirements dd { margin: 7px 0 0; color: #d9d8ce; font-size: 14px; line-height: 1.5; }
+.unsigned-note { grid-column: 1 / -1; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 16px 18px; border: 1px solid rgba(239,91,63,.45); background: rgba(239,91,63,.07); color: var(--red); }
+.unsigned-note p { margin: 0; color: #dedcd2; font-size: 14px; line-height: 1.6; }.unsigned-note b { color: #fff; }
+.unsigned-note code, .mod-asset-list code { font-family: var(--font-mono); overflow-wrap: anywhere; }
+.mod-asset-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.mod-asset-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.mod-asset-list b { display: block; margin: 6px 0; color: #f0eee6; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.mod-asset-list code { display: block; color: #9da095; font-size: 10px; }
+.mod-asset-list .primary-action, .mod-asset-list .secondary-download { min-height: 42px; gap: 8px; }
+.mod-pending { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; }.mod-pending .pending-download { width: auto; padding-inline: 22px; }
+.classic-alpha .download-intro h2 { font-size: clamp(32px, 3.2vw, 46px); }
+.classic-alpha .platform-card { min-height: 0; }.classic-alpha .platform-card > p { min-height: 0; }.classic-alpha .secondary-download { gap: 8px; }
+.classic-alpha .download-footnote { margin-top: -34px; }
+
+/* Homepage hero trailer (shown only when public/trailer/ holds the video and its poster). */
+.hero-trailer { position: relative; z-index: 3; width: 100%; max-width: 640px; justify-self: end; margin: 0; border: 1px solid rgba(241,210,139,.24); background: #0b0d0b; box-shadow: 0 28px 80px rgba(0,0,0,.35); }
+.hero-trailer video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.hero-trailer button { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(240,238,230,.3); background: rgba(17,20,17,.8); color: #e8e5d9; padding: 7px 10px; font-size: 11px; cursor: pointer; }
+.hero-trailer button:hover { border-color: var(--gold); color: #fff; }
+
+@media (max-width: 1050px) {
+  .ai-choices { grid-template-columns: 1fr; }.mod-setup, .mod-downloads, .classic-alpha { padding: 64px 0; }.unsigned-note { grid-column: auto; }
+  .hero-trailer { justify-self: start; }
+}
+@media (max-width: 720px) {
+  .mod-requirements { grid-template-columns: 1fr; }.mod-asset-list li { grid-template-columns: 1fr; }.ra2-requirement p { font-size: 16px; }
+  .mod-setup, .mod-downloads, .classic-alpha { width: min(100% - 30px, 1320px); padding: 52px 0; }.classic-alpha .download-footnote { margin-top: -16px; }
+}
+
+/* Privacy: the multi-part AI co-commander section. */
+.privacy-detail { min-width: 0; }
+.privacy-detail h3 { margin: 26px 0 8px; color: #e5e3d8; font-size: 14px; font-weight: 620; }
+.privacy-detail ul { margin: 0; padding-left: 18px; color: #9da097; font-size: 14px; line-height: 1.7; }
+.privacy-detail li + li { margin-top: 8px; }
+.privacy-detail b { color: #d9d8ce; font-weight: 620; }

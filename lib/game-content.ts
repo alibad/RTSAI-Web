@@ -3,6 +3,7 @@ import snapshot from "../data/factions.generated.json";
 import { gameMedia } from "./game-media.generated";
 import release from "../data/openra-ai-release.json";
 import coverage from "../data/release-content.json";
+import { getModRelease } from "./mod-release";
 export type GameMode = "ra" | "ra2";
 export const catalog = snapshot.catalog;
 export const factions = catalog.factions;
@@ -20,6 +21,11 @@ export function unitsForFaction(id: string, mode: GameMode) { return units.filte
 export function downloadHref(factionId: string, mode: GameMode) { return `/download?faction=${encodeURIComponent(factionId)}&mode=${mode}`; }
 export function availability(faction: Faction, mode: GameMode) {
   if (faction.variants[mode].status !== "implemented") return "Not in this mode";
+  // RA2 ships as the RTS AI mod; only factions its published manifest names are claimed.
+  if (mode === "ra2") {
+    const mod = getModRelease();
+    return mod.published && mod.ra2FactionIds.includes(faction.id) ? "In public Windows release" : "Development · release unconfirmed";
+  }
   const verified = coverage.windows.version === release.windows.version && coverage.windows.engineCommit === release.engineCommit && coverage.windows.productCommit === release.productCommit;
   if (verified && coverage.windows.modes[mode].factionIds.some(id => id === faction.id)) return "In public Windows release";
   return "Development · release unconfirmed";

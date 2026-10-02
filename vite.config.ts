@@ -1,6 +1,9 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
+import { findTrailer } from "./lib/trailer";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -22,6 +25,12 @@ const localBindingConfig = {
   r2_buckets: [],
 };
 
+// The homepage hero shows the gameplay trailer only when public/trailer/ holds
+// the video and its poster at build time (see lib/trailer.ts).
+const publicDirectory = fileURLToPath(new URL("./public", import.meta.url));
+const trailer = findTrailer((publicPath) => existsSync(`${publicDirectory}${publicPath}`));
+const define = { "process.env.RTSAI_TRAILER": JSON.stringify(trailer ? JSON.stringify(trailer) : "") };
+
 export default defineConfig(async () => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
@@ -39,6 +48,7 @@ export default defineConfig(async () => {
     const { nitro } = await import("nitro/vite");
     return {
       server,
+      define,
       plugins: [tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
@@ -48,6 +58,7 @@ export default defineConfig(async () => {
 
   return {
     server,
+    define,
     plugins: [
       vinext(),
       cloudflare({

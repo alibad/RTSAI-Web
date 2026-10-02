@@ -127,6 +127,12 @@ when available. Windows signing must come from the signature check; Mac assets
 require successful signing, notarization and stapling evidence. A Windows-only
 release preserves the previous Mac download instead of implying version parity.
 
+The RTS AI mod (the Red Alert 2 mod in `alibad/RTSAI-Mod`) has its own
+committed manifest, `data/rtsai-mod-release.json`. While it is unpublished the
+download page shows "coming soon" and renders no mod links. After a GitHub
+release is published, fill it with `npm run sync:mod-release -- v0.2.0-alpha.1`
+(see `docs/launch-checklist.md`).
+
 ## Shared faction guide
 
 Author stories and signature-unit identities in `OpenRA-AI/catalog/factions.json`.

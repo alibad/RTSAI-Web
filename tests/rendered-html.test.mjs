@@ -34,8 +34,13 @@ test("renders a focused homepage: the RA2 mod promise, three pillars, factions, 
   assert.match(html, /Five modern nations/);
   assert.match(html, /An AI co-commander/);
   assert.match(html, /Red Alert 2 on OpenRA/);
+  assert.match(html, /<i>In development<\/i>/, "pillar 3 says In development until the mod manifest is published");
+  assert.doesNotMatch(html, /<i>Alpha<\/i>/);
+  assert.match(html, /Play the current alpha/);
+  assert.doesNotMatch(html, /RTSAI-Mod\/releases|Download RTS AI (?:<!-- -->)?\d/);
   assert.match(html, /Türkiye/);
   assert.match(html, /Interactive AI companion preview/);
+  assert.doesNotMatch(html, /<video/, "no trailer files, so the hero keeps the CompanionDemo");
   assert.match(html, /Red Sea 2026/);
   assert.match(html, /AUTO when you say so/);
   assert.match(html, /href="\/companion"/);
@@ -108,20 +113,68 @@ test("renders companion and download routes; parked routes stay reachable but un
   assert.match(capabilityAtlas, /China/);
   assert.match(capabilityAtlas, /Open public manifest/);
   assert.doesNotMatch(capabilityAtlas, /BeTenshi/i);
-  assert.match(download, /Locally built and smoke-tested/);
-  assert.match(download, /Download Windows setup/);
+  // The previous Classic alpha stays downloadable, as a clearly secondary section.
+  assert.match(download, /id="classic-alpha"/);
+  assert.match(download, /Previous Classic alpha/);
+  assert.match(download, /PREVIOUS CLASSIC ALPHA \/ 0\.1\.0-alpha\.13/);
+  assert.match(download, /not Red Alert 2/);
   assert.match(download, /data-analytics-event="game-download"/);
+  assert.match(download, /windows-x64-setup\.exe/);
   assert.match(download, /Portable ZIP/);
   assert.match(download, /Apple silicon/);
   assert.match(download, /signed and notarized disk image/);
-  assert.doesNotMatch(download, /Signed macOS download pending/);
-  assert.match(download, /Install or extract/);
-  assert.match(download, /Play-Red-Sea-2026\.cmd/);
-  assert.match(download, /Optional Local AI Pack/);
-  assert.match(download, /Qwen3-VL/);
-  assert.match(download, /PUBLIC BUILDS/);
-  assert.match(download, /WINDOWS 0\.1\.0-alpha\.13 \/ MACOS 0\.1\.0-alpha\.13/);
-  assert.match(download, /Red Alert 2 and Yuri/);
+  assert.match(download, /Classic Local AI Pack/);
+});
+
+test("the download page leads with the RA2 requirement and renders no mod links before a published release", async () => {
+  const html = await (await render("/download")).text();
+  const requirement = String.raw`You need your own Red Alert 2 \(Steam, EA app or disc\)\. The mod imports it on first launch; we never ship EA(?:&#x27;|&#39;|')s files\.`;
+  assert.match(html, new RegExp(requirement));
+  const order = [
+    html.search(new RegExp(requirement)),
+    html.indexOf("How should your co-commander think?"),
+    html.indexOf("What your PC needs."),
+    html.indexOf('id="mod-downloads"'),
+    html.indexOf('id="classic-alpha"'),
+  ];
+  assert.ok(order.every((index) => index > 0), `every section renders: ${order}`);
+  assert.deepEqual([...order].sort((a, b) => a - b), order, "requirement, AI choices, requirements, downloads, then the Classic alpha");
+  assert.ok(html.indexOf("<main") < order[0], "the requirement is inside the page body, before any download");
+
+  for (const choice of ["Hosted AI + local voice", "Full local AI", "No AI", "~1.8 GB", "Default"]) assert.ok(html.includes(choice), choice);
+  for (const requirementText of ["Windows 10 or 11, 64-bit", "8 GB; 16 GB recommended for Full local AI", "Your own Red Alert 2: Steam, EA app or disc"]) assert.ok(html.includes(requirementText), requirementText);
+  assert.match(html, /href="\/privacy#ai-co-commander"/);
+
+  // Unpublished: honest "coming soon", no mod links, no unsigned-build note.
+  assert.match(html, /First RTS AI mod release coming soon/);
+  assert.match(html, /Mod download not yet published/);
+  assert.doesNotMatch(html, /RTSAI-Mod\/releases/);
+  assert.doesNotMatch(html, /data-analytics-event="mod_download"/);
+  assert.doesNotMatch(html, /not code-signed yet/);
+  assert.doesNotMatch(html, /Download RTS AI (?:<!-- -->)?\d/);
+  const beforeClassic = html.slice(0, html.indexOf('id="classic-alpha"'));
+  assert.doesNotMatch(beforeClassic, /releases\/download/, "nothing above the Classic section links to a download");
+});
+
+test("privacy explains the hosted AI co-commander in plain language", async () => {
+  const html = await (await render("/privacy")).text();
+  assert.match(html, /id="ai-co-commander"/);
+  for (const claim of [
+    "compact snapshot of the match state",
+    "up to two downscaled screenshots",
+    "forwards these to Anthropic",
+    "Your voice audio is transcribed on your own PC",
+    "Audio is never uploaded",
+    "anonymous install token",
+    "No account is required",
+    "IP addresses for rate limiting only",
+    "Daily usage counters that expire",
+    "AI Off, Local, or External",
+    "Vercel",
+    "Google Firebase (Cloud Firestore)",
+  ]) assert.ok(html.includes(claim), claim);
+  assert.match(html, /do not send your name, email/);
+  assert.match(html, /Written feedback and diagnostics are never sent to Google Analytics/);
 });
 
 test("faction-to-unit-to-install journey retains mode and refuses unsupported combinations", async () => {
@@ -150,7 +203,8 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   assert.match(saudiUnit, /<h1>Saudi National Guard<\/h1>/);
   const download = await (await render("/download?faction=china&mode=ra2")).text();
   assert.match(download, /China \/ Red Alert 2/);
-  assert.match(download, /not the newer local dual-mode build/);
+  assert.match(download, /RA2 release not yet certified/);
+  assert.match(download, /The Red Alert 2 mod has no public release yet/);
   assert.match(download, /v0\.1\.0-alpha\.13/);
   assert.doesNotMatch(download, /href="[^"]*windows-dual/);
   for (const path of ["/factions/nonexistent", "/units/nonexistent"]) {

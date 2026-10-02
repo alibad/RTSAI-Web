@@ -1,8 +1,11 @@
 import { ArrowRight, BrainCircuit, Download, Flag, Mic, ShieldCheck, Swords, Zap } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "./components/CompanionDemo";
+import { HeroTrailer } from "./components/HeroTrailer";
 import { gameSource, SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { getGameRelease } from "../lib/release";
+import { getModRelease, isPublished, RA2_REQUIREMENT, windowsInstaller } from "../lib/mod-release";
+import { buildTrailer } from "../lib/trailer";
 import { factions } from "../lib/game-content";
 import { CatalogImage } from "./components/ContentGuide";
 
@@ -14,6 +17,10 @@ export default async function Home() {
   const windowsRelease = gameRelease.windows;
   const latestPublicVersion = gameRelease.macos?.version ?? windowsRelease.version;
   const primaryWindowsUrl = windowsRelease.installerUrl ?? windowsRelease.url;
+  const modRelease = getModRelease();
+  const mod = isPublished(modRelease) ? modRelease : null;
+  const modInstaller = windowsInstaller(modRelease);
+  const trailer = buildTrailer();
   const inRa2 = factions.filter((faction) => faction.variants.ra2.status === "implemented");
   const comingToRa2 = factions.filter((faction) => faction.variants.ra2.status !== "implemented");
   const pillars = [
@@ -38,11 +45,11 @@ export default async function Home() {
     {
       id: "ra2",
       icon: Swords,
-      status: "In development",
+      status: mod ? "Alpha" : "In development",
       title: "Red Alert 2 on OpenRA",
       description: "Install the mod, point it at the Red Alert 2 you own on Steam, the EA app or disc, and play. Commercial game files are never bundled.",
       href: "/download",
-      action: "Release status",
+      action: mod ? "Download the mod" : "Release status",
     },
   ];
   const structuredData = {
@@ -56,21 +63,36 @@ export default async function Home() {
         description: "An OpenRA mod for Red Alert 2 with five modern nations and an AI co-commander.",
         inLanguage: "en",
       },
-      {
-        "@type": ["SoftwareApplication", "VideoGame"],
-        "@id": `${canonicalUrl}/#openra-ai`,
-        name: "OpenRA AI",
-        url: canonicalUrl,
-        description: "The public OpenRA AI alpha: an interruptible AI companion, optional AUTO command, and the Red Sea 2026 theatre.",
-        applicationCategory: "GameApplication",
-        operatingSystem: gameRelease.macos ? "Windows 10, Windows 11, macOS" : "Windows 10, Windows 11",
-        softwareVersion: windowsRelease.version,
-        downloadUrl: primaryWindowsUrl,
-        isAccessibleForFree: true,
-        image: `${canonicalUrl}/social-card.png`,
-        sameAs: [gameSource],
-        offers: { "@type": "Offer", price: "0", priceCurrency: "USD", url: primaryWindowsUrl },
-      },
+      mod && modInstaller
+        ? {
+          "@type": ["SoftwareApplication", "VideoGame"],
+          "@id": `${canonicalUrl}/#rtsai-mod`,
+          name: "RTS AI",
+          url: `${canonicalUrl}/download`,
+          description: `A Red Alert 2 mod for OpenRA with five modern nations and an AI co-commander. ${RA2_REQUIREMENT}`,
+          applicationCategory: "GameApplication",
+          operatingSystem: "Windows 10, Windows 11",
+          softwareVersion: mod.version,
+          downloadUrl: modInstaller.url,
+          isAccessibleForFree: true,
+          image: `${canonicalUrl}/social-card.png`,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD", url: `${canonicalUrl}/download` },
+        }
+        : {
+          "@type": ["SoftwareApplication", "VideoGame"],
+          "@id": `${canonicalUrl}/#openra-ai`,
+          name: "OpenRA AI",
+          url: canonicalUrl,
+          description: "The public OpenRA AI alpha: an interruptible AI companion, optional AUTO command, and the Red Sea 2026 theatre.",
+          applicationCategory: "GameApplication",
+          operatingSystem: gameRelease.macos ? "Windows 10, Windows 11, macOS" : "Windows 10, Windows 11",
+          softwareVersion: windowsRelease.version,
+          downloadUrl: primaryWindowsUrl,
+          isAccessibleForFree: true,
+          image: `${canonicalUrl}/social-card.png`,
+          sameAs: [gameSource],
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD", url: primaryWindowsUrl },
+        },
     ],
   };
 
@@ -86,7 +108,7 @@ export default async function Home() {
             <p className="hero-lede">Five modern nations on the Red Alert 2 battlefield, and an AI co-commander that watches your match, speaks when it matters, and takes command only when you hand it over.</p>
             <div className="hero-actions">
               <Link className="primary-action" href="/factions"><Flag size={17} /> Meet the factions</Link>
-              <Link className="text-action" href="/download">Play the current alpha <ArrowRight size={17} /></Link>
+              <Link className="text-action" href="/download">{mod ? `Download RTS AI ${mod.version}` : "Play the current alpha"} <ArrowRight size={17} /></Link>
             </div>
             <div className="hero-proof">
               <span><ShieldCheck size={15} /> Sees only what you see</span>
@@ -94,7 +116,7 @@ export default async function Home() {
               <span><Zap size={15} /> AUTO when you say so</span>
             </div>
           </div>
-          <CompanionDemo />
+          {trailer ? <HeroTrailer video={trailer.video} poster={trailer.poster} /> : <CompanionDemo />}
         </header>
 
         <section className="home-experiences" aria-labelledby="pillars-title">
@@ -127,17 +149,35 @@ export default async function Home() {
         </section>
 
         <section className="closing-section home-closing">
-          <div>
-            <span className="eyebrow">Free playable alpha</span>
-            <h2>Play what exists today.</h2>
-          </div>
-          <div>
-            <p>The public alpha {windowsRelease.version} runs on OpenRA&apos;s classic Red Alert with the AI companion and the Red Sea 2026 theatre. The Red Alert 2 mod is the next release.</p>
-            <div className="hero-actions">
-              <Link className="primary-action" href="/download"><Download size={17} /> Download {latestPublicVersion}</Link>
-              <Link className="text-action" href="/companion">How the companion works <ArrowRight size={17} /></Link>
-            </div>
-          </div>
+          {mod ? (
+            <>
+              <div>
+                <span className="eyebrow">Free alpha for Windows</span>
+                <h2>Bring Red Alert 2. Command.</h2>
+              </div>
+              <div>
+                <p>RTS AI {mod.version} is out for Windows. {RA2_REQUIREMENT}</p>
+                <div className="hero-actions">
+                  <Link className="primary-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link>
+                  <Link className="text-action" href="/companion">How the companion works <ArrowRight size={17} /></Link>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <span className="eyebrow">Free playable alpha</span>
+                <h2>Play what exists today.</h2>
+              </div>
+              <div>
+                <p>The public alpha {windowsRelease.version} runs on OpenRA&apos;s classic Red Alert with the AI companion and the Red Sea 2026 theatre. The Red Alert 2 mod is the next release.</p>
+                <div className="hero-actions">
+                  <Link className="primary-action" href="/download"><Download size={17} /> Download {latestPublicVersion}</Link>
+                  <Link className="text-action" href="/companion">How the companion works <ArrowRight size={17} /></Link>
+                </div>
+              </div>
+            </>
+          )}
         </section>
       </main>
       <SiteFooter />
