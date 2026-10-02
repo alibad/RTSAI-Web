@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 export type DictationField = string;
 
@@ -30,6 +30,8 @@ function recognitionConstructor(): (new () => Recognition) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+const subscribeToNothing = () => () => {};
+
 const MESSAGES: Record<string, string> = {
   "not-allowed": "Microphone access was not allowed. You can still type.",
   "service-not-allowed": "The speech service was not allowed. You can still type.",
@@ -56,7 +58,12 @@ export function useFeedbackDictation(options: {
 }) {
   const { getText, setText, onNotice, limits } = options;
   const [field, setField] = useState<DictationField | null>(null);
-  const [supported, setSupported] = useState(false);
+  // Browser capability, read without a setState-in-effect: false on the server.
+  const supported = useSyncExternalStore(
+    subscribeToNothing,
+    () => Boolean(recognitionConstructor()),
+    () => false,
+  );
 
   const recognition = useRef<Recognition | null>(null);
   const prefix = useRef("");
@@ -64,9 +71,9 @@ export function useFeedbackDictation(options: {
   const deliberate = useRef(false);
   // Kept in a ref so a re-render never tears down a running session.
   const latest = useRef({ getText, setText, onNotice, limits });
-  latest.current = { getText, setText, onNotice, limits };
-
-  useEffect(() => setSupported(Boolean(recognitionConstructor())), []);
+  useEffect(() => {
+    latest.current = { getText, setText, onNotice, limits };
+  });
 
   const stop = useCallback(() => {
     deliberate.current = true;
