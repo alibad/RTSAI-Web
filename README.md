@@ -18,11 +18,11 @@ Players can:
 - use privacy-safe product analytics that associate events with a pseudonymous account ID instead of a name or email;
 - send authenticated, private product feedback with a searchable receipt ID and optional usefulness rating.
 
-The product story is organized around the original plan: companion + command,
-Earth-to-battlefield creation, and the web + launcher surface that makes both
-approachable. New theatre/mod development and autonomous strategy research are
-presented as growth tracks. Individual scenarios such as the current Red Sea
-2026 vertical slice are evolving proof of that platform rather than its identity.
+The product is one thing: a Red Alert 2 mod for OpenRA with five modern
+nations and an AI co-commander (see `../OpenRA-AI/docs/roadmap.md`). The public
+navigation is Factions and Download. The Earth studio, Capability Atlas and
+platform plan are parked: still reachable for existing links, but `noindex`,
+out of the sitemap and unlinked.
 
 The homepage also includes an interactive companion preview so visitors can
 understand the pause, ask, and alert-priority experience before downloading the
@@ -100,7 +100,8 @@ npm run lint
 npm test
 ```
 
-`npm test` type-checks the full project, builds the production worker, verifies
+`npm test` first checks that the committed faction snapshot matches the sibling
+`../OpenRA-AI` catalog (so it needs that checkout and its `.venv`), then type-checks the full project, builds the production worker, verifies
 the rendered product surface and share-link parser, checks the API validation
 boundary, and compiles a deterministic OpenRA map fixture.
 

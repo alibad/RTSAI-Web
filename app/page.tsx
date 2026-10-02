@@ -1,21 +1,50 @@
-import { ArrowRight, BrainCircuit, Download, Globe2, ShieldCheck, VolumeX, Zap } from "lucide-react";
+import { ArrowRight, BrainCircuit, Download, Flag, Mic, ShieldCheck, Swords, Zap } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "./components/CompanionDemo";
-import { CurrentShowcase } from "./components/CurrentShowcase";
 import { gameSource, SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { getGameRelease } from "../lib/release";
-import { productLayers } from "../lib/product-plan";
+import { factions } from "../lib/game-content";
 import { CatalogImage } from "./components/ContentGuide";
 
 const canonicalUrl = "https://rtsai.net";
-const experienceIcons = { companion: BrainCircuit, world: Globe2 };
+const listFormat = new Intl.ListFormat("en", { style: "long", type: "conjunction" });
 
 export default async function Home() {
   const gameRelease = await getGameRelease();
   const windowsRelease = gameRelease.windows;
   const latestPublicVersion = gameRelease.macos?.version ?? windowsRelease.version;
   const primaryWindowsUrl = windowsRelease.installerUrl ?? windowsRelease.url;
-  const coreExperiences = productLayers.filter((layer) => layer.id !== "distribution");
+  const inRa2 = factions.filter((faction) => faction.variants.ra2.status === "implemented");
+  const comingToRa2 = factions.filter((faction) => faction.variants.ra2.status !== "implemented");
+  const pillars = [
+    {
+      id: "factions",
+      icon: Flag,
+      status: `${inRa2.length} of ${factions.length} in RA2`,
+      title: "Five modern nations",
+      description: `${listFormat.format(factions.map((faction) => faction.name))}, each with its own doctrine, signature units and counters.`,
+      href: "/factions",
+      action: "Meet the factions",
+    },
+    {
+      id: "companion",
+      icon: BrainCircuit,
+      status: "Playable now",
+      title: "An AI co-commander",
+      description: "It sees only what you can see, speaks up when it matters, answers spoken questions, and plays for you only when you switch AUTO on.",
+      href: "/companion",
+      action: "How it works",
+    },
+    {
+      id: "ra2",
+      icon: Swords,
+      status: "In development",
+      title: "Red Alert 2 on OpenRA",
+      description: "Install the mod, point it at the Red Alert 2 you own on Steam, the EA app or disc, and play. Commercial game files are never bundled.",
+      href: "/download",
+      action: "Release status",
+    },
+  ];
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -24,7 +53,7 @@ export default async function Home() {
         "@id": `${canonicalUrl}/#website`,
         url: canonicalUrl,
         name: "RTS AI",
-        description: "An AI-native RTS platform for intelligent play and Earth-built missions.",
+        description: "An OpenRA mod for Red Alert 2 with five modern nations and an AI co-commander.",
         inLanguage: "en",
       },
       {
@@ -32,7 +61,7 @@ export default async function Home() {
         "@id": `${canonicalUrl}/#openra-ai`,
         name: "OpenRA AI",
         url: canonicalUrl,
-        description: "A playable OpenRA build with an interruptible AI companion, optional AUTO delegation, and real-world mission generation.",
+        description: "The public OpenRA AI alpha: an interruptible AI companion, optional AUTO command, and the Red Sea 2026 theatre.",
         applicationCategory: "GameApplication",
         operatingSystem: gameRelease.macos ? "Windows 10, Windows 11, macOS" : "Windows 10, Windows 11",
         softwareVersion: windowsRelease.version,
@@ -52,74 +81,61 @@ export default async function Home() {
         <header className="hero" id="top">
           <div className="hero-radar" aria-hidden="true"><i /><i /><i /><span /></div>
           <div className="hero-copy">
-            <Link className="eyebrow hero-release-link" href="/download"><span className="live-dot" /> Latest public build / {latestPublicVersion} <ArrowRight size={13} /></Link>
+            <Link className="eyebrow hero-release-link" href="/factions"><span className="live-dot" /> A Red Alert 2 mod for OpenRA <ArrowRight size={13} /></Link>
             <h1>Your battlefield.<br /><em>Now it talks back.</em></h1>
-            <p className="hero-lede">OpenRA rebuilt around human + AI play: an interruptible companion in the match and a mission studio that turns real places into playable battlefields.</p>
+            <p className="hero-lede">Five modern nations on the Red Alert 2 battlefield, and an AI co-commander that watches your match, speaks when it matters, and takes command only when you hand it over.</p>
             <div className="hero-actions">
-              <Link className="primary-action" href="/download"><Download size={17} /> Download {latestPublicVersion}</Link>
-              <Link className="text-action" href="/studio">Build a mission <ArrowRight size={17} /></Link>
+              <Link className="primary-action" href="/factions"><Flag size={17} /> Meet the factions</Link>
+              <Link className="text-action" href="/download">Play the current alpha <ArrowRight size={17} /></Link>
             </div>
             <div className="hero-proof">
-              <span><ShieldCheck size={15} /> Fog-respecting</span>
-              <span><VolumeX size={15} /> Interruptible</span>
-              <span><Zap size={15} /> AUTO is optional</span>
+              <span><ShieldCheck size={15} /> Sees only what you see</span>
+              <span><Mic size={15} /> Ask by voice</span>
+              <span><Zap size={15} /> AUTO when you say so</span>
             </div>
           </div>
           <CompanionDemo />
         </header>
 
-        <div className="capability-rail home-capability-rail" aria-label="Core capabilities">
-          <span>01 <b>Play with intelligence</b></span>
-          <span>02 <b>Create from Earth</b></span>
-          <span>03 <b>Download and launch</b></span>
-        </div>
-
-        <section className="home-experiences" aria-labelledby="experiences-title">
+        <section className="home-experiences" aria-labelledby="pillars-title">
           <div className="home-section-heading">
-            <span className="section-number">TWO CORE EXPERIENCES</span>
-            <h2 id="experiences-title">Intelligence inside the match.<br />The world outside it.</h2>
-            <p>Start with the way you want to play. Both experiences meet in the same native OpenRA build.</p>
+            <span className="section-number">WHAT YOU GET</span>
+            <h2 id="pillars-title">Five nations.<br />One co-commander.</h2>
+            <p>You bring your own copy of Red Alert 2. The mod brings the factions and the AI.</p>
           </div>
           <div className="home-experience-grid">
-            {coreExperiences.map((experience) => {
-              const ExperienceIcon = experienceIcons[experience.id as keyof typeof experienceIcons];
-              const href = experience.id === "companion" ? "/companion" : "/studio";
-              return (
-                <Link href={href} className="home-experience-card" key={experience.id}>
-                  <div><span>{experience.number}</span><i>{experience.status}</i></div>
-                  <ExperienceIcon size={26} />
-                  <h3>{experience.title}</h3>
-                  <p>{experience.description}</p>
-                  <strong>Explore the experience <ArrowRight size={16} /></strong>
-                </Link>
-              );
-            })}
+            {pillars.map((pillar, index) => (
+              <Link href={pillar.href} className="home-experience-card" key={pillar.id}>
+                <div><span>{String(index + 1).padStart(2, "0")}</span><i>{pillar.status}</i></div>
+                <pillar.icon size={26} />
+                <h3>{pillar.title}</h3>
+                <p>{pillar.description}</p>
+                <strong>{pillar.action} <ArrowRight size={16} /></strong>
+              </Link>
+            ))}
           </div>
         </section>
 
         <section className="home-faction-entry" aria-labelledby="faction-entry-title">
           <CatalogImage id="red-sea-key-art" />
-          <div><span className="section-number">FACTIONS / CLASSIC + RED ALERT 2</span><h2 id="faction-entry-title">A side worth knowing.<br />A force worth mastering.</h2><p>Meet five modern factions through their stories and signature units. Compare Classic and RA2 variants, with clear labels for what is in development and what you can download.</p><Link className="primary-action" href="/factions">Explore the factions <ArrowRight size={17} /></Link></div>
-        </section>
-        <section className="home-proof" aria-labelledby="proof-title">
-          <div className="home-section-heading home-proof-heading">
-            <span className="section-number">CURRENT PLAYABLE PROOF</span>
-            <h2 id="proof-title">Not a concept.<br />A battlefield you can launch.</h2>
-            <Link href="/platform">See the full platform plan <ArrowRight size={16} /></Link>
+          <div>
+            <span className="section-number">FACTIONS / RED ALERT 2</span>
+            <h2 id="faction-entry-title">A side worth knowing.<br />A force worth mastering.</h2>
+            <p>{listFormat.format(inRa2.map((faction) => faction.name))} {inRa2.length === 1 ? "is" : "are"} being built for Red Alert 2 now{comingToRa2.length > 0 ? `; ${listFormat.format(comingToRa2.map((faction) => faction.name))} follow` : ""}. Every faction keeps one identity across the game and this guide.</p>
+            <Link className="primary-action" href="/factions">Explore the factions <ArrowRight size={17} /></Link>
           </div>
-          <CurrentShowcase downloadUrl={primaryWindowsUrl} version={windowsRelease.version} compact />
         </section>
 
         <section className="closing-section home-closing">
           <div>
             <span className="eyebrow">Free playable alpha</span>
-            <h2>Install the game.<br />Bring the AI.</h2>
+            <h2>Play what exists today.</h2>
           </div>
           <div>
-            <p>Download the verified Windows build, check macOS availability, or open the Earth studio and create a mission package first.</p>
+            <p>The public alpha {windowsRelease.version} runs on OpenRA&apos;s classic Red Alert with the AI companion and the Red Sea 2026 theatre. The Red Alert 2 mod is the next release.</p>
             <div className="hero-actions">
-              <Link className="primary-action" href="/download"><Download size={17} /> Choose your download</Link>
-              <Link className="text-action" href="/studio">Open Earth studio <ArrowRight size={17} /></Link>
+              <Link className="primary-action" href="/download"><Download size={17} /> Download {latestPublicVersion}</Link>
+              <Link className="text-action" href="/companion">How the companion works <ArrowRight size={17} /></Link>
             </div>
           </div>
         </section>

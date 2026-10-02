@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Platform Plan | RTS AI",
   description: "See how the AI companion, Earth mission studio, distribution layer, new theatres, and autonomous strategy research fit together.",
   alternates: { canonical: "/platform" },
+  robots: { index: false, follow: true },
 };
 
 const productLayerIcons = { companion: BrainCircuit, world: Globe2, distribution: MonitorDown };

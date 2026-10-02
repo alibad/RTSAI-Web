@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { availability, downloadHref, mediaById, modes, type Faction, type GameMode } from "../../lib/game-content";
 export function ModeNav({ mode, path }: { mode: GameMode; path: string }) {
-  return <nav className="mode-nav" aria-label="Game mode">{modes.map(item =>
+  return <nav className="mode-nav" aria-label="Game mode">{[...modes].sort((a, b) => (a.id === "ra2" ? -1 : 0) - (b.id === "ra2" ? -1 : 0)).map(item =>
     <Link key={item.id} href={`${path}?mode=${item.id}`} aria-current={mode === item.id ? "page" : undefined}><b>{item.name}</b><span>{item.subtitle}</span></Link>)}</nav>;
 }
 export function CatalogImage({ id, portrait = false, priority = false }: { id: string; portrait?: boolean; priority?: boolean }) {

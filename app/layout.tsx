@@ -8,9 +8,9 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
 const canonicalOrigin = new URL("https://rtsai.net");
-const title = "RTS AI — An AI-Native RTS Platform Built on OpenRA";
+const title = "RTS AI — Red Alert 2 with an AI Co-Commander";
 const description =
-  "Play with an interruptible AI companion, create validated missions from Earth, explore new OpenRA experiences, and advance game intelligence through autonomous agents.";
+  "An OpenRA mod for Red Alert 2: five modern nations and an AI co-commander that watches your match, answers by voice, and takes command only when you hand it over.";
 
 export const metadata: Metadata = {
   metadataBase: canonicalOrigin,
@@ -23,11 +23,10 @@ export const metadata: Metadata = {
     "OpenRA AI",
     "OpenRA companion",
     "AI strategy game",
-    "Earth mission generator",
-    "real world strategy maps",
-    "OpenRA mod platform",
+    "Red Alert 2 mod",
+    "OpenRA mod",
     "AI game companion",
-    "autonomous game agent",
+    "modern factions",
   ],
   alternates: { canonical: "/" },
   manifest: "/manifest.webmanifest",
@@ -67,7 +66,7 @@ export const metadata: Metadata = {
         url: "/social-card.png",
         width: 1200,
         height: 630,
-        alt: "RTS AI — an AI-native RTS platform built on OpenRA",
+        alt: "RTS AI — a Red Alert 2 mod for OpenRA with an AI co-commander",
       },
     ],
     type: "website",

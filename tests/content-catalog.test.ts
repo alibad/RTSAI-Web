@@ -25,8 +25,11 @@ test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(availability(factionById("saudi-arabia")!, "ra2"), "Not in this mode");
   assert.equal(availability(factionById("china")!, "ra2"), "Development · release unconfirmed");
   assert.equal(resolveMode("ra2"), "ra2");
-  assert.equal(resolveMode(["ra2"]), "ra");
-  assert.equal(resolveMode("unknown"), "ra");
+  assert.equal(resolveMode("ra"), "ra");
+  // RA2 is the product mode; callers such as the download page can pin another fallback.
+  assert.equal(resolveMode(["ra"]), "ra2");
+  assert.equal(resolveMode("unknown"), "ra2");
+  assert.equal(resolveMode(undefined, "ra"), "ra");
   assert.equal(factionById("__proto__"), undefined);
   assert.equal(unitById("missing"), undefined);
   assert.equal(downloadHref("china", "ra2"), "/download?faction=china&mode=ra2");

@@ -13,7 +13,7 @@ async function render(pathname = "/") {
   );
 }
 
-test("renders a focused homepage with the product promise, two experiences, playable proof, and download path", async () => {
+test("renders a focused homepage: the RA2 mod promise, three pillars, factions, and an honest download path", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -28,34 +28,34 @@ test("renders a focused homepage with the product promise, two experiences, play
   assert.match(html, /"SoftwareApplication"/);
   assert.match(html, /"VideoGame"/);
   assert.match(html, /Your battlefield/);
-  assert.match(html, /Latest public build \/ (?:<!-- -->)?0\.1\.0-alpha\.13/);
+  assert.match(html, /A Red Alert 2 mod for OpenRA/);
   assert.match(html, /Download (?:<!-- -->)?0\.1\.0-alpha\.13/);
-  assert.match(html, /TWO CORE EXPERIENCES/);
-  assert.match(html, /Companion \+ command/);
-  assert.match(html, /Earth to battlefield/);
-  assert.match(html, /Current playable proof/);
+  assert.match(html, /WHAT YOU GET/);
+  assert.match(html, /Five modern nations/);
+  assert.match(html, /An AI co-commander/);
+  assert.match(html, /Red Alert 2 on OpenRA/);
+  assert.match(html, /Türkiye/);
   assert.match(html, /Interactive AI companion preview/);
-  assert.match(html, /0\.1\.0-alpha\.\d+/);
   assert.match(html, /Red Sea 2026/);
-  assert.match(html, /Jizan Corridor/);
-  assert.match(html, /red-sea-2026-key-art\.webp/);
-  assert.match(html, /AUTO is optional/);
+  assert.match(html, /AUTO when you say so/);
   assert.match(html, /href="\/companion"/);
-  assert.match(html, /href="\/studio"/);
+  assert.match(html, /href="\/factions"/);
   assert.match(html, /href="\/download"/);
+  // Parked surfaces leave the story and the navigation.
+  assert.doesNotMatch(html, /href="\/(?:studio|capabilities|platform)/);
+  assert.doesNotMatch(html, /Earth to battlefield|Earth studio|Capability Atlas|TWO CORE EXPERIENCES|Haitian/);
   assert.doesNotMatch(html, /Same seed reproduces the same terrain/);
   assert.doesNotMatch(html, /Optional Local AI Pack/);
   assert.doesNotMatch(html, /Help improve RTS AI/);
   assert.match(html, /href="\/privacy"/);
-  assert.match(html, /Map attribution/);
+  assert.doesNotMatch(html, /Map attribution/);
   assert.match(html, /EA has not endorsed and does not support this product/);
-  assert.match(html, /data-analytics-event="game-download"/);
   assert.match(html, />Feedback</);
   assert.match(html, /windows-x64-setup\.exe/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/);
 });
 
-test("renders focused companion, studio, platform, capabilities, and download routes", async () => {
+test("renders companion and download routes; parked routes stay reachable but unindexed", async () => {
   const [companion, studio, platform, capabilityAtlas, download] = await Promise.all([
     render("/companion").then((response) => response.text()),
     render("/studio").then((response) => response.text()),
@@ -67,8 +67,8 @@ test("renders focused companion, studio, platform, capabilities, and download ro
   assert.match(companion, /AI GAME COMPANION/);
   assert.match(companion, /Helpful enough to speak/);
   assert.match(companion, /AI layer/);
-  assert.match(companion, /From a useful sentence to safe command/);
-  assert.match(companion, /href="\/capabilities#safe-actions"/);
+  assert.doesNotMatch(companion, /href="\/capabilities/);
+  for (const parked of [studio, platform, capabilityAtlas]) assert.match(parked, /name="robots" content="noindex, follow"/);
   assert.match(studio, /EARTH TO BATTLEFIELD/);
   assert.match(studio, /Mission studio/);
   assert.match(studio, /Point anywhere/);
@@ -110,6 +110,7 @@ test("renders focused companion, studio, platform, capabilities, and download ro
   assert.doesNotMatch(capabilityAtlas, /BeTenshi/i);
   assert.match(download, /Locally built and smoke-tested/);
   assert.match(download, /Download Windows setup/);
+  assert.match(download, /data-analytics-event="game-download"/);
   assert.match(download, /Portable ZIP/);
   assert.match(download, /Apple silicon/);
   assert.match(download, /signed and notarized disk image/);
@@ -126,6 +127,8 @@ test("renders focused companion, studio, platform, capabilities, and download ro
 test("faction-to-unit-to-install journey retains mode and refuses unsupported combinations", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
   assert.match(directory, /3(?:<!-- -->)? faction variants/);
+  const defaultDirectory = await (await render("/factions")).text();
+  assert.match(defaultDirectory, /\/factions\/china\?mode=ra2/);
   assert.match(directory, /\/factions\/china\?mode=ra2/);
   assert.match(directory, /Saudi Arabia(?:<!-- -->)? · Classic/);
   const dossier = await (await render("/factions/china?mode=ra2")).text();
@@ -133,9 +136,11 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   assert.match(dossier, /not screenshots of RA2 gameplay/);
   const unit = await (await render("/units/cnqilin?mode=ra2")).text();
   assert.match(unit, /<code>r2qilin<\/code>/);
+  assert.match(unit, /<h1>Qilin Battle Tank<\/h1>/);
   assert.match(unit, /\/download\?faction=china&amp;mode=ra2/);
   const classic = await (await render("/units/cnqilin?mode=ra")).text();
   assert.match(classic, /<code>CNQILIN<\/code>/);
+  assert.match(classic, /<h1>Qilin Main Battle Tank<\/h1>/);
   const unavailable = await (await render("/factions/yemen?mode=ra2")).text();
   assert.match(unavailable, /No roster in this mode yet/);
   assert.doesNotMatch(unavailable, /\/units\/tech\?mode=ra2/);
@@ -191,7 +196,7 @@ test("ships crawl, install, and brand assets", async () => {
 
   assert.match(robots, /sitemap: "https:\/\/rtsai\.net\/sitemap\.xml"/);
   assert.match(sitemap, /url: "https:\/\/rtsai\.net\/"/);
-  assert.match(sitemap, /url: "https:\/\/rtsai\.net\/capabilities"/);
+  assert.doesNotMatch(sitemap, /rtsai\.net\/(?:capabilities|platform|studio)"/);
   assert.match(manifest, /short_name: "RTS AI"/);
   assert.match(manifest, /purpose: "maskable"/);
   assert.ok(favicon.byteLength > 1000);
@@ -227,12 +232,13 @@ test("serves committed native Windows and macOS release assets", async () => {
   assert.match(page, /No placeholder download/);
 });
 
-test("keeps the platform plan durable and current showcases replaceable", async () => {
+test("keeps site metadata on the RA2 mod while the parked platform page still builds", async () => {
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const page = await readFile(new URL("../app/platform/page.tsx", import.meta.url), "utf8");
   const plan = await readFile(new URL("../lib/product-plan.ts", import.meta.url), "utf8");
 
-  assert.match(layout, /AI-Native RTS Platform/);
+  assert.match(layout, /Red Alert 2 with an AI Co-Commander/);
+  assert.doesNotMatch(layout, /Earth mission|autonomous game agent/);
   assert.doesNotMatch(layout, /Red Sea 2026/);
   assert.match(plan, /export const productLayers/);
   assert.match(plan, /export const currentShowcase/);

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { ArrowRight, BrainCircuit, Map, Mic2, RadioTower, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "../components/CompanionDemo";
-import { CapabilitySlice } from "../components/CapabilitySlice";
 import { gameSource, SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 export const metadata: Metadata = {
@@ -41,13 +40,6 @@ export default function CompanionPage() {
             <article><Mic2 size={22} /><h3>You retain command</h3><p>Confirm individual actions, switch strategies by voice, or turn AUTO on. Interrupt speech or disable delegation at any moment.</p><span>Ask · confirm · delegate · take back</span></article>
           </div>
         </section>
-
-        <CapabilitySlice
-          eyebrow="GO DEEPER"
-          title="From a useful sentence to safe command."
-          intro="The in-match surface stays quiet. The capability contract underneath it is explicit, inspectable, and interruptible."
-          ids={["voice-tactical-feed", "priority-alerts", "safe-actions", "fog-respecting-vision"]}
-        />
 
         <section className="architecture-section">
           <div className="architecture-copy">

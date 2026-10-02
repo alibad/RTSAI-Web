@@ -26,7 +26,7 @@ function formatDate(value: string | null) {
 
 export default async function DownloadPage({ searchParams }: { searchParams: Promise<{ faction?: string | string[]; mode?: string | string[] }> }) {
   const selection = await searchParams;
-  const mode = resolveMode(selection.mode);
+  const mode = resolveMode(selection.mode, "ra");
   const faction = typeof selection.faction === "string" ? factionById(selection.faction) : undefined;
   const selectionStatus = faction ? availability(faction, mode) : undefined;
   const gameRelease = await getGameRelease();
@@ -60,7 +60,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <div className="release-trust" aria-label="Release details">
             <span><CheckCircle2 size={15} /> Locally built and smoke-tested</span>
             <span><CalendarDays size={15} /> Released {formatDate(windowsRelease.publishedAt)}</span>
-            <Link href={`/platform#${currentShowcase.slug}`}><Sparkles size={15} /> Current playable proof</Link>
+            <Link href="/factions?mode=ra"><Sparkles size={15} /> Red Sea 2026 factions</Link>
           </div>
         </header>
 

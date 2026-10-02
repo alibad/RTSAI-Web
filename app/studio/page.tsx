@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Earth Mission Studio | RTS AI",
   description: "Pin a real place on Earth and generate a deterministic, validated, editable OpenRA battlefield in your browser.",
   alternates: { canonical: "/studio" },
+  robots: { index: false, follow: true },
 };
 
 export default async function StudioPage() {
