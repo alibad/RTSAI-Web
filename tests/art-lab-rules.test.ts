@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { child, childValue, mergeMiniYaml, parseMiniYaml, YamlError, type Yaml } from "../lib/art-lab/miniyaml";
-import { cameraMatrix, facingLabel, partMatrices, transformVector, wrotMatrix } from "../lib/art-lab/voxel-math";
+import { cameraMatrix, facingLabel, partMatrices, transformVector, wcos, wrotMatrix, wrotQuaternion } from "../lib/art-lab/voxel-math";
 import { indexFacing, sequenceFrame } from "../lib/art-lab/sprite-render";
-import { poseParts, rasterizeUnit } from "../lib/art-lab/raster";
+import { poseParts, quantizedNormal, rasterizeUnit } from "../lib/art-lab/raster";
 import { decodeVxl } from "../lib/art-lab/vxl";
 import { decodeHva } from "../lib/art-lab/hva";
 import { decodePal } from "../lib/art-lab/pal";
-import { RA2_NORMALS } from "../lib/art-lab/normals.generated";
+import { RA2_NORMALS, TS_NORMALS } from "../lib/art-lab/normals.generated";
 import manifest from "../data/art-lab.json";
 import type { SpriteSequence } from "../lib/art-lab/types";
 
@@ -64,6 +64,20 @@ test("Facings follow OpenRA: 0 is north, counter-clockwise, matching the SHP fra
   // Rotation matrices are orthonormal.
   const m = wrotMatrix(0, 85 - 256, 256);
   for (let c = 0; c < 3; c++) assert.ok(Math.abs(Math.hypot(m[4 * c], m[4 * c + 1], m[4 * c + 2]) - 1) < 1e-3);
+});
+
+test("WRot is the engine's: its cosine table, and the wrapped angle halved", () => {
+  // Values from OpenRA.Game/WAngle.cs and WRot.cs (checked against an engine render of the Rhino and Grizzly).
+  assert.deepEqual([0, 1, 85, 128, 171, 256, 512, 768].map(wcos), [1024, 1023, 887, 724, 510, 0, -1024, 0]);
+  assert.deepEqual(wrotQuaternion(0, 85 - 256, 256), { x: -364, y: -364, z: 625, w: -625 }, "CameraPitch 85: pitch -171 wraps to 853");
+  assert.deepEqual(wrotQuaternion(0, 85 - 256, 256), wrotQuaternion(0, -172, 256));
+  assert.deepEqual(wrotQuaternion(0, 0, 640), { x: 0, y: 0, z: -946, w: -391 });
+});
+
+test("Normals past the table shade like the engine's empty palette entry", () => {
+  assert.equal(quantizedNormal(TS_NORMALS, 0)[3], 1, "table entries have w = 1");
+  assert.deepEqual(quantizedNormal(TS_NORMALS, 36), [-1, -1, -1, -1], "TS has 36 normals; an RA2 limb on ts-normals reads 0x00000000");
+  assert.deepEqual(quantizedNormal(RA2_NORMALS, 244), [-1, -1, -1, -1], "RA2 has 244");
 });
 
 test("Voxel projection: a unit facing north points up the screen, facing east points right", () => {

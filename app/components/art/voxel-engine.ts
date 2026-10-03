@@ -8,7 +8,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { Palette } from "../../../lib/art-lab/pal";
-import { aimInGame, projectLabels, type InGameBox, type ModelPose, type RasterFrame, type StageLabel, type VoxelModel } from "./voxel-three";
+import { aimInGame, projectLabels, renderShadowSprite, shadowSpriteTarget, type InGameBox, type ModelPose, type RasterFrame, type StageLabel, type VoxelModel } from "./voxel-three";
 
 export type EngineView = {
   model: VoxelModel;
@@ -21,6 +21,7 @@ export class VoxelEngine {
   readonly canvas: HTMLCanvasElement;
   readonly renderer: THREE.WebGLRenderer;
   private readonly target = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: true, stencilBuffer: true });
+  private readonly shadowTarget = shadowSpriteTarget();
   private readonly camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -10000, 10000);
   private readonly orbit = new THREE.OrthographicCamera(-50, 50, 50, -50, -10000, 10000);
   private readonly orbitTarget = new THREE.Vector3();
@@ -55,6 +56,7 @@ export class VoxelEngine {
     }
     this.target.viewport.set(0, 0, box.width, box.height);
     const r = this.renderer;
+    renderShadowSprite(r, model, this.shadowTarget);
     r.setRenderTarget(this.target);
     r.setClearColor(0x000000, 0);
     r.clear(true, true, true);
@@ -193,6 +195,7 @@ export class VoxelEngine {
     this.controls?.dispose();
     this.controls = null;
     this.target.dispose();
+    this.shadowTarget.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.canvas.remove();

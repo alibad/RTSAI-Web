@@ -10,7 +10,7 @@ import type { Hva } from "./hva";
 import type { Palette } from "./pal";
 import type { Vxl, VxlLimb } from "./vxl";
 import type { Vec3 } from "./types";
-import { groundProjection, localToWorld, multiply, partMatrices, rotateYaw, transformVector, type Mat4 } from "./voxel-math";
+import { localToWorld, multiply, partMatrices, rotateYaw, shadowSprite, shadowTexel, transformVector, type Mat4, type ShadowPart, type ShadowSprite } from "./voxel-math";
 
 export type RasterPart = {
   vxl: Vxl;
@@ -49,23 +49,32 @@ const FACES: { dir: Vec3; corners: Vec3[] }[] = [
   { dir: [0, 0, 1], corners: [[0, 0, 1], [0, 1, 1], [1, 1, 1], [1, 0, 1]] },
 ];
 
-/** The normal as the shader sees it: through an 8-bit palette channel, then 2x - 1. */
-export function quantizedNormal(normals: readonly number[], index: number): Vec3 {
+/**
+ * The normal as the shader sees it: a VoxelNormalsPalette entry read back as 2x - 1 on all four channels. Table
+ * entries store 8-bit x, y, z and alpha 255, so w = 1 (the shader's "+ 1"). Indices past the table read the
+ * palette's empty entries (0x00000000), which the engine shades with (-1, -1, -1, -1), mostly black: a limb with
+ * RA2 normals on a unit that uses ts-normals (the Rhino's barrel), or RA2 index 244 and up. The game draws those
+ * voxels that way, so the lab does too.
+ */
+export function quantizedNormal(normals: readonly number[], index: number): [number, number, number, number] {
   const q = (v: number) => (2 * Math.round(((v + 1) / 2) * 255)) / 255 - 1;
-  if (3 * index + 2 >= normals.length) return [0, 0, 0];
-  return [q(normals[3 * index]), q(normals[3 * index + 1]), q(normals[3 * index + 2])];
+  if (3 * index + 2 >= normals.length) return [-1, -1, -1, -1];
+  return [q(normals[3 * index]), q(normals[3 * index + 1]), q(normals[3 * index + 2]), 1];
 }
 
-type Prepared = { limb: VxlLimb; toScreen: Mat4; shadow: Mat4 | null; light: Vec3 };
+type Prepared = { limb: VxlLimb; toScreen: Mat4; modelToWorld: Mat4; casts: boolean; light: Vec3 };
 
 function prepare(unit: RasterUnit) {
   const altitudePx = unit.altitude ? (30 * unit.altitude) / 1448 : 0;
   const prepared: Prepared[] = [];
+  const shadowParts: ShadowPart[] = [];
+  let camera: Mat4 | null = null, shadow: Mat4 | null = null;
   for (const part of unit.parts) {
     const frame = Math.min(part.frame, Math.max(0, part.hva.frameCount - 1));
-    part.vxl.limbs.forEach((limb, s) => {
+    const bounds: ShadowPart = { world: [], limbs: [] };
+    for (const [s, limb] of part.vxl.limbs.entries()) {
       const row = part.hva.rows[frame]?.[s];
-      if (!row) return;
+      if (!row) continue;
       const m = partMatrices({
         scale: unit.scale, cameraPitch: unit.cameraPitch, lightPitch: unit.lightPitch, lightYaw: unit.lightYaw,
         pose: { yaw: part.yaw, worldOffset: part.worldOffset }, limb, hvaRow: row,
@@ -73,27 +82,69 @@ function prepare(unit: RasterUnit) {
       // The model is drawn at the actor's altitude; screen y moves up by the projected height.
       const lift = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, -altitudePx, 0, 1];
       const toScreen = multiply(lift, multiply(m.camera, m.modelToWorld));
-      const shadow = part.showShadow ? multiply(m.camera, multiply(groundProjection(m.lightWorld, 0), m.modelToWorld)) : null;
-      prepared.push({ limb, toScreen, shadow, light: m.light });
-    });
+      prepared.push({ limb, toScreen, modelToWorld: m.modelToWorld, casts: part.showShadow, light: m.light });
+      camera = m.camera; shadow = m.shadow; bounds.world = m.world;
+      const [x0, y0, z0, x1, y1, z1] = limb.bounds;
+      bounds.limbs.push({ t: m.t, extent: [x1 - x0, y1 - y0, z1 - z0] });
+    }
+    if (bounds.limbs.length) shadowParts.push(bounds);
   }
-  return prepared;
+  const sprite = camera && shadow && prepared.some(p => p.casts) ? shadowSprite(shadowParts, camera, shadow, altitudePx) : null;
+  return { prepared, sprite };
 }
 
-function bounds(prepared: Prepared[]) {
+function bounds(prepared: Prepared[], sprite: ShadowSprite | null) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of prepared) {
     const [sx, sy, sz] = p.limb.size;
-    for (const m of [p.toScreen, p.shadow]) {
-      if (!m) continue;
-      for (const c of [[0, 0, 0], [sx, 0, 0], [0, sy, 0], [0, 0, sz], [sx, sy, 0], [sx, 0, sz], [0, sy, sz], [sx, sy, sz]]) {
-        const v = transformVector(m, [c[0], c[1], c[2], 1]);
-        x0 = Math.min(x0, v[0]); x1 = Math.max(x1, v[0]);
-        y0 = Math.min(y0, v[1]); y1 = Math.max(y1, v[1]);
+    for (const c of [[0, 0, 0], [sx, 0, 0], [0, sy, 0], [0, 0, sz], [sx, sy, 0], [sx, 0, sz], [0, sy, sz], [sx, sy, sz]]) {
+      const v = transformVector(p.toScreen, [c[0], c[1], c[2], 1]);
+      x0 = Math.min(x0, v[0]); x1 = Math.max(x1, v[0]);
+      y0 = Math.min(y0, v[1]); y1 = Math.max(y1, v[1]);
+    }
+  }
+  for (const [x, y] of sprite?.quad ?? []) {
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  }
+  return { x0, y0, x1, y1 };
+}
+
+/** The shadow sprite's coverage: every casting voxel face drawn from the light at 2x (pixel centres, as GL does). */
+function shadowCoverage(prepared: Prepared[], sprite: ShadowSprite) {
+  const { width, height } = sprite;
+  const mask = new Uint8Array(width * height);
+  const tri = (ax: number, ay: number, bx: number, by: number, cx: number, cy: number) => {
+    const area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    if (Math.abs(area) < 1e-9) return;
+    const minX = Math.max(0, Math.floor(Math.min(ax, bx, cx))), maxX = Math.min(width - 1, Math.ceil(Math.max(ax, bx, cx)));
+    const minY = Math.max(0, Math.floor(Math.min(ay, by, cy))), maxY = Math.min(height - 1, Math.ceil(Math.max(ay, by, cy)));
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) {
+      const px = x + 0.5, py = y + 0.5;
+      const w0 = ((bx - px) * (cy - py) - (by - py) * (cx - px)) / area;
+      const w1 = ((cx - px) * (ay - py) - (cy - py) * (ax - px)) / area;
+      if (w0 >= -1e-7 && w1 >= -1e-7 && 1 - w0 - w1 >= -1e-7) mask[y * width + x] = 1;
+    }
+  };
+  for (const p of prepared) {
+    if (!p.casts) continue;
+    const m = multiply(sprite.toSprite, p.modelToWorld);
+    const { limb } = p;
+    const [sx, sy, sz] = limb.size;
+    const filled = (x: number, y: number, z: number) => x >= 0 && y >= 0 && z >= 0 && x < sx && y < sy && z < sz && limb.filled[x + sx * (y + sy * z)] === 1;
+    for (let z = 0; z < sz; z++) for (let y = 0; y < sy; y++) for (let x = 0; x < sx; x++) {
+      const index = x + sx * (y + sy * z);
+      // The shadow palette is transparent at index 0 only.
+      if (!limb.filled[index] || limb.colors[index] === 0) continue;
+      for (const face of FACES) {
+        if (filled(x + face.dir[0], y + face.dir[1], z + face.dir[2])) continue;
+        const q = face.corners.map(c => transformVector(m, [x + c[0], y + c[1], z + c[2], 1]));
+        tri(q[0][0], q[0][1], q[1][0], q[1][1], q[2][0], q[2][1]);
+        tri(q[0][0], q[0][1], q[2][0], q[2][1], q[3][0], q[3][1]);
       }
     }
   }
-  return { x0, y0, x1, y1 };
+  return mask;
 }
 
 /**
@@ -101,8 +152,8 @@ function bounds(prepared: Prepared[]) {
  * several units on one grid; otherwise the image is cropped to the unit with a 2px margin.
  */
 export function rasterizeUnit(unit: RasterUnit, frame?: { width: number; height: number; anchorX: number; anchorY: number }): RasterImage {
-  const prepared = prepare(unit);
-  const b = bounds(prepared);
+  const { prepared, sprite } = prepare(unit);
+  const b = bounds(prepared, sprite);
   const width = frame?.width ?? Math.max(1, Math.ceil(b.x1) - Math.floor(b.x0) + 4);
   const height = frame?.height ?? Math.max(1, Math.ceil(b.y1) - Math.floor(b.y0) + 4);
   const anchorX = frame?.anchorX ?? 2 - Math.floor(b.x0);
@@ -148,7 +199,7 @@ export function rasterizeUnit(unit: RasterUnit, frame?: { width: number; height:
       const ci = limb.colors[index];
       const alpha = unit.palette[4 * ci + 3];
       const nrm = quantizedNormal(unit.normals, limb.normals[index]);
-      const d = Math.max(nrm[0] * light[0] + nrm[1] * light[1] + nrm[2] * light[2] + 1, 0);
+      const d = Math.max(nrm[0] * light[0] + nrm[1] * light[1] + nrm[2] * light[2] + nrm[3], 0);
       const rgb = [0, 1, 2].map(c => Math.round(Math.min(1, Math.max(0, (unit.ambient[c] + unit.diffuse[c] * d) * (unit.palette[4 * ci + c] / 255))) * 255));
       for (const face of FACES) {
         if (filled(x + face.dir[0], y + face.dir[1], z + face.dir[2])) continue;
@@ -162,13 +213,14 @@ export function rasterizeUnit(unit: RasterUnit, frame?: { width: number; height:
           tri(q[0][0], q[0][1], q[0][2], q[1][0], q[1][1], q[1][2], q[2][0], q[2][1], q[2][2], write);
           tri(q[0][0], q[0][1], q[0][2], q[2][0], q[2][1], q[2][2], q[3][0], q[3][1], q[3][2], write);
         }
-        if (p.shadow) {
-          const s = face.corners.map(c => project(p.shadow!, x + c[0], y + c[1], z + c[2]));
-          const mark = (i: number) => { shadowMask[i] = 1; };
-          tri(s[0][0], s[0][1], 0, s[1][0], s[1][1], 0, s[2][0], s[2][1], 0, mark);
-          tri(s[0][0], s[0][1], 0, s[2][0], s[2][1], 0, s[3][0], s[3][1], 0, mark);
-        }
       }
+    }
+  }
+  if (sprite) {
+    const coverage = shadowCoverage(prepared, sprite);
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const texel = shadowTexel(sprite, x + 0.5 - anchorX, y + 0.5 - anchorY);
+      if (texel && coverage[texel[1] * sprite.width + texel[0]]) shadowMask[y * width + x] = 1;
     }
   }
   const [sr, sg, sb, sa] = unit.shadowColor;

@@ -9,22 +9,56 @@ import type { Vec3 } from "./types";
 
 export type Mat4 = number[];
 
-/** WAngle sine/cosine: OpenRA uses a 1024-step table scaled by 1024. */
-export const wcos = (angle: number) => Math.round(Math.cos((angle * Math.PI) / 512) * 1024);
+/**
+ * WAngle.CosineTable (OpenRA.Game/WAngle.cs): one quadrant, 0..256, scaled by 1024. It is not Math.round(cos):
+ * 125 of its 257 entries are one lower (cos 1 is 1023, cos 85 is 887), and the voxel matrices are built from it.
+ */
+const COSINE_TABLE = [
+  1024, 1023, 1023, 1023, 1023, 1023, 1023, 1023, 1022, 1022, 1022, 1021, 1021, 1020, 1020, 1019,
+  1019, 1018, 1017, 1017, 1016, 1015, 1014, 1013, 1012, 1011, 1010, 1009, 1008, 1007, 1006, 1005,
+  1004, 1003, 1001, 1000, 999, 997, 996, 994, 993, 991, 990, 988, 986, 985, 983, 981,
+  979, 978, 976, 974, 972, 970, 968, 966, 964, 962, 959, 957, 955, 953, 950, 948,
+  946, 943, 941, 938, 936, 933, 930, 928, 925, 922, 920, 917, 914, 911, 908, 906,
+  903, 900, 897, 894, 890, 887, 884, 881, 878, 875, 871, 868, 865, 861, 858, 854,
+  851, 847, 844, 840, 837, 833, 829, 826, 822, 818, 814, 811, 807, 803, 799, 795,
+  791, 787, 783, 779, 775, 771, 767, 762, 758, 754, 750, 745, 741, 737, 732, 728,
+  724, 719, 715, 710, 706, 701, 696, 692, 687, 683, 678, 673, 668, 664, 659, 654,
+  649, 644, 639, 634, 629, 625, 620, 615, 609, 604, 599, 594, 589, 584, 579, 574,
+  568, 563, 558, 553, 547, 542, 537, 531, 526, 521, 515, 510, 504, 499, 493, 488,
+  482, 477, 471, 466, 460, 454, 449, 443, 437, 432, 426, 420, 414, 409, 403, 397,
+  391, 386, 380, 374, 368, 362, 356, 350, 344, 339, 333, 327, 321, 315, 309, 303,
+  297, 291, 285, 279, 273, 267, 260, 254, 248, 242, 236, 230, 224, 218, 212, 205,
+  199, 193, 187, 181, 175, 168, 162, 156, 150, 144, 137, 131, 125, 119, 112, 106,
+  100, 94, 87, 81, 75, 69, 62, 56, 50, 43, 37, 31, 25, 18, 12, 6,
+  0,
+];
+
+/** WAngle.Cos(): the angle wraps to 0..1023 and the quadrant table is mirrored and signed, as the engine does. */
+export function wcos(angle: number) {
+  const a = angle & 1023;
+  const index = 256 - Math.abs(256 - (a & 511));
+  // 0 - x, not -x: the engine returns an int, never -0.
+  return ((a + 256) >> 9) & 1 ? 0 - COSINE_TABLE[index] : COSINE_TABLE[index];
+}
 export const wsin = (angle: number) => wcos(angle - 256);
 
-/** WRot(roll, pitch, yaw) -> integer quaternion, as WRot's constructor computes it. */
+/**
+ * WRot(roll, pitch, yaw) -> integer quaternion, as WRot's constructor computes it. WAngle wraps an angle to
+ * 0..1023 before WRot halves it, so an odd negative angle rounds the other way: CameraPitch 85 gives the pitch
+ * -171 = 853, halved to -426 (the rotation of -172), not -85.
+ */
 export function wrotQuaternion(roll: number, pitch: number, yaw: number) {
-  const half = (a: number) => Math.trunc(-a / 2);
+  const half = (a: number) => -Math.floor((a & 1023) / 2);
   const cr = wcos(half(roll)), sr = wsin(half(roll));
   const cp = wcos(half(pitch)), sp = wsin(half(pitch));
   const cy = wcos(half(yaw)), sy = wsin(half(yaw));
+  // C# long division truncates toward zero; "| 0" does the same here (and never leaves -0).
   const d = 1048576;
   return {
-    x: Math.trunc((sr * cp * cy - cr * sp * sy) / d),
-    y: Math.trunc((cr * sp * cy + sr * cp * sy) / d),
-    z: Math.trunc((cr * cp * sy - sr * sp * cy) / d),
-    w: Math.trunc((cr * cp * cy + sr * sp * sy) / d),
+    x: ((sr * cp * cy - cr * sp * sy) / d) | 0,
+    y: ((cr * sp * cy + sr * cp * sy) / d) | 0,
+    z: ((cr * cp * sy - sr * sp * cy) / d) | 0,
+    w: ((cr * cp * cy + sr * sp * sy) / d) | 0,
   };
 }
 
@@ -164,6 +198,10 @@ export function partMatrices(opts: {
   return {
     /** model (voxel grid) -> model world (pixels, before the camera) */
     modelToWorld: multiply(world, t),
+    /** The part's world transform and the limb's transform, kept apart for the shadow bounds. */
+    world,
+    t,
+    shadow,
     /** The part's pivot in model world: where its rotation is centred (turret ring, body centre). */
     pivot: [offset[0], offset[1], offset[2]] as Vec3,
     camera,
@@ -171,6 +209,93 @@ export function partMatrices(opts: {
     /** Direction light travels in model-world space (shadow-space z). */
     lightWorld: extractRotationVector(invert(shadow)),
   };
+}
+
+/** Util.MatrixAABBMultiply: the axis-aligned box of a transformed box [x0, y0, z0, x1, y1, z1]. */
+export function aabbTransform(m: Mat4, b: number[]): number[] {
+  const out = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < 8; i++) {
+    const v = transformVector(m, [b[i & 4 ? 3 : 0], b[i & 2 ? 4 : 1], b[i & 1 ? 5 : 2], 1]);
+    for (let k = 0; k < 3; k++) {
+      out[k] = Math.min(out[k], v[k] / v[3]);
+      out[k + 3] = Math.max(out[k + 3], v[k] / v[3]);
+    }
+  }
+  return out;
+}
+
+export type ShadowPart = {
+  /** The part's world transform (offset * scale * rotation). */
+  world: Mat4;
+  /** Each limb's transform and its bounds extent (Voxel.Bounds boxes the extent, not the grid size). */
+  limbs: { t: Mat4; extent: Vec3 }[];
+};
+
+export type ShadowSprite = {
+  /** The sprite size: twice the light-space bounds, rounded to even (CalculateSpriteGeometry). */
+  width: number;
+  height: number;
+  /** Model world -> sprite pixels (x right, y down), z kept for depth. */
+  toSprite: Mat4;
+  /** Screen corners (relative to the actor's ground point) of the sprite's top-left, top-right, bottom-right and bottom-left. */
+  quad: [number, number][];
+};
+
+/**
+ * The voxel shadow as ModelRenderer.RenderAsync draws it: the model rendered from the light at twice the
+ * resolution into a sprite, which is then stretched over the ground quad of the light-space bounds. The sprite's
+ * size and offset are rounded (and the bounds come from boxed boxes), so the quad and the sprite never quite agree;
+ * that is how the game looks, so the lab copies it.
+ */
+export function shadowSprite(parts: ShadowPart[], camera: Mat4, shadow: Mat4, altitudePx = 0): ShadowSprite | null {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const part of parts) {
+    const b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    for (const limb of part.limbs) {
+      const bb = aabbTransform(limb.t, [0, 0, 0, ...limb.extent]);
+      for (let k = 0; k < 3; k++) { b[k] = Math.min(b[k], bb[k]); b[k + 3] = Math.max(b[k + 3], bb[k + 3]); }
+    }
+    const s = aabbTransform(shadow, aabbTransform(part.world, b));
+    x0 = Math.min(x0, s[0]); y0 = Math.min(y0, s[1]); x1 = Math.max(x1, s[3]); y1 = Math.max(y1, s[4]);
+  }
+  if (!Number.isFinite(x0)) return null;
+  x0 -= 2; y0 -= 2; x1 += 2; y1 += 2;
+  const invShadow = invert(shadow);
+  const toScreen = multiply(camera, invShadow);
+  const gn = transformVector(shadow, [0, 0, 1, 1]);
+  const light = transformVector(camera, transformVector(invShadow, [0, 0, 1, 1]));
+  // ModelRenderable: the quad sits at the ground point, moved along the light by the altitude.
+  const shiftX = altitudePx * (-light[2] / light[1]);
+  const corner = (x: number, y: number): [number, number] => {
+    const v = transformVector(toScreen, [x, y, -((y * gn[1]) / gn[2] + (x * gn[0]) / gn[2]), 1]);
+    return [v[0] + shiftX, v[1]];
+  };
+  let width = Math.trunc(2 * (x1 - x0));
+  let height = Math.trunc(2 * (y1 - y0));
+  if (width & 1) width++;
+  if (height & 1) height++;
+  const offsetX = Math.trunc(x1 + x0), offsetY = Math.trunc(y1 + y0);
+  const toSprite = multiply([2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, width / 2 - offsetX, height / 2 - offsetY, 0, 1], shadow);
+  return { width, height, toSprite, quad: [corner(x0, y0), corner(x1, y0), corner(x1, y1), corner(x0, y1)] };
+}
+
+/** Sprite.Inset: texture coordinates are pulled 1/128 texel inside the sprite's edges. */
+export const SPRITE_INSET = 1 / 128;
+
+/**
+ * Where a screen point (relative to the actor's ground point) samples the shadow sprite, as the GPU interpolates
+ * the quad's texture coordinates: the texel, or null outside the quad.
+ */
+export function shadowTexel(sprite: ShadowSprite, x: number, y: number): [number, number] | null {
+  const [a, b, , d] = sprite.quad;
+  const ux = b[0] - a[0], uy = b[1] - a[1], vx = d[0] - a[0], vy = d[1] - a[1];
+  const det = ux * vy - uy * vx;
+  if (Math.abs(det) < 1e-12) return null;
+  const px = x - a[0], py = y - a[1];
+  const s = (px * vy - py * vx) / det;
+  const t = (ux * py - uy * px) / det;
+  if (s < 0 || s > 1 || t < 0 || t > 1) return null;
+  return [Math.floor(SPRITE_INSET + s * (sprite.width - 2 * SPRITE_INSET)), Math.floor(SPRITE_INSET + t * (sprite.height - 2 * SPRITE_INSET))];
 }
 
 /** Planar projection onto z = groundZ along direction d (model-world). */

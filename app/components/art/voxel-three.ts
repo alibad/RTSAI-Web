@@ -14,7 +14,7 @@ import type { Palette } from "../../../lib/art-lab/pal";
 import type { Vxl, VxlLimb } from "../../../lib/art-lab/vxl";
 import type { Vec3 } from "../../../lib/art-lab/types";
 import { quantizedNormal } from "../../../lib/art-lab/raster";
-import { cameraMatrix, groundProjection, localToWorld, multiply, partMatrices, rotateYaw, transformVector, type Mat4 } from "../../../lib/art-lab/voxel-math";
+import { cameraMatrix, localToWorld, multiply, partMatrices, rotateYaw, shadowSprite, SPRITE_INSET, transformVector, type Mat4, type ShadowPart, type ShadowSprite } from "../../../lib/art-lab/voxel-math";
 import type { CameraLink, ViewMode } from "./viewSettings";
 
 export type StagePart = {
@@ -81,14 +81,14 @@ function limbGeometry(limb: VxlLimb, normals: readonly number[]) {
     for (const face of FACES) {
       if (filled(x + face.dir[0], y + face.dir[1], z + face.dir[2])) continue;
       const base = positions.length / 3;
-      for (const c of face.corners) { positions.push(x + c[0], y + c[1], z + c[2]); colors.push(limb.colors[i]); nrm.push(n[0], n[1], n[2]); }
+      for (const c of face.corners) { positions.push(x + c[0], y + c[1], z + c[2]); colors.push(limb.colors[i]); nrm.push(n[0], n[1], n[2], n[3]); }
       index.push(base, base + 1, base + 2, base, base + 2, base + 3);
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   g.setAttribute("aColor", new THREE.Float32BufferAttribute(colors, 1));
-  g.setAttribute("aNormalVx", new THREE.Float32BufferAttribute(nrm, 3));
+  g.setAttribute("aNormalVx", new THREE.Float32BufferAttribute(nrm, 4));
   g.setIndex(index);
   g.computeBoundingBox();
   return g;
@@ -96,16 +96,17 @@ function limbGeometry(limb: VxlLimb, normals: readonly number[]) {
 
 const vertexShader = `
 attribute float aColor;
-attribute vec3 aNormalVx;
+attribute vec4 aNormalVx;
 varying float vColor;
-varying vec3 vNormalVx;
+varying vec4 vNormalVx;
 void main() {
   vColor = aColor;
   vNormalVx = aNormalVx;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
 
-// OpenRA glsl/model.frag: intensity = ambient + diffuse * max(dot(normal4, light4), 0) with w = 1 on both.
+// OpenRA glsl/model.frag: intensity = ambient + diffuse * max(dot(normal4, light4), 0). The light has w = 1; the
+// normal's w is 1 for table entries and -1 for indices past the table (see quantizedNormal).
 const fragmentShader = `
 uniform sampler2D uPalette;
 uniform vec3 uLight;
@@ -113,14 +114,51 @@ uniform vec3 uAmbient;
 uniform vec3 uDiffuse;
 uniform vec3 uTint;
 varying float vColor;
-varying vec3 vNormalVx;
+varying vec4 vNormalVx;
 void main() {
   vec4 c = texture2D(uPalette, vec2((floor(vColor + 0.5) + 0.5) / 256.0, 0.5));
   if (c.a < 0.01) discard;
-  float d = max(dot(vNormalVx, uLight) + 1.0, 0.0);
+  float d = max(dot(vNormalVx.xyz, uLight) + vNormalVx.w, 0.0);
   vec3 rgb = clamp((uAmbient + uDiffuse * d) * c.rgb, 0.0, 1.0);
   gl_FragColor = vec4(rgb * uTint, 1.0);
 }`;
+
+// The shadow sprite pass (ModelRenderer's shadow render at 2x): coverage only; the shadow palette is clear at index 0.
+const spriteVertexShader = `
+attribute float aColor;
+varying float vColor;
+void main() {
+  vColor = aColor;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+const spriteFragmentShader = `
+varying float vColor;
+void main() {
+  if (floor(vColor + 0.5) < 0.5) discard;
+  gl_FragColor = vec4(1.0);
+}`;
+
+// The sprite stretched over the ground quad: texture coordinates inset like Sprite's, nearest texel, the shadow
+// palette's colour (0, 0, 0, 140).
+const quadVertexShader = `
+attribute vec2 aCorner;
+varying vec2 vCorner;
+void main() {
+  vCorner = aCorner;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+const quadFragmentShader = `
+uniform sampler2D uSprite;
+uniform vec4 uBox;
+varying vec2 vCorner;
+void main() {
+  vec2 texel = vec2(${SPRITE_INSET}) + vCorner * (uBox.xy - ${2 * SPRITE_INSET});
+  if (texture2D(uSprite, (floor(texel) + 0.5) / uBox.zw).a < 0.5) discard;
+  gl_FragColor = vec4(0.0, 0.0, 0.0, ${(140 / 255).toFixed(6)});
+}`;
+
+/** Drops z so the light-space sprite fits any orthographic depth range. */
+const FLATTEN: Mat4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
 const setMatrix = (object: THREE.Object3D, m: Mat4) => {
   object.matrixAutoUpdate = false;
@@ -146,17 +184,26 @@ const BOX_CORNERS = (box: THREE.Box3) => [
   [box.min.x, box.min.y, box.max.z], [box.max.x, box.max.y, box.min.z], [box.min.x, box.max.y, box.max.z], [box.max.x, box.min.y, box.min.z],
 ];
 
+type LimbEntry = { part: StagePart; limbIndex: number; mesh: THREE.Mesh; shadow: THREE.Mesh; material: THREE.ShaderMaterial };
+
 /** One unit's meshes and poses. Rendering is done by VoxelStage or VoxelEngine. */
 export class VoxelModel {
   readonly modelScene = new THREE.Scene();
+  /** The ground quad that shows the shadow sprite (drawn before the model). */
   readonly shadowScene = new THREE.Scene();
+  /** The model seen from the light, in shadow-sprite pixels: render with `shadowSpriteCamera` (see renderShadowSprite). */
+  readonly shadowSpriteScene = new THREE.Scene();
+  readonly shadowSpriteCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+  /** After an in-game pose: the shadow sprite, or null when nothing casts one. */
+  sprite: ShadowSprite | null = null;
   readonly groundScene = new THREE.Scene();
   readonly helpers = new THREE.Group();
   private readonly root = new THREE.Group();
   private readonly ground = new THREE.Group();
   private readonly paletteTexture: THREE.DataTexture;
-  private readonly shadowMaterial: THREE.MeshBasicMaterial;
-  private readonly limbs: { part: StagePart; limbIndex: number; mesh: THREE.Mesh; shadow: THREE.Mesh; material: THREE.ShaderMaterial }[] = [];
+  private readonly spriteMaterial: THREE.ShaderMaterial;
+  private readonly shadowQuad: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+  private readonly limbs: LimbEntry[] = [];
   private palette: Palette | null = null;
   private tintKey = "";
   private grid: { extent: number; helper: THREE.GridHelper } | null = null;
@@ -186,10 +233,21 @@ export class VoxelModel {
     this.modelScene.add(this.root);
     this.modelScene.add(this.helpers);
     this.groundScene.add(this.ground);
-    this.shadowMaterial = new THREE.MeshBasicMaterial({
-      color: 0x000000, transparent: true, opacity: 140 / 255, depthTest: false, depthWrite: false, side: THREE.DoubleSide,
-      stencilWrite: true, stencilRef: 1, stencilFunc: THREE.NotEqualStencilFunc, stencilZPass: THREE.ReplaceStencilOp,
+    this.spriteMaterial = new THREE.ShaderMaterial({
+      vertexShader: spriteVertexShader, fragmentShader: spriteFragmentShader, side: THREE.DoubleSide, depthTest: false, depthWrite: false,
     });
+    const quad = new THREE.BufferGeometry();
+    quad.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(12), 3));
+    quad.setAttribute("aCorner", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+    quad.setIndex([0, 1, 2, 2, 3, 0]);
+    this.shadowQuad = new THREE.Mesh(quad, new THREE.ShaderMaterial({
+      vertexShader: quadVertexShader, fragmentShader: quadFragmentShader, side: THREE.DoubleSide,
+      transparent: true, depthTest: false, depthWrite: false,
+      uniforms: { uSprite: { value: null }, uBox: { value: new THREE.Vector4(1, 1, 1, 1) } },
+    }));
+    this.shadowQuad.frustumCulled = false;
+    this.shadowQuad.visible = false;
+    this.shadowScene.add(this.shadowQuad);
     for (const part of parts) {
       part.vxl.limbs.forEach((limb, limbIndex) => {
         const geometry = limbGeometry(limb, spec.normals);
@@ -202,11 +260,11 @@ export class VoxelModel {
           },
         });
         const mesh = new THREE.Mesh(geometry, material);
-        const shadow = new THREE.Mesh(geometry, this.shadowMaterial);
+        const shadow = new THREE.Mesh(geometry, this.spriteMaterial);
         mesh.frustumCulled = false;
         shadow.frustumCulled = false;
         this.root.add(mesh);
-        this.shadowScene.add(shadow);
+        this.shadowSpriteScene.add(shadow);
         this.limbs.push({ part, limbIndex, mesh, shadow, material });
       });
     }
@@ -247,6 +305,10 @@ export class VoxelModel {
     clearGroup(this.helpers);
     const labels: typeof this.labels = [];
     let zmin = Infinity, zmax = -Infinity, rxy = 0;
+    // In game: every shown part bounds the shadow sprite; the casting limbs are drawn into it afterwards.
+    const shadowParts = new Map<string, ShadowPart>();
+    const casting: { limb: LimbEntry; modelToWorld: Mat4 }[] = [];
+    let camera: Mat4 | null = null, light: Mat4 | null = null;
     for (const limb of this.limbs) {
       const p = poses.get(limb.part.id)!;
       const rows = limb.part.hva.rows;
@@ -263,7 +325,14 @@ export class VoxelModel {
       const explode: Mat4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, raise, 1];
       if (mode === "ingame") {
         setMatrix(limb.mesh, multiply(FLIP_Y, multiply(lift, multiply(m.camera, m.modelToWorld))));
-        setMatrix(limb.shadow, multiply(FLIP_Y, multiply(m.camera, multiply(groundProjection(m.lightWorld, 0), m.modelToWorld))));
+        if (on) {
+          const [x0, y0, z0, x1, y1, z1] = limb.part.vxl.limbs[limb.limbIndex].bounds;
+          const bounds = shadowParts.get(limb.part.id) ?? { world: m.world, limbs: [] };
+          bounds.limbs.push({ t: m.t, extent: [x1 - x0, y1 - y0, z1 - z0] });
+          shadowParts.set(limb.part.id, bounds);
+          camera = m.camera; light = m.shadow;
+        }
+        if (limb.shadow.visible) casting.push({ limb, modelToWorld: m.modelToWorld });
         continue;
       }
       const world = multiply(explode, m.modelToWorld);
@@ -285,6 +354,8 @@ export class VoxelModel {
     }
     setMatrix(this.root, mode === "ingame" ? IDENTITY : this.orbitRoot);
     this.labels = labels;
+    this.sprite = mode === "ingame" && casting.length && camera && light ? shadowSprite([...shadowParts.values()], camera, light, altitudePx) : null;
+    this.layoutShadow(casting);
     if (mode === "ingame") { this.measureInGame(); return; }
     setMatrix(this.helpers, this.orbitRoot);
     setMatrix(this.ground, this.orbitRoot);
@@ -298,6 +369,29 @@ export class VoxelModel {
       halfWidth: rxy,
     };
     this.layoutGround(rxy, pose.facing);
+  }
+
+  /** Positions the casting limbs in sprite pixels and the ground quad on screen (y up, like the in-game scene). */
+  private layoutShadow(casting: { limb: LimbEntry; modelToWorld: Mat4 }[]) {
+    const sprite = this.sprite;
+    this.shadowQuad.visible = !!sprite;
+    if (!sprite) return;
+    for (const { limb, modelToWorld } of casting) setMatrix(limb.shadow, multiply(FLATTEN, multiply(sprite.toSprite, modelToWorld)));
+    Object.assign(this.shadowSpriteCamera, { left: 0, right: sprite.width, top: sprite.height, bottom: 0 });
+    this.shadowSpriteCamera.updateProjectionMatrix();
+    const position = this.shadowQuad.geometry.getAttribute("position") as THREE.BufferAttribute;
+    sprite.quad.forEach(([x, y], i) => position.setXYZ(i, x, -y, 0));
+    position.needsUpdate = true;
+    const box = this.shadowQuad.material.uniforms.uBox.value as THREE.Vector4;
+    box.x = sprite.width; box.y = sprite.height;
+  }
+
+  /** Points the ground quad at the rendered sprite (a texture of texWidth x texHeight, the sprite in its corner). */
+  useShadowSprite(texture: THREE.Texture, texWidth: number, texHeight: number) {
+    const uniforms = this.shadowQuad.material.uniforms;
+    uniforms.uSprite.value = texture;
+    const box = uniforms.uBox.value as THREE.Vector4;
+    box.z = texWidth; box.w = texHeight;
   }
 
   /** Ground grid (rebuilt only when the unit's size changes) and the facing arrow (moved, never rebuilt). */
@@ -348,13 +442,14 @@ export class VoxelModel {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     const v = new THREE.Vector3();
     for (const limb of this.limbs) {
-      for (const mesh of [limb.mesh, limb.shadow]) {
-        if (!mesh.visible) continue;
-        for (const c of BOX_CORNERS(mesh.geometry.boundingBox!)) {
-          v.set(c[0], c[1], c[2]).applyMatrix4(mesh.matrix);
-          x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, -v.y); y1 = Math.max(y1, -v.y);
-        }
+      if (!limb.mesh.visible) continue;
+      for (const c of BOX_CORNERS(limb.mesh.geometry.boundingBox!)) {
+        v.set(c[0], c[1], c[2]).applyMatrix4(limb.mesh.matrix);
+        x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, -v.y); y1 = Math.max(y1, -v.y);
       }
+    }
+    for (const [x, y] of this.sprite?.quad ?? []) {
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
     }
     if (!Number.isFinite(x0)) { x0 = -10; x1 = 10; y0 = -10; y1 = 10; }
     this.inGameBox = { width: Math.ceil(x1) - Math.floor(x0) + 4, height: Math.ceil(y1) - Math.floor(y0) + 4, anchorX: 2 - Math.floor(x0), anchorY: 2 - Math.floor(y0) };
@@ -366,9 +461,35 @@ export class VoxelModel {
     this.grid = null;
     this.arrow = null;
     for (const limb of this.limbs) { limb.mesh.geometry.dispose(); limb.material.dispose(); }
-    this.shadowMaterial.dispose();
+    this.spriteMaterial.dispose();
+    this.shadowQuad.geometry.dispose();
+    this.shadowQuad.material.dispose();
     this.paletteTexture.dispose();
   }
+}
+
+/** A target for shadow sprites: nearest sampling, no depth, grown (never shrunk) by renderShadowSprite. */
+export const shadowSpriteTarget = () => new THREE.WebGLRenderTarget(64, 64, {
+  minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false, generateMipmaps: false,
+});
+
+/**
+ * Renders a posed model's shadow sprite into `target` (its top-left corner) and points the model's ground quad at
+ * it. Call before drawing the in-game scenes; it leaves `target` bound, so set the next target afterwards.
+ */
+export function renderShadowSprite(renderer: THREE.WebGLRenderer, model: VoxelModel, target: THREE.WebGLRenderTarget) {
+  const sprite = model.sprite;
+  if (!sprite) return;
+  if (sprite.width > target.width || sprite.height > target.height) target.setSize(Math.max(target.width, sprite.width), Math.max(target.height, sprite.height));
+  target.viewport.set(0, 0, sprite.width, sprite.height);
+  const color = renderer.getClearColor(new THREE.Color());
+  const alpha = renderer.getClearAlpha();
+  renderer.setRenderTarget(target);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear(true, false, false);
+  renderer.render(model.shadowSpriteScene, model.shadowSpriteCamera);
+  renderer.setClearColor(color, alpha);
+  model.useShadowSprite(target.texture, target.width, target.height);
 }
 
 /** Points an orthographic camera at a 1x in-game box: one canvas or target pixel per game pixel. */
@@ -408,6 +529,7 @@ export class VoxelStage {
   private radius = 60;
   private frameWidth = 60;
   private size = { width: 0, height: 0 };
+  private readonly shadowTarget = shadowSpriteTarget();
   /** 1x size and anchor of the last in-game render. */
   inGameBox: InGameBox = { width: 0, height: 0, anchorX: 0, anchorY: 0 };
 
@@ -541,6 +663,7 @@ export class VoxelStage {
     if (this.disposed) return;
     const ingame = this.state.mode === "ingame";
     const tint = ingame ? this.state.tint : [1, 1, 1];
+    if (ingame) { renderShadowSprite(this.renderer, this.model, this.shadowTarget); this.renderer.setRenderTarget(null); }
     const bg = this.state.background;
     if (bg) this.renderer.setClearColor(new THREE.Color().setRGB((bg[0] / 255) * tint[0], (bg[1] / 255) * tint[1], (bg[2] / 255) * tint[2], THREE.SRGBColorSpace), 1);
     else this.renderer.setClearColor(0x000000, 0);
@@ -576,6 +699,7 @@ export class VoxelStage {
     this.unsubscribe?.();
     this.controls?.dispose();
     this.model.dispose();
+    this.shadowTarget.dispose();
     this.renderer.dispose();
   }
 }
