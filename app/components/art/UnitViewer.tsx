@@ -18,7 +18,7 @@ export function toolbarFeatures(items: { spec: RenderSpec; sprite: SpriteArt | n
   return {
     modes: true,
     turret: items.some(i => i.spec.voxel?.parts.some(p => p.turretOffset) || i.spec.sprite?.turret),
-    shadow: items.some(i => i.spec.voxel),
+    shadow: items.some(i => i.spec.voxel || i.sprite?.sequences.some(s => s.shadowStart >= 0)),
     airborne: items.some(i => i.spec.voxel?.altitude !== null && i.spec.voxel?.altitude !== undefined),
     frames: items.some(i => i.spec.voxel?.parts.some(p => p.frames > 1)),
     animations: [...animations].map(([id, label]) => ({ id, label })),

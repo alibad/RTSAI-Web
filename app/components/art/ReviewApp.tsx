@@ -10,12 +10,12 @@ import type { RenderSpec } from "../../../lib/art-lab/spec";
 import type { SpriteArt } from "../../../lib/art-lab/types";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
 import {
-  candidateRenderSpec, candidateSprite, candidatesForSlot, emptyEntry, needsDecision, slotIds, slotLabels, slotState,
+  candidateRenderSpec, candidateSprite, candidateVehicleSprite, candidatesForSlot, emptyEntry, needsDecision, slotIds, slotLabels, slotState,
   type Candidate, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type SlotState, type UnitWorkspace,
 } from "../../../lib/art-lab/review";
 import { ArtStage } from "./ArtStage";
 import { PixelCanvas, type PixelImage } from "./PixelCanvas";
-import { candidateLabel, Cost, DecisionButtons, ExportBanner, HelpPopover, HowReviewWorks, MadeFrom, Scores, useHowtoDismissed, ZoomableImage, type Decide } from "./review-parts";
+import { candidateLabel, Cost, DecisionButtons, ExportBanner, HelpPopover, HowReviewWorks, MadeFrom, previewLabel, Scores, TechNote, useHowtoDismissed, ZoomableImage, type Decide } from "./review-parts";
 import { toolbarFeatures } from "./UnitViewer";
 import { ViewerToolbar } from "./ViewerToolbar";
 import { CameraLink, useViewSettings, type MapTint, type ViewSettings } from "./viewSettings";
@@ -93,10 +93,12 @@ function stageItem(unit: ReviewUnit, candidate: Candidate | null): StageItem | n
     if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite });
     return itemCache.get(key)!;
   }
-  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${(candidate.files.vxl ?? []).join(",")}:${(candidate.files.shp ?? []).join(",")}`;
+  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${(candidate.files.vxl ?? []).join(",")}:${(candidate.files.shp ?? []).join(",")}:${candidate.rulesText?.length ?? 0}`;
   if (!itemCache.has(key)) {
+    // Voxel candidates draw in the voxel slot; sprite candidates use their own frame layout (rules snippet or
+    // meta.sprite) when the unit is a voxel today, else the unit's current sprite sequences.
     const voxel = candidateRenderSpec(unit.spec, candidate);
-    const sprite = voxel ? null : candidateSprite(unit.spec, unit.sprite, candidate);
+    const sprite = voxel ? null : candidateVehicleSprite(unit.spec, candidate) ?? candidateSprite(unit.spec, unit.sprite, candidate);
     itemCache.set(key, voxel ? { key: candidate.id, spec: voxel, sprite: null } : sprite ? { key: candidate.id, spec: sprite.spec, sprite: sprite.sprite } : null);
   }
   return itemCache.get(key)!;
@@ -334,10 +336,11 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
                       {col.candidate ? (
                         <>
                           <MadeFrom candidate={col.candidate} all={allCandidates} />
+                          {slot === "model" && <TechNote candidate={col.candidate} />}
                           <Scores candidate={col.candidate} />
                           <p className="review-col-meta"><Cost candidate={col.candidate} all={allCandidates} /> · {new Date(col.candidate.createdAt).toLocaleString()}{col.candidate.fixture ? " · fixture" : ""}</p>
                           {!!col.candidate.files.previews?.length && (
-                            <details className="review-previews"><summary>Forge previews ({col.candidate.files.previews.length}), made outside the game</summary>
+                            <details className="review-previews"><summary>{previewLabel(col.candidate)} ({col.candidate.files.previews.length})</summary>
                               {col.candidate.files.previews.map(p => col.candidate!.urls[p] && <a key={p} href={col.candidate!.urls[p]} target="_blank" rel="noreferrer"><img src={col.candidate!.urls[p]} alt={p} loading="lazy" /></a>)}
                             </details>
                           )}

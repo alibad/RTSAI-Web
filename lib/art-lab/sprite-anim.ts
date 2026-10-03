@@ -29,7 +29,7 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     out.push({ id: "prone", label: "Prone", body: prone ?? stand, note: prone ? null : "No prone art: while prone the game shows the normal sequences." });
     out.push({ id: "die", label: "Die", body: by("WithDeathAnimation"), note: null });
   } else {
-    out.push({ id: "body", label: "Idle", body: by("WithSpriteBody") ?? seqs[0] ?? null, note: null });
+    out.push({ id: "body", label: "Idle", body: by("WithFacingSpriteBody") ?? by("WithSpriteBody") ?? seqs.find(s => !s.usedBy.some(u => u.startsWith("WithSpriteTurret"))) ?? null, note: null });
     const make = by("WithMakeAnimation");
     if (make) out.push({ id: "make", label: "Build-up", body: make, note: "Build-up: the turret and overlays appear once construction completes." });
   }

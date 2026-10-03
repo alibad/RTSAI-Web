@@ -70,7 +70,11 @@ export function readState(root: string): ReviewState {
       const files = listFiles(join(root, cdir));
       const urls = Object.fromEntries(files.map(f => [f, `${FILE_ROUTE}${encodeURIComponent(`${cdir}/${f}`)}`]));
       if (!meta) { errors.push(`${cdir}/meta.json is missing or not JSON`); candidates.push({ id, actor, createdAt: "", kind: "unknown", files: {}, dir: cdir, urls, metaError: "meta.json missing or invalid" }); continue; }
-      candidates.push({ ...meta, id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls });
+      // The candidate's proposed rules/sequences (MiniYaml) travel with it so the viewer reads the real layout.
+      const rulesFile = meta.files?.rules ? safeResolve(root, `${cdir}/${meta.files.rules}`) : null;
+      let rulesText: string | null = null;
+      try { if (rulesFile && statSync(rulesFile).size < 256 * 1024) rulesText = readFileSync(rulesFile, "utf8"); } catch { rulesText = null; }
+      candidates.push({ ...meta, id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls, rulesText });
     }
     candidates.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const comparisons = listFiles(join(root, "reference-local", "comparisons"), 0)

@@ -4,11 +4,11 @@ import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { artFactions, artLab } from "../../lib/art-lab/manifest";
 import "../art-lab.css";
 
-export function ArtLabChrome({ active, children }: { active: string; children: ReactNode }) {
+export function ArtLabChrome({ active, children, wide = false }: { active: string; children: ReactNode; wide?: boolean }) {
   return (
     <>
       <SiteHeader />
-      <main id="main-content" className="art-lab">
+      <main id="main-content" className={`art-lab ${wide ? "is-wide" : ""}`}>
         <nav className="art-lab-nav" aria-label="Art Lab">
           <Link href="/art" className="art-lab-brand" aria-current={active === "index" ? "page" : undefined}>Faction Art Lab</Link>
           {artFactions.map(f => (

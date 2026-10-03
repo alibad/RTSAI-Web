@@ -23,7 +23,7 @@ export default async function ReviewPage() {
     };
   }));
   return (
-    <ArtLabChrome active="review">
+    <ArtLabChrome active="review" wide>
       <ReviewApp units={units} tints={artLab.render.mapTints} />
     </ArtLabChrome>
   );

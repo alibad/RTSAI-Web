@@ -4,7 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Check, HelpCircle, MessageSquare, RotateCcw, X, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
-import { candidateCost, formatCost, slotLabels, type Candidate, type SlotDecision, type SlotId } from "../../../lib/art-lab/review";
+import { candidateCost, declaredTurretOffset, formatCost, parseCandidateRules, slotLabels, type Candidate, type SlotDecision, type SlotId } from "../../../lib/art-lab/review";
 
 export type Decide = {
   choose: (candidate: string) => void;
@@ -186,6 +186,33 @@ export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
       )}
     </>
   );
+}
+
+/**
+ * The Forge's own voxel previews (vxl_preview.py) were drawn at about half the in-game size; its sprite
+ * previews come from an engine-chain renderer. The columns above are always drawn at true in-game scale.
+ */
+export function previewLabel(c: Candidate) {
+  const engineChain = /ingame_view|engine-chain/i.test(c.previewNote ?? "");
+  if (c.kind === "voxel" && !engineChain) return "Forge preview (not true scale)";
+  return engineChain ? "Forge previews (engine-chain renders, made outside the game)" : "Forge previews, made outside the game";
+}
+
+/** How the column was drawn: the turret placement used and, for sprites, where the frame layout came from. */
+export function TechNote({ candidate }: { candidate: Candidate }) {
+  const offset = declaredTurretOffset(candidate);
+  const rules = candidate.rulesText ? parseCandidateRules(candidate.rulesText, candidate.actor) : null;
+  const rulesUrl = candidate.files.rules ? candidate.urls[candidate.files.rules] : null;
+  const lines: React.ReactNode[] = [];
+  if (candidate.kind === "voxel") {
+    lines.push(offset ? <>Turret pivot at Turreted.Offset <code>{offset.join(",")}</code> ({candidate.voxelize?.turretPlacement ?? "declared by the candidate"}).</> : <>Turret pivot at the current Turreted.Offset.</>);
+  }
+  if (candidate.kind === "sprite") {
+    lines.push(<>Pre-rendered sprite: frame layout from {rules && Object.keys(rules.sequences).length ? <code>{candidate.files.rules}</code> : <code>meta.sprite</code>}{offset ? <>, Turreted.Offset <code>{offset.join(",")}</code></> : null}.</>);
+    if (rules?.removed.length || rules?.traits.length) lines.push(<>Needs rules changes: {rules.removed.map(t => `-${t}`).concat(rules.traits).join(", ")}.</>);
+  }
+  if (!lines.length) return null;
+  return <div className="review-tech">{lines.map((l, i) => <p key={i}>{l}</p>)}{rulesUrl && <a href={rulesUrl} target="_blank" rel="noreferrer">Proposed rules ({candidate.files.rules})</a>}</div>;
 }
 
 export { slotLabels };

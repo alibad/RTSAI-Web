@@ -13,8 +13,9 @@
  *     "comments": [{ at, slot, candidate, view, text, author }], "log": [{ at, action, slot, candidate, author }] }
  * Version 1 entries ({ status, approved, comments }) are migrated when read.
  */
+import { child, childValue, parseMiniYaml, type Yaml } from "./miniyaml";
 import type { RenderSpec } from "./spec";
-import type { SpriteArt, Vec3 } from "./types";
+import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 
 export type SlotId = "model" | "icon" | "concept";
 export const slotIds: SlotId[] = ["model", "icon", "concept"];
@@ -53,16 +54,28 @@ export type CandidateMeta = {
   variantOf?: string;
   variantNote?: string;
   imageTo3d?: { service?: string; model?: string; costUsd?: number; license?: Record<string, string> };
+  /** Voxel candidates: where the Forge placed the turret pivot (a Turreted.Offset for current rules). */
+  voxelize?: { turretOffsetWorld?: number[]; turretPlacement?: string };
+  /** Sprite candidates: the SHP frame layout the Forge rendered. */
+  sprite?: {
+    shp?: string;
+    facings?: number;
+    sequences?: Record<string, { start?: number; facings?: number; shadowStart?: number; length?: number; usedBy?: string }>;
+    turret?: { sequence?: string; name?: string; offset?: number[] };
+    palette?: { file?: string; transparent?: number[]; shadow?: number[]; remap?: number[] };
+  };
   calls?: { route?: string; costUsd?: number }[];
   refusals?: unknown[];
   files: {
     concept?: string | null; cameo?: string | null; mesh?: string | null;
     vxl?: string[]; hva?: string[]; shp?: string[]; pal?: string | null; previews?: string[];
+    /** Proposed OpenRA rules and sequences (MiniYaml) for using the candidate. */
+    rules?: string | null;
   };
 };
 
-/** A candidate as the review UI receives it: file names resolved to dev-route URLs. */
-export type Candidate = CandidateMeta & { dir: string; urls: Record<string, string>; metaError?: string };
+/** A candidate as the review UI receives it: file names resolved to dev-route URLs; `rulesText` is files.rules. */
+export type Candidate = CandidateMeta & { dir: string; urls: Record<string, string>; metaError?: string; rulesText?: string | null };
 
 export type UnitWorkspace = {
   actor: string;
@@ -254,6 +267,8 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
   const actor = current.id;
   const turret = current.voxel.parts.find(p => p.turretOffset);
   const body = current.voxel.parts.find(p => !p.turretOffset);
+  // The candidate's own turret placement wins over the current rules (e.g. a longer hull moves the ring).
+  const declared: Vec3 = declaredTurretOffset(candidate) ?? turret?.turretOffset ?? [0, 0, 0];
   const hasDropin = candidate.files.vxl.some(f => f.replace(/\\/g, "/").toLowerCase() === `dropin/${actor}tur.vxl`);
   const parts = candidate.files.vxl.flatMap(file => {
     const name = file.replace(/\\/g, "/");
@@ -267,11 +282,11 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
     if (base === actor) label = "body";
     else if (base === `${actor}tur`) {
       label = dropin ? "turret (drop-in, for current rules)" : "turret";
-      turretOffset = turret?.turretOffset ?? [0, 0, 0];
+      turretOffset = [...declared] as Vec3;
       defaultVisible = dropin || !hasDropin;
     } else if (base === `${actor}barl`) {
       label = "barrel (needs WithVoxelBarrel)";
-      turretOffset = turret?.turretOffset ?? [0, 0, 0];
+      turretOffset = [...declared] as Vec3;
       defaultVisible = !hasDropin;
     } else defaultVisible = false;
     return [{
@@ -305,5 +320,128 @@ export function candidateSprite(spec: RenderSpec, sprite: SpriteArt | null, cand
       sprite: { ...spec.sprite, stand: swap(spec.sprite.stand), turret: swap(spec.sprite.turret), overlay: swap(spec.sprite.overlay) },
     },
     sprite: { ...sprite, sequences: sprite.sequences.map(s => (s.file && !s.inherited && !s.file.endsWith(".png") ? { ...s, file: shpUrl } : s)) },
+  };
+}
+
+const vec3 = (v: unknown): Vec3 | null => (Array.isArray(v) && v.length === 3 && v.every(n => typeof n === "number") ? [v[0], v[1], v[2]] : null);
+const parseVec = (text: string | null) => { const parts = (text ?? "").split(",").map(t => Number(t.trim())); return parts.length === 3 && parts.every(Number.isFinite) ? (parts as Vec3) : null; };
+const parseInts = (text: string | null) => (text ?? "").split(",").map(t => t.trim()).filter(Boolean).map(Number).filter(Number.isFinite);
+
+export type CandidateRules = {
+  sequences: Record<string, { file: string | null; start: number; length: number; facings: number; shadowStart: number; offset: Vec3; tick: number }>;
+  turretOffset: Vec3 | null;
+  turretInitialFacing: number | null;
+  palette: { transparent: number[]; shadow: number[]; remap: number[] } | null;
+  traits: string[];
+  removed: string[];
+};
+
+/**
+ * Reads the OpenRA MiniYaml a candidate proposes (files.rules): the actor's sequences (blocks whose children
+ * set Filename/Start/Facings), its traits (Turreted.Offset, ...) and its palette definitions under ^Palettes.
+ */
+export function parseCandidateRules(text: string, actor: string): CandidateRules {
+  const nodes = parseMiniYaml(text, "openra-snippet.yaml");
+  const out: CandidateRules = { sequences: {}, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [] };
+  const isSequence = (n: Yaml) => n.nodes.some(c => ["Filename", "Start", "Facings", "Length", "ShadowStart"].includes(c.key));
+  let playerPalette: string | null = null;
+  for (const node of nodes.filter(n => n.key === actor)) {
+    const children = node.value.nodes;
+    if (children.some(c => isSequence(c.value)) && children.every(c => isSequence(c.value) || c.key === "Defaults" || c.key.startsWith("Inherits"))) {
+      for (const seq of children) {
+        if (!isSequence(seq.value)) continue;
+        const v = seq.value;
+        const filename = childValue(v, "Filename");
+        out.sequences[seq.key] = {
+          file: filename ? filename.split("|").pop()!.split("/").pop()! : null,
+          start: Number(childValue(v, "Start") ?? 0), length: Number(childValue(v, "Length") ?? 1),
+          facings: Number(childValue(v, "Facings") ?? 1), shadowStart: Number(childValue(v, "ShadowStart") ?? -1),
+          offset: parseVec(childValue(v, "Offset")) ?? [0, 0, 0], tick: Number(childValue(v, "Tick") ?? 40),
+        };
+      }
+    } else {
+      for (const trait of children) (trait.key.startsWith("-") ? out.removed : out.traits).push(trait.key.replace(/^-/, ""));
+      const turreted = child(node.value, "Turreted")?.value;
+      out.turretOffset = parseVec(childValue(turreted, "Offset")) ?? out.turretOffset;
+      const initial = childValue(turreted, "InitialFacing");
+      if (initial !== null) out.turretInitialFacing = Number(initial);
+      playerPalette = childValue(child(node.value, "RenderSprites")?.value, "PlayerPalette") ?? playerPalette;
+    }
+  }
+  const palettes = nodes.find(n => n.key === "^Palettes")?.value;
+  if (palettes) {
+    const players = palettes.nodes.filter(n => n.key.startsWith("PlayerColorPalette"));
+    const player = players.find(n => childValue(n.value, "BaseName") === playerPalette) ?? players[0];
+    const baseName = player ? childValue(player.value, "BasePalette") : null;
+    const file = palettes.nodes.find(n => n.key.startsWith("PaletteFromFile") && (!baseName || childValue(n.value, "Name") === baseName));
+    if (file || player) {
+      out.palette = {
+        transparent: file && childValue(file.value, "TransparentIndex") ? parseInts(childValue(file.value, "TransparentIndex")) : [0],
+        shadow: file ? parseInts(childValue(file.value, "ShadowIndex")) : [],
+        remap: player ? parseInts(childValue(player.value, "RemapIndex")) : [],
+      };
+    }
+  }
+  return out;
+}
+
+/** The turret offset a candidate declares: its rules snippet's Turreted.Offset, else the Forge's recorded placement. */
+export function declaredTurretOffset(candidate: Candidate): Vec3 | null {
+  const rules = candidate.rulesText ? parseCandidateRules(candidate.rulesText, candidate.actor) : null;
+  return rules?.turretOffset ?? vec3(candidate.voxelize?.turretOffsetWorld) ?? vec3(candidate.sprite?.turret?.offset);
+}
+
+/**
+ * A pre-rendered vehicle sprite candidate (body + turret, with shadow frames) for a unit that is a voxel model
+ * today. The frame layout comes from the candidate's rules snippet, else from meta.sprite; it is never guessed.
+ */
+export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate): { spec: RenderSpec; sprite: SpriteArt; layoutSource: string } | null {
+  if (candidate.kind !== "sprite" || !candidate.files.shp?.length) return null;
+  const rules = candidate.rulesText ? parseCandidateRules(candidate.rulesText, candidate.actor) : null;
+  const metaSeqs = candidate.sprite?.sequences ?? {};
+  const fromRules = Boolean(rules && Object.keys(rules.sequences).length > 0);
+  const names = fromRules ? Object.keys(rules!.sequences) : Object.keys(metaSeqs);
+  if (!names.length) return null;
+  const shpUrl = (file: string | null) => {
+    const name = (file ?? candidate.sprite?.shp ?? candidate.files.shp![0]).replace(/\\/g, "/");
+    return candidate.urls[name] ?? candidate.urls[candidate.files.shp!.find(f => f.endsWith(name)) ?? ""] ?? null;
+  };
+  const sequences: SpriteSequence[] = [];
+  for (const name of names) {
+    const r = fromRules ? rules!.sequences[name] : null;
+    const m = metaSeqs[name];
+    const file = shpUrl(r?.file ?? null);
+    if (!file) continue;
+    const length = r?.length ?? m?.length ?? 1;
+    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy ?? "") ? ["WithSpriteTurret"] : ["WithFacingSpriteBody"];
+    sequences.push({
+      name, file, external: null, start: r?.start ?? m?.start ?? 0, length, stride: length, facings: r?.facings ?? m?.facings ?? 1,
+      reverseFacings: false, transpose: false, tick: r?.tick ?? 40, zOffset: 0, shadowStart: r?.shadowStart ?? m?.shadowStart ?? -1,
+      offset: r?.offset ?? [0, 0, 0], frames: null, reverses: false, usedBy, inherited: false,
+    });
+  }
+  const body = sequences.find(s => s.usedBy.includes("WithFacingSpriteBody"));
+  if (!body) return null;
+  const turretSeq = sequences.find(s => s.usedBy.includes("WithSpriteTurret")) ?? null;
+  const pal = candidate.files.pal ? candidate.urls[candidate.files.pal] : null;
+  const metaPal = candidate.sprite?.palette;
+  const palette = pal ? {
+    name: candidate.files.pal!, url: pal,
+    remap: rules?.palette?.remap ?? metaPal?.remap ?? current.palette?.remap ?? [],
+    transparent: rules?.palette?.transparent ?? metaPal?.transparent ?? [0],
+    shadow: rules?.palette?.shadow ?? metaPal?.shadow ?? [],
+  } : current.palette;
+  const turretOffset = rules?.turretOffset ?? vec3(candidate.sprite?.turret?.offset) ?? [0, 0, 0];
+  const sprite: SpriteArt = {
+    image: current.id, palette: palette?.name ?? "", shp: null, sequences, quantizedFacings: body.facings,
+    turret: turretSeq ? { sequence: turretSeq.name, name: candidate.sprite?.turret?.name ?? "primary", offset: turretOffset, initialFacing: rules?.turretInitialFacing ?? 0 } : null,
+  };
+  return {
+    spec: {
+      ...current, id: `${current.id}:${candidate.id}`, name: `${current.name} · ${candidate.id}`, palette, voxel: null,
+      sprite: { stand: body, turret: turretSeq, turretInitialFacing: sprite.turret?.initialFacing ?? null, overlay: null },
+    },
+    sprite,
+    layoutSource: fromRules ? candidate.files.rules ?? "rules snippet" : "meta.sprite",
   };
 }

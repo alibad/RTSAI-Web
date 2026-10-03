@@ -8,7 +8,7 @@ import { partVisibleByDefault, type RenderSpec } from "../../../lib/art-lab/spec
 import { overlaySequence, pickAnimation, turretSequence } from "../../../lib/art-lab/sprite-anim";
 import { blit, drawShpFrame, framePosition, indexFacing, sequenceFrame, sequenceLength } from "../../../lib/art-lab/sprite-render";
 import type { SpriteArt, SpriteSequence } from "../../../lib/art-lab/types";
-import { facingLabel } from "../../../lib/art-lab/voxel-math";
+import { facingLabel, localToWorld, rotateYaw, screenVector } from "../../../lib/art-lab/voxel-math";
 import { backdropRgb, PixelCanvas, type PixelImage } from "./PixelCanvas";
 import { useNearViewport } from "./useInGameRenders";
 import { tintFor, type CameraLink, type MapTint, type ViewSettings } from "./viewSettings";
@@ -167,18 +167,33 @@ function usePalette(spec: RenderSpec, color: string | null) {
   return palette;
 }
 
-/** Draws body (+ turret + overlay) frames around a fixed actor centre so frames never jitter. */
-function compose(layers: { shp: Shp; seq: SpriteSequence; facing: number; frame: number }[], palette: Palette, base: Shp, baseSeq: SpriteSequence): PixelImage {
-  const width = base.width + 8, height = base.height + 8;
-  const anchorX = Math.round(base.width / 2 + 4 - baseSeq.offset[0]);
-  const anchorY = Math.round(base.height / 2 + 4 - baseSeq.offset[1]);
+type Layer = { shp: Shp; seq: SpriteSequence; facing: number; frame: number; dx?: number; dy?: number };
+
+/**
+ * Draws sprite layers around a fixed actor centre so frames never jitter: every layer's ShadowStart frame
+ * first (the shadow palette index draws black at alpha 140), then body, turret and overlays in order.
+ */
+function compose(layers: Layer[], palette: Palette, base: Shp, baseSeq: SpriteSequence, shadows: boolean): PixelImage {
+  const margin = 8 + Math.max(0, ...layers.map(l => Math.max(Math.abs(l.dx ?? 0), Math.abs(l.dy ?? 0))));
+  const width = base.width + 2 * margin, height = base.height + 2 * margin;
+  const anchorX = Math.round(base.width / 2 + margin - baseSeq.offset[0]);
+  const anchorY = Math.round(base.height / 2 + margin - baseSeq.offset[1]);
   const data = new Uint8ClampedArray(4 * width * height);
-  for (const layer of layers) {
-    const index = sequenceFrame(layer.seq, layer.frame, layer.facing);
-    const at = framePosition(layer.shp, layer.seq, anchorX, anchorY);
+  const draw = (layer: Layer, index: number) => {
+    if (index < 0 || index >= layer.shp.frames.length) return;
+    const at = framePosition(layer.shp, layer.seq, anchorX + (layer.dx ?? 0), anchorY + (layer.dy ?? 0));
     blit(data, width, height, drawShpFrame(layer.shp, index, palette), layer.shp.width, layer.shp.height, at.x, at.y);
-  }
+  };
+  if (shadows) for (const layer of layers) if (layer.seq.shadowStart >= 0) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing, true));
+  for (const layer of layers) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing));
   return { width, height, data, anchorX, anchorY };
+}
+
+/** Turreted.Position for a sprite actor: the offset rotated by the quantized body facing, in screen pixels. */
+function turretScreenOffset(offset: [number, number, number] | undefined, bodyFacing: number) {
+  if (!offset || (offset[0] === 0 && offset[1] === 0 && offset[2] === 0)) return { dx: 0, dy: 0 };
+  const v = screenVector(localToWorld(rotateYaw(offset, bodyFacing), false, 85));
+  return { dx: Math.round(v[0]), dy: Math.round(v[1]) };
 }
 
 function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
@@ -201,25 +216,25 @@ function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
     return () => clearInterval(timer);
   }, [settings.playing, body]);
   const frame = body?.reverses && length > 1 ? (() => { const p = tick % (2 * length - 2); return p >= length ? 2 * length - 2 - p : p; })() : tick % Math.max(1, length);
-  const turretAngle = ((sprite?.turret?.initialFacing ?? 0) + settings.turretFacing) & 1023;
-  const image = useMemo(() => {
-    if (!body || !bodyShp || !palette) return null;
-    const layers = [{ shp: bodyShp, seq: body, facing: settings.facing, frame }];
-    if (turret && turretShp) layers.push({ shp: turretShp, seq: turret, facing: turretAngle, frame: 0 });
-    if (overlay && overlayShp) layers.push({ shp: overlayShp, seq: overlay, facing: 0, frame: tick });
-    return compose(layers, palette, bodyShp, body);
-  }, [body, bodyShp, turret, turretShp, overlay, overlayShp, palette, settings.facing, frame, turretAngle, tick]);
   const facings = body?.facings ?? 1;
-  const strip = useMemo(() => {
-    if (settings.mode === "ingame" || !body || !bodyShp || !palette) return [];
-    const count = Math.max(facings, turret ? turret.facings : 1);
-    return Array.from({ length: count }, (_, i) => {
-      const facing = (i * 1024) / count;
-      const layers = [{ shp: bodyShp, seq: body, facing, frame }];
-      if (turret && turretShp) layers.push({ shp: turretShp, seq: turret, facing: facings > 1 ? turretAngle : facing, frame: 0 });
-      return { facing, image: compose(layers, palette, bodyShp, body) };
-    });
-  }, [settings.mode, body, bodyShp, turret, turretShp, palette, facings, frame, turretAngle]);
+  // A vehicle's turret turns with its body (Turreted: world = body + local); a defence's body never turns.
+  const vehicle = facings > 1 && Boolean(turret);
+  const quantize = (f: number) => (indexFacing(f, facings) * 1024) / facings;
+  const turretAngleFor = (bodyFacing: number) => (vehicle ? (quantize(bodyFacing) + settings.turretFacing) & 1023 : ((sprite?.turret?.initialFacing ?? 0) + settings.turretFacing) & 1023);
+  const turretAngle = turretAngleFor(settings.facing);
+  const turretOffset = sprite?.turret?.offset;
+  const layersAt = (bodyFacing: number, bodyFrame: number): Layer[] => {
+    const layers: Layer[] = [{ shp: bodyShp!, seq: body!, facing: bodyFacing, frame: bodyFrame }];
+    if (turret && turretShp) layers.push({ shp: turretShp, seq: turret, facing: turretAngleFor(bodyFacing), frame: 0, ...turretScreenOffset(turretOffset, vehicle ? quantize(bodyFacing) : 0) });
+    if (overlay && overlayShp) layers.push({ shp: overlayShp, seq: overlay, facing: 0, frame: tick });
+    return layers;
+  };
+  const image = !body || !bodyShp || !palette ? null : compose(layersAt(settings.facing, frame), palette, bodyShp, body, settings.shadow);
+  const stripCount = Math.max(facings, turret ? turret.facings : 1);
+  const strip = settings.mode === "ingame" || !body || !bodyShp || !palette ? [] : Array.from({ length: stripCount }, (_, i) => {
+    const facing = (i * 1024) / stripCount;
+    return { facing, image: compose(layersAt(facings > 1 ? facing : settings.facing, frame).map(l => (l.seq === turret && facings === 1 ? { ...l, facing } : l)), palette, bodyShp, body, settings.shadow) };
+  });
   const facingIndex = body ? indexFacing(settings.facing, facings) : 0;
   return (
     <div className="art-stage-wrap" ref={wrapRef}>
@@ -227,9 +242,9 @@ function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
         {image ? <PixelCanvas image={image} zoom={settings.zoom} backdrop={settings.backdrop} tint={tint} diamond label={`${spec.name}, ${animation?.label ?? "sprite"}, facing ${settings.facing}`} /> : <p className="art-stage-status">{active ? "Loading the sprite…" : ""}</p>}
       </div>
       <p className="art-hint">
-        {settings.mode !== "ingame" ? <b>Pre-rendered sprite: no 3D, shown at every facing. </b> : null}
+        <b className="art-sprite-tag">Pre-rendered sprite: no 3D{settings.mode !== "ingame" ? ", shown at every facing" : ""}. </b>
         {animation ? `${animation.label}: sequence “${body?.name}”, frame ${frame + 1}/${length}` : ""}{facings > 1 ? `, facing ${facingIndex + 1}/${facings}` : ""}
-        {turret ? `, turret ${turretAngle} (${facingLabel(turretAngle)})` : ""}.{animation?.note ? ` ${animation.note}` : ""}
+        {turret ? `, turret ${turretAngle} (${facingLabel(turretAngle)})` : ""}{turretOffset && turretOffset.some(v => v !== 0) ? `, Turreted.Offset ${turretOffset.join(",")}` : ""}.{animation?.note ? ` ${animation.note}` : ""}
       </p>
       {strip.length > 0 && (
         <div className="art-facing-strip" aria-label="Every facing">
