@@ -21,7 +21,7 @@ export type Decide = {
  * The decision for the focused version: one primary action, Reject, an always-open note box with quick chips,
  * and the unit's notes. Everything technical sits behind Details.
  */
-export function DecisionPanel({ unit, slot, version, decision, comments, labelFor, busy, decide, noteRef, all, now, forgePick }: {
+export function DecisionPanel({ unit, slot, version, decision, comments, labelFor, busy, decide, noteRef, all, now, forgePick, referenceOnly = false, reference = null }: {
   unit: ReviewUnit;
   slot: SlotId;
   version: Version;
@@ -34,6 +34,9 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
   all: Candidate[];
   now: number;
   forgePick: string | null;
+  /** Original RA2 units and the Reference version: compare and take notes, never decide. */
+  referenceOnly?: boolean;
+  reference?: ReviewUnit | null;
 }) {
   const [draft, setDraft] = useState("");
   const [details, setDetails] = useState(false);
@@ -48,7 +51,9 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
   };
 
   let primary: React.ReactNode = null;
-  if (chosen) {
+  if (referenceOnly) {
+    primary = <div className="lab-refonly"><span className="lab-pill">Reference only</span><small>Original RA2 art</small></div>;
+  } else if (chosen) {
     primary = (
       <div className="lab-chosen">
         <span><Check size={18} strokeWidth={3} /> {concept ? "Reference" : c ? "In game" : "Keeping current"}</span>
@@ -69,7 +74,7 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
     <aside className="lab-panel" aria-label="Decision">
       <header className="lab-panel-head">
         <h1>{unit.name}</h1>
-        <p>{unit.factionName} · {unit.role}</p>
+        <p>{unit.factionName} · {unit.role}<span className={`lab-origin-pill is-${unit.origin ?? "new"}`}>{unit.origin === "original" ? "Original RA2" : unit.origin === "modified" ? "Modified" : "New"}</span></p>
       </header>
 
       <div className="lab-focus-row">
@@ -79,11 +84,12 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
         {rejected && <span className="lab-pill is-bad">Rejected</span>}
         {forgePick && forgePick === version.key && !chosen && <span className="lab-pill">Forge pick</span>}
         <button type="button" className="lab-ghost" aria-expanded={details} onClick={() => setDetails(true)}><Info size={14} /> Details</button>
+        {version.reference && <span className="lab-ref-name">{version.reference.name}</span>}
       </div>
 
       <div className="lab-actions">
         {primary}
-        {c ? (rejected
+        {c && !referenceOnly ? (rejected
           ? <button type="button" className="lab-secondary" onClick={() => decide.unreject(c.id)} disabled={busy}><Undo2 size={14} /> Undo reject</button>
           : <button type="button" className="lab-secondary is-reject" onClick={() => decide.reject(c.id)} disabled={busy}><X size={14} /> Reject <kbd>R</kbd></button>)
           : <span className="lab-secondary is-placeholder" aria-hidden="true" />}
@@ -92,7 +98,8 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
 
       <form className="lab-note" onSubmit={e => { e.preventDefault(); void save(); }}>
         <label htmlFor="lab-note" className="lab-label">Note for the Forge <kbd>C</kbd></label>
-        <textarea id="lab-note" ref={noteRef} rows={3} maxLength={4000} value={draft} placeholder={`What should change in ${version.label}?`}
+        <textarea id="lab-note" ref={noteRef} rows={3} maxLength={4000} value={draft}
+          placeholder={referenceOnly ? `Note on ${version.reference?.name ?? unit.name}` : `What should change in ${version.label}?`}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => {
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void save(); }
@@ -126,7 +133,7 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
 
       <p className="lab-foot">Nothing ships until export.</p>
 
-      {details && <Details unit={unit} version={version} all={all} onClose={closeDetails} />}
+      {details && <Details unit={version.reference ?? unit} version={version} all={all} onClose={closeDetails} reference={reference} />}
     </aside>
   );
 }
@@ -138,7 +145,7 @@ function generatorPreviews(c: Candidate) {
 }
 
 /** Everything technical about the focused version: provenance, score, cost, rules, previews, prompt. */
-function Details({ unit, version, all, onClose }: { unit: ReviewUnit; version: Version; all: Candidate[]; onClose: () => void }) {
+function Details({ unit, version, all, onClose, reference }: { unit: ReviewUnit; version: Version; all: Candidate[]; onClose: () => void; reference: ReviewUnit | null }) {
   const c = version.candidate;
   const unitPage = `/art/${unit.factionId}/${unit.id}`;
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -155,11 +162,23 @@ function Details({ unit, version, all, onClose }: { unit: ReviewUnit; version: V
         <span className="lab-mono">{c ? c.id : unit.id}</span>
         <button ref={closeRef} type="button" className="lab-icon-btn" onClick={onClose} aria-label="Close details"><X size={16} /></button>
       </header>
-      {c ? <CandidateDetails c={c} all={all} /> : (
+      {c ? <CandidateDetails c={c} all={all} /> : unit.origin === "original" ? (
+        <>
+          <dl className="lab-dl">
+            <dt>Art</dt><dd>Untouched Westwood RA2 {unit.spec.voxel ? "voxel model" : "sprite"}, read from your local RA2 data.</dd>
+            <dt>Unit</dt><dd>{unit.name} <span className="lab-mono">{unit.id}</span></dd>
+            {version.kind === "reference" && <><dt>Why this one</dt><dd>The original unit this faction&apos;s new one replaces (same role and category).</dd></>}
+            <dt>Files</dt><dd className="lab-mono lab-files">{(unit.files ?? []).join(" ")}</dd>
+            {!!unit.fromModBits?.length && <><dt>Mod override</dt><dd className="lab-mono">{unit.fromModBits.join(" ")}</dd></>}
+          </dl>
+          <p className="lab-hint">EA copyright. Extracted with the mod&apos;s engine into a local cache, served only by the dev server, never published.</p>
+        </>
+      ) : (
         <dl className="lab-dl">
           <dt>What ships now</dt><dd>{unit.spec.voxel ? "Voxel model" : unit.spec.sprite ? "Pre-rendered sprite" : "Cameo"} from the mod.</dd>
           <dt>Unit</dt><dd>{unit.name} <span className="lab-mono">{unit.id}</span></dd>
           {unit.catalog && <><dt>Catalog</dt><dd>{unit.catalog.name} · {unit.catalog.role}</dd></>}
+          {reference && <><dt>Reference</dt><dd>{reference.name} <span className="lab-mono">{reference.id}</span> (original RA2)</dd></>}
         </dl>
       )}
       <Link className="lab-ghost lab-details-link" href={unitPage} target="_blank"><ExternalLink size={14} /> Unit page</Link>

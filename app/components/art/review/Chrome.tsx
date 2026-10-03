@@ -2,12 +2,13 @@
 
 /* Cameos are tiny local files drawn pixel-exact; next/image would resample them. */
 /* eslint-disable @next/next/no-img-element */
-import { ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { houseColors } from "../../../../lib/art-lab/remap";
 import type { SlotId } from "../../../../lib/art-lab/review";
 import { backdrops } from "../PixelCanvas";
 import type { MapTint } from "../viewSettings";
+import { flagSrc } from "./flags";
 import { setLab, useLab } from "./lab-store";
 import type { ReviewUnit } from "./versions";
 
@@ -126,47 +127,168 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
   );
 }
 
-export type RailRow = { unit: ReviewUnit; needs: boolean };
+export type Origin = "new" | "original" | "modified";
+export type RailRow = { unit: ReviewUnit; origin: Origin; count: number; needs: boolean };
+export type RailFilter = "all" | "original" | "new" | "candidates" | "needs";
+export type FactionSummary = { id: string; name: string; units: number; withCandidates: number; decided: number };
 
-export const UnitRail = memo(function UnitRail({ rows, selected, faction, factions, onFaction, onSelect, collapsed, onCollapse }: {
+export const railFilters: { id: RailFilter; label: string; test: (r: RailRow) => boolean }[] = [
+  { id: "all", label: "All", test: () => true },
+  { id: "original", label: "Original", test: r => r.origin !== "new" },
+  { id: "new", label: "New", test: r => r.origin === "new" },
+  { id: "candidates", label: "Has candidates", test: r => r.count > 0 },
+  { id: "needs", label: "Needs decision", test: r => r.needs },
+];
+
+const groupNames: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Ships", defense: "Defenses", structure: "Base buildings" };
+const groupOrder = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
+const originTag: Record<Origin, string> = { new: "NEW", original: "RA2", modified: "MOD" };
+const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: untouched RA2 art", modified: "Modified: derived from RA2 art" };
+
+function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
+  const src = flagSrc(id);
+  return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size}`} />;
+}
+
+function Progress({ done, total }: { done: number; total: number }) {
+  if (!total) return <span className="lab-fprog is-none">No candidates</span>;
+  return (
+    <span className="lab-fprog" title={`${done} of ${total} units with candidates decided`}>
+      <i style={{ ["--done" as string]: done / total }} aria-hidden="true" />{done}/{total}
+    </span>
+  );
+}
+
+/** The faction switch: flag, name, roster size and decided progress. A keyboard listbox (arrows, Enter, Esc). */
+function FactionPicker({ factions, faction, onFaction, compact }: { factions: FactionSummary[]; faction: string; onFaction: (id: string) => void; compact: boolean }) {
+  const [open, setOpen] = useState<{ top: number; left: number } | null>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const options = useRef<(HTMLButtonElement | null)[]>([]);
+  const current = factions.find(f => f.id === faction) ?? factions[0];
+  useEffect(() => {
+    if (!open) return;
+    const at = Math.max(0, factions.findIndex(f => f.id === faction));
+    options.current[at]?.focus();
+    const onDown = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(null); };
+    const close = () => setOpen(null);
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("resize", close);
+    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("resize", close); };
+  }, [open, factions, faction]);
+  // Fixed to the viewport so the rail's scroll box never clips it.
+  const show = () => { const r = button.current?.getBoundingClientRect(); if (r) setOpen({ top: r.bottom + 8, left: r.left }); };
+  const toggle = () => (open ? setOpen(null) : show());
+  const choose = (id: string) => { onFaction(id); setOpen(null); button.current?.focus(); };
+  const onKey = (e: React.KeyboardEvent, i: number) => {
+    const move = (to: number) => { e.preventDefault(); options.current[(to + factions.length) % factions.length]?.focus(); };
+    if (e.key === "ArrowDown") move(i + 1);
+    else if (e.key === "ArrowUp") move(i - 1);
+    else if (e.key === "Home") move(0);
+    else if (e.key === "End") move(factions.length - 1);
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setOpen(null); button.current?.focus(); }
+    else if (e.key === "Tab") setOpen(null);
+  };
+  if (!current) return null;
+  return (
+    <div className="lab-picker" ref={wrap}>
+      <button ref={button} type="button" className="lab-picker-btn" aria-haspopup="listbox" aria-expanded={Boolean(open)} title={`${current.name}: change faction`}
+        onClick={toggle} onKeyDown={e => { if (e.key === "ArrowDown" && !open) { e.preventDefault(); show(); } }}>
+        <Flag id={current.id} size="m" />
+        {!compact && <><b>{current.name}</b><ChevronDown size={16} aria-hidden="true" /></>}
+      </button>
+      {open && (
+        <div className="lab-picker-pop" role="listbox" aria-label="Faction" style={{ top: open.top, left: open.left }}>
+          {factions.map((f, i) => (
+            <button key={f.id} id={`faction-${f.id}`} ref={el => { options.current[i] = el; }} type="button" role="option" aria-selected={f.id === faction}
+              className="lab-picker-opt" onClick={() => choose(f.id)} onKeyDown={e => onKey(e, i)}>
+              <Flag id={f.id} size="l" />
+              <span className="lab-picker-name"><b>{f.name}</b><small>{f.units} units</small></span>
+              <Progress done={f.decided} total={f.withCandidates} />
+              {f.id === faction && <Check size={16} className="lab-picker-check" aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: { row: RailRow; current: boolean; collapsed: boolean; onSelect: (id: string) => void }) {
+  const { unit, origin, count, needs } = row;
+  const status = count ? (needs ? "Needs decision" : "Decided") : null;
+  return (
+    <li>
+      <button type="button" aria-current={current ? "true" : undefined} onClick={() => onSelect(unit.id)}
+        title={`${unit.name} · ${originTitle[origin]}${count ? ` · ${count} candidate${count === 1 ? "" : "s"}, ${status!.toLowerCase()}` : ""}`}>
+        <span className="lab-cameo">
+          {unit.spec.cameo ? <img src={unit.spec.cameo} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="lab-noicon" />}
+          <i className={`lab-origin is-${origin}`} aria-label={originTitle[origin]}>{originTag[origin]}</i>
+        </span>
+        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b></span>}
+        {count > 0 && (
+          <span className={`lab-count${needs ? " is-needs" : " is-done"}`} aria-label={`${count} candidates, ${status}`}>
+            {!needs && <Check size={12} strokeWidth={3} aria-hidden="true" />}{count}
+          </span>
+        )}
+      </button>
+    </li>
+  );
+});
+
+/**
+ * The faction's whole build roster, grouped like the build palette (base buildings last, folded): every unit
+ * shows its static cameo (lazy-loaded), whether its art is New or Original RA2, and how many candidates wait.
+ */
+export const UnitRail = memo(function UnitRail({ rows, selected, faction, factions, onFaction, filter, onFilter, onSelect, collapsed, onCollapse }: {
   rows: RailRow[];
   selected: string | null;
   faction: string;
-  factions: [string, string][];
+  factions: FactionSummary[];
   onFaction: (id: string) => void;
+  filter: RailFilter;
+  onFilter: (f: RailFilter) => void;
   onSelect: (id: string) => void;
   collapsed: boolean;
   onCollapse: (collapsed: boolean) => void;
 }) {
+  const [buildingsOpen, setBuildingsOpen] = useState(false);
+  const test = railFilters.find(f => f.id === filter)?.test ?? (() => true);
+  const groups = groupOrder.map(cat => ({ cat, rows: rows.filter(r => r.unit.category === cat && test(r)) })).filter(g => g.rows.length);
+  const counts = Object.fromEntries(railFilters.map(f => [f.id, rows.filter(f.test).length]));
   return (
     <nav className={`lab-rail${collapsed ? " is-collapsed" : ""}`} aria-label="Units">
       <div className="lab-rail-head">
+        <div className="lab-rail-top">
+          <FactionPicker factions={factions} faction={faction} onFaction={onFaction} compact={collapsed} />
+          <button type="button" className="lab-icon-btn" onClick={() => onCollapse(!collapsed)} aria-label={collapsed ? "Expand the unit list" : "Collapse the unit list"} title={collapsed ? "Expand" : "Collapse"}>
+            {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+          </button>
+        </div>
         {!collapsed && (
-          <select aria-label="Faction" value={faction} onChange={e => onFaction(e.target.value)}>
-            <option value="all">All factions</option>
-            {factions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
+          <div className="lab-filters" role="radiogroup" aria-label="Show">
+            {railFilters.map(f => (
+              <button key={f.id} type="button" role="radio" aria-checked={filter === f.id} className="lab-chip-btn" disabled={!counts[f.id] && f.id !== "all"} onClick={() => onFilter(f.id)}>
+                {f.label}<small>{counts[f.id]}</small>
+              </button>
+            ))}
+          </div>
         )}
-        <button type="button" className="lab-icon-btn" onClick={() => onCollapse(!collapsed)} aria-label={collapsed ? "Expand the unit list" : "Collapse the unit list"} title={collapsed ? "Expand" : "Collapse"}>
-          {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
-        </button>
       </div>
-      <ol>
-        {rows.map(r => (
-          <li key={r.unit.id}>
-            <button type="button" aria-current={selected === r.unit.id ? "true" : undefined} onClick={() => onSelect(r.unit.id)} title={r.unit.name}>
-              {r.unit.spec.cameo ? <img src={r.unit.spec.cameo} width={60} height={48} alt="" /> : <span className="lab-noicon" />}
-              {collapsed ? <i className={`lab-dot${r.needs ? " is-needs" : " is-done"}`} aria-label={r.needs ? "Needs decision" : "Decided"} /> : (
-                <span className="lab-rail-text">
-                  <b>{r.unit.name}</b>
-                  <span className={`lab-pill${r.needs ? " is-needs" : " is-good"}`}>{r.needs ? "Needs decision" : "Decided"}</span>
-                </span>
-              )}
-            </button>
-          </li>
-        ))}
-        {!rows.length && <li className="lab-hint lab-rail-empty">No candidates yet.</li>}
-      </ol>
+      {groups.map(g => {
+        const folded = g.cat === "structure" && !buildingsOpen && !g.rows.some(r => r.unit.id === selected);
+        return (
+          <section key={g.cat} className="lab-group" aria-label={groupNames[g.cat]}>
+            {!collapsed && (g.cat === "structure"
+              ? <button type="button" className="lab-group-head is-toggle" aria-expanded={!folded} onClick={() => setBuildingsOpen(o => !o)}>
+                  <ChevronRight size={14} aria-hidden="true" /><span>{groupNames[g.cat]}</span><small>{g.rows.length}</small>
+                </button>
+              : <h2 className="lab-group-head"><span>{groupNames[g.cat]}</span><small>{g.rows.length}</small></h2>)}
+            {!folded && <ol>{g.rows.map(r => <RailItem key={r.unit.id} row={r} current={selected === r.unit.id} collapsed={collapsed} onSelect={onSelect} />)}</ol>}
+          </section>
+        );
+      })}
+      {!groups.length && <p className="lab-hint lab-rail-empty">Nothing matches.</p>}
     </nav>
   );
 });

@@ -40,8 +40,11 @@ function artReviewDevApi(): Plugin {
     async configureServer(server) {
       if (process.env.NODE_ENV === "production") return;
       const { createArtReviewMiddleware } = await import("./lib/art-lab/review-server");
+      const { originalsConfig } = await import("./lib/art-lab/originals");
       const root = process.env.RTSAI_ART_DIR ?? fileURLToPath(new URL("../RTSAI-Art", import.meta.url));
-      server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root }));
+      // Original RA2 units: extracted locally from the player's RA2 content into the gitignored .cache/.
+      const originals = originalsConfig(fileURLToPath(new URL(".", import.meta.url)));
+      server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root, originals }));
     },
   };
 }

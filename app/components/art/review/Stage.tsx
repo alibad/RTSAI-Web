@@ -15,6 +15,9 @@ import { comparePair, type Version } from "./versions";
 
 export const DEFAULT_FACING = 896;
 
+/** "Reference · Grizzly Battle Tank" for the original unit compared against; else the version's label. */
+export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.label ?? "");
+
 export const poseFrom = (s: LabView, tints: MapTint[], facing = s.facing, tick = 0): Pose => ({
   facing, turret: s.turret, tick, animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints),
 });
@@ -248,8 +251,19 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
           ctx.lineWidth = Math.round(2 * dpr);
           ctx.strokeRect(Math.round(x0 * dpr), Math.round(h.y0 * dpr) + ctx.lineWidth / 2, Math.round(gridW * dpr), Math.round((h.y1 - h.y0) * dpr) - ctx.lineWidth);
         }
+        const v = versions[h.index];
+        const mid = Math.round(((h.y0 + h.y1) / 2) * dpr);
         ctx.fillStyle = isFocus ? "#f0eee6" : "#9c9c91";
-        ctx.fillText(versions[h.index].label, Math.round(pad * dpr), Math.round(((h.y0 + h.y1) / 2) * dpr));
+        ctx.fillText(v.label, Math.round(pad * dpr), v.reference ? mid - Math.round(9 * dpr) : mid);
+        if (v.reference) {
+          // The original unit's name under "Reference", cut to the gutter.
+          ctx.font = `500 ${Math.round(12 * dpr)}px ${getComputedStyle(canvas).fontFamily}`;
+          let name = v.reference.name;
+          while (name.length > 3 && ctx.measureText(name).width > (gutter + pad - 16) * dpr) name = name.slice(0, -2).trimEnd() + "…";
+          ctx.fillStyle = "#73776d";
+          ctx.fillText(name, Math.round(pad * dpr), mid + Math.round(9 * dpr));
+          ctx.font = `600 ${Math.round(14 * dpr)}px ${getComputedStyle(canvas).fontFamily}`;
+        }
       }
       drawn.current.rows = hits;
       return;
@@ -439,15 +453,15 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       {compare === "side" && pair ? (
         <>
           <span className="lab-tag lab-pane-tag">{versions[pair[0]].label}</span>
-          <span className="lab-tag lab-pane-tag is-right-half">{partner?.label}</span>
+          <span className="lab-tag lab-pane-tag is-right-half">{tagText(partner)}</span>
         </>
       ) : compare === "swipe" && pair ? (
         <>
           <span className="lab-tag lab-pane-tag">{versions[pair[0]].label}</span>
-          <span className="lab-tag lab-pane-tag is-right">{partner?.label}</span>
+          <span className="lab-tag lab-pane-tag is-right">{tagText(partner)}</span>
           <button ref={handleRef} type="button" className="lab-swipe-handle" aria-label="Drag to compare" />
         </>
-      ) : compare === "single" ? <span className="lab-tag lab-pane-tag">{focused?.label}</span> : null}
+      ) : compare === "single" ? <span className="lab-tag lab-pane-tag">{tagText(focused)}</span> : null}
 
       {allowCompare && (
         <div className="lab-corner is-tr">

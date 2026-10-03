@@ -43,3 +43,6 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+
+# Original RA2 files extracted for the dev-only Review (EA copyright; never committed or published)
+/.cache/

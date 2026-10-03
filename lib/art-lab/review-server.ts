@@ -6,6 +6,9 @@
  *   GET  /state                 units, candidates, review.json, local references
  *   GET  /file?path=<relative>  a file inside RTSAI-Art (read-only, path-checked)
  *   POST /action                approve / reject / comment / status -> review.json
+ *   GET  /roster                every faction's build roster, with original RA2 units resolved (originals.ts)
+ *   GET  /ra2/<name>            an original RA2 file from the local, gitignored cache (EA copyright: never
+ *                               published; this route, like the others, does not exist in production)
  *
  * RTSAI-Art files are read in place; nothing is copied into public/.
  */
@@ -13,6 +16,7 @@ import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileS
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { applyReviewAction, migrateEntry, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
+import { cachedFile, rosterPayload, SAFE_NAME, type OriginalsConfig } from "./originals";
 import { reviewEnabled } from "./review-gate";
 
 const TYPES: Record<string, string> = {
@@ -128,7 +132,7 @@ function isLocalRequest(req: IncomingMessage) {
   return true;
 }
 
-export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV }: { root: string; env?: string }) {
+export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, originals = null }: { root: string; env?: string; originals?: OriginalsConfig | null }) {
   const workspace = resolve(root);
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (!reviewEnabled(env)) return send(res, 404, { error: "Not found" });
@@ -137,6 +141,19 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV }: 
       const path = url.pathname.replace(/^\/api\/art-review/, "") || "/";
       if (!isLocalRequest(req)) return send(res, 403, { error: "Review mode only answers local requests" });
       if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace));
+      if (req.method === "GET" && path === "/roster") {
+        if (!originals) return send(res, 404, { error: "Original units are not configured" });
+        return send(res, 200, await rosterPayload(originals, url.searchParams.has("refresh")));
+      }
+      if (req.method === "GET" && path.startsWith("/ra2/")) {
+        const name = decodeURIComponent(path.slice(5));
+        const file = originals && SAFE_NAME.test(name) ? cachedFile(originals, name) : null;
+        if (!file) return send(res, 404, { error: "No such file" });
+        res.setHeader("Cache-Control", "private, max-age=3600");
+        res.statusCode = 200;
+        res.setHeader("Content-Type", name.endsWith(".png") ? "image/png" : "application/octet-stream");
+        return res.end(readFileSync(file));
+      }
       if (req.method === "GET" && path === "/file") {
         const target = safeResolve(workspace, url.searchParams.get("path") ?? "");
         if (!target || !existsSync(target) || !statSync(target).isFile()) return send(res, 404, { error: "No such file" });

@@ -20,6 +20,12 @@ export type ModReader = {
   exists(path: string): boolean;
 };
 
+/**
+ * Optional access to original RA2 files (dev-only Review, never the public sync): `record` returns a key for a
+ * bare RA2 filename such as `gi.shp` when the file is available locally, else null; `bytes` reads it.
+ */
+export type Ra2Hook = { record(name: string): string | null; bytes(name: string): Uint8Array };
+
 export const MODERN_FACTIONS = ["china", "iran", "turkey", "saudi", "yemen"] as const;
 export const MOD_DIR = "mods/rtsai";
 export const ART_DIR = `${MOD_DIR}/modern-factions`;
@@ -187,45 +193,7 @@ export function resolveArtLab(reader: ModReader, data: ModData): Resolution {
     const prereqs = list(childValue(buildable, "Prerequisites"));
     const faction = factions.find(f => prereqs.includes(`~faction.${f.id}`));
     if (!faction) continue;
-
-    const message = (key: string | null) => (key ? data.messages.get(key) ?? key : "");
-    const tooltip = child(actor, "Tooltip")?.value;
-    const queue = list(childValue(buildable, "Queue"));
-    const category = categorize(actor, queue);
-    const strategic = child(actor, "StrategicRole")?.value;
-    const renderSprites = child(actor, "RenderSprites")?.value;
-    const factionImages = child(renderSprites, "FactionImages")?.value;
-    const spriteImage = (childValue(factionImages, faction.id) ?? childValue(renderSprites, "Image") ?? name).toLowerCase();
-
-    // Cameo: Buildable.Icon sequence of the sprite image.
-    const iconSequence = childValue(buildable, "Icon") ?? "icon";
-    const cameoRef = sequenceFile(data, spriteImage, iconSequence);
-    const cameo = { sequence: iconSequence, file: null as string | null, external: null as ExternalRef | null };
-    if (cameoRef.path && provenanceKey(cameoRef.path)) cameo.file = recordFile(cameoRef.path);
-    else cameo.external = { ref: cameoRef.ref ?? `${spriteImage}.${iconSequence}`, reason: cameoRef.reason ?? "not modern-faction art" };
-
-    const renderVoxels = child(actor, "RenderVoxels")?.value;
-    const voxel = renderVoxels ? resolveVoxel(reader, data, actor, renderVoxels, name, palettes, normalsTypes, recordFile) : null;
-    const sprite = !renderVoxels ? resolveSprite(reader, data, actor, spriteImage, renderSprites, recordFile) : null;
-
-    const art: Resolution["actors"][string] = {
-      id: name, factionId: faction.id,
-      name: message(childValue(tooltip, "Name")),
-      description: message(childValue(buildable, "Description")),
-      category, domain: childValue(strategic, "Domain"), roles: list(childValue(strategic, "Roles")),
-      queue, buildPaletteOrder: num(childValue(buildable, "BuildPaletteOrder"), 9999),
-      cost: child(actor, "Valued") ? num(childValue(child(actor, "Valued")!.value, "Cost"), 0) : null,
-      cameo, render: voxel ? "voxel" : "sprite", voxel, sprite,
-      files: [], definedIn: data.ruleSources.get(name) ?? "",
-    };
-    const used = new Set<string>();
-    if (cameo.file) used.add(cameo.file);
-    voxel?.parts.forEach(p => { if (p.model.vxl) used.add(p.model.vxl); if (p.model.hva) used.add(p.model.hva); });
-    voxel?.unusedSequences.forEach(s => { if (s.vxl) { used.add(s.vxl); used.add(s.vxl.replace(/\.vxl$/, ".hva")); } });
-    if (voxel) { const p = palettes[voxel.palette]; if (p?.file) used.add(p.file); }
-    sprite?.sequences.forEach(s => { if (s.file) used.add(s.file); });
-    if (sprite) { const p = palettes[sprite.palette]; if (p?.file) used.add(p.file); }
-    art.files = [...used].sort();
+    const art = resolveActor(reader, data, name, actor, faction.id, { palettes, normalsTypes, recordFile });
     actors[name] = art;
     faction.actors.push(name);
   }
@@ -237,7 +205,71 @@ export function resolveArtLab(reader: ModReader, data: ModData): Resolution {
   return { factions, actors, palettes: Object.fromEntries(Object.entries(palettes).filter(([, p]) => p.file)), files, presetColors, shadowColor };
 }
 
-function categorize(actor: Yaml, queue: string[]): ArtCategory {
+type ResolvedActor = Omit<ActorArt, "generator" | "catalogUnitId">;
+
+/** How one actor is drawn: palettes in scope, where its files are recorded, and (Review only) RA2 file access. */
+export type ActorContext = {
+  palettes: Record<string, PaletteRef>;
+  normalsTypes: Map<string, "RedAlert2" | "TiberianSun">;
+  recordFile: (modPath: string) => string;
+  ra2?: Ra2Hook;
+};
+
+/** Resolves one buildable actor's art (cameo, voxel parts or sprite sequences) the way the game draws it. */
+export function resolveActor(reader: ModReader, data: ModData, name: string, actor: Yaml, factionId: string | null, ctx: ActorContext): ResolvedActor {
+  const { palettes, normalsTypes, recordFile, ra2 } = ctx;
+  const buildable = child(actor, "Buildable")?.value;
+
+  const message = (key: string | null) => (key ? data.messages.get(key) ?? key : "");
+  const tooltip = child(actor, "Tooltip")?.value;
+  const queue = list(childValue(buildable, "Queue"));
+  const category = categorize(actor, queue);
+  const strategic = child(actor, "StrategicRole")?.value;
+  const renderSprites = child(actor, "RenderSprites")?.value;
+  const factionImages = child(renderSprites, "FactionImages")?.value;
+  const spriteImage = ((factionId ? childValue(factionImages, factionId) : null) ?? childValue(renderSprites, "Image") ?? name).toLowerCase();
+
+  // Cameo: Buildable.Icon sequence of the sprite image.
+  const iconSequence = childValue(buildable, "Icon") ?? "icon";
+  const cameoRef = sequenceFile(data, spriteImage, iconSequence);
+  const cameo = { sequence: iconSequence, file: null as string | null, external: null as ExternalRef | null };
+  const ra2Cameo = !cameoRef.path && ra2 && cameoRef.ref && !cameoRef.ref.includes("|") ? ra2.record(cameoRef.ref.toLowerCase()) : null;
+  if (cameoRef.path && provenanceKey(cameoRef.path)) cameo.file = recordFile(cameoRef.path);
+  else if (ra2Cameo) cameo.file = ra2Cameo;
+  else cameo.external = { ref: cameoRef.ref ?? `${spriteImage}.${iconSequence}`, reason: cameoRef.reason ?? "not modern-faction art" };
+
+  const renderVoxels = child(actor, "RenderVoxels")?.value;
+  const voxel = renderVoxels ? resolveVoxel(reader, data, actor, renderVoxels, name, palettes, normalsTypes, recordFile, ra2) : null;
+  const sprite = !renderVoxels ? resolveSprite(reader, data, actor, spriteImage, renderSprites, recordFile, ra2) : null;
+
+  const art: ResolvedActor = {
+    id: name, factionId: factionId ?? "",
+    name: message(childValue(tooltip, "Name")),
+    description: message(childValue(buildable, "Description")),
+    category, domain: childValue(strategic, "Domain"), roles: list(childValue(strategic, "Roles")),
+    queue, buildPaletteOrder: num(childValue(buildable, "BuildPaletteOrder"), 9999),
+    cost: child(actor, "Valued") ? num(childValue(child(actor, "Valued")!.value, "Cost"), 0) : null,
+    cameo, render: voxel ? "voxel" : "sprite", voxel, sprite,
+    files: [], definedIn: data.ruleSources.get(name) ?? "",
+  };
+  const used = new Set<string>();
+  if (cameo.file) used.add(cameo.file);
+  voxel?.parts.forEach(p => { if (p.model.vxl) used.add(p.model.vxl); if (p.model.hva) used.add(p.model.hva); });
+  voxel?.unusedSequences.forEach(s => { if (s.vxl) { used.add(s.vxl); used.add(s.vxl.replace(/\.vxl$/, ".hva")); } });
+  if (voxel) { const p = palettes[voxel.palette]; if (p?.file) used.add(p.file); }
+  sprite?.sequences.forEach(s => { if (s.file) used.add(s.file); });
+  if (sprite) { const p = palettes[sprite.palette]; if (p?.file) used.add(p.file); }
+  art.files = [...used].sort();
+  return art;
+}
+
+/** Palettes, normals and the shadow colour defined on the World actor (modern-faction files only). */
+export function worldNormals(data: ModData) {
+  const world = data.rules.get("world");
+  return new Map(traits(world!, "VoxelNormalsPalette").map(([, n]) => [childValue(n.value, "Name") ?? "normals", (childValue(n.value, "Type") ?? "TiberianSun") as "RedAlert2" | "TiberianSun"]));
+}
+
+export function categorize(actor: Yaml, queue: string[]): ArtCategory {
   if (child(actor, "Building")) return queue.some(q => /support|defen/i.test(q)) ? "defense" : "structure";
   if (child(actor, "Aircraft")) return "aircraft";
   if (queue.includes("Ship") || /naval|submarine/.test(childValue(child(actor, "Mobile")?.value, "Locomotor") ?? "")) return "ship";
@@ -256,7 +288,21 @@ function sequenceFile(data: ModData, image: string, sequence: string): { path: s
   return { path, ref: filename, reason: path && !provenanceKey(path) ? "mod or engine file outside modern-factions (not faction art)" : reason };
 }
 
-function resolveModel(reader: ModReader, data: ModData, image: string, sequence: string, recordFile: (p: string) => string): VoxelModelRef {
+function describeModel(ref: VoxelModelRef, vxlBytes: Uint8Array, hvaBytes: Uint8Array) {
+  const model = decodeVxl(vxlBytes);
+  const anim = decodeHva(hvaBytes);
+  ref.problems = checkVxl(model);
+  if (model.limbCount !== anim.sectionCount) ref.problems.push(`VXL has ${model.limbCount} sections but HVA has ${anim.sectionCount} (OpenRA refuses to load this)`);
+  ref.frames = anim.frameCount;
+  ref.sections = model.limbs.map(l => {
+    let remap = 0;
+    for (let i = 0; i < l.colors.length; i++) if (l.filled[i] && l.colors[i] >= 16 && l.colors[i] <= 31) remap++;
+    return { name: l.name, scale: l.scale, size: l.size, bounds: l.bounds, normalsMode: l.normalsMode, voxels: l.voxelCount, remapVoxels: remap };
+  });
+  return ref;
+}
+
+function resolveModel(reader: ModReader, data: ModData, image: string, sequence: string, recordFile: (p: string) => string, ra2?: Ra2Hook): VoxelModelRef {
   const ref: VoxelModelRef = { sequence, vxl: null, hva: null, external: null, sections: [], frames: 0, problems: [] };
   const definition = data.modelSequences.get(image);
   const node = child(definition, sequence);
@@ -269,27 +315,26 @@ function resolveModel(reader: ModReader, data: ModData, image: string, sequence:
   const vxlKey = vxl.path ? provenanceKey(`${vxl.path}.vxl`) : null;
   const hvaKey = hva.path ? provenanceKey(`${hva.path}.hva`) : null;
   if (!vxlKey || !hvaKey) {
+    if (ra2 && !vxlRef.includes("|") && !hvaRef.includes("|")) {
+      const vName = `${vxlRef}.vxl`.toLowerCase(), hName = `${hvaRef}.hva`.toLowerCase();
+      const vk = ra2.record(vName), hk = ra2.record(hName);
+      if (vk && hk) {
+        ref.vxl = vk;
+        ref.hva = hk;
+        return describeModel(ref, ra2.bytes(vName), ra2.bytes(hName));
+      }
+    }
     ref.external = { ref: `${vxlRef}.vxl`, reason: vxl.reason ?? hva.reason ?? "outside modern-factions" };
     return ref;
   }
   ref.vxl = recordFile(`${vxl.path}.vxl`);
   ref.hva = recordFile(`${hva.path}.hva`);
-  const model = decodeVxl(reader.bytes(`${vxl.path}.vxl`));
-  const anim = decodeHva(reader.bytes(`${hva.path}.hva`));
-  ref.problems = checkVxl(model);
-  if (model.limbCount !== anim.sectionCount) ref.problems.push(`VXL has ${model.limbCount} sections but HVA has ${anim.sectionCount} (OpenRA refuses to load this)`);
-  ref.frames = anim.frameCount;
-  ref.sections = model.limbs.map(l => {
-    let remap = 0;
-    for (let i = 0; i < l.colors.length; i++) if (l.filled[i] && l.colors[i] >= 16 && l.colors[i] <= 31) remap++;
-    return { name: l.name, scale: l.scale, size: l.size, bounds: l.bounds, normalsMode: l.normalsMode, voxels: l.voxelCount, remapVoxels: remap };
-  });
-  return ref;
+  return describeModel(ref, reader.bytes(`${vxl.path}.vxl`), reader.bytes(`${hva.path}.hva`));
 }
 
 function resolveVoxel(
   reader: ModReader, data: ModData, actor: Yaml, rv: Yaml, name: string, palettes: Record<string, PaletteRef>,
-  normalsTypes: Map<string, "RedAlert2" | "TiberianSun">, recordFile: (p: string) => string,
+  normalsTypes: Map<string, "RedAlert2" | "TiberianSun">, recordFile: (p: string) => string, ra2?: Ra2Hook,
 ): VoxelArt {
   const image = (childValue(rv, "Image") ?? name).toLowerCase();
   const body = child(actor, "BodyOrientation")?.value;
@@ -314,7 +359,7 @@ function resolveVoxel(
     const label = trait.replace(/^WithVoxel/, "").replace(/Body$/, " body").trim().toLowerCase() || "body";
     parts.push({
       id: `${trait}${instance ? "@" + instance : ""}`, label: instance ? `${label} (${instance})` : label, trait,
-      model: resolveModel(reader, data, image, sequence, recordFile),
+      model: resolveModel(reader, data, image, sequence, recordFile, ra2),
       offset: parseVec3(childValue(node.value, "Offset")),
       showShadow: bool(childValue(node.value, "ShowShadow"), true),
       requiresCondition: childValue(node.value, "RequiresCondition"),
@@ -348,7 +393,7 @@ function resolveVoxel(
   const usedSequences = new Set(parts.map(p => p.model.sequence));
   const definition = data.modelSequences.get(image);
   const unusedSequences = (definition?.nodes ?? []).filter(n => !usedSequences.has(n.key)).map(n => {
-    const m = resolveModel(reader, data, image, n.key, recordFile);
+    const m = resolveModel(reader, data, image, n.key, recordFile, ra2);
     return { sequence: n.key, vxl: m.vxl, external: m.external };
   });
   const playerPalette = childValue(rv, "PlayerPalette") ?? "player";
@@ -373,7 +418,7 @@ function resolveVoxel(
   };
 }
 
-function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: string, renderSprites: Yaml | undefined, recordFile: (p: string) => string): SpriteArt {
+function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: string, renderSprites: Yaml | undefined, recordFile: (p: string) => string, ra2?: Ra2Hook): SpriteArt {
   const img = data.sequences.get(image);
   const defaults = child(img, "Defaults")?.value;
   const raw = data.rawSequenceKeys.get(image) ?? new Set<string>();
@@ -438,7 +483,16 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
           const decoded = decodeShp(reader.bytes(path!));
           shp = { width: decoded.width, height: decoded.height, frames: decoded.frames.length, compression: [...new Set(decoded.frames.map(f => f.compression))].sort() };
         }
-      } else entry.external = { ref: filename, reason: reason ?? "mod or engine file outside modern-factions (not faction art)" };
+      } else {
+        const ra2Key = ra2 && !filename.includes("|") ? ra2.record(filename.toLowerCase()) : null;
+        if (ra2Key) {
+          entry.file = ra2Key;
+          if (/\.shp$/i.test(filename) && !shp) {
+            const decoded = decodeShp(ra2!.bytes(filename.toLowerCase()));
+            shp = { width: decoded.width, height: decoded.height, frames: decoded.frames.length, compression: [...new Set(decoded.frames.map(f => f.compression))].sort() };
+          }
+        } else entry.external = { ref: filename, reason: reason ?? "mod or engine file outside modern-factions (not faction art)" };
+      }
     } else entry.external = { ref: `${image}.${node.key}`, reason: "no Filename: loaded from RA2 game data by image name" };
     sequences.push(entry);
   }

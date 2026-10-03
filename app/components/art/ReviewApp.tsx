@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { candidatesForSlot, emptyEntry, needsDecision, slotIds, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId } from "../../../lib/art-lab/review";
+import { candidatesForSlot, emptyEntry, needsDecision, slotIds, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type UnitWorkspace } from "../../../lib/art-lab/review";
 import { reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
 import { useFeedbackStore } from "../../../lib/stores/feedback-store";
-import { CoachMark, slotNames, TopBar, UnitRail, type RailRow } from "./review/Chrome";
+import type { RosterPayload } from "../../../lib/art-lab/originals";
+import { CoachMark, railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
@@ -19,6 +20,13 @@ import "./review/review.css";
 export type { ReviewUnit } from "./review/versions";
 
 const API = "/api/art-review";
+
+type Row = { unit: ReviewUnit; ws: UnitWorkspace | undefined; entry: ReviewEntry | undefined; count: number; needs: boolean; origin: Origin };
+/** "main-battle-tank" -> "Main battle tank"; falls back to the category. */
+const roleText = (roles: string[], category: string) => {
+  const text = (roles[0] ?? category).replace(/-/g, " ");
+  return text[0].toUpperCase() + text.slice(1);
+};
 const railKey = "rtsai-art-review-rail";
 
 async function post(action: ReviewAction): Promise<ReviewEntry> {
@@ -36,7 +44,9 @@ async function post(action: ReviewAction): Promise<ReviewEntry> {
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
   const [state, setState] = useState<ReviewState | null>(null);
   const [error, setError] = useState("");
-  const [faction, setFaction] = useState("all");
+  const [faction, setFaction] = useState<string | null>(null);
+  const [filter, setFilter] = useState<RailFilter>("all");
+  const [roster, setRoster] = useState<RosterPayload | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [slot, setSlot] = useState<SlotId>("model");
   const [focusKey, setFocusKey] = useState("current");
@@ -92,6 +102,15 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     window.addEventListener("focus", onFocus);
     return () => { clearTimeout(first); window.removeEventListener("focus", onFocus); };
   }, [load]);
+  // Every faction's roster, with original RA2 units served from the local cache (dev only).
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API}/roster`, { cache: "no-store" })
+      .then(r => (r.ok ? r.json() as Promise<RosterPayload> : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(r => { if (!cancelled) setRoster(r); })
+      .catch(cause => { if (!cancelled) setToast(`Original units unavailable: ${cause instanceof Error ? cause.message : String(cause)}`); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Deep links: /art/review?unit=r2qilin&slot=model&v=sprite-v2 (kept in the address bar as you move).
   useEffect(() => {
@@ -99,7 +118,9 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const unit = params.get("unit");
     const slotParam = params.get("slot") as SlotId | null;
     const v = params.get("v");
+    const factionParam = params.get("faction");
     const id = setTimeout(() => {
+      if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
       if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
       if (v) setFocusKey(v);
@@ -108,21 +129,63 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }, []);
 
   const workspace = useMemo(() => new Map((state?.units ?? []).map(u => [u.actor, u])), [state]);
-  const rows = useMemo(() => units.map(u => {
+  const rowFor = useCallback((u: ReviewUnit): Row => {
     const ws = workspace.get(u.id);
     const entry = state?.review[u.id];
     const count = slotIds.reduce((n, s) => n + candidatesForSlot(ws, s).length, 0);
-    return { unit: u, ws, entry, count, needs: needsDecision(ws, entry) };
-  }), [units, workspace, state]);
-  const queue = useMemo(() => rows.filter(r => r.count > 0), [rows]);
-  const shown = useMemo(() => queue.filter(r => faction === "all" || r.unit.factionId === faction), [queue, faction]);
-  const railRows: RailRow[] = useMemo(() => shown.map(r => ({ unit: r.unit, needs: r.needs })), [shown]);
-  const factions = useMemo(() => [...new Map(queue.map(r => [r.unit.factionId, r.unit.factionName])).entries()], [queue]);
+    return { unit: u, ws, entry, count, needs: needsDecision(ws, entry), origin: u.origin ?? "new" };
+  }, [workspace, state]);
+  // Every unit by id: our new units (page data) and the original RA2 units (dev API).
+  const unitIndex = useMemo(() => {
+    const m = new Map<string, ReviewUnit>(units.map(u => [u.id, { ...u, origin: "new" as const }]));
+    for (const [id, s] of Object.entries(roster?.stock ?? {})) {
+      if (m.has(id)) continue;
+      const info = s.info;
+      const category = info?.category ?? s.spec.category;
+      m.set(id, {
+        id, factionId: "", factionName: "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
+        queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits,
+      });
+    }
+    return m;
+  }, [units, roster]);
+  const rosterInfo = useMemo(() => new Map((roster?.factions ?? []).flatMap(f => f.units.map(u => [`${f.id}:${u.id}`, u] as const))), [roster]);
+  const rows = useMemo(() => units.map(u => rowFor({ ...u, origin: "new" })), [units, rowFor]);
+  const factionIds = useMemo(() => (roster?.factions.map(f => f.id) ?? [...new Set(units.map(u => u.factionId))]), [roster, units]);
+  // Each faction's whole roster (new and original units), in build-palette order; new units only until it loads.
+  const rostersById = useMemo(() => new Map(factionIds.map(id => {
+    const f = roster?.factions.find(x => x.id === id);
+    const ids = f ? f.units.map(u => u.id) : units.filter(u => u.factionId === id).map(u => u.id);
+    return [id, ids.flatMap(i => { const u = unitIndex.get(i); return u ? [rowFor(u)] : []; })] as const;
+  })), [factionIds, roster, units, unitIndex, rowFor]);
+  const factionSummaries: FactionSummary[] = useMemo(() => factionIds.map(id => {
+    const list = rostersById.get(id) ?? [];
+    const withCandidates = list.filter(r => r.count > 0);
+    const name = roster?.factions.find(f => f.id === id)?.name ?? units.find(u => u.factionId === id)?.factionName ?? id;
+    return { id, name, units: list.length, withCandidates: withCandidates.length, decided: withCandidates.filter(r => !r.needs).length };
+  }), [factionIds, rostersById, roster, units]);
+  const factionId = faction && factionIds.includes(faction) ? faction
+    : factionSummaries.find(f => (rostersById.get(f.id) ?? []).some(r => r.needs))?.id ?? factionIds[0] ?? "china";
+  const factionName = factionSummaries.find(f => f.id === factionId)?.name ?? factionId;
+  const factionRows = useMemo(() => rostersById.get(factionId) ?? [], [rostersById, factionId]);
+  const railRows: RailRow[] = useMemo(() => factionRows.map(r => ({ unit: r.unit, origin: r.origin, count: r.count, needs: r.needs })), [factionRows]);
+  const visibleRows = useMemo(() => {
+    const test = railFilters.find(f => f.id === filter)?.test ?? (() => true);
+    return railRows.filter(test);
+  }, [railRows, filter]);
   const progress = reviewProgress(rows);
-  const current = rows.find(r => r.unit.id === selected) ?? shown.find(r => r.needs) ?? shown[0] ?? queue[0] ?? null;
-  const unit = current?.unit ?? null;
+  const selectedUnit = selected ? unitIndex.get(selected) : undefined;
+  const current = selectedUnit ? rowFor(selectedUnit)
+    : factionRows.find(r => r.needs) ?? factionRows.find(r => r.count > 0) ?? factionRows[0] ?? null;
+  const currentUnit = current?.unit ?? null;
+  // Original units are shared by several factions; show them in the faction being browsed.
+  const unit = useMemo(() => (currentUnit ? { ...currentUnit, factionId: currentUnit.factionId || factionId, factionName: currentUnit.factionName || factionName } : null), [currentUnit, factionId, factionName]);
   const ws = current?.ws;
-  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot) : []), [unit, ws, slot]);
+  const info = unit ? rosterInfo.get(`${factionId}:${unit.id}`) ?? [...rosterInfo.entries()].find(([k]) => k.endsWith(`:${unit.id}`))?.[1] : undefined;
+  const reference = info?.reference ? unitIndex.get(info.reference) ?? null : null;
+  const paletteUnits = useMemo(() => factionRows.map(r => ({ ...r.unit, factionId })), [factionRows, factionId]);
+  const unitKey = unit?.id ?? null;
+  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference) : []), [unit, ws, slot, reference]);
   const focus = Math.max(0, versions.findIndex(v => v.key === focusKey));
   const focused = versions[focus] ?? null;
   const entry = current?.entry ?? emptyEntry();
@@ -132,20 +195,25 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const conceptCurrent = useMemo(() => versions.slice(0, 1), [versions]);
   const currentItem = unit ? stageItem(unit, null) : null;
   const radius = useUnitRadius(frames, slot === "icon" ? null : currentItem, tints);
-  const thumbZoom = radius !== null && radius <= 26 ? 2 : 1;
+  // Thumbnails at the largest whole zoom that keeps the unit's turning circle inside the card.
+  const thumbZoom = radius === null ? 1 : Math.max(1, Math.min(3, Math.floor(104 / (2 * radius))));
+  // The lineup already lists every version as a clickable row, so it takes the filmstrip's height.
+  const compareMode = useLab(s => s.compare);
+  const lineupOnly = compareMode === "lineup" && slot !== "concept" && versions.length > 1;
   const comments = useMemo(() => entry.comments.slice().reverse(), [entry]);
   const forgeRecommendation = (entry.forgeRecommendation ?? {}) as Record<string, string>;
   const forgePick = focused?.candidate ? forgeRecommendation[String(focused.candidate.kind)] ?? null : null;
 
   // Keep the address bar in step for deep links.
   useEffect(() => {
-    if (!unit) return;
+    if (!unitKey) return;
     const url = new URL(window.location.href);
-    url.searchParams.set("unit", unit.id);
+    url.searchParams.set("faction", factionId);
+    url.searchParams.set("unit", unitKey);
     url.searchParams.set("slot", slot);
     if (focusKey !== "current") url.searchParams.set("v", focusKey); else url.searchParams.delete("v");
     window.history.replaceState(null, "", url);
-  }, [unit, slot, focusKey]);
+  }, [unitKey, factionId, slot, focusKey]);
 
   // Preload the neighbours of the focused version (models warm in the stage's frame cache).
   useEffect(() => {
@@ -168,12 +236,14 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }, [toast]);
 
   const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey("current"); setLab({ zoom: null }); }, []);
+  const changeFaction = useCallback((id: string) => { setFaction(id); setSelected(null); setFocusKey("current"); setLab({ zoom: null }); }, []);
   const changeSlot = useCallback((s: SlotId) => { setSlot(s); setFocusKey("current"); setLab({ zoom: null }); }, []);
   const focusIndex = useCallback((i: number) => { const v = versions[i]; if (v) setFocusKey(v.key); }, [versions]);
 
   const view = () => {
     const s = useLab.getState();
-    return `${slotNames[slot]} · ${focused?.label ?? ""}${slot === "model" ? ` · facing ${s.facing} (${facingLabel(s.facing)})` : ""}`;
+    const ref = focused?.reference ? ` (${focused.reference.id})` : "";
+    return `${slotNames[slot]} · ${focused?.label ?? ""}${ref}${slot === "model" ? ` · facing ${s.facing} (${facingLabel(s.facing)})` : ""}`;
   };
   const send = async (action: ReviewAction, message: string) => {
     setBusy(true);
@@ -200,8 +270,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   } : null;
 
   // Keyboard: one listener reading the latest render through a ref.
-  const keys = useRef({ railRows, unit, versions, focus, focused, decision, decide, slot, help });
-  useEffect(() => { keys.current = { railRows, unit, versions, focus, focused, decision, decide, slot, help }; });
+  // Original units and references are for comparison only: no Use, Keep or Reject.
+  const referenceOnly = unit?.origin === "original" || focused?.kind === "reference";
+  const keys = useRef({ visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly });
+  useEffect(() => { keys.current = { visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly }; });
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -212,9 +284,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       const candidate = k.focused?.candidate ?? null;
       const handled = () => event.preventDefault();
       const goUnit = (delta: number) => {
-        if (!k.railRows.length) return;
-        const index = k.railRows.findIndex(r => r.unit.id === k.unit?.id);
-        const next = k.railRows[((index < 0 ? 0 : index + delta) + k.railRows.length) % k.railRows.length];
+        const list = k.visibleRows;
+        if (!list.length) return;
+        const index = list.findIndex(r => r.unit.id === k.unit?.id);
+        const next = list[((index < 0 ? 0 : index + delta) + list.length) % list.length];
         selectUnit(next.unit.id);
       };
       if (key === "j") { goUnit(1); handled(); }
@@ -222,6 +295,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       else if (key === "ArrowRight") { const v = k.versions[Math.min(k.versions.length - 1, k.focus + 1)]; if (v) setFocusKey(v.key); handled(); }
       else if (key === "ArrowLeft") { const v = k.versions[Math.max(0, k.focus - 1)]; if (v) setFocusKey(v.key); handled(); }
       else if (key === "1" || key === "2" || key === "3") { changeSlot(slotIds[Number(key) - 1]); handled(); }
+      else if ((key === "u" || key === "n" || key === "r") && k.referenceOnly) handled();
       else if (key === "u" && k.decide) {
         if (candidate) k.decide.choose(candidate.id); else if (k.slot !== "concept") k.decide.choose("current");
         handled();
@@ -239,7 +313,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   let stage: React.ReactNode = null;
   if (unit && focused) {
     if (slot === "model") stage = <ModelStage versions={versions} focus={focus} allowCompare frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
-    else if (slot === "icon") stage = <IconStage versions={versions} focus={focus} unit={unit} units={units} onFocus={focusIndex} />;
+    else if (slot === "icon") stage = <IconStage versions={versions} focus={focus} unit={unit} units={paletteUnits} onFocus={focusIndex} />;
     else if (focused.key === "current") stage = <ModelStage versions={conceptCurrent} focus={0} allowCompare={false} frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
     else stage = <ConceptStage version={focused} />;
   }
@@ -248,13 +322,14 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     <div className="lab">
       <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
-        <UnitRail rows={railRows} selected={unit?.id ?? null} faction={faction} factions={factions} onFaction={setFaction} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />
+        <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
+          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />
         <main className="lab-main" id="main-content">
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
-            : !unit ? <p className="lab-empty">No candidates yet.</p>
+            : !unit ? <p className="lab-empty">No units.</p>
             : stage}
-          {unit && focused && (
+          {unit && focused && !lineupOnly && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} />
           )}
@@ -262,7 +337,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
         </main>
         {unit && focused && decide ? (
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
-            busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} />
+            busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         ) : <aside className="lab-panel" />}
       </div>
       <CoachMark />

@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 async function render(pathname) {
@@ -71,5 +74,28 @@ test("public faction and unit pages embed the shared viewers; three.js loads onl
       const before = source.slice(Math.max(0, m.index - 20), m.index);
       assert.ok(/(import\([`"]\.\/|_next\/static\/chunks\/)$/.test(before), `${chunk} loads three.js dynamically only`);
     }
+  }
+});
+
+// Original RA2 files (EA copyright) live only in the gitignored .cache/ and are served only by the dev API.
+test("no original RA2 file reaches the production build (by name or by content)", async () => {
+  assert.equal((await render("/api/art-review/roster")).status === 200, false, "the roster API does not exist in production");
+  assert.equal((await render("/api/art-review/ra2/gi.shp")).status === 200, false);
+  const dist = fileURLToPath(new URL("../dist/", import.meta.url));
+  const walk = dir => readdirSync(dir).flatMap(name => {
+    const path = join(dir, name);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+  const built = walk(dist);
+  const cache = fileURLToPath(new URL("../.cache/ra2-originals/files/", import.meta.url));
+  const originals = existsSync(cache) ? readdirSync(cache) : [];
+  const hash = path => createHash("sha256").update(readFileSync(path)).digest("hex");
+  const originalHashes = new Set(originals.map(name => hash(join(cache, name))));
+  const names = new Set(originals.map(n => n.toLowerCase()));
+  for (const path of built) {
+    const base = basename(path).toLowerCase();
+    assert.ok(!names.has(base), `${path} has the name of an original RA2 file`);
+    assert.ok(!originalHashes.has(hash(path)), `${path} is byte-identical to an original RA2 file`);
+    if (/\.(js|mjs|css|html|json)$/.test(path)) assert.doesNotMatch(readFileSync(path, "utf8"), /ra2-originals|\/api\/art-review\/ra2\//, `${path} references the originals cache or route`);
   }
 });

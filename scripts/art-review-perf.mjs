@@ -6,12 +6,14 @@
  *   PLAYWRIGHT_CORE=<path to a playwright-core package> CHROME_PATH=<chrome.exe> \
  *     node scripts/art-review-perf.mjs [http://localhost:3461] [--json out.json]
  *
- * Measures, per unit (r2qilin: voxels + sprite candidates; r2sang: infantry sprite):
+ * Measures, per unit (r2qilin in China, the largest roster: voxels + sprite candidates + its RA2 Reference;
+ * r2sang: infantry sprite; mtnk: an original RA2 voxel unit; e1: an original RA2 infantry):
  *   - long tasks (PerformanceObserver "longtask") after load, during every interaction;
  *   - drag-rotate with the mouse: frames per second, worst frame gap, and that the facing really changed;
  *   - input-to-paint for clicks and key presses (Event Timing API) on slot, version, compare and 3D switches;
  *   - WebGL contexts created on the page (must be at most 1);
- *   - idle main-thread time (CDP Performance.getMetrics TaskDuration over 4 s with nothing playing).
+ *   - idle main-thread time (CDP Performance.getMetrics TaskDuration over 4 s with nothing playing);
+ *   - the unit rail of the largest faction: picker switches by keyboard, filter chips, J x10, scrolling.
  * Exits non-zero when a budget fails.
  */
 import { createRequire } from "node:module";
@@ -52,7 +54,7 @@ function stats(frames) {
   return { frames: frames.length, fps: total ? Math.round(((frames.length - 1) * 1000) / total) : 0, worstGapMs: Math.round(Math.max(0, ...gaps)) };
 }
 
-async function run(page, client, label, url) {
+async function run(page, client, label, url, rail = false) {
   const out = { unit: label, steps: [] };
   await page.goto(url, { waitUntil: "load" });
   await page.waitForSelector(".lab-stage canvas", { timeout: 20000 });
@@ -77,7 +79,7 @@ async function run(page, client, label, url) {
     const r = await page.evaluate(() => { window.__perf.gen++; return { long: window.__perf.long, events: window.__perf.events, frames: window.__perf.frames }; });
     const s = { name, wallMs: wall, longTasks: r.long.map(l => Math.round(l.ms)), events: r.events.map(e => `${e.name} ${Math.round(e.ms)}`), worstEventMs: Math.round(Math.max(0, ...r.events.map(e => e.ms))), ...stats(r.frames), ...extra };
     out.steps.push(s);
-    console.log(`${label.padEnd(8)} ${name.padEnd(26)} long>50: ${s.longTasks.filter(x => x > BUDGET.longTaskMs).length ? s.longTasks.join(",") : "none"}  input→paint max ${s.worstEventMs} ms  ${s.fps} fps (worst gap ${s.worstGapMs} ms)${extra ? "  " + JSON.stringify(extra) : ""}`);
+    console.log(`${label.padEnd(8)} ${name.padEnd(30)} long>50: ${s.longTasks.filter(x => x > BUDGET.longTaskMs).length ? s.longTasks.join(",") : "none"}  input→paint max ${s.worstEventMs} ms  ${s.fps} fps (worst gap ${s.worstGapMs} ms)${extra ? "  " + JSON.stringify(extra) : ""}`);
     return s;
   };
 
@@ -133,6 +135,39 @@ async function run(page, client, label, url) {
     }, { record: false });
     await step("animation: Stand", async () => { await anim.selectOption({ label: "Stand" }); await page.waitForTimeout(300); });
   }
+  if (rail) {
+    await step("rail: picker → Türkiye → China", async () => {
+      for (const target of ["Türkiye", "China"]) {
+        await page.locator(".lab-picker-btn").focus();
+        await page.keyboard.press("ArrowDown");
+        await page.waitForTimeout(150);
+        for (let i = 0; i < 6; i++) {
+          const name = await page.evaluate(() => document.activeElement?.querySelector("b")?.textContent ?? "");
+          if (name === target) break;
+          await page.keyboard.press("ArrowDown");
+        }
+        await page.keyboard.press("Enter");
+        await page.waitForTimeout(500);
+      }
+      return { units: await page.locator(".lab-rail li").count() };
+    });
+    await step("rail: filter chips", async () => {
+      const seen = {};
+      for (const f of ["Original", "New", "Has candidates", "Needs decision", "All"]) {
+        await page.locator(".lab-filters button", { hasText: f }).click();
+        await page.waitForTimeout(200);
+        seen[f] = await page.locator(".lab-rail li").count();
+      }
+      return seen;
+    });
+    await step("rail: J ×10", async () => { await page.mouse.click(cx, cy - 200); for (let i = 0; i < 10; i++) { await page.keyboard.press("j"); await page.waitForTimeout(120); } });
+    await step("rail: scroll", async () => {
+      const r = await page.locator(".lab-rail").boundingBox();
+      await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2);
+      for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, 240); await page.waitForTimeout(30); }
+      for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, -240); await page.waitForTimeout(30); }
+    });
+  }
   await step("slots 2 → 3 → 1", async () => { for (const k of ["2", "3", "1"]) { await page.keyboard.press(k); await page.waitForTimeout(400); } });
   await step("spin (1.5 s)", async () => { await page.keyboard.press(" "); await page.waitForTimeout(1500); await page.keyboard.press(" "); });
   out.webglContexts = await page.evaluate(() => window.__perf.contexts);
@@ -148,13 +183,18 @@ const browser = await chromium.launch({
 console.log(`Renderer: ${gpu ? "real GPU (ANGLE D3D11)" : "SwiftShader (software)"}`);
 const results = [];
 try {
-  for (const [label, query] of [["r2qilin", "unit=r2qilin&slot=model"], ["r2sang", "unit=r2sang&slot=model"]]) {
+  for (const [label, query, rail] of [
+    ["r2qilin", "faction=china&unit=r2qilin&slot=model", true],
+    ["r2sang", "faction=saudi&unit=r2sang&slot=model"],
+    ["mtnk", "faction=china&unit=mtnk&slot=model"],
+    ["e1", "faction=china&unit=e1&slot=model"],
+  ]) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     await context.addInitScript(init);
     const page = await context.newPage();
     const client = await context.newCDPSession(page);
     await client.send("Performance.enable");
-    results.push(await run(page, client, label, `${base}/art/review?${query}`));
+    results.push(await run(page, client, label, `${base}/art/review?${query}`, rail));
     await context.close();
   }
 } finally {
@@ -172,6 +212,7 @@ for (const r of results) {
     if (s.idleCpuPct !== undefined && s.idleCpuPct > BUDGET.idleCpuPct) failures.push(`${r.unit} idle CPU ${s.idleCpuPct}%`);
     if (s.orbitChanged === false) failures.push(`${r.unit}: orbit drag did not change the 3D view`);
     if (s.facing && s.facing.split(" → ")[0] === s.facing.split(" → ")[1] && s.name === "drag rotate") failures.push(`${r.unit}: drag did not rotate`);
+    if (/rail:/.test(s.name) && s.worstGapMs > 100) failures.push(`${r.unit} ${s.name}: a ${s.worstGapMs} ms frame gap`);
   }
 }
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ budget: BUDGET, results, failures }, null, 2));
