@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtLabChrome } from "../../ArtLabChrome";
-import { UnitArt } from "../../../components/art/UnitArt";
+import { UnitViewer } from "../../../components/art/UnitViewer";
 import { artActor, artFactionById, artLab, categoryLabels, fileUrl, renderSpec, spriteWithUrls } from "../../../../lib/art-lab/manifest";
 import { roleLabel } from "../../../../lib/art-lab/labels";
 import { unitById } from "../../../../lib/game-content";
@@ -82,7 +82,7 @@ export default async function ActorArtPage({ params }: Props) {
         </div>
       </header>
 
-      <UnitArt spec={renderSpec(actor)} sprite={spriteWithUrls(actor)} tints={artLab.render.mapTints} feedback={{ factionId: faction.id, actorId: actor.id }} />
+      <UnitViewer spec={renderSpec(actor)} sprite={spriteWithUrls(actor)} tints={artLab.render.mapTints} feedback={{ factionId: faction.id, actorId: actor.id }} check sheet eager />
 
       {v && (
         <section className="art-facts" aria-label="How the parts come together">

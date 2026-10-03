@@ -174,9 +174,18 @@ npm run check:art    # fail if the committed copy is stale
 - Decoders (`lib/art-lab/{vxl,hva,shp,pal}.ts`) and the voxel transform chain
   (`voxel-math.ts`, `raster.ts`) follow the engine. three.js loads only when a
   voxel viewer scrolls into view.
+- Every unit page, the faction quick-view drawer and the public unit pages use
+  one viewer: In-game / 3D orbit / Exploded with a shared toolbar (facing and
+  auto-spin, house colour, scale, ground, map light, turret, shadow).
 - Review mode (`/art/review`, `npm run dev` only) reads the Art Forge's local
   `../RTSAI-Art` workspace (override with `RTSAI_ART_DIR`) through a Vite
-  dev-server API and writes decisions to its `review.json`. Production builds
+  dev-server API. Each unit has three slots (battlefield model, build icon,
+  concept art); per slot the owner picks one candidate to use in game, keeps the
+  current asset, or rejects candidates, and comments for the Forge. Decisions
+  are written to `review.json` as version 2 per actor:
+  `{ version: 2, status, slots: { model|icon|concept: { chosen: id|"current"|null, rejected: [], at } }, comments: [{ at, slot, candidate, view, text, author }], log: [...] }`;
+  version-1 entries are migrated when read and fields the Forge adds are kept.
+  Nothing reaches the mod until a separate export step. Production builds
   contain neither the tab, the UI nor the API.
 
 ## Deployment

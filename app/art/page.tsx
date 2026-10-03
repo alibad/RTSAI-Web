@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtLabChrome } from "./ArtLabChrome";
 import { RosterBoard, type RosterGroup } from "../components/art/RosterBoard";
-import { artFactions, artLab, categoryLabels, factionActors, fileUrl, renderSpec } from "../../lib/art-lab/manifest";
+import { artFactions, artLab, categoryLabels, factionActors, fileUrl, renderSpec, spriteWithUrls } from "../../lib/art-lab/manifest";
 import { artCategories } from "../../lib/art-lab/types";
 import { roleLabel } from "../../lib/art-lab/labels";
 
@@ -20,7 +20,7 @@ export default function ArtLabIndex() {
       id: category, label: categoryLabels[category],
       columns: artFactions.map(f => ({
         id: f.id, label: f.name,
-        tiles: factionActors(f.id).filter(a => a.category === category).map(a => ({ spec: renderSpec(a), href: `/art/${f.id}/${a.id}`, role: roleLabel(a) })),
+        tiles: factionActors(f.id).filter(a => a.category === category).map(a => ({ spec: renderSpec(a), sprite: spriteWithUrls(a), href: `/art/${f.id}/${a.id}`, role: roleLabel(a), feedback: { factionId: f.id, actorId: a.id } })),
       })),
     }))
     .filter(g => g.columns.some(c => c.tiles.length));

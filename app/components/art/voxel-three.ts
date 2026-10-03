@@ -1,7 +1,8 @@
 /**
  * three.js voxel stage (client only; imported dynamically so no other route pays for three.js).
- * In-game mode reproduces OpenRA's battlefield projection pixel for pixel at 1x; orbit and exploded modes
- * show the same transforms from any angle, with the parts pulled apart, labelled and their pivots marked.
+ * In-game mode reproduces OpenRA's battlefield projection pixel for pixel at 1x. 3D orbit and exploded modes
+ * show the same transforms from any angle (ground horizontal, model up = screen up), auto-framed to fill the
+ * canvas, with the parts pulled apart, labelled and their pivots marked in exploded mode.
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -10,9 +11,8 @@ import type { Palette } from "../../../lib/art-lab/pal";
 import type { Vxl, VxlLimb } from "../../../lib/art-lab/vxl";
 import type { Vec3 } from "../../../lib/art-lab/types";
 import { quantizedNormal } from "../../../lib/art-lab/raster";
-import { groundProjection, localToWorld, multiply, partMatrices, rotateYaw, transformVector, type Mat4 } from "../../../lib/art-lab/voxel-math";
-
-export type StageMode = "ingame" | "orbit" | "exploded";
+import { cameraMatrix, groundProjection, localToWorld, multiply, partMatrices, rotateYaw, transformVector, type Mat4 } from "../../../lib/art-lab/voxel-math";
+import type { CameraLink, ViewMode } from "./viewSettings";
 
 export type StagePart = {
   id: string;
@@ -30,7 +30,7 @@ export type StageSpec = {
 };
 
 export type StageState = {
-  mode: StageMode;
+  mode: ViewMode;
   facing: number;
   turretFacing: number;
   frame: number;
@@ -46,6 +46,7 @@ export type StageState = {
 export type StageLabel = { id: string; text: string; x: number; y: number; kind: "part" | "pivot" };
 
 const FLIP_Y: Mat4 = [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+const IDENTITY: Mat4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 const FACES: { dir: Vec3; corners: Vec3[] }[] = [
   { dir: [-1, 0, 0], corners: [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1]] },
   { dir: [1, 0, 0], corners: [[1, 0, 0], [1, 0, 1], [1, 1, 1], [1, 1, 0]] },
@@ -54,6 +55,7 @@ const FACES: { dir: Vec3; corners: Vec3[] }[] = [
   { dir: [0, 0, -1], corners: [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]] },
   { dir: [0, 0, 1], corners: [[0, 0, 1], [0, 1, 1], [1, 1, 1], [1, 0, 1]] },
 ];
+const EXPLODE_STEP = 18;
 
 function limbGeometry(limb: VxlLimb, normals: readonly number[]) {
   const [sx, sy, sz] = limb.size;
@@ -78,7 +80,7 @@ function limbGeometry(limb: VxlLimb, normals: readonly number[]) {
   g.setAttribute("aColor", new THREE.Float32BufferAttribute(colors, 1));
   g.setAttribute("aNormalVx", new THREE.Float32BufferAttribute(nrm, 3));
   g.setIndex(index);
-  g.computeBoundingSphere();
+  g.computeBoundingBox();
   return g;
 }
 
@@ -100,7 +102,6 @@ uniform vec3 uLight;
 uniform vec3 uAmbient;
 uniform vec3 uDiffuse;
 uniform vec3 uTint;
-uniform vec3 uHighlight;
 varying float vColor;
 varying vec3 vNormalVx;
 void main() {
@@ -108,7 +109,7 @@ void main() {
   if (c.a < 0.01) discard;
   float d = max(dot(vNormalVx, uLight) + 1.0, 0.0);
   vec3 rgb = clamp((uAmbient + uDiffuse * d) * c.rgb, 0.0, 1.0);
-  gl_FragColor = vec4(rgb * uTint + uHighlight, 1.0);
+  gl_FragColor = vec4(rgb * uTint, 1.0);
 }`;
 
 const setMatrix = (object: THREE.Object3D, m: Mat4) => {
@@ -121,10 +122,9 @@ export class VoxelStage {
   readonly renderer: THREE.WebGLRenderer;
   private readonly modelScene = new THREE.Scene();
   private readonly shadowScene = new THREE.Scene();
+  private readonly groundScene = new THREE.Scene();
   private readonly root = new THREE.Group();
   private readonly helpers = new THREE.Group();
-  /** Ground grid, drawn in its own pass before the model so the model always covers it. */
-  private readonly groundScene = new THREE.Scene();
   private readonly ground = new THREE.Group();
   private readonly ortho = new THREE.OrthographicCamera(-50, 50, 50, -50, -10000, 10000);
   private controls: OrbitControls | null = null;
@@ -133,15 +133,35 @@ export class VoxelStage {
   private state: StageState;
   private labels: StageLabel[] = [];
   private onLabels: ((labels: StageLabel[]) => void) | null = null;
+  private pendingLabels: { id: string; text: string; world: Vec3; kind: "part" | "pivot" }[] = [];
   private disposed = false;
   private frameRequest = 0;
+  private configuredMode: ViewMode | null = null;
+  private applyingLink = false;
+  private unsubscribe: (() => void) | null = null;
+  private readonly orbitRoot: Mat4;
+  private readonly elevation: number;
+  private target = new THREE.Vector3();
+  private radius = 60;
+  private frameWidth = 60;
+  private size = { width: 0, height: 0 };
   /** 1x size and anchor of the last in-game render. */
   inGameBox = { width: 0, height: 0, anchorX: 0, anchorY: 0 };
 
-  constructor(private readonly canvas: HTMLCanvasElement, private readonly spec: StageSpec, private readonly parts: StagePart[], initial: StageState) {
+  constructor(private readonly canvas: HTMLCanvasElement, private readonly spec: StageSpec, private readonly parts: StagePart[], initial: StageState,
+    private readonly options: { height?: number; link?: CameraLink | null } = {}) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, stencil: true, preserveDrawingBuffer: true });
     this.renderer.autoClear = false;
     this.state = initial;
+    // Orbit frame: tilt the battlefield camera space so model up is screen up (three's Y), keeping the
+    // in-game handedness; the default orbit camera then sits at the battlefield elevation.
+    const flipCamera = multiply(FLIP_Y, cameraMatrix(spec.cameraPitch));
+    const up = transformVector(flipCamera, [0, 0, 1, 0]);
+    this.elevation = Math.atan2(up[2], up[1]);
+    const c = Math.cos(-this.elevation), s = Math.sin(-this.elevation);
+    // Rx(-elevation), column-major: maps the in-game up vector onto +Y.
+    const tilt: Mat4 = [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1];
+    this.orbitRoot = multiply(tilt, flipCamera);
     this.paletteTexture = new THREE.DataTexture(new Uint8Array(1024), 256, 1, THREE.RGBAFormat);
     this.paletteTexture.magFilter = THREE.NearestFilter;
     this.paletteTexture.minFilter = THREE.NearestFilter;
@@ -161,7 +181,7 @@ export class VoxelStage {
           uniforms: {
             uPalette: { value: this.paletteTexture }, uLight: { value: new THREE.Vector3() },
             uAmbient: { value: new THREE.Vector3(...spec.ambient) }, uDiffuse: { value: new THREE.Vector3(...spec.diffuse) },
-            uTint: { value: new THREE.Vector3(1, 1, 1) }, uHighlight: { value: new THREE.Vector3(0, 0, 0) },
+            uTint: { value: new THREE.Vector3(1, 1, 1) },
           },
         });
         const mesh = new THREE.Mesh(geometry, material);
@@ -173,16 +193,16 @@ export class VoxelStage {
         this.limbs.push({ part, limbIndex, mesh, shadow, material });
       });
     }
+    if (options.link) this.unsubscribe = options.link.subscribe((direction, source) => { if (source !== this) this.applyDirection(direction); });
     this.setState(initial);
   }
 
   setLabelListener(listener: ((labels: StageLabel[]) => void) | null) { this.onLabels = listener; }
 
   setState(next: Partial<StageState>) {
-    const previousMode = this.state.mode;
     this.state = { ...this.state, ...next };
     if (next.palette) { (this.paletteTexture.image.data as Uint8Array).set(next.palette); this.paletteTexture.needsUpdate = true; }
-    if (this.state.mode !== previousMode || !this.controls !== (this.state.mode === "ingame")) this.configureMode();
+    if (this.state.mode !== this.configuredMode) this.configureMode();
     this.layout();
     this.render();
   }
@@ -204,63 +224,78 @@ export class VoxelStage {
     const poses = new Map(this.poses().map(p => [p.part.id, p]));
     const altitudePx = this.state.airborne && this.spec.altitude ? (30 * this.spec.altitude) / 1448 : 0;
     const lift: Mat4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, -altitudePx, 0, 1];
-    const explodeStep = mode === "exploded" ? 18 : 0;
-    const order = this.parts.map(p => p.id);
+    const shown = this.parts.filter(p => visible[p.id] !== false).map(p => p.id);
     this.helpers.clear();
-    const labels: { id: string; text: string; world: Vec3; kind: "part" | "pivot" }[] = [];
-    let camera: Mat4 | null = null;
+    const labels: typeof this.pendingLabels = [];
+    let zmin = Infinity, zmax = -Infinity, rxy = 0;
     for (const limb of this.limbs) {
       const pose = poses.get(limb.part.id)!;
       const rows = limb.part.hva.rows;
       const row = rows[Math.min(frame, rows.length - 1)]?.[limb.limbIndex] ?? rows[0][limb.limbIndex];
       const m = partMatrices({
         scale: this.spec.scale, cameraPitch: this.spec.cameraPitch, lightPitch: this.spec.lightPitch, lightYaw: this.spec.lightYaw,
-        pose: { yaw: pose.yaw, worldOffset: pose.worldOffset }, limb: this.parts.find(p => p.id === limb.part.id)!.vxl.limbs[limb.limbIndex], hvaRow: row,
+        pose: { yaw: pose.yaw, worldOffset: pose.worldOffset }, limb: limb.part.vxl.limbs[limb.limbIndex], hvaRow: row,
       });
-      camera = m.camera;
       (limb.material.uniforms.uLight.value as THREE.Vector3).set(...m.light);
       const on = visible[limb.part.id] !== false;
       limb.mesh.visible = on;
       limb.shadow.visible = on && this.state.shadow && mode === "ingame" && limb.part.showShadow;
-      const raise = explodeStep * order.indexOf(limb.part.id);
+      const raise = mode === "exploded" ? EXPLODE_STEP * Math.max(0, shown.indexOf(limb.part.id)) : 0;
       const explode: Mat4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, raise, 1];
       if (mode === "ingame") {
         setMatrix(limb.mesh, multiply(FLIP_Y, multiply(lift, multiply(m.camera, m.modelToWorld))));
         setMatrix(limb.shadow, multiply(FLIP_Y, multiply(m.camera, multiply(groundProjection(m.lightWorld, 0), m.modelToWorld))));
-      } else {
-        setMatrix(limb.mesh, multiply(explode, m.modelToWorld));
+        continue;
+      }
+      const world = multiply(explode, m.modelToWorld);
+      setMatrix(limb.mesh, world);
+      if (on) {
+        const box = limb.mesh.geometry.boundingBox!;
+        for (const corner of [[box.min.x, box.min.y, box.min.z], [box.max.x, box.max.y, box.max.z], [box.min.x, box.max.y, box.min.z], [box.max.x, box.min.y, box.max.z], [box.min.x, box.min.y, box.max.z], [box.max.x, box.max.y, box.min.z], [box.min.x, box.max.y, box.max.z], [box.max.x, box.min.y, box.min.z]]) {
+          const v = transformVector(world, [corner[0], corner[1], corner[2], 1]);
+          zmin = Math.min(zmin, v[2]); zmax = Math.max(zmax, v[2]); rxy = Math.max(rxy, Math.hypot(v[0], v[1]));
+        }
       }
       if (mode === "exploded" && on && limb.limbIndex === 0) {
         const pivot: Vec3 = [m.pivot[0], m.pivot[1], m.pivot[2] + raise];
         this.addPivot(pivot, limb.part.turretOffset ? 0xf1d28b : 0xef5b3f);
-        const box = new THREE.Box3().setFromBufferAttribute(limb.mesh.geometry.getAttribute("position") as THREE.BufferAttribute);
+        const box = limb.mesh.geometry.boundingBox!;
         const top = new THREE.Vector3((box.min.x + box.max.x) / 2, (box.min.y + box.max.y) / 2, box.max.z).applyMatrix4(limb.mesh.matrix);
         labels.push({ id: `${limb.part.id}:part`, text: limb.part.label, world: [top.x, top.y, top.z + 6], kind: "part" });
         labels.push({ id: `${limb.part.id}:pivot`, text: limb.part.turretOffset ? "turret pivot" : "body pivot", world: pivot, kind: "pivot" });
       }
     }
-    if (camera) setMatrix(this.root, mode === "ingame" ? [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] : multiply(FLIP_Y, camera));
-    if (camera && mode !== "ingame") {
-      setMatrix(this.helpers, multiply(FLIP_Y, camera));
-      // Ground grid (16 x 10 px squares) on the ground plane.
-      this.ground.clear();
-      setMatrix(this.ground, multiply(FLIP_Y, camera));
-      const grid = new THREE.GridHelper(160, 16, 0x6f7d58, 0x3c4238);
-      grid.rotation.x = Math.PI / 2;
-      grid.updateMatrix();
-      this.ground.add(grid);
-      const facingArrow = new THREE.ArrowHelper(new THREE.Vector3(...this.forward()), new THREE.Vector3(0, 0, 0.5), 70, 0xf1d28b, 10, 6);
-      this.helpers.add(facingArrow);
-      if (this.controls) this.controls.object.up.copy(new THREE.Vector3(...transformVector(multiply(FLIP_Y, camera), [0, 0, 1, 0]).slice(0, 3) as Vec3).normalize());
-    }
+    setMatrix(this.root, mode === "ingame" ? IDENTITY : this.orbitRoot);
     this.pendingLabels = labels;
-    if (mode === "ingame") this.fitInGame();
+    if (mode === "ingame") { this.fitInGame(); return; }
+    setMatrix(this.helpers, this.orbitRoot);
+    setMatrix(this.ground, this.orbitRoot);
+    if (!Number.isFinite(zmin)) { zmin = 0; zmax = 20; rxy = 30; }
+    // Frame the cylinder the unit sweeps when it turns (so spinning never re-zooms), as seen from the
+    // battlefield elevation: half-width = its radius, half-height = radius * sin(e) + half its height * cos(e).
+    const centre = transformVector(this.orbitRoot, [0, 0, (zmin + zmax) / 2, 1]);
+    const halfHeight = rxy * Math.sin(this.elevation) + ((zmax - zmin) / 2) * Math.cos(this.elevation);
+    this.frameWidth = rxy;
+    const radius = halfHeight;
+    if (Math.abs(radius - this.radius) > 0.5 || this.target.distanceTo(new THREE.Vector3(centre[0], centre[1], centre[2])) > 0.5) {
+      const offset = this.ortho.position.clone().sub(this.target);
+      this.target.set(centre[0], centre[1], centre[2]);
+      this.radius = radius;
+      this.ortho.position.copy(this.target).add(offset);
+      this.controls?.target.copy(this.target);
+      this.updateFrustum();
+    }
+    this.ground.clear();
+    const extent = Math.max(80, Math.ceil(rxy / 10) * 20 + 20);
+    const grid = new THREE.GridHelper(extent, extent / 10, 0x6f7d58, 0x3c4238);
+    grid.rotation.x = Math.PI / 2;
+    grid.updateMatrix();
+    this.ground.add(grid);
+    const forward = this.forward();
+    this.ground.add(new THREE.ArrowHelper(new THREE.Vector3(...forward), new THREE.Vector3(0, 0, 0.5), rxy + 8, 0xf1d28b, 8, 5));
   }
 
-  private pendingLabels: { id: string; text: string; world: Vec3; kind: "part" | "pivot" }[] = [];
-
   private forward(): Vec3 {
-    // Model-world direction of the body's front (voxel +x) at the current facing.
     const m = partMatrices({
       scale: 1, cameraPitch: this.spec.cameraPitch, lightPitch: this.spec.lightPitch, lightYaw: this.spec.lightYaw,
       pose: { yaw: this.state.facing, worldOffset: [0, 0, 0] }, limb: { scale: 1, bounds: [0, 0, 0, 1, 1, 1], size: [1, 1, 1] }, hvaRow: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
@@ -286,10 +321,9 @@ export class VoxelStage {
   private fitInGame() {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const limb of this.limbs) {
-      if (!limb.mesh.visible) continue;
       for (const mesh of [limb.mesh, limb.shadow]) {
         if (!mesh.visible) continue;
-        const box = new THREE.Box3().setFromBufferAttribute(mesh.geometry.getAttribute("position") as THREE.BufferAttribute);
+        const box = mesh.geometry.boundingBox!;
         for (const c of [[box.min.x, box.min.y, box.min.z], [box.max.x, box.max.y, box.max.z], [box.min.x, box.max.y, box.min.z], [box.max.x, box.min.y, box.max.z], [box.min.x, box.min.y, box.max.z], [box.max.x, box.max.y, box.min.z], [box.min.x, box.max.y, box.max.z], [box.max.x, box.min.y, box.min.z]]) {
           const v = new THREE.Vector3(c[0], c[1], c[2]).applyMatrix4(mesh.matrix);
           x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, -v.y); y1 = Math.max(y1, -v.y);
@@ -316,37 +350,75 @@ export class VoxelStage {
     this.ortho.updateProjectionMatrix();
   }
 
+  private updateFrustum() {
+    const aspect = this.size.width / Math.max(1, this.size.height);
+    const h = Math.max(this.radius, this.frameWidth / aspect) * 1.12 + 2;
+    const w = h * aspect;
+    Object.assign(this.ortho, { left: -w, right: w, top: h, bottom: -h });
+    this.ortho.updateProjectionMatrix();
+  }
+
   private configureMode() {
+    const previous = this.configuredMode;
+    this.configuredMode = this.state.mode;
     if (this.state.mode === "ingame") {
       this.controls?.dispose();
       this.controls = null;
       return;
     }
-    const parent = this.canvas.parentElement;
-    const w = Math.max(240, parent?.clientWidth ?? 480);
-    const h = Math.max(240, Math.min(520, Math.round(w * 0.66)));
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    this.renderer.setSize(w, h, false);
-    this.canvas.style.width = `${w}px`;
-    this.canvas.style.height = `${h}px`;
+    this.measure();
     this.canvas.style.imageRendering = "auto";
-    const half = 90;
-    Object.assign(this.ortho, { left: -half * (w / h), right: half * (w / h), top: half, bottom: -half });
-    this.ortho.position.set(0, 0, 600);
-    this.ortho.up.set(0, 1, 0);
-    this.ortho.lookAt(0, 0, 0);
-    this.ortho.zoom = 1;
-    this.ortho.updateProjectionMatrix();
+    if (!this.controls || previous === "ingame" || previous === null) {
+      // Start at the battlefield angle (or the linked direction), looking at the model's centre.
+      const direction = this.options.link?.linked && this.options.link.last ? this.options.link.last : [0, Math.sin(this.elevation), Math.cos(this.elevation)];
+      this.ortho.up.set(0, 1, 0);
+      this.ortho.position.copy(this.target).add(new THREE.Vector3(...direction).multiplyScalar(800));
+      this.ortho.zoom = 1;
+      this.ortho.lookAt(this.target);
+    }
     if (!this.controls) {
       this.controls = new OrbitControls(this.ortho, this.canvas);
       this.controls.enableDamping = false;
-      this.controls.addEventListener("change", () => this.render());
+      this.controls.addEventListener("change", () => {
+        this.render();
+        if (!this.applyingLink && this.options.link) {
+          const d = this.ortho.position.clone().sub(this.target).normalize();
+          this.options.link.publish([d.x, d.y, d.z], this);
+        }
+      });
     }
-    this.controls.target.set(0, 0, 0);
+    this.controls.target.copy(this.target);
     this.controls.update();
   }
 
-  resize() { if (this.state.mode !== "ingame") { this.configureMode(); this.layout(); this.render(); } }
+  private applyDirection(direction: [number, number, number]) {
+    if (this.state.mode === "ingame" || !this.controls) return;
+    this.applyingLink = true;
+    const distance = this.ortho.position.distanceTo(this.target) || 800;
+    this.ortho.position.copy(this.target).add(new THREE.Vector3(...direction).multiplyScalar(distance));
+    this.ortho.lookAt(this.target);
+    this.controls.update();
+    this.applyingLink = false;
+    this.render();
+  }
+
+  private measure() {
+    const parent = this.canvas.parentElement;
+    const width = Math.max(220, Math.floor(parent?.clientWidth ?? 480) - 2);
+    const height = this.options.height ?? Math.max(260, Math.min(560, Math.round(width * 0.62)));
+    this.size = { width, height };
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.renderer.setSize(width, height, false);
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    this.updateFrustum();
+  }
+
+  resize() {
+    if (this.state.mode === "ingame") return;
+    this.measure();
+    this.render();
+  }
 
   render() {
     if (this.disposed) return;
@@ -394,6 +466,7 @@ export class VoxelStage {
   dispose() {
     this.disposed = true;
     cancelAnimationFrame(this.frameRequest);
+    this.unsubscribe?.();
     this.controls?.dispose();
     for (const limb of this.limbs) { limb.mesh.geometry.dispose(); limb.material.dispose(); }
     this.paletteTexture.dispose();

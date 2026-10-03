@@ -2,30 +2,38 @@
 
 /* Candidate images come from the local dev route at their own sizes; next/image cannot serve them. */
 /* eslint-disable @next/next/no-img-element */
-import { Check, MessageSquare, RefreshCw, X } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { renderInGame } from "../../../lib/art-lab/client";
 import type { RenderSpec } from "../../../lib/art-lab/spec";
 import type { SpriteArt } from "../../../lib/art-lab/types";
+import { facingLabel } from "../../../lib/art-lab/voxel-math";
 import {
-  candidateRenderSpec, effectiveStatus, hasViewableFiles, needsAttention, reviewStatuses,
-  type Candidate, type ReviewAction, type ReviewEntry, type ReviewState, type ReviewStatus, type UnitWorkspace,
+  candidateRenderSpec, candidateSprite, candidatesForSlot, emptyEntry, needsDecision, slotIds, slotLabels, slotState,
+  type Candidate, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type SlotState, type UnitWorkspace,
 } from "../../../lib/art-lab/review";
-import type { MapTint } from "./ArtToolbar";
+import { ArtStage } from "./ArtStage";
 import { PixelCanvas, type PixelImage } from "./PixelCanvas";
-import { SpriteViewer } from "./SpriteViewer";
-import { VoxelViewer } from "./VoxelViewer";
+import { candidateLabel, Cost, DecisionButtons, ExportBanner, HelpPopover, HowReviewWorks, MadeFrom, Scores, useHowtoDismissed, ZoomableImage, type Decide } from "./review-parts";
+import { toolbarFeatures } from "./UnitViewer";
+import { ViewerToolbar } from "./ViewerToolbar";
+import { CameraLink, useViewSettings, type MapTint, type ViewSettings } from "./viewSettings";
 import "../../art-lab.css";
 
 export type ReviewUnit = {
   id: string; factionId: string; factionName: string; name: string; category: string; role: string;
+  catalog: { name: string; role: string; story: string } | null;
+  queue: string; order: number;
   spec: RenderSpec; sprite: SpriteArt | null;
 };
 
-type Filter = "attention" | "candidates" | "all" | ReviewStatus;
-
+type DecisionFilter = "needs" | "decided" | "all";
 const API = "/api/art-review";
+const dotSymbol: Record<SlotState, string> = { chosen: "✓", current: "↺", undecided: "•", none: "–" };
+const dotWords: Record<SlotState, string> = { chosen: "candidate chosen", current: "keep current", undecided: "undecided", none: "no candidates" };
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 async function post(action: ReviewAction): Promise<ReviewEntry> {
   const response = await fetch(`${API}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action) });
@@ -34,117 +42,85 @@ async function post(action: ReviewAction): Promise<ReviewEntry> {
   return payload.entry;
 }
 
-function StatusPill({ status }: { status: ReviewStatus | "none" }) {
-  return <span className={`review-pill is-${status}`}>{status === "none" ? "no candidates" : status}</span>;
+function Dots({ ws, entry }: { ws: UnitWorkspace | undefined; entry: ReviewEntry | undefined }) {
+  return (
+    <span className="review-dots">
+      {slotIds.map(slot => {
+        const state = slotState(ws, entry, slot);
+        return <i key={slot} className={`is-${state}`} title={`${slotLabels[slot]}: ${dotWords[state]}`} aria-label={`${slotLabels[slot]}: ${dotWords[state]}`}>{dotSymbol[state]}</i>;
+      })}
+    </span>
+  );
 }
 
-function CurrentThumb({ spec }: { spec: RenderSpec }) {
+function useInGameImage(spec: RenderSpec, settings: ViewSettings) {
   const [image, setImage] = useState<PixelImage | null>(null);
   useEffect(() => {
     let cancelled = false;
-    renderInGame(spec, { facing: 896, color: "F21818" }).then(i => { if (!cancelled) setImage(i); }).catch(() => undefined);
+    renderInGame(spec, { facing: settings.facing, color: settings.color }).then(i => { if (!cancelled) setImage(i); }).catch(() => undefined);
     return () => { cancelled = true; };
-  }, [spec]);
-  return image ? <PixelCanvas image={image} zoom={2} backdrop="sand" diamond label={`${spec.name} as shipped`} /> : <span className="art-tile-wait">Rendering…</span>;
+  }, [spec, settings.facing, settings.color]);
+  return image;
 }
 
-/** Stock RA2 voxels from reference-local, drawn with RA2 vehicle defaults. Local comparison only. */
-function stockSpec(base: RenderSpec, state: ReviewState, stockId: string): RenderSpec | null {
-  const unit = state.stock.find(s => s.id === stockId);
-  if (!unit || !state.stockPalette || !base.palette) return null;
-  const url = (f: string) => `${API}/file?path=${encodeURIComponent(`reference-local/ra2-stock/${f}`)}`;
-  const parts = unit.parts.map(part => {
-    const name = part === "body" ? stockId : `${stockId}${part}`;
-    return {
-      id: `stock:${name}`, label: part === "body" ? "body" : part === "tur" ? "turret" : part === "barl" ? "barrel" : part, trait: part,
-      vxl: url(`${name}.vxl`), hva: url(`${name}.hva`), offset: [0, 0, 0] as [number, number, number], showShadow: true, requiresCondition: null,
-      turretOffset: part === "body" ? null : [0, 0, 0] as [number, number, number], turretInitialFacing: null, tickRate: null, frames: 1,
-    };
-  });
-  return {
-    ...base, id: `stock:${stockId}`, name: `RA2 ${stockId} (local reference)`, cameo: null,
-    palette: { name: "unittem.pal", url: state.stockPalette, remap: base.palette.remap.length ? Array.from({ length: 16 }, (_, i) => 16 + i) : [], transparent: [0], shadow: [] },
-    voxel: { scale: 11.7, cameraPitch: 85, lightPitch: 150, lightYaw: 800, ambient: [-0.5, -0.5, -0.5], diffuse: [1.4, 1.4, 1.4], useClassicPerspectiveFudge: false, normals: "RedAlert2", altitude: null, parts },
-    sprite: null,
-  };
-}
-
-function candidateSpriteSpec(unit: ReviewUnit, candidate: Candidate) {
-  const shp = candidate.files.shp?.[0];
-  if (!shp || !unit.sprite || !unit.spec.sprite) return null;
-  const shpUrl = candidate.urls[shp];
-  const palUrl = candidate.files.pal ? candidate.urls[candidate.files.pal] : null;
-  if (!shpUrl) return null;
-  const swap = <T extends { file: string | null } | null>(s: T): T => (s && s.file ? { ...s, file: shpUrl } : s);
-  const spec: RenderSpec = {
-    ...unit.spec, id: `${unit.id}:${candidate.id}`, name: `${unit.name} · ${candidate.id}`,
-    palette: palUrl && unit.spec.palette ? { ...unit.spec.palette, url: palUrl } : unit.spec.palette,
-    sprite: { ...unit.spec.sprite, stand: swap(unit.spec.sprite.stand), turret: swap(unit.spec.sprite.turret), overlay: swap(unit.spec.sprite.overlay) },
-  };
-  const sprite: SpriteArt = { ...unit.sprite, sequences: unit.sprite.sequences.map(s => (s.file && !s.inherited && !s.file.endsWith(".png") ? { ...s, file: shpUrl } : s)) };
-  return { spec, sprite };
-}
-
-function CandidateCard({ unit, candidate, focused, approved, onFocus, tints }: {
-  unit: ReviewUnit; candidate: Candidate; focused: boolean; approved: boolean; onFocus: () => void; tints: MapTint[];
-}) {
-  const f = candidate.files;
-  const voxelSpec = useMemo(() => candidateRenderSpec(unit.spec, candidate), [unit.spec, candidate]);
-  const sprite = useMemo(() => candidateSpriteSpec(unit, candidate), [unit, candidate]);
-  const scores = Object.entries(candidate.scores ?? {});
+/** A mock build palette: the faction's queue, three cameos wide, with this unit's slot holding `cameo`. */
+function PaletteContext({ unit, units, cameo, zoom }: { unit: ReviewUnit; units: ReviewUnit[]; cameo: string | null; zoom: number }) {
+  const queue = units.filter(u => u.factionId === unit.factionId && u.queue === unit.queue).sort((a, b) => a.order - b.order);
+  const at = queue.findIndex(u => u.id === unit.id);
+  const start = Math.max(0, Math.min(at - 4, queue.length - 9));
+  const shown = queue.slice(start, start + 9);
   return (
-    <article className={`review-candidate ${focused ? "is-focused" : ""} ${approved ? "is-approved" : ""}`} aria-label={`Candidate ${candidate.id}`}>
-      <header>
-        <button type="button" className="review-focus" aria-pressed={focused} onClick={onFocus}>{focused ? "Selected" : "Select"}</button>
-        <b>{candidate.id}</b>
-        <span className="review-kind">{candidate.kind}</span>
-        {approved && <span className="review-pill is-approved">approved</span>}
-        {candidate.fixture && <span className="review-pill is-draft">fixture</span>}
-      </header>
-      <p className="review-meta">{candidate.model ?? "unknown model"} · {candidate.createdAt ? new Date(candidate.createdAt).toLocaleString() : "no date"}{typeof candidate.costUsd === "number" ? ` · $${candidate.costUsd.toFixed(3)}` : ""}{candidate.seed !== undefined && candidate.seed !== null ? ` · seed ${candidate.seed}` : ""}{candidate.refusals?.length ? ` · ${candidate.refusals.length} refusal(s)` : ""}</p>
-      {candidate.metaError && <p className="art-warn">{candidate.metaError}</p>}
-      {f.cameo && candidate.urls[f.cameo] && (
-        <div className="review-cameos">
-          <img src={candidate.urls[f.cameo]} width={60} height={48} alt="" className="art-cameo-native" />
-          <img src={candidate.urls[f.cameo]} width={120} height={96} alt={`${candidate.id} cameo at 2x`} className="art-cameo-2x" />
-          {unit.spec.cameo && <span className="review-vs"><img src={unit.spec.cameo} width={60} height={48} alt="current cameo" className="art-cameo-native" /><small>current</small></span>}
-        </div>
-      )}
-      {f.concept && candidate.urls[f.concept] && <a href={candidate.urls[f.concept]} target="_blank" rel="noreferrer"><img src={candidate.urls[f.concept]} alt={`${candidate.id} concept`} className="review-concept" loading="lazy" /></a>}
-      {voxelSpec && focused && <VoxelViewer spec={voxelSpec} tints={tints} feedback={null} />}
-      {voxelSpec && !focused && <p className="art-hint">Voxel candidate ({f.vxl?.length} VXL). Focus the card to load it in the viewer.</p>}
-      {sprite && focused && <SpriteViewer spec={sprite.spec} sprite={sprite.sprite} tints={tints} feedback={null} />}
-      {!!f.previews?.length && (
-        <details className="review-previews"><summary>Forge previews ({f.previews.length}){candidate.previewNote ? " · made outside the game" : ""}</summary>
-          {candidate.previewNote && <p className="art-hint">{candidate.previewNote}</p>}
-          {f.previews.map(p => candidate.urls[p] && <a key={p} href={candidate.urls[p]} target="_blank" rel="noreferrer"><img src={candidate.urls[p]} alt={p} loading="lazy" /></a>)}
-        </details>
-      )}
-      {(scores.length > 0 || candidate.critique) && (
-        <div className="review-critique">
-          {scores.length > 0 && <ul>{scores.map(([k, v]) => <li key={k}><b>{k}</b> {typeof v === "object" ? JSON.stringify(v) : String(v)}</li>)}</ul>}
-          {candidate.critique && <p>{candidate.critique}</p>}
-        </div>
-      )}
-      {!hasViewableFiles(candidate) && <p className="art-hint">No viewable files yet.</p>}
-      {candidate.prompt && <details><summary>Prompt</summary><p className="art-hint">{candidate.prompt}</p></details>}
-    </article>
+    <figure className="review-palette">
+      <div className="review-palette-grid" style={{ gridTemplateColumns: `repeat(3, ${60 * zoom}px)` }}>
+        {shown.map(u => {
+          const src = u.id === unit.id ? cameo : u.spec.cameo;
+          return <span key={u.id} className={u.id === unit.id ? "is-this" : undefined}>{src ? <img src={src} width={60 * zoom} height={48 * zoom} alt={u.id === unit.id ? `${u.name} (this slot)` : u.name} /> : null}</span>;
+        })}
+      </div>
+      <figcaption>In context: {unit.factionName} {unit.queue.toLowerCase()} tab, build-palette order, {zoom}×. The marked cell is this unit.</figcaption>
+    </figure>
   );
+}
+
+type Column = { key: string; candidate: Candidate | null };
+type StageItem = { key: string; spec: RenderSpec; sprite: SpriteArt | null };
+
+// Stable item objects per unit and candidate, so the viewers are not rebuilt on every render.
+const itemCache = new Map<string, StageItem | null>();
+function stageItem(unit: ReviewUnit, candidate: Candidate | null): StageItem | null {
+  if (!candidate) {
+    const key = `${unit.id}:current`;
+    if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite });
+    return itemCache.get(key)!;
+  }
+  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${(candidate.files.vxl ?? []).join(",")}:${(candidate.files.shp ?? []).join(",")}`;
+  if (!itemCache.has(key)) {
+    const voxel = candidateRenderSpec(unit.spec, candidate);
+    const sprite = voxel ? null : candidateSprite(unit.spec, unit.sprite, candidate);
+    itemCache.set(key, voxel ? { key: candidate.id, spec: voxel, sprite: null } : sprite ? { key: candidate.id, spec: sprite.spec, sprite: sprite.sprite } : null);
+  }
+  return itemCache.get(key)!;
 }
 
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
   const [state, setState] = useState<ReviewState | null>(null);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState<Filter>("attention");
+  const [filter, setFilter] = useState<DecisionFilter>("needs");
   const [faction, setFaction] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
-  const [focusIndex, setFocusIndex] = useState(0);
-  const [composer, setComposer] = useState<{ type: "comment" | "approve" | "reject" } | null>(null);
+  const [slot, setSlot] = useState<SlotId>("model");
+  const [focus, setFocus] = useState(0);
+  const [composer, setComposer] = useState<{ slot: SlotId; candidate: string | null } | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
-  const [stockId, setStockId] = useState("");
+  const [help, setHelp] = useState(false);
+  const [paletteZoom, setPaletteZoom] = useState<1 | 2>(1);
+  const [howtoDismissed, setHowtoDismissed] = useHowtoDismissed();
+  const [settings, update] = useViewSettings({ mode: "ingame", zoom: 2 });
+  const link = useMemo(() => new CameraLink(), []);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { link.setLinked(settings.linkCameras); }, [link, settings.linkCameras]);
 
   const load = useCallback(async () => {
     try {
@@ -164,83 +140,109 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => window.removeEventListener("focus", onFocus);
   }, [load]);
 
+  // Deep links: /art/review?unit=r2qilin&slot=model (kept in the address bar as you move).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const unit = params.get("unit");
+    const slotParam = params.get("slot") as SlotId | null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the deep link after hydration
+    if (unit) { setSelected(unit); setFilter("all"); }
+    if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
+  }, []);
+  useEffect(() => {
+    if (!selected) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("unit", selected);
+    url.searchParams.set("slot", slot);
+    window.history.replaceState(null, "", url);
+  }, [selected, slot]);
+
   const workspace = useMemo(() => new Map((state?.units ?? []).map(u => [u.actor, u])), [state]);
   const rows = useMemo(() => units.map(u => {
-    const ws: UnitWorkspace | undefined = workspace.get(u.id);
+    const ws = workspace.get(u.id);
     const entry = state?.review[u.id];
-    const candidates = ws?.candidates ?? [];
-    return { unit: u, ws, entry, candidates, attention: ws ? needsAttention(ws, entry) : false, status: candidates.length || entry ? effectiveStatus(entry) : "none" as const };
+    const count = slotIds.reduce((n, s) => n + candidatesForSlot(ws, s).length, 0);
+    return { unit: u, ws, entry, count, needs: needsDecision(ws, entry) };
   }), [units, workspace, state]);
-  const visible = rows.filter(r =>
-    (faction === "all" || r.unit.factionId === faction) &&
-    (filter === "all" || (filter === "attention" ? r.attention : filter === "candidates" ? r.candidates.length > 0 : r.status === filter)));
-  const attentionCount = rows.filter(r => r.attention).length;
+  const visible = rows.filter(r => (faction === "all" || r.unit.factionId === faction)
+    && (filter === "all" || (filter === "needs" ? r.needs : r.count > 0 && !r.needs)));
+  const needsCount = rows.filter(r => r.needs).length;
   const current = rows.find(r => r.unit.id === selected) ?? visible[0] ?? null;
-  const candidates = current?.candidates ?? [];
-  const focused = candidates[Math.min(focusIndex, Math.max(0, candidates.length - 1))] ?? null;
+  const entry = current?.entry ?? emptyEntry();
+  const decision = entry.slots[slot];
+  const candidates = candidatesForSlot(current?.ws, slot);
+  const allCandidates = current?.ws?.candidates ?? [];
+  const columns: Column[] = [{ key: "current", candidate: null }, ...candidates.map(c => ({ key: c.id, candidate: c }))];
+  const focused = columns[Math.min(focus, columns.length - 1)] ?? columns[0];
   const factions = [...new Map(units.map(u => [u.factionId, u.factionName])).entries()];
 
-  const move = (delta: number) => {
-    if (!visible.length) return;
-    const index = Math.max(0, visible.findIndex(r => r.unit.id === current?.unit.id));
-    const next = visible[(index + delta + visible.length) % visible.length];
-    setSelected(next.unit.id);
-    setFocusIndex(0);
-    setComposer(null);
-  };
+  const items: StageItem[] = current ? [stageItem(current.unit, null)!, ...candidates.flatMap(c => { const item = stageItem(current.unit, c); return item ? [item] : []; })] : [];
+  const features = { ...toolbarFeatures(items), link: items.filter(i => i.spec.voxel).length > 1 };
 
-  const act = async (action: ReviewAction, message: string) => {
+  const view = () => `${slotLabels[slot]} · ${slot === "model" ? `${settings.mode === "ingame" ? "in-game" : settings.mode === "orbit" ? "3D orbit" : "exploded"} view, facing ${settings.facing} (${facingLabel(settings.facing)})` : slot === "icon" ? `${settings.zoom}x` : "sheet"}`;
+  const send = async (action: ReviewAction, message: string) => {
     setBusy(true);
     try {
-      const entry = await post(action);
-      setState(s => (s ? { ...s, review: { ...s.review, [action.actor]: entry } } : s));
+      const next = await post(action);
+      setState(s => (s ? { ...s, review: { ...s.review, [action.actor]: next } } : s));
       setToast(message);
-      setComposer(null);
-      setText("");
     } catch (cause) {
       setToast(`Not saved: ${cause instanceof Error ? cause.message : String(cause)}`);
     } finally {
       setBusy(false);
     }
   };
-
-  const submitComposer = () => {
-    if (!current || !composer) return;
-    const view = focused ? `${focused.kind} candidate` : "unit";
-    if (composer.type === "comment") {
-      if (!text.trim()) return;
-      void act({ type: "comment", actor: current.unit.id, candidate: focused?.id ?? null, view, text }, "Comment saved to review.json");
-    } else if (focused) {
-      void act({ type: composer.type, actor: current.unit.id, candidate: focused.id, view, text }, `${composer.type === "approve" ? "Approved" : "Rejected"} ${focused.id}`);
-    }
+  const decide: Decide | null = current ? {
+    choose: c => void send({ type: "choose", actor: current.unit.id, slot, candidate: c, view: view() }, c === "current" ? `${slotLabels[slot]}: keep current` : slot === "concept" ? `${c}: reference for the next round` : `${slotLabels[slot]}: ${c} chosen for game`),
+    clear: () => void send({ type: "clear", actor: current.unit.id, slot }, `${slotLabels[slot]}: decision undone`),
+    reject: c => void send({ type: "reject", actor: current.unit.id, slot, candidate: c }, `${c} rejected`),
+    unreject: c => void send({ type: "unreject", actor: current.unit.id, slot, candidate: c }, `${c}: rejection undone`),
+    comment: c => { setComposer({ slot, candidate: c }); setText(""); },
+  } : null;
+  const saveComment = () => {
+    if (!current || !composer || !text.trim()) return;
+    void send({ type: "comment", actor: current.unit.id, slot: composer.slot, candidate: composer.candidate, view: view(), text }, "Comment saved for the Forge").then(() => { setComposer(null); setText(""); });
   };
-  // The key handler reads the latest render through a ref, so it subscribes once.
-  const keyState = useRef({ move, candidates, focused, current });
-  useEffect(() => { keyState.current = { move, candidates, focused, current }; });
 
+  const goUnit = (delta: number) => {
+    if (!visible.length) return;
+    const index = Math.max(0, visible.findIndex(r => r.unit.id === current?.unit.id));
+    setSelected(visible[(index + delta + visible.length) % visible.length].unit.id);
+    setFocus(0);
+    setComposer(null);
+  };
+
+  // Keyboard: one listener; it reads the latest render through a ref.
+  const keys = useRef({ goUnit, columns, focused, decision, decide, update, settings });
+  useEffect(() => { keys.current = { goUnit, columns, focused, decision, decide, update, settings }; });
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target && (target.closest("input, textarea, select") || target.isContentEditable)) {
+      if (target?.closest("input, textarea, select") || target?.isContentEditable) {
         if (event.key === "Escape") setComposer(null);
         return;
       }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const { goUnit, columns, focused, decision, decide, update, settings } = keys.current;
       const key = event.key.toLowerCase();
-      const { move, candidates, focused, current } = keyState.current;
-      if (key === "j" || event.key === "ArrowDown") { move(1); event.preventDefault(); }
-      else if (key === "k" || event.key === "ArrowUp") { move(-1); event.preventDefault(); }
-      else if (key === "l" || key === "]") { setFocusIndex(i => Math.min(i + 1, Math.max(0, candidates.length - 1))); event.preventDefault(); }
-      else if (key === "h" || key === "[") { setFocusIndex(i => Math.max(0, i - 1)); event.preventDefault(); }
-      else if (key === "a" && focused) { setComposer({ type: "approve" }); event.preventDefault(); }
-      else if (key === "r" && focused) { setComposer({ type: "reject" }); event.preventDefault(); }
-      else if (key === "c" && current) { setComposer({ type: "comment" }); event.preventDefault(); }
-      else if (event.key === "Escape") setComposer(null);
+      const candidate = focused?.candidate?.id ?? null;
+      const handled = () => event.preventDefault();
+      if (key === "j") { goUnit(1); handled(); }
+      else if (key === "k") { goUnit(-1); handled(); }
+      else if (key === "l") { setFocus(f => Math.min(f + 1, columns.length - 1)); handled(); }
+      else if (key === "h") { setFocus(f => Math.max(0, f - 1)); handled(); }
+      else if (key === "1" || key === "2" || key === "3") { setSlot(slotIds[Number(key) - 1]); setFocus(0); setComposer(null); handled(); }
+      else if (key === "u" && decide && candidate && !decision.rejected.includes(candidate)) { decide.choose(candidate); handled(); }
+      else if (key === "n" && decide) { decide.choose("current"); handled(); }
+      else if (key === "r" && decide && candidate) { (decision.rejected.includes(candidate) ? decide.unreject : decide.reject)(candidate); handled(); }
+      else if (key === "c" && decide) { decide.comment(candidate); handled(); }
+      else if (event.key === " " && !target?.closest("button")) { update({ spin: !settings.spin }); handled(); }
+      else if (event.key === "?") { setHelp(h => !h); handled(); }
+      else if (event.key === "Escape") { setComposer(null); setHelp(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
   useEffect(() => { if (composer) textRef.current?.focus(); }, [composer]);
   useEffect(() => {
     if (!toast) return;
@@ -248,104 +250,151 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const stock = state && current && stockId ? stockSpec(current.unit.spec, state, stockId) : null;
-  const entry = current?.entry;
-
+  const unitComments = entry.comments.slice().reverse();
   return (
     <div className="review">
-      <header className="review-head">
-        <div>
-          <span className="eyebrow">Local only · npm run dev</span>
-          <h1>Review</h1>
-          <p className="art-hint">Candidates from <code>{state?.root ?? "RTSAI-Art"}</code>, read in place through a dev-only route. Decisions are written to <code>review.json</code> there. This tab and its API do not exist in production builds.</p>
-        </div>
-        <button type="button" className="art-check" onClick={() => void load()}><RefreshCw size={14} /> Reload</button>
-      </header>
+      <HowReviewWorks open={!howtoDismissed} onClose={() => setHowtoDismissed(true)} />
+      <ExportBanner />
       {error && <p className="art-warn">{error}</p>}
       {state && !state.exists && <p className="art-warn">No workspace at {state.root}.</p>}
-      {state?.errors.length ? <ul className="art-warn">{state.errors.map(e => <li key={e}>{e}</li>)}</ul> : null}
-      <p className="review-keys" aria-label="Keyboard shortcuts"><kbd>J</kbd>/<kbd>K</kbd> next/previous unit · <kbd>H</kbd>/<kbd>L</kbd> previous/next candidate · <kbd>A</kbd> approve · <kbd>R</kbd> reject · <kbd>C</kbd> comment · <kbd>Esc</kbd> cancel</p>
+      {state?.errors.length ? <p className="art-hint">Skipped {plural(state.errors.length, "candidate folder")} without a readable meta.json (the Forge may still be writing them): {state.errors.map(e => e.replace(/\/meta\.json.*$/, "")).join(", ")}.</p> : null}
       <div className="review-layout">
-        <aside className="review-queue" aria-label="Units">
+        <aside className="review-rail" aria-label="Units">
           <div className="review-filters">
-            <label className="art-control"><span>Faction</span><select value={faction} onChange={e => setFaction(e.target.value)}><option value="all">All</option>{factions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
-            <label className="art-control"><span>Status</span><select value={filter} onChange={e => setFilter(e.target.value as Filter)}>
-              <option value="attention">Needs attention ({attentionCount})</option>
-              <option value="candidates">Has candidates</option>
-              {reviewStatuses.map(s => <option key={s} value={s}>{s}</option>)}
-              <option value="all">All units</option>
-            </select></label>
+            <label className="art-control"><span>Faction</span><select value={faction} onChange={e => setFaction(e.target.value)}><option value="all">All factions</option>{factions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+            <div className="review-segment" role="group" aria-label="Show">
+              {([["needs", `Needs your decision (${needsCount})`], ["decided", "Decided"], ["all", "All"]] as const).map(([id, label]) => (
+                <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>
+              ))}
+            </div>
+            <p className="review-legend">Slots: model · icon · concept. <b className="is-chosen">✓</b> chosen <b className="is-current">↺</b> keep current <b className="is-undecided">•</b> undecided</p>
           </div>
           <ol>
             {visible.map(r => (
               <li key={r.unit.id}>
-                <button type="button" aria-current={current?.unit.id === r.unit.id ? "true" : undefined} onClick={() => { setSelected(r.unit.id); setFocusIndex(0); setComposer(null); }}>
-                  {r.unit.spec.cameo ? <img src={r.unit.spec.cameo} width={30} height={24} alt="" /> : <span className="review-noicon" />}
-                  <span><b>{r.unit.name}</b><small>{r.unit.factionName} · {r.candidates.length} candidate{r.candidates.length === 1 ? "" : "s"}</small></span>
-                  {r.attention && <i className="review-dot" aria-label="needs attention" />}
-                  <StatusPill status={r.status} />
+                <button type="button" aria-current={current?.unit.id === r.unit.id ? "true" : undefined} onClick={() => { setSelected(r.unit.id); setFocus(0); setComposer(null); }}>
+                  {r.unit.spec.cameo ? <img src={r.unit.spec.cameo} width={45} height={36} alt="" /> : <span className="review-noicon" />}
+                  <span><b>{r.unit.name}</b><small>{r.unit.factionName} · {r.needs ? "Needs your decision" : r.count ? "Decided" : "No candidates"}</small></span>
+                  <Dots ws={r.ws} entry={r.entry} />
                 </button>
               </li>
             ))}
-            {!visible.length && <li className="art-hint">Nothing matches. {filter === "attention" ? "The queue is clear." : ""}</li>}
+            {!visible.length && <li className="art-hint">{filter === "needs" ? "Nothing needs your decision." : "Nothing matches."}</li>}
           </ol>
         </aside>
-        {current && (
+        {current && decide && (
           <section className="review-main" aria-label={current.unit.name}>
             <header className="review-unit-head">
               <div>
                 <span className="eyebrow">{current.unit.factionName} · {current.unit.category} · {current.unit.role}</span>
                 <h2>{current.unit.name} <code>{current.unit.id}</code></h2>
-                <p><StatusPill status={current.status} /> {entry?.approved ? <>approved candidate <code>{entry.approved}</code></> : null} · <Link href={`/art/${current.unit.factionId}/${current.unit.id}`}>Unit page →</Link></p>
+                {current.unit.catalog && <p className="review-catalog">Catalog: <b>{current.unit.catalog.name}</b> · {current.unit.catalog.role} · {current.unit.catalog.story}</p>}
               </div>
-              <div className="review-actions">
-                <button type="button" className="art-check" disabled={!focused || busy} onClick={() => setComposer({ type: "approve" })}><Check size={14} /> Approve <kbd>A</kbd></button>
-                <button type="button" className="art-check" disabled={!focused || busy} onClick={() => setComposer({ type: "reject" })}><X size={14} /> Reject <kbd>R</kbd></button>
-                <button type="button" className="art-check" disabled={busy} onClick={() => setComposer({ type: "comment" })}><MessageSquare size={14} /> Comment <kbd>C</kbd></button>
+              <div className="review-head-actions">
+                {howtoDismissed && <button type="button" className="art-check" onClick={() => setHowtoDismissed(false)}>How review works</button>}
+                <HelpPopover open={help} onToggle={() => setHelp(h => !h)} />
+                <button type="button" className="art-check" onClick={() => void load()}><RefreshCw size={14} /> Reload</button>
+                <Link className="art-check" href={`/art/${current.unit.factionId}/${current.unit.id}`}>Unit page</Link>
               </div>
             </header>
+            <div className="review-tabs" role="tablist" aria-label="Slots">
+              {slotIds.map((id, i) => {
+                const st = slotState(current.ws, current.entry, id);
+                return (
+                  <button key={id} type="button" role="tab" aria-selected={slot === id} onClick={() => { setSlot(id); setFocus(0); setComposer(null); }}>
+                    <kbd>{i + 1}</kbd> {slotLabels[id]} <small>{plural(candidatesForSlot(current.ws, id).length, "candidate")} · {id === "concept" ? (st === "chosen" ? "reference chosen" : "reference only") : dotWords[st]}</small>
+                  </button>
+                );
+              })}
+            </div>
+            {slot === "model" && <ViewerToolbar settings={settings} update={update} tints={tints} features={features} className="is-sticky" />}
+            {slot === "icon" && (
+              <div className="art-toolbar is-sticky" role="toolbar" aria-label="Icon view"><div className="art-control" role="group" aria-label="Palette scale"><span>Palette scale</span>{([1, 2] as const).map(z => <button key={z} type="button" aria-pressed={paletteZoom === z} onClick={() => setPaletteZoom(z)}>{z}×</button>)}</div><span className="art-hint">Players see cameos at 1×.</span></div>
+            )}
             {composer && (
-              <form className="review-composer" onSubmit={e => { e.preventDefault(); submitComposer(); }}>
-                <label htmlFor="review-text">{composer.type === "comment" ? `Comment${focused ? ` on ${focused.id}` : ""}` : `${composer.type === "approve" ? "Approve" : "Reject"} ${focused?.id} — optional note`}</label>
-                <textarea id="review-text" ref={textRef} value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={4000}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComposer(); } }} />
-                <div><button type="submit" className="art-check" disabled={busy || (composer.type === "comment" && !text.trim())}>Save <kbd>Enter</kbd></button><button type="button" className="art-check" onClick={() => setComposer(null)}>Cancel <kbd>Esc</kbd></button></div>
+              <form className="review-composer" onSubmit={e => { e.preventDefault(); saveComment(); }}>
+                <label htmlFor="review-text">Comment for the Forge · {slotLabels[composer.slot]}{composer.candidate ? ` · ${composer.candidate}` : " · the current asset"}</label>
+                <textarea id="review-text" ref={textRef} value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={4000} placeholder="What should the next round change?"
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveComment(); } }} />
+                <div><button type="submit" className="art-check" disabled={busy || !text.trim()}>Save <kbd>Enter</kbd></button><button type="button" className="art-check" onClick={() => setComposer(null)}>Cancel <kbd>Esc</kbd></button></div>
               </form>
             )}
-            <div className="review-current">
-              <h3>In game now</h3>
-              <div className="review-current-row">
-                {current.unit.spec.cameo && <span className="review-cameos"><img src={current.unit.spec.cameo} width={60} height={48} alt="" className="art-cameo-native" /><img src={current.unit.spec.cameo} width={120} height={96} alt="current cameo" className="art-cameo-2x" /></span>}
-                <CurrentThumb spec={current.unit.spec} />
-              </div>
+            {candidates.length === 0 && <p className="art-hint review-empty">The Forge has no {slotLabels[slot].toLowerCase()} candidates for this unit yet. The column below shows what is in game.</p>}
+            <div className={`review-grid is-${slot}`}>
+              {columns.map((col, i) => {
+                const id = col.candidate?.id ?? "current";
+                const chosen = decision.chosen === id;
+                const rejected = col.candidate ? decision.rejected.includes(col.candidate.id) : false;
+                return (
+                  <article key={col.key} className={`review-col ${focused.key === col.key ? "is-focused" : ""} ${chosen ? "is-chosen" : ""} ${rejected ? "is-rejected" : ""}`}
+                    onPointerDownCapture={() => setFocus(i)} onFocusCapture={() => setFocus(i)} aria-label={col.candidate ? candidateLabel(col.candidate) : "Now in game"}>
+                    <h3 className="review-col-title">{col.candidate ? candidateLabel(col.candidate) : slot === "concept" ? "Now in game (for reference)" : "Now in game"}</h3>
+                    <ColumnBody slot={slot} unit={current.unit} units={units} candidate={col.candidate} items={items} settings={settings} tints={tints} link={link} paletteZoom={paletteZoom} />
+                    <div className="review-col-foot">
+                      {col.candidate ? (
+                        <>
+                          <MadeFrom candidate={col.candidate} all={allCandidates} />
+                          <Scores candidate={col.candidate} />
+                          <p className="review-col-meta"><Cost candidate={col.candidate} all={allCandidates} /> · {new Date(col.candidate.createdAt).toLocaleString()}{col.candidate.fixture ? " · fixture" : ""}</p>
+                          {!!col.candidate.files.previews?.length && (
+                            <details className="review-previews"><summary>Forge previews ({col.candidate.files.previews.length}), made outside the game</summary>
+                              {col.candidate.files.previews.map(p => col.candidate!.urls[p] && <a key={p} href={col.candidate!.urls[p]} target="_blank" rel="noreferrer"><img src={col.candidate!.urls[p]} alt={p} loading="lazy" /></a>)}
+                            </details>
+                          )}
+                        </>
+                      ) : <p className="review-col-meta">{slot === "concept" ? "Concept art never ships; this is what players see today." : "Shipped in the mod now."}</p>}
+                      {(slot !== "concept" || col.candidate) && <DecisionButtons slot={slot} candidate={id} decision={decision} decide={decide} busy={busy} />}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-            <h3>Candidates ({candidates.length})</h3>
-            {!candidates.length && <p className="art-hint">The Forge has not produced candidates for this unit yet.</p>}
-            <div className="review-candidates">
-              {candidates.map((c, i) => (
-                <CandidateCard key={c.id} unit={current.unit} candidate={c} focused={focused?.id === c.id} approved={entry?.approved === c.id} onFocus={() => setFocusIndex(i)} tints={tints} />
-              ))}
-            </div>
-            {state && (current.ws?.comparisons.length || state.stock.length) ? (
-              <details className="review-reference">
-                <summary>Local RA2 reference (reference-local, never published)</summary>
-                {current.ws?.comparisons.map(src => <img key={src} src={src} alt="local comparison" loading="lazy" />)}
-                {current.unit.spec.voxel && state.stock.length > 0 && (
-                  <>
-                    <label className="art-control"><span>Stock voxel</span><select value={stockId} onChange={e => setStockId(e.target.value)}><option value="">Choose…</option>{state.stock.map(s => <option key={s.id} value={s.id}>{s.id} — {s.usedBy.join(", ")}</option>)}</select></label>
-                    {stock && <VoxelViewer key={stock.id} spec={stock} tints={tints} feedback={null} />}
-                  </>
-                )}
-              </details>
-            ) : null}
-            <h3>Comments and decisions</h3>
-            {entry?.comments.length ? (
-              <ol className="review-comments">{[...entry.comments].reverse().map((c, i) => <li key={i}><small>{new Date(c.at).toLocaleString()} · {c.author}{c.candidate ? ` · ${c.candidate}` : ""}{c.view ? ` · ${c.view}` : ""}</small><p>{c.text}</p></li>)}</ol>
-            ) : <p className="art-hint">None yet.</p>}
+            <section className="review-history" aria-label="Comments for the Forge">
+              <h3>Comments for the Forge</h3>
+              {unitComments.length ? (
+                <ol>{unitComments.map((c, i) => <li key={i}><small>{c.at ? new Date(c.at).toLocaleString() : ""} · {c.slot ? slotLabels[c.slot] : "unit"}{c.candidate ? ` · ${c.candidate}` : ""}{c.view ? ` · ${c.view}` : ""}</small><p>{c.text}</p></li>)}</ol>
+              ) : <p className="art-hint">None yet. Press <kbd>C</kbd> to leave one on the focused column.</p>}
+            </section>
           </section>
         )}
       </div>
       {toast && <p className="review-toast" role="status">{toast}</p>}
+    </div>
+  );
+}
+
+function ColumnBody({ slot, unit, units, candidate, items, settings, tints, link, paletteZoom }: {
+  slot: SlotId; unit: ReviewUnit; units: ReviewUnit[]; candidate: Candidate | null; items: StageItem[];
+  settings: ViewSettings; tints: MapTint[]; link: CameraLink; paletteZoom: 1 | 2;
+}) {
+  if (slot === "model") {
+    const item = items.find(i => i.key === (candidate?.id ?? "current"));
+    if (!item) return <p className="art-hint">This candidate has no files the game could draw ({candidate?.files.vxl?.length ? "VXL without matching HVA" : "no VXL or SHP"}).</p>;
+    return <ArtStage spec={item.spec} sprite={item.sprite} settings={settings} tints={tints} link={link} height={340} />;
+  }
+  if (slot === "icon") {
+    const cameo = candidate ? (candidate.files.cameo ? candidate.urls[candidate.files.cameo] : null) : unit.spec.cameo;
+    return (
+      <div className="review-icon">
+        <div className="review-icon-sizes">
+          {cameo ? <><figure><img src={cameo} width={60} height={48} alt="" className="art-cameo-native" /><figcaption>1×</figcaption></figure><figure><img src={cameo} width={120} height={96} alt={`${unit.name} cameo at 2x`} className="art-cameo-2x" /><figcaption>2×</figcaption></figure></> : <span className="art-hint">No cameo file.</span>}
+        </div>
+        <PaletteContext unit={unit} units={units} cameo={cameo} zoom={paletteZoom} />
+      </div>
+    );
+  }
+  if (!candidate) return <CurrentReference unit={unit} settings={settings} tints={tints} />;
+  const sheet = candidate.files.concept ? candidate.urls[candidate.files.concept] : null;
+  return sheet ? <ZoomableImage src={sheet} alt={`${candidate.id} concept sheet`} /> : <p className="art-hint">No concept image.</p>;
+}
+
+function CurrentReference({ unit, settings, tints }: { unit: ReviewUnit; settings: ViewSettings; tints: MapTint[] }) {
+  const image = useInGameImage(unit.spec, settings);
+  const tint = tints.find(t => t.map === settings.tintMap)?.tint ?? [1, 1, 1] as [number, number, number];
+  return (
+    <div className="review-current-ref">
+      {unit.spec.cameo && <img src={unit.spec.cameo} width={120} height={96} alt={`${unit.name} cameo`} className="art-cameo-2x" />}
+      {image && <PixelCanvas image={image} zoom={2} backdrop={settings.backdrop} tint={tint} diamond label={`${unit.name} in game`} />}
     </div>
   );
 }

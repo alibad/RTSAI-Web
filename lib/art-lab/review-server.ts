@@ -12,7 +12,7 @@
 import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, relative, resolve, sep } from "node:path";
-import { applyReviewAction, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
+import { applyReviewAction, migrateEntry, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
 import { reviewEnabled } from "./review-gate";
 
 const TYPES: Record<string, string> = {
@@ -51,6 +51,12 @@ export function safeResolve(root: string, rel: string) {
   return target;
 }
 
+const kindsOf = (unit: UnitWorkspace | undefined) => (candidate: string) => unit?.candidates.find(c => c.id === candidate)?.kind;
+
+function unitWorkspace(root: string, actor: string): UnitWorkspace | undefined {
+  return readState(root).units.find(u => u.actor === actor);
+}
+
 export function readState(root: string): ReviewState {
   const errors: string[] = [];
   const exists = existsSync(root);
@@ -72,7 +78,10 @@ export function readState(root: string): ReviewState {
       .map(f => `${FILE_ROUTE}${encodeURIComponent(`reference-local/comparisons/${f}`)}`);
     units.push({ actor, spec: readJson(join(dir, "spec.json")), candidates, comparisons });
   }
-  const review = readJson<ReviewFile>(join(root, "review.json")) ?? {};
+  // Present every entry in the current (version 2, per-slot) shape; the file itself is rewritten only on a decision.
+  const raw = readJson<Record<string, unknown>>(join(root, "review.json")) ?? {};
+  const review: ReviewFile = {};
+  for (const [actor, entry] of Object.entries(raw)) review[actor] = migrateEntry(entry, kindsOf(units.find(u => u.actor === actor)));
   const stockIndex = readJson<{ units?: Record<string, { usedBy?: string[]; parts?: Record<string, string[]>; found?: boolean }> }>(join(root, "reference-local", "ra2-stock", "index.json"));
   const stock = Object.entries(stockIndex?.units ?? {}).filter(([, u]) => u.found !== false).map(([id, u]) => ({ id, usedBy: u.usedBy ?? [], parts: Object.keys(u.parts ?? {}) }));
   const stockPalette = existsSync(join(root, "reference-local", "ra2-stock", "unittem.pal")) ? `${FILE_ROUTE}${encodeURIComponent("reference-local/ra2-stock/unittem.pal")}` : null;
@@ -91,7 +100,7 @@ export function readState(root: string): ReviewState {
 export function writeAction(root: string, action: ReviewAction) {
   const path = join(root, "review.json");
   const current = readJson<ReviewFile>(path) ?? {};
-  const next = applyReviewAction(current, action);
+  const next = applyReviewAction(current, action, new Date().toISOString(), kindsOf(unitWorkspace(root, action.actor)));
   const temp = `${path}.${process.pid}.tmp`;
   writeFileSync(temp, JSON.stringify(next, null, 2) + "\n");
   renameSync(temp, path);

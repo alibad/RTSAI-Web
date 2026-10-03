@@ -3,7 +3,7 @@
  * Server components: they pass only the small render specs to the client viewers.
  */
 import { RosterBoard, type RosterGroup } from "./art/RosterBoard";
-import { UnitArt } from "./art/UnitArt";
+import { UnitViewer } from "./art/UnitViewer";
 import { artActorByCatalogUnit, artFactionByCatalogId, artLab, categoryLabels, factionActors, renderSpec, spriteWithUrls } from "../../lib/art-lab/manifest";
 import { artCategories } from "../../lib/art-lab/types";
 import { roleLabel } from "../../lib/art-lab/labels";
@@ -20,7 +20,7 @@ export function FactionInGameRoster({ catalogFactionId }: { catalogFactionId: st
       id: category, label: categoryLabels[category],
       tiles: actors.filter(a => a.category === category).map(a => {
         const unit = a.catalogUnitId ? unitById(a.catalogUnitId) : undefined;
-        return { spec: renderSpec(unit ? { ...a, name: unitLabel(unit, "ra2").name } : a), href: unit ? `/units/${unit.id}?mode=ra2` : null, role: unit ? unitLabel(unit, "ra2").role : roleLabel(a) };
+        return { spec: renderSpec(unit ? { ...a, name: unitLabel(unit, "ra2").name } : a), sprite: spriteWithUrls(a), href: unit ? `/units/${unit.id}?mode=ra2` : null, hrefLabel: "Unit dossier", role: unit ? unitLabel(unit, "ra2").role : roleLabel(a) };
       }),
     }))
     .filter(g => g.tiles.length);
@@ -29,7 +29,7 @@ export function FactionInGameRoster({ catalogFactionId }: { catalogFactionId: st
       <span className="section-number">ON THE BATTLEFIELD</span>
       <h2 className="art-board-title">The full roster at in-game scale</h2>
       <p className="art-board-note">{sourceNote}</p>
-      <RosterBoard groups={groups} tints={artLab.render.mapTints} compact />
+      <RosterBoard groups={groups} tints={artLab.render.mapTints} />
     </section>
   );
 }
@@ -44,7 +44,7 @@ export function UnitInGameArt({ catalogUnitId }: { catalogUnitId: string }) {
       <span className="section-number">IN GAME · RED ALERT 2</span>
       <h2 className="art-board-title">{actor.render === "voxel" ? "Turn it, take it apart" : "Every frame the game draws"}</h2>
       <p className="art-board-note">{sourceNote}</p>
-      <UnitArt spec={spec} sprite={spriteWithUrls(actor)} tints={artLab.render.mapTints} feedback={null} compact />
+      <UnitViewer spec={spec} sprite={spriteWithUrls(actor)} tints={artLab.render.mapTints} />
     </section>
   );
 }

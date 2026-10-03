@@ -5,7 +5,7 @@ import { Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { applyReviewAction, candidateRenderSpec, needsAttention, validateAction, type ReviewFile, type UnitWorkspace } from "../lib/art-lab/review";
+import { applyReviewAction, candidateCost, candidateRenderSpec, formatCost, migrateEntry, needsDecision, slotState, validateAction, type Candidate, type ReviewFile, type UnitWorkspace } from "../lib/art-lab/review";
 import { reviewEnabled } from "../lib/art-lab/review-gate";
 import { createArtReviewMiddleware, safeResolve } from "../lib/art-lab/review-server";
 import { artLab, renderSpec } from "../lib/art-lab/manifest";
@@ -91,33 +91,75 @@ test("review API in development: state, safe file reads and review.json writes",
     assert.equal((await call(handler, "POST", "/action", { body: JSON.stringify({ type: "approve", actor: "../x", candidate: "a" }), headers: { "content-type": "application/json" } })).status, 400);
 
     const post = (body: unknown) => call(handler, "POST", "/action", { body: JSON.stringify(body), headers: { "content-type": "application/json" } });
-    assert.equal((await post({ type: "comment", actor: "r2qilin", candidate: "fixture-1", view: "cameo 2x", text: "Turret reads too small" })).status, 200);
-    assert.equal((await post({ type: "approve", actor: "r2qilin", candidate: "fixture-1", view: "cameo" })).status, 200);
+    assert.equal((await post({ type: "comment", actor: "r2qilin", slot: "icon", candidate: "fixture-1", view: "Build icon · 2x", text: "Turret reads too small" })).status, 200);
+    assert.equal((await post({ type: "choose", actor: "r2qilin", slot: "icon", candidate: "fixture-1", view: "Build icon · 1x" })).status, 200);
+    assert.equal((await post({ type: "choose", actor: "r2qilin", slot: "model", candidate: "current" })).status, 200);
     const review = JSON.parse(readFileSync(join(root, "review.json"), "utf8")) as ReviewFile;
-    assert.equal(review.r2qilin.status, "approved");
-    assert.equal(review.r2qilin.approved, "fixture-1");
-    assert.deepEqual(review.r2qilin.comments.map(c => c.text), ["Turret reads too small", "Approved"]);
-    assert.equal(review.r2qilin.comments[0].view, "cameo 2x");
+    assert.equal(review.r2qilin.version, 2);
+    assert.equal(review.r2qilin.slots.icon.chosen, "fixture-1");
+    assert.equal(review.r2qilin.slots.model.chosen, "current", "keep current");
+    assert.equal(review.r2qilin.status, "decided", "both decision slots are decided");
+    assert.deepEqual(review.r2qilin.comments.map(c => [c.slot, c.text]), [["icon", "Turret reads too small"]], "decisions are logged, not mixed into the Forge comments");
+    assert.deepEqual(review.r2qilin.log.map(l => l.action), ["choose", "choose"]);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("review model: decisions, validation and the needs-attention queue", () => {
+test("review model: per-slot decisions, keep current, reject, and the decision queue", () => {
   let file: ReviewFile = {};
-  file = applyReviewAction(file, { type: "comment", actor: "r2lynx", text: "hm" }, "2026-10-03T01:00:00Z");
+  file = applyReviewAction(file, { type: "comment", actor: "r2lynx", slot: "model", text: "Lower the turret" }, "2026-10-03T01:00:00Z");
   assert.equal(file.r2lynx.status, "in-review");
-  file = applyReviewAction(file, { type: "approve", actor: "r2lynx", candidate: "v1" }, "2026-10-03T02:00:00Z");
-  file = applyReviewAction(file, { type: "reject", actor: "r2lynx", candidate: "v1", text: "wheels" }, "2026-10-03T03:00:00Z");
-  assert.equal(file.r2lynx.status, "rejected");
-  assert.equal(file.r2lynx.approved, null);
-  assert.equal(file.r2lynx.comments.at(-1)!.text, "Rejected: wheels");
-  assert.equal(validateAction({ type: "status", actor: "r2lynx", status: "shipped" }), "Bad status");
+  file = applyReviewAction(file, { type: "choose", actor: "r2lynx", slot: "model", candidate: "voxel-v1" }, "2026-10-03T02:00:00Z");
+  assert.equal(file.r2lynx.slots.model.chosen, "voxel-v1");
+  file = applyReviewAction(file, { type: "reject", actor: "r2lynx", slot: "model", candidate: "voxel-v1" }, "2026-10-03T03:00:00Z");
+  assert.equal(file.r2lynx.slots.model.chosen, null, "rejecting the chosen candidate clears the choice");
+  assert.deepEqual(file.r2lynx.slots.model.rejected, ["voxel-v1"]);
+  file = applyReviewAction(file, { type: "choose", actor: "r2lynx", slot: "model", candidate: "voxel-v1" }, "2026-10-03T04:00:00Z");
+  assert.deepEqual(file.r2lynx.slots.model.rejected, [], "choosing a rejected candidate un-rejects it");
+  assert.equal(validateAction({ type: "choose", actor: "r2lynx", slot: "turret", candidate: "a" }), "Bad slot");
+  assert.equal(validateAction({ type: "reject", actor: "r2lynx", slot: "model", candidate: "current" }), "Only candidates can be rejected");
   assert.equal(validateAction({ type: "comment", actor: "r2lynx", text: "  " }), "Empty comment");
-  assert.equal(validateAction({ type: "approve", actor: "r2lynx", candidate: "voxel-v1" }), null);
+  assert.equal(validateAction({ type: "approve", actor: "r2lynx", candidate: "voxel-v1" }), "Unknown action");
 
-  const unit = (createdAt: string): UnitWorkspace => ({ actor: "r2lynx", spec: null, comparisons: [], candidates: [{ id: "v2", actor: "r2lynx", createdAt, kind: "cameo", dir: "", urls: {}, files: { cameo: "c.png" } }] });
-  assert.equal(needsAttention(unit("2026-10-03T00:00:00Z"), file.r2lynx), false, "decided after the newest candidate");
-  assert.equal(needsAttention(unit("2026-10-03T04:00:00Z"), file.r2lynx), true, "a newer candidate needs a look");
-  assert.equal(needsAttention(unit("2026-10-03T04:00:00Z"), undefined), true, "never reviewed");
+  const ws = (createdAt: string): UnitWorkspace => ({ actor: "r2lynx", spec: null, comparisons: [], candidates: [{ id: "voxel-v2", actor: "r2lynx", createdAt, kind: "voxel", dir: "", urls: {}, files: { vxl: ["a.vxl"] } }] });
+  assert.equal(needsDecision(ws("2026-10-03T00:00:00Z"), file.r2lynx), false, "decided after the newest candidate");
+  assert.equal(needsDecision(ws("2026-10-03T05:00:00Z"), file.r2lynx), true, "a newer candidate needs a decision");
+  assert.equal(needsDecision(ws("2026-10-03T05:00:00Z"), undefined), true, "never reviewed");
+  assert.equal(slotState(ws("2026-10-03T00:00:00Z"), file.r2lynx, "model"), "chosen");
+  assert.equal(slotState(ws("2026-10-03T00:00:00Z"), file.r2lynx, "icon"), "none");
+  const kept = applyReviewAction(file, { type: "choose", actor: "r2lynx", slot: "model", candidate: "current" }, "2026-10-03T06:00:00Z");
+  assert.equal(slotState(ws("2026-10-03T05:00:00Z"), kept.r2lynx, "model"), "current");
+});
+
+test("review.json version 1 entries migrate to per-slot decisions, keeping the Forge's fields", () => {
+  const v1 = {
+    status: "approved", approved: "cameo-v6", forgeRecommendation: { cameo: "cameo-v6" },
+    comments: [
+      { at: "2026-10-03T01:00:00Z", candidate: "voxel-v1", view: "voxel candidate", text: "Rejected: too dark", author: "owner" },
+      { at: "2026-10-03T02:00:00Z", candidate: "cameo-v6", view: null, text: "Approved", author: "owner" },
+      { at: "2026-10-03T03:00:00Z", candidate: null, view: null, text: "Make the gun longer", author: "owner" },
+    ],
+  };
+  const kinds: Record<string, string> = { "cameo-v6": "cameo", "voxel-v1": "voxel" };
+  const entry = migrateEntry(v1, id => kinds[id]);
+  assert.equal(entry.version, 2);
+  assert.equal(entry.slots.icon.chosen, "cameo-v6");
+  assert.deepEqual(entry.slots.model.rejected, ["voxel-v1"]);
+  assert.equal(entry.approved, undefined);
+  assert.deepEqual(entry.forgeRecommendation, { cameo: "cameo-v6" });
+  assert.deepEqual(entry.comments.map(c => c.text), ["Rejected: too dark", "Make the gun longer"], "bare decision notes leave the comment list");
+  assert.equal(entry.comments[0].slot, "model");
+});
+
+test("candidate cost sums its calls, the concept and the variant it reuses; unknown is a dash", () => {
+  const base = { actor: "r2qilin", createdAt: "", dir: "", urls: {}, files: {} };
+  const all: Candidate[] = [
+    { ...base, id: "concept-v1", kind: "concept", costUsd: 0.055603 },
+    { ...base, id: "voxel-v1", kind: "voxel", costUsd: 0.067306, fromConcept: "concept-v1", imageTo3d: { model: "trellis" } },
+    { ...base, id: "voxel-v2", kind: "voxel", costUsd: 0, calls: [], fromConcept: "concept-v1", variantOf: "voxel-v1", imageTo3d: { model: "trellis" } },
+    { ...base, id: "cameo-x", kind: "cameo" },
+  ];
+  assert.equal(formatCost(candidateCost(all[2], all)), "$0.123", "v2 reuses v1's reference image; the concept counts once");
+  assert.equal(formatCost(candidateCost(all[3], all)), "—");
 });
 
 test("voxel candidates are drawn in the current unit's slot: same scale, light and turret pivot", () => {

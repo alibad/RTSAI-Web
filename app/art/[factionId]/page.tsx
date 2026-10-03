@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtLabChrome } from "../ArtLabChrome";
 import { RosterBoard, type RosterGroup } from "../../components/art/RosterBoard";
-import { artFactionById, artLab, categoryLabels, factionActors, fileUrl, renderSpec } from "../../../lib/art-lab/manifest";
+import { artFactionById, artLab, categoryLabels, factionActors, fileUrl, renderSpec, spriteWithUrls } from "../../../lib/art-lab/manifest";
 import { artCategories } from "../../../lib/art-lab/types";
 import { roleLabel } from "../../../lib/art-lab/labels";
 
@@ -23,7 +23,7 @@ export default async function FactionArtPage({ params }: Props) {
   const groups: RosterGroup[] = artCategories
     .map(category => ({
       id: category, label: categoryLabels[category],
-      tiles: actors.filter(a => a.category === category).map(a => ({ spec: renderSpec(a), href: `/art/${faction.id}/${a.id}`, role: roleLabel(a) })),
+      tiles: actors.filter(a => a.category === category).map(a => ({ spec: renderSpec(a), sprite: spriteWithUrls(a), href: `/art/${faction.id}/${a.id}`, role: roleLabel(a), feedback: { factionId: faction.id, actorId: a.id } })),
     }))
     .filter(g => g.tiles.length);
   const issues = actors.flatMap(a => [

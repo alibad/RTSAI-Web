@@ -1,0 +1,57 @@
+/**
+ * Which sequences the game plays for each sprite animation, taken from the rules traits recorded per
+ * sequence (`usedBy`): infantry stand / move / attack / idle / die (and prone when the unit has prone art);
+ * defences idle / build-up, with the turret and idle overlays on top.
+ */
+import type { SpriteArt, SpriteSequence } from "./types";
+
+export type SpriteAnimation = { id: string; label: string; body: SpriteSequence | null; note: string | null };
+
+export const animationLabels: Record<string, string> = {
+  stand: "Stand", move: "Walk", attack: "Fire", idle: "Idle", die: "Die", prone: "Prone", body: "Idle", make: "Build-up",
+};
+
+const own = (s: SpriteSequence) => Boolean(s.file) && !s.inherited && !(s.file ?? "").endsWith(".png");
+
+export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
+  if (!sprite) return [];
+  const seqs = sprite.sequences.filter(own);
+  const by = (prefix: string) => seqs.find(s => s.usedBy.some(u => u.startsWith(prefix))) ?? null;
+  const infantry = seqs.some(s => s.usedBy.some(u => u.startsWith("WithInfantryBody")));
+  const out: SpriteAnimation[] = [];
+  if (infantry) {
+    const stand = by("WithInfantryBody stand");
+    out.push({ id: "stand", label: "Stand", body: stand, note: null });
+    out.push({ id: "move", label: "Walk", body: by("WithInfantryBody move"), note: null });
+    out.push({ id: "attack", label: "Fire", body: by("WithInfantryBody attack"), note: null });
+    out.push({ id: "idle", label: "Idle", body: by("WithInfantryBody idle"), note: null });
+    const prone = seqs.find(s => s.name.startsWith("prone-")) ?? null;
+    out.push({ id: "prone", label: "Prone", body: prone ?? stand, note: prone ? null : "No prone art: while prone the game shows the normal sequences." });
+    out.push({ id: "die", label: "Die", body: by("WithDeathAnimation"), note: null });
+  } else {
+    out.push({ id: "body", label: "Idle", body: by("WithSpriteBody") ?? seqs[0] ?? null, note: null });
+    const make = by("WithMakeAnimation");
+    if (make) out.push({ id: "make", label: "Build-up", body: make, note: "Build-up: the turret and overlays appear once construction completes." });
+  }
+  return out.filter(a => a.body);
+}
+
+/** The animation to show for a requested id, falling back to the first (stand / idle). */
+export function pickAnimation(sprite: SpriteArt | null, id: string) {
+  const list = spriteAnimations(sprite);
+  const aliases: Record<string, string[]> = { stand: ["stand", "body"], body: ["body", "stand"], move: ["move", "body"], attack: ["attack", "body"], idle: ["idle", "body"], die: ["die", "body"], prone: ["prone", "body"], make: ["make", "stand"] };
+  for (const candidate of aliases[id] ?? [id]) {
+    const hit = list.find(a => a.id === candidate);
+    if (hit) return hit;
+  }
+  return list[0] ?? null;
+}
+
+export function turretSequence(sprite: SpriteArt | null) {
+  if (!sprite?.turret) return null;
+  return sprite.sequences.find(s => s.name === sprite.turret!.sequence && own(s)) ?? null;
+}
+
+export function overlaySequence(sprite: SpriteArt | null) {
+  return sprite?.sequences.find(s => own(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) ?? null;
+}
