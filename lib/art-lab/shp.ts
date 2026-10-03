@@ -4,6 +4,8 @@
  * radar colour, 4 reserved, data offset). Compression 0/1: raw rows of `w` bytes; 2: rows prefixed by a
  * u16 length; 3: rows prefixed by a u16 length and RLE-zero encoded (0, n = n transparent pixels).
  */
+import { decodeShpTd } from "./shp-td";
+
 export type ShpFrame = {
   /** Position and size of the cropped data inside the full frame. */
   x: number;
@@ -42,7 +44,7 @@ export function isShpTs(bytes: Uint8Array) {
 
 export function decodeShp(input: ArrayBuffer | Uint8Array): Shp {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-  if (!isShpTs(bytes)) throw new Error("Not a TS/RA2 SHP");
+  if (!isShpTs(bytes)) return decodeShpTd(bytes);
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const width = view.getUint16(2, true);
   const height = view.getUint16(4, true);

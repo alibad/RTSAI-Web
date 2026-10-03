@@ -45,7 +45,10 @@ test("MiniYaml merge: Inherits from ^templates, @ instances, -removals and later
 
 test("MiniYaml merge resolves the real mod: Qilin inherits the modern vehicle template", () => {
   const qilin = manifest.actors.r2qilin;
-  assert.equal(qilin.voxel!.scale, 15.2, "Scale comes from ^R2ModernVehicle");
+  assert.equal(qilin.voxel!.scale, 11.7, "Qilin's approved pilot overrides the modern template");
+  assert.deepEqual(qilin.voxel!.ambient, [-0.5, -0.5, -0.5]);
+  assert.deepEqual(qilin.voxel!.diffuse, [1.4, 1.4, 1.4]);
+  assert.equal(manifest.actors.r2karrar.voxel!.scale, 15.2, "other units retain the template scale");
   assert.equal(qilin.voxel!.cameraPitch, 85, "CameraPitch comes from the RA2 ^Vehicle default");
   assert.deepEqual(qilin.voxel!.parts.map(p => p.trait), ["WithVoxelBody", "WithVoxelTurret"]);
   // r2phl removes the turret traits it inherits.

@@ -38,6 +38,7 @@ test("the Faction Art Lab renders and is never indexed", async () => {
 test("Review mode and its API do not exist in the production build", async () => {
   assert.equal((await render("/art/review")).status, 404);
   assert.notEqual((await render("/api/art-review/state")).status, 200);
+  for (const path of ["/api/art-review/roster?mode=classic", "/api/art-review/classic/e1.shp", "/api/art-review/mod/example.pal", "/api/art-review/duel"]) assert.notEqual((await render(path)).status, 200, path);
   const artLab = await (await render("/art")).text();
   assert.doesNotMatch(artLab, /href="\/art\/review"/, "no Review tab in production");
   const chunks = readdirSync(new URL("../dist/client/_next/static/chunks/", import.meta.url));
@@ -88,10 +89,12 @@ test("no original RA2 file reaches the production build (by name or by content)"
   });
   const built = walk(dist);
   const cache = fileURLToPath(new URL("../.cache/ra2-originals/files/", import.meta.url));
+  const classicCache = fileURLToPath(new URL("../.cache/classic-originals/files/", import.meta.url));
   const originals = existsSync(cache) ? readdirSync(cache) : [];
   const hash = path => createHash("sha256").update(readFileSync(path)).digest("hex");
   const originalHashes = new Set(originals.map(name => hash(join(cache, name))));
   const names = new Set(originals.map(n => n.toLowerCase()));
+  for (const name of existsSync(classicCache) ? readdirSync(classicCache) : []) { names.add(name.toLowerCase()); originalHashes.add(hash(join(classicCache, name))); }
   for (const path of built) {
     const base = basename(path).toLowerCase();
     assert.ok(!names.has(base), `${path} has the name of an original RA2 file`);

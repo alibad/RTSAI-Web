@@ -7,6 +7,7 @@ import { parseHexColor, remapPalette } from "./remap";
 import { RA2_NORMALS, TS_NORMALS } from "./normals.generated";
 import { poseParts, rasterizeUnit, type RasterImage } from "./raster";
 import { blit, drawShpFrame, framePosition, sequenceFrame } from "./sprite-render";
+import ShpWorker from "./shp-worker?worker";
 import { partVisibleByDefault, type PaletteSpec, type RenderSpec } from "./spec";
 
 const bytesCache = new Map<string, Promise<Uint8Array>>();
@@ -31,7 +32,18 @@ function cached<T>(key: string, make: () => Promise<T>): Promise<T> {
 }
 export const loadVxl = (url: string) => cached<Vxl>(`vxl:${url}`, async () => decodeVxl(await loadBytes(url)));
 export const loadHva = (url: string) => cached<Hva>(`hva:${url}`, async () => decodeHva(await loadBytes(url)));
-export const loadShp = (url: string) => cached<Shp>(`shp:${url}`, async () => decodeShp(await loadBytes(url)));
+let shpWorker: Worker | undefined, decodeId = 0;
+const pendingShp = new Map<number, { resolve: (shp: Shp) => void; reject: (e: Error) => void }>();
+export const loadShp = (url: string) => cached<Shp>(`shp:${url}`, async () => {
+  const bytes = await loadBytes(url);
+  if (typeof Worker === "undefined") return decodeShp(bytes);
+  if (!shpWorker) {
+    shpWorker = new ShpWorker();
+    shpWorker.onmessage = e => { const job = pendingShp.get(e.data.id); pendingShp.delete(e.data.id); if (e.data.error) job?.reject(new Error(e.data.error)); else job?.resolve(e.data.shp); };
+    shpWorker.onerror = () => { for (const job of pendingShp.values()) job.reject(new Error("Sprite decoder failed")); pendingShp.clear(); shpWorker?.terminate(); shpWorker = undefined; };
+  }
+  return new Promise<Shp>((resolve, reject) => { const id = ++decodeId; pendingShp.set(id, { resolve, reject }); const copy = bytes.slice(); shpWorker!.postMessage({ id, bytes: copy }, [copy.buffer]); });
+});
 
 /** Base palette (no remap) as OpenRA loads it. */
 export const loadBasePalette = (spec: PaletteSpec) => cached<Palette>(`pal:${spec.url}:${spec.transparent}:${spec.shadow}`, async () => decodePal(await loadBytes(spec.url), spec.transparent, spec.shadow));

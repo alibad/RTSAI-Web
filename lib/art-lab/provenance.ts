@@ -15,7 +15,7 @@ export type ProvenanceRecord = {
 };
 
 export const PUBLISHABLE_ORIGINS = new Set(["generated", "procedural", "rendered-from-project-geometry"]);
-export const PUBLISHABLE_GENERATORS = new Set(["qwen-image", "project-geometry"]);
+export const PUBLISHABLE_GENERATORS = new Set(["qwen-image", "project-geometry", "forge-voxel"]);
 
 export class ProvenanceError extends Error {
   constructor(public readonly problems: string[]) {
@@ -38,6 +38,7 @@ export function assertPublishable(keys: Iterable<string>, record: ProvenanceReco
     if (!entry) { problems.push(`${key}: referenced by the mod's rules or sequences but not recorded in ART-PROVENANCE.json`); continue; }
     if (!PUBLISHABLE_ORIGINS.has(entry.origin)) problems.push(`${key}: origin "${entry.origin}" is not publishable`);
     if (!PUBLISHABLE_GENERATORS.has(entry.generator)) problems.push(`${key}: generator "${entry.generator}" is not publishable`);
+    if (entry.generator === "forge-voxel" && (entry.source?.repo !== "RTSAI-Art (local)" || !/^[a-f0-9]{7,40}$/.test(entry.source?.commit ?? "") || !/^units\/[a-z0-9]+\/candidates\/[a-z0-9-]+\//.test(entry.source?.path ?? "") || entry.source?.path?.includes("..") || entry.generation?.model !== "gpt-image-2.5-sunburst")) problems.push(`${key}: Forge source must identify the committed authored candidate and its image model`);
     const actual = sha256Of(key);
     if (actual !== entry.sha256) problems.push(`${key}: bytes (sha256 ${actual.slice(0, 12)}…) differ from the provenance record (${entry.sha256.slice(0, 12)}…)`);
     entries.set(key, entry);

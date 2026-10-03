@@ -131,7 +131,7 @@ export type GeneratorRef = {
   commit: string;
   script: string;
   functions: { name: string; file: string; line: number; url: string; part?: string }[];
-  scriptUrl: string;
+  scriptUrl: string | null;
   geometry: string | null;
   note: string | null;
 };

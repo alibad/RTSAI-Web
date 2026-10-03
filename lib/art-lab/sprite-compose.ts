@@ -29,10 +29,12 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
   const animation = pickAnimation(sprite, animationId);
   if (!animation?.body) return null;
   const make = animation.id === "make";
+  const damaged = animation.id.startsWith("damaged-");
+  const damagedLayer = (base: SpriteSequence | null) => damaged && base ? sprite?.sequences.find(s => s.name === `damaged-${base.name}` && s.file) ?? base : base;
   return {
     animation, body: animation.body,
-    turret: make ? null : turretSequence(sprite),
-    overlay: make ? null : overlaySequence(sprite),
+    turret: make ? null : damagedLayer(turretSequence(sprite)),
+    overlay: make ? null : damagedLayer(overlaySequence(sprite)),
     initialFacing: sprite?.turret?.initialFacing ?? 0,
     turretOffset: sprite?.turret?.offset,
   };

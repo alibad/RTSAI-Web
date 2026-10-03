@@ -40,7 +40,7 @@ export type Version = {
 const itemCache = new Map<string, StageItem | null>();
 export function stageItem(unit: ReviewUnit, candidate: Candidate | null): StageItem | null {
   if (!candidate) {
-    const key = `${unit.id}:current`;
+    const key = `${unit.id}:current:${JSON.stringify(unit.spec)}`;
     if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite });
     return itemCache.get(key)!;
   }

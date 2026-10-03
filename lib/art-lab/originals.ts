@@ -10,14 +10,17 @@
  * linking the mod engine's `mods` and the existing RA2 content, so no other repository is touched.
  */
 import { execFile } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { crc32, deflateSync } from "node:zlib";
 import { child, childValue, traits } from "./miniyaml";
 import { decodePal } from "./pal";
 import { buildRenderSpec, spriteWithUrlsOf } from "./render-spec";
 import { loadModData, MOD_DIR, resolveActor, worldNormals, type ModReader, type Ra2Hook } from "./resolve";
+import { behaviorFacts, type BehaviorFacts } from "./behavior";
+import { loadClassicData } from "./classic";
 import { computeRosters, type FactionRoster, type RosterUnit } from "./roster";
 import { decodeShp } from "./shp";
 import type { PaletteSpec, RenderSpec } from "./spec";
@@ -29,6 +32,7 @@ const run = promisify(execFile);
 export type OriginalsConfig = {
   /** RTSAI-Mod checkout (rules, sequences, the engine and its OpenRA.Utility). */
   modRoot: string;
+  mode?: "ra2" | "classic";
   /** Directory holding Content/ra2 (ra2.mix, language.mix): the player's RA2 data. */
   supportDir: string;
   /** Gitignored cache for extracted files. */
@@ -47,32 +51,36 @@ export function originalsConfig(webRoot: string, env: NodeJS.ProcessEnv = proces
   };
 }
 
-export type StockArt = { spec: RenderSpec; sprite: SpriteArt | null; files: string[]; fromModBits: string[]; info: RosterUnit | null };
+export type StockArt = { spec: RenderSpec; sprite: SpriteArt | null; files: string[]; fromModBits: string[]; info: RosterUnit | null; behavior: BehaviorFacts };
 export type RosterPayload = {
+  mode?: "ra2" | "classic";
   factions: FactionRoster[];
+  unresolved?: string[];
   stock: Record<string, StockArt>;
   extraction: { requested: number; cached: number; missing: string[]; error: string | null; ms: number };
 };
 
+export function classicConfig(cfg: OriginalsConfig): OriginalsConfig { return { ...cfg, mode: "classic", modRoot: resolve(cfg.modRoot, "../OpenRA"), cacheDir: resolve(cfg.cacheDir, "../classic-originals") }; }
+
 const filesDir = (cfg: OriginalsConfig) => join(cfg.cacheDir, "files");
-const cached = (cfg: OriginalsConfig, name: string) => SAFE_NAME.test(name) && existsSync(join(filesDir(cfg), name));
+const cachePath = (cfg: OriginalsConfig, name: string) => name.startsWith("owned/")
+  ? SAFE_NAME.test(name.slice(6)) ? join(cfg.cacheDir, "owned-files", name.slice(6)) : null
+  : SAFE_NAME.test(name) ? join(filesDir(cfg), name) : null;
+const cached = (cfg: OriginalsConfig, name: string) => { const p = cachePath(cfg, name); return Boolean(p && existsSync(p)); };
 
 /** Path of a cached original file, or null (unsafe name or not extracted). */
 export function cachedFile(cfg: OriginalsConfig, name: string) {
-  return cached(cfg, name) ? join(filesDir(cfg), name) : null;
+  return cached(cfg, name) ? cachePath(cfg, name) : null;
 }
 
 function modReader(root: string): ModReader {
-  return {
-    text: p => readFileSync(join(root, p), "utf8"),
-    bytes: p => new Uint8Array(readFileSync(join(root, p))),
-    exists: p => existsSync(join(root, p)),
-  };
+  const path = (p: string) => join(root, existsSync(join(root, "engine")) ? p : p.replace(/^engine\//, ""));
+  return { text: p => readFileSync(path(p), "utf8"), bytes: p => new Uint8Array(readFileSync(path(p))), exists: p => existsSync(path(p)) };
 }
 
 /** A minimal engine directory for OpenRA.Utility: the mod engine's mods, its mix database, and Support -> RA2 content. */
 function ensureShim(cfg: OriginalsConfig) {
-  const engine = join(cfg.modRoot, "engine");
+  const engine = cfg.mode === "classic" ? cfg.modRoot : join(cfg.modRoot, "engine");
   const shim = join(cfg.cacheDir, "engine-shim");
   mkdirSync(shim, { recursive: true });
   const link = (target: string, path: string) => { if (!existsSync(path)) symlinkSync(target, path, process.platform === "win32" ? "junction" : "dir"); };
@@ -90,12 +98,12 @@ export async function extractOriginals(cfg: OriginalsConfig, names: string[]): P
   const known = new Set<string>(existsSync(missingFile) ? JSON.parse(readFileSync(missingFile, "utf8")) : []);
   const todo = names.filter(n => SAFE_NAME.test(n) && !cached(cfg, n) && !known.has(n));
   if (!todo.length) return names.filter(n => known.has(n));
-  if (!existsSync(join(cfg.supportDir, "Content", "ra2", "ra2.mix"))) throw new Error(`No RA2 content at ${join(cfg.supportDir, "Content", "ra2")} (set RTSAI_RA2_SUPPORT)`);
+  if (!existsSync(join(cfg.supportDir, "Content", cfg.mode === "classic" ? "ra/v2" : "ra2", cfg.mode === "classic" ? "conquer.mix" : "ra2.mix"))) throw new Error(`No RA2 content at ${join(cfg.supportDir, "Content", "ra2")} (set RTSAI_RA2_SUPPORT)`);
   const shim = ensureShim(cfg);
-  const bin = join(cfg.modRoot, "engine", "bin");
+  const bin = join(cfg.modRoot, cfg.mode === "classic" ? "bin" : "engine/bin");
   const [cmd, pre] = process.platform === "win32" ? [join(bin, "OpenRA.Utility.exe"), []] : ["dotnet", [join(bin, "OpenRA.Utility.dll")]];
   const env = { ...process.env, ENGINE_DIR: shim, MOD_SEARCH_PATHS: join(cfg.modRoot, "mods") };
-  const extract = (batch: string[]) => run(cmd, [...pre, "rtsai", "--extract", ...batch], { cwd: out, env, windowsHide: true, timeout: 120_000 });
+  const extract = (batch: string[]) => run(cmd, [...pre, cfg.mode === "classic" ? "ra" : "rtsai", "--extract", ...batch], { cwd: out, env, windowsHide: true, timeout: 120_000 });
   // The utility extracts in order and stops at the first file it cannot find: that file is the first one still
   // missing, so note it and carry on with the rest (one extra launch per missing file).
   let rest = todo;
@@ -182,30 +190,51 @@ function spawnConditions(actor: NonNullable<ReturnType<ReturnType<typeof loadMod
   return granted;
 }
 
-let memo: { key: string; payload: Promise<RosterPayload> } | null = null;
+const memo = new Map<string, Promise<RosterPayload>>();
 
 /** Every faction's roster, with the original units' art resolved from the local RA2 cache (extracting on demand). */
 export function rosterPayload(cfg: OriginalsConfig, refresh = false): Promise<RosterPayload> {
-  const stamp = ["mod.yaml", "modern-factions/shared-replacements.yaml"].map(f => { try { return statSync(join(cfg.modRoot, MOD_DIR, f)).mtimeMs; } catch { return 0; } }).join(":");
-  const key = `${cfg.modRoot}|${stamp}`;
-  if (!refresh && memo?.key === key) return memo.payload;
+  const key = `${cfg.mode ?? "ra2"}|${cfg.modRoot}`;
+  if (!refresh && memo.has(key)) return memo.get(key)!;
   const payload = buildPayload(cfg);
-  memo = { key, payload };
-  payload.catch(() => { if (memo?.payload === payload) memo = null; });
+  memo.set(key, payload);
+  payload.catch(() => { if (memo.get(key) === payload) memo.delete(key); });
   return payload;
 }
 
 async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const started = Date.now();
   const reader = modReader(cfg.modRoot);
-  const data = loadModData(reader);
+  const data = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
   const { factions, stock: stockInfo } = computeRosters(data);
   const ids = new Set<string>();
-  for (const f of factions) for (const u of f.units) { if (u.origin !== "new") ids.add(u.id); if (u.reference) ids.add(u.reference); }
+  for (const f of factions) for (const u of f.units) { ids.add(u.id); if (u.reference) ids.add(u.reference); }
   const palettes = stockPalettes(data);
-  const paletteRefs: Record<string, PaletteRef> = palettes.player ? { player: palettes.player } : {};
+  const paletteRefs: Record<string, PaletteRef> = {};
+  const world = data.rules.get("world")!;
+  const numbers = (s: string | null) => (s ?? "").split(",").filter(x => x.trim()).map(x => Number(x.trim())).filter(Number.isFinite);
+  const ownFile = (path: string) => {
+    const name = `${createHash("sha256").update(path).digest("hex").slice(0, 12)}-${basename(path).toLowerCase()}`;
+    if (!SAFE_NAME.test(name) || !reader.exists(path)) throw new Error(`Missing mod art: ${path}`);
+    mkdirSync(join(cfg.cacheDir, "owned-files"), { recursive: true });
+    writeFileSync(join(cfg.cacheDir, "owned-files", name), reader.bytes(path));
+    return `owned/${name}`;
+  };
+  for (const [, node] of traits(world, "PaletteFromFile")) {
+    if (childValue(node.value, "Tileset") && childValue(node.value, "Tileset") !== "TEMPERATE") continue;
+    const name = childValue(node.value, "Name") ?? "", ref = childValue(node.value, "Filename") ?? "";
+    const file = ref.includes("|") ? ownFile(ref.replace(/^ra2\|/, "mods/rtsai/").replace(/^ra\|/, "mods/ra/")) : ref.toLowerCase();
+    if (!SAFE_NAME.test(file.replace(/^owned\//, ""))) continue;
+    paletteRefs[name] = { name, file, basePalette: name, remap: [], transparent: child(node.value, "TransparentIndex") ? numbers(childValue(node.value, "TransparentIndex")) : [0], shadow: numbers(childValue(node.value, "ShadowIndex")), definedBy: "Merged World rules" };
+  }
+  for (const [, node] of traits(world, "PlayerColorPalette")) {
+    const base = paletteRefs[childValue(node.value, "BasePalette") ?? ""];
+    if (base) paletteRefs[childValue(node.value, "BaseName") ?? childValue(node.value, "Name") ?? base.name] = { ...base, remap: numbers(childValue(node.value, "RemapIndex")) };
+  }
+  // The default player remap may retain its base name.
+  if (palettes.player && paletteRefs.player) paletteRefs.player.remap = palettes.player.remap;
   const normalsTypes = worldNormals(data);
-  const outside = () => { throw new Error("Original units read no modern-faction files"); };
+  const outside = ownFile;
   const resolveAll = (ra2: Ra2Hook) => {
     const out = new Map<string, ReturnType<typeof resolveActor>>();
     for (const id of ids) {
@@ -217,16 +246,25 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   };
 
   // Pass 1: which RA2 files the game would read for these actors.
-  const wanted = new Set<string>([palettes.player?.file, palettes.chrome?.file].filter((f): f is string => Boolean(f)));
-  resolveAll({ record: n => { wanted.add(n); return null; }, bytes: () => new Uint8Array(0) });
+  const wanted = new Set<string>(Object.values(paletteRefs).map(p => p.file!).filter(Boolean));
+  const localRef = (n: string): string | null => {
+    if (n.includes("|")) {
+      const path = n.replace(/^ra\|/, "mods/ra/").replace(/^ra2\|/, "mods/rtsai/").replace(/^common\|/, "engine/mods/common/");
+      return reader.exists(path) ? ownFile(path) : null;
+    }
+    const dir = cfg.mode === "classic" ? "mods/ra" : MOD_DIR;
+    for (const sub of ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"]) if (reader.exists(`${dir}/${sub}/${n}`)) return ownFile(`${dir}/${sub}/${n}`);
+    return null;
+  };
+  resolveAll({ record: n => localRef(n) ?? (wanted.add(n), null), bytes: n => cached(cfg, n) ? new Uint8Array(readFileSync(cachePath(cfg, n)!)) : new Uint8Array(0) });
   let error: string | null = null;
   let missing: string[] = [];
   try { missing = await extractOriginals(cfg, [...wanted]); } catch (e) { error = e instanceof Error ? e.message : String(e); }
 
   // Pass 2: resolve with the extracted bytes.
-  const bytes = (n: string) => new Uint8Array(readFileSync(join(filesDir(cfg), n)));
-  const resolved = resolveAll({ record: n => (cached(cfg, n) ? n : null), bytes });
-  const url = (key: string | null | undefined) => (key ? `${RA2_ROUTE}${encodeURIComponent(key)}` : null);
+  const bytes = (n: string) => new Uint8Array(readFileSync(cachePath(cfg, n)!));
+  const resolved = resolveAll({ record: n => localRef(n) ?? (cached(cfg, n) ? n : null), bytes });
+  const url = (key: string | null | undefined) => (key ? key.startsWith("owned/") ? `/api/art-review/mod/${encodeURIComponent(key.slice(6))}?mode=${cfg.mode ?? "ra2"}` : `${cfg.mode === "classic" ? "/api/art-review/classic/" : RA2_ROUTE}${encodeURIComponent(key)}` : null);
   const paletteSpec = (p: PaletteRef | null): PaletteSpec | null => (p && cached(cfg, p.file!) ? { name: p.name, url: url(p.file)!, remap: p.remap, transparent: p.transparent, shadow: p.shadow } : null);
   const chromePal = palettes.chrome && cached(cfg, palettes.chrome.file!) ? decodePal(bytes(palettes.chrome.file!), palettes.chrome.transparent, palettes.chrome.shadow) : null;
   const bitsFiles = new Set<string>();
@@ -238,12 +276,13 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   for (const [id, art] of resolved) {
     // Cameos become PNGs once (cameo.pal, frame 0), so the unit list shows static images only.
     let cameoUrl: string | null = null;
-    if (art.cameo.file && chromePal) {
+    if (art.cameo.file?.endsWith(".png")) cameoUrl = url(art.cameo.file);
+    else if (art.cameo.file && chromePal) {
       const png = `${art.cameo.file.replace(/\.shp$/, "")}.png`;
       if (!cached(cfg, png)) {
         try {
           const shp = decodeShp(bytes(art.cameo.file));
-          writeFileSync(join(filesDir(cfg), png), encodePng(shp.width, shp.height, drawShpFrame(shp, 0, chromePal)));
+          writeFileSync(cachePath(cfg, png)!, encodePng(shp.width, shp.height, drawShpFrame(shp, 0, chromePal)));
         } catch { /* leave without a cameo */ }
       }
       if (cached(cfg, png)) cameoUrl = url(png);
@@ -263,11 +302,11 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     const sprite = art.sprite ? {
       ...art.sprite,
       turret: art.sprite.turret && !conditional.has(art.sprite.turret.sequence) ? art.sprite.turret : null,
-      sequences: art.sprite.sequences.map(q => (q.usedBy.length && q.file && !conditional.has(q.name) ? { ...q, inherited: false } : q)),
+      sequences: art.sprite.sequences.map(q => (q.file && q.name !== "icon" ? { ...q, inherited: false } : q)),
     } : null;
     const owned = { ...art, sprite, factionId: "" };
-    const spec = buildRenderSpec(owned, url, name => (name === "player" ? paletteSpec(palettes.player) : null), cameoUrl);
-    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? null };
+    const spec = buildRenderSpec(owned, url, name => paletteSpec(paletteRefs[name ?? "player"] ?? null), cameoUrl);
+    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id) };
   }
-  return { factions, stock, extraction: { requested: wanted.size, cached: [...wanted].filter(n => cached(cfg, n)).length, missing, error, ms: Date.now() - started } };
+  return { mode: cfg.mode ?? "ra2", factions, stock, unresolved: [...ids].filter(id => !stock[id]), extraction: { requested: wanted.size, cached: [...wanted].filter(n => cached(cfg, n)).length, missing, error, ms: Date.now() - started } };
 }

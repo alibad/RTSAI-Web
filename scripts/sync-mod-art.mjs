@@ -67,6 +67,10 @@ function generatorsFor(actor) {
     : [...new Set(actor.sprite.sequences.filter(s => s.file?.endsWith(".shp")).map(s => s.file))].map(key => ({ key, label: "sprite" }));
   for (const { key, label } of outputs) {
     const entry = entries.get(key);
+    if (entry?.generator === "forge-voxel" && entry.source) {
+      byFile.set(key, { repo: entry.source.repo, commit: entry.source.commit, script: "tools/mesh_to_vxl.py → tools/palette_pass.py", functions: [], scriptUrl: null, geometry: entry.source.path, note: "Committed local Forge candidate; this repository has no public remote." });
+      continue;
+    }
     if (!entry?.source || !entry.script || byFile.has(key)) continue;
     const script = entry.script.replace(/\s*\(.*$/, "").trim();
     const { repo, commit } = entry.source;

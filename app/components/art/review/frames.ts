@@ -108,6 +108,13 @@ export class FrameStore {
   /** Bumped whenever an asset finishes loading (for useSyncExternalStore). */
   assetsVersion = 0;
   readonly errors = new Map<string, string>();
+  private identities = new WeakMap<RenderSpec, string>();
+  private nextIdentity = 0;
+  private identity(spec: RenderSpec) {
+    let key = this.identities.get(spec);
+    if (!key) { key = `${spec.id}:${++this.nextIdentity}`; this.identities.set(spec, key); }
+    return key;
+  }
 
   /** Arms the store (and re-arms it after a StrictMode effect cleanup); GPU resources come back lazily. */
   revive() {
@@ -145,8 +152,8 @@ export class FrameStore {
 
   private key(item: StageItem, pose: Pose, rig?: SpriteRig | null, shps?: RigShps | null) {
     const tint = pose.tint.join(",");
-    if (item.spec.voxel) return `${item.spec.id}|v|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
-    if (!rig || !shps) return `${item.spec.id}|s|${pose.animation}|${pose.tick}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
+    if (item.spec.voxel) return `${this.identity(item.spec)}|v|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
+    if (!rig || !shps) return `${this.identity(item.spec)}|s|${pose.animation}|${pose.tick}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
     // Facings that pick the same SHP frames share one cached picture (an 8-facing soldier has 8, not 32).
     const tick = rig.overlay ? pose.tick % 960 : rigFrame(rig, rigLength(rig, shps), pose.tick);
     const facings = rig.body.facings;
@@ -154,7 +161,7 @@ export class FrameStore {
     const vehicle = facings > 1 && Boolean(rig.turret);
     const turretAngle = vehicle ? ((body * 1024) / facings + pose.turret) & 1023 : (rig.initialFacing + pose.turret) & 1023;
     const turret = rig.turret ? indexFacing(turretAngle, rig.turret.facings) : 0;
-    return `${item.spec.id}|s|${pose.animation}|${tick}|${body}|${turret}|${pose.color}|${pose.shadow}|${tint}`;
+    return `${this.identity(item.spec)}|s|${pose.animation}|${tick}|${body}|${turret}|${pose.color}|${pose.shadow}|${tint}`;
   }
 
   private spriteParts(item: StageItem, animation: string) {
@@ -221,38 +228,38 @@ export class FrameStore {
   /** The loaded voxel model for the 3D view, or null (loading starts). */
   model(item: StageItem, color: string | null): { model: VoxelModel; palette: Palette } | null {
     if (!item.spec.voxel || !this.ensure(item, { facing: 0, turret: 0, tick: 0, animation: "stand", color, shadow: true, tint: [1, 1, 1] })) return null;
-    const model = this.models.get(item.spec.id);
+    const model = this.models.get(this.identity(item.spec));
     const palette = this.palettes.get(this.paletteKey(item.spec, color));
     return typeof model === "object" && typeof palette === "object" ? { model, palette } : null;
   }
 
-  failed(item: StageItem) { return this.errors.get(item.spec.id) ?? null; }
+  failed(item: StageItem) { return this.errors.get(this.identity(item.spec)) ?? null; }
 
   private paletteKey(spec: RenderSpec, color: string | null) { return `${spec.palette?.url}|${color}`; }
 
   /** True when every asset the frame needs is decoded; otherwise starts the loads and returns false. */
   private ensure(item: StageItem, pose: Pose): boolean {
     const spec = item.spec;
-    if (this.errors.has(spec.id)) return false;
-    if (!spec.palette) { this.errors.set(spec.id, "No palette"); return false; }
+    if (this.errors.has(this.identity(spec))) return false;
+    if (!spec.palette) { this.errors.set(this.identity(spec), "No palette"); return false; }
     let ready = true;
     const pk = this.paletteKey(spec, pose.color);
     const pal = this.palettes.get(pk);
     if (pal === undefined) { this.loadPalette(spec, pose.color, pk); ready = false; }
-    else if (pal === "failed") { this.errors.set(spec.id, "Palette failed to load"); return false; }
+    else if (pal === "failed") { this.errors.set(this.identity(spec), "Palette failed to load"); return false; }
     else if (pal === "loading") ready = false;
     if (spec.voxel) {
-      const m = this.models.get(spec.id);
+      const m = this.models.get(this.identity(spec));
       if (m === undefined) { this.loadModel(spec); ready = false; }
       else if (m === "failed") return false;
       else if (m === "loading") ready = false;
       return ready;
     }
     const rig = spriteRig(item.sprite, pose.animation);
-    if (!rig) { this.errors.set(spec.id, "No sprite sequence"); return false; }
+    if (!rig) { this.errors.set(this.identity(spec), "No sprite sequence"); return false; }
     for (const file of rigFiles(rig)) {
       const s = this.shps.get(file);
-      if (s === undefined) { this.loadShpFile(file, spec.id); ready = false; }
+      if (s === undefined) { this.loadShpFile(file, this.identity(spec)); ready = false; }
       else if (s === "failed") return false;
       else if (s === "loading") ready = false;
     }
@@ -269,7 +276,7 @@ export class FrameStore {
     this.palettes.set(key, "loading");
     loadPlayerPalette(spec.palette!, color)
       .then(p => { this.palettes.set(key, p); this.loaded(); })
-      .catch(() => { this.palettes.set(key, "failed"); this.errors.set(spec.id, "Palette failed to load"); this.loaded(); });
+      .catch(() => { this.palettes.set(key, "failed"); this.errors.set(this.identity(spec), "Palette failed to load"); this.loaded(); });
   }
 
   private loadShpFile(file: string, owner: string) {
@@ -287,21 +294,21 @@ export class FrameStore {
   }
 
   private loadModel(spec: RenderSpec) {
-    this.models.set(spec.id, "loading");
+    this.models.set(this.identity(spec), "loading");
     const v = spec.voxel!;
     (async () => {
       const [three, parts] = await Promise.all([
         this.loadThree(),
         Promise.all(v.parts.map(async p => ({ id: p.id, label: p.label, vxl: await loadVxl(p.vxl), hva: await loadHva(p.hva), offset: p.offset, turretOffset: p.turretOffset, showShadow: p.showShadow }))),
       ]);
-      if (!this.alive) { this.models.delete(spec.id); return; }
+      if (!this.alive) { this.models.delete(this.identity(spec)); return; }
       this.engineInstance ??= new three.VoxelEngine();
-      this.models.set(spec.id, new three.VoxelModel({ ...v, normals: normalsTable(v.normals) }, parts));
-      this.trimModels(spec.id);
+      this.models.set(this.identity(spec), new three.VoxelModel({ ...v, normals: normalsTable(v.normals) }, parts));
+      this.trimModels(this.identity(spec));
       this.loaded();
     })().catch(e => {
-      this.models.set(spec.id, "failed");
-      this.errors.set(spec.id, `Model failed to load: ${e instanceof Error ? e.message : e}`);
+      this.models.set(this.identity(spec), "failed");
+      this.errors.set(this.identity(spec), `Model failed to load: ${e instanceof Error ? e.message : e}`);
       this.loaded();
     });
   }
@@ -332,7 +339,7 @@ export class FrameStore {
     const palette = this.palettes.get(this.paletteKey(item.spec, pose.color));
     if (typeof palette !== "object") return null;
     if (item.spec.voxel) {
-      const model = this.models.get(item.spec.id);
+      const model = this.models.get(this.identity(item.spec));
       const engine = this.engineInstance;
       if (typeof model !== "object" || !engine || this.inflight.has(key)) return null;
       if (!urgent && this.inflight.size >= MAX_INFLIGHT) return null;
@@ -347,7 +354,7 @@ export class FrameStore {
         this.schedule();
       }, e => {
         this.inflight.delete(key);
-        if (this.alive) this.errors.set(item.spec.id, `Could not draw: ${e instanceof Error ? e.message : e}`);
+        if (this.alive) this.errors.set(this.identity(item.spec), `Could not draw: ${e instanceof Error ? e.message : e}`);
       });
       return null;
     }
@@ -357,7 +364,7 @@ export class FrameStore {
       this.store(key, frame);
       return frame;
     } catch (e) {
-      this.errors.set(item.spec.id, `Could not draw: ${e instanceof Error ? e.message : e}`);
+      this.errors.set(this.identity(item.spec), `Could not draw: ${e instanceof Error ? e.message : e}`);
       return null;
     }
   }
@@ -382,7 +389,7 @@ export class FrameStore {
       const job = this.queue.shift()!;
       this.queued.delete(job.key);
       if (this.frames.has(job.key) || this.inflight.has(job.key)) continue;
-      if (this.errors.has(job.item.spec.id)) continue;
+      if (this.errors.has(this.identity(job.item.spec))) continue;
       if (!this.ensure(job.item, job.pose)) { this.waiting.push(job); this.queued.add(job.key); continue; }
       // While the user is acting, only what is on screen renders; warm-up waits.
       if ((!job.visible && !quiet) || (job.item.spec.voxel && this.inflight.size >= MAX_INFLIGHT)) { deferred.push(job); this.queued.add(job.key); continue; }

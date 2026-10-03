@@ -141,7 +141,7 @@ async function run(page, client, label, url, rail = false) {
         await page.locator(".lab-picker-btn").focus();
         await page.keyboard.press("ArrowDown");
         await page.waitForTimeout(150);
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 16; i++) {
           const name = await page.evaluate(() => document.activeElement?.querySelector("b")?.textContent ?? "");
           if (name === target) break;
           await page.keyboard.press("ArrowDown");

@@ -142,12 +142,12 @@ export const railFilters: { id: RailFilter; label: string; test: (r: RailRow) =>
 
 const groupNames: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Ships", defense: "Defenses", structure: "Base buildings" };
 const groupOrder = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
-const originTag: Record<Origin, string> = { new: "NEW", original: "RA2", modified: "MOD" };
-const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: untouched RA2 art", modified: "Modified: derived from RA2 art" };
+const originTag: Record<Origin, string> = { new: "NEW", original: "BASE", modified: "MOD" };
+const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: base game art", modified: "Modified: modified game art" };
 
 function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
   const src = flagSrc(id);
-  return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size}`} />;
+  return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size} is-code`} aria-hidden="true">{({america:"US",england:"GB",france:"FR",germany:"DE",korea:"KR",russia:"RU",ukraine:"UA",cuba:"CU",libya:"LY",iraq:"IQ"} as Record<string,string>)[id] ?? id.slice(0,2).toUpperCase()}</span>;
 }
 
 function Progress({ done, total }: { done: number; total: number }) {
@@ -203,7 +203,7 @@ function FactionPicker({ factions, faction, onFaction, compact }: { factions: Fa
             <button key={f.id} id={`faction-${f.id}`} ref={el => { options.current[i] = el; }} type="button" role="option" aria-selected={f.id === faction}
               className="lab-picker-opt" onClick={() => choose(f.id)} onKeyDown={e => onKey(e, i)}>
               <Flag id={f.id} size="l" />
-              <span className="lab-picker-name"><b>{f.name}</b><small>{f.units} units</small></span>
+              <span className="lab-picker-name"><b>{f.name}</b><small>{f.units} actors</small></span>
               <Progress done={f.decided} total={f.withCandidates} />
               {f.id === faction && <Check size={16} className="lab-picker-check" aria-hidden="true" />}
             </button>
@@ -252,9 +252,11 @@ export const UnitRail = memo(function UnitRail({ rows, selected, faction, factio
   collapsed: boolean;
   onCollapse: (collapsed: boolean) => void;
 }) {
-  const [buildingsOpen, setBuildingsOpen] = useState(false);
+  const [buildingsOpen, setBuildingsOpen] = useState(true);
+  const [search, setSearch] = useState("");
+  const [domain, setDomain] = useState("all");
   const test = railFilters.find(f => f.id === filter)?.test ?? (() => true);
-  const groups = groupOrder.map(cat => ({ cat, rows: rows.filter(r => r.unit.category === cat && test(r)) })).filter(g => g.rows.length);
+  const groups = groupOrder.map(cat => ({ cat, rows: rows.filter(r => r.unit.category === cat && test(r) && (domain === "all" || (domain === "buildings" ? ["structure", "defense"].includes(cat) : cat === domain)) && r.unit.name.toLowerCase().includes(search.toLowerCase())) })).filter(g => g.rows.length);
   const counts = Object.fromEntries(railFilters.map(f => [f.id, rows.filter(f.test).length]));
   return (
     <nav className={`lab-rail${collapsed ? " is-collapsed" : ""}`} aria-label="Units">
@@ -265,6 +267,7 @@ export const UnitRail = memo(function UnitRail({ rows, selected, faction, factio
             {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
           </button>
         </div>
+        {!collapsed && <div className="studio-rail-tools"><input aria-label="Find an actor" placeholder="Find an actor…" value={search} onChange={e => setSearch(e.target.value)} /><select aria-label="Actor category" value={domain} onChange={e => setDomain(e.target.value)}><option value="all">Everything</option><option value="buildings">Buildings & defenses</option>{groupOrder.filter(c => c !== "structure" && c !== "defense").map(c => <option key={c} value={c}>{groupNames[c]}</option>)}</select></div>}
         {!collapsed && (
           <div className="lab-filters" role="radiogroup" aria-label="Show">
             {railFilters.map(f => (

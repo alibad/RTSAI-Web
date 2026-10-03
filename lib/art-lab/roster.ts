@@ -168,13 +168,20 @@ export function pickReference(unit: RosterUnit, replaced: RosterUnit[], stock: R
   return found ? { id: found.id, why: found.why } : null;
 }
 
-export function computeRosters(data: ModData, factionIds: readonly string[] = MODERN_FACTIONS): { factions: FactionRoster[]; stock: Record<string, RosterUnit> } {
+export function playableFactions(data: ModData): string[] {
+  return traits(data.rules.get("world")!, "Faction").map(([, n]) => n.value)
+    .filter(n => childValue(n, "Selectable")?.toLowerCase() !== "false" && !childValue(n, "RandomFactionMembers"))
+    .map(n => childValue(n, "InternalName") ?? "").filter(id => id && !/^random/i.test(id));
+}
+
+export function computeRosters(data: ModData, factionIds: readonly string[] = playableFactions(data)): { factions: FactionRoster[]; stock: Record<string, RosterUnit> } {
   const world = data.rules.get("world")!;
   const modern = new Map<string, string>();
   for (const [name, actor] of data.rules) {
     if (name.startsWith("^")) continue;
     const ts = tokens(actor);
-    const f = factionIds.find(id => ts.some(t => !t.negated && t.name === `faction.${id}`));
+    const f = MODERN_FACTIONS.find(id => ts.some(t => !t.negated && (t.name === id || t.name === `faction.${id}` || t.name === `country.${id}` || t.name.endsWith(`.${id}`))))
+      ?? MODERN_FACTIONS.find(id => list(childValue(child(actor, "Buildable")?.value, "Prerequisites")).includes(id));
     if (f) modern.set(name, f);
   }
   // Every stock unit any faction (modern or classic) can build: the pool for references.

@@ -8,6 +8,8 @@ import { useFeedbackStore } from "../../../lib/stores/feedback-store";
 import type { RosterPayload } from "../../../lib/art-lab/originals";
 import { CoachMark, railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
+import { BehaviorPanel, StudioBar } from "./review/Studio";
+import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
@@ -42,6 +44,8 @@ async function post(action: ReviewAction): Promise<ReviewEntry> {
  * Choices go to RTSAI-Art/review.json through the dev-only API; nothing reaches the mod until export.
  */
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
+  const [mode, setMode] = useState<"ra2" | "classic">("ra2");
+  const [surface, setSurface] = useState<"art" | "actions" | "arena">("art");
   const [state, setState] = useState<ReviewState | null>(null);
   const [error, setError] = useState("");
   const [faction, setFaction] = useState<string | null>(null);
@@ -105,12 +109,12 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   // Every faction's roster, with original RA2 units served from the local cache (dev only).
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API}/roster`, { cache: "no-store" })
+    fetch(`${API}/roster?mode=${mode}`, { cache: "no-store" })
       .then(r => (r.ok ? r.json() as Promise<RosterPayload> : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then(r => { if (!cancelled) setRoster(r); })
-      .catch(cause => { if (!cancelled) setToast(`Original units unavailable: ${cause instanceof Error ? cause.message : String(cause)}`); });
+      .catch(cause => { if (!cancelled) setToast(`Game roster unavailable: ${cause instanceof Error ? cause.message : String(cause)}`); });
     return () => { cancelled = true; };
-  }, []);
+  }, [mode]);
 
   // Deep links: /art/review?unit=r2qilin&slot=model&v=sprite-v2 (kept in the address bar as you move).
   useEffect(() => {
@@ -120,6 +124,9 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const v = params.get("v");
     const factionParam = params.get("faction");
     const id = setTimeout(() => {
+      if (params.get("mode") === "classic") setMode("classic");
+      const surface = params.get("view");
+      if (surface === "arena" || surface === "actions") setSurface(surface);
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
       if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
@@ -130,25 +137,25 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   const workspace = useMemo(() => new Map((state?.units ?? []).map(u => [u.actor, u])), [state]);
   const rowFor = useCallback((u: ReviewUnit): Row => {
-    const ws = workspace.get(u.id);
+    const ws = mode === "ra2" ? workspace.get(u.id) : undefined;
     const entry = state?.review[u.id];
     const count = slotIds.reduce((n, s) => n + candidatesForSlot(ws, s).length, 0);
     return { unit: u, ws, entry, count, needs: needsDecision(ws, entry), origin: u.origin ?? "new" };
-  }, [workspace, state]);
+  }, [workspace, state, mode]);
   // Every unit by id: our new units (page data) and the original RA2 units (dev API).
   const unitIndex = useMemo(() => {
-    const m = new Map<string, ReviewUnit>(units.map(u => [u.id, { ...u, origin: "new" as const }]));
+    const m = new Map<string, ReviewUnit>((mode === "ra2" ? units : []).map(u => [u.id, { ...u, origin: "new" as const }]));
     for (const [id, s] of Object.entries(roster?.stock ?? {})) {
-      if (m.has(id)) continue;
+      const existing = m.get(id);
       const info = s.info;
       const category = info?.category ?? s.spec.category;
       m.set(id, {
-        id, factionId: "", factionName: "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
+        ...existing, id, factionId: existing?.factionId ?? "", factionName: existing?.factionName ?? "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
         queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits,
       });
     }
     return m;
-  }, [units, roster]);
+  }, [units, roster, mode]);
   // Dev-only test hook (this whole component is stubbed out of production builds): the exact 1x picture the
   // stage draws for a unit, for pixel comparisons against the engine's own render.
   useEffect(() => {
@@ -194,7 +201,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const test = railFilters.find(f => f.id === filter)?.test ?? (() => true);
     return railRows.filter(test);
   }, [railRows, filter]);
-  const progress = reviewProgress(rows);
+  const progress = reviewProgress(mode === "ra2" ? rows : []);
   const selectedUnit = selected ? unitIndex.get(selected) : undefined;
   const current = selectedUnit ? rowFor(selectedUnit)
     : factionRows.find(r => r.needs) ?? factionRows.find(r => r.count > 0) ?? factionRows[0] ?? null;
@@ -233,9 +240,11 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     url.searchParams.set("faction", factionId);
     url.searchParams.set("unit", unitKey);
     url.searchParams.set("slot", slot);
+    url.searchParams.set("mode", mode);
+    url.searchParams.set("view", surface);
     if (focusKey !== "current") url.searchParams.set("v", focusKey); else url.searchParams.delete("v");
     window.history.replaceState(null, "", url);
-  }, [unitKey, factionId, slot, focusKey]);
+  }, [unitKey, factionId, slot, focusKey, mode, surface]);
 
   // Preload the neighbours of the focused version (models warm in the stage's frame cache).
   useEffect(() => {
@@ -293,7 +302,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   // Keyboard: one listener reading the latest render through a ref.
   // Original units and references are for comparison only: no Use, Keep or Reject.
-  const referenceOnly = unit?.origin === "original" || focused?.kind === "reference";
+  const referenceOnly = mode === "classic" || unit?.origin === "original" || focused?.kind === "reference";
   const keys = useRef({ visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly });
   useEffect(() => { keys.current = { visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly }; });
   useEffect(() => {
@@ -334,14 +343,15 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   let stage: React.ReactNode = null;
   if (unit && focused) {
-    if (slot === "model") stage = <ModelStage versions={versions} focus={focus} allowCompare frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
+    if (slot === "model") stage = <ModelStage key={mode} versions={versions} focus={focus} allowCompare frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
     else if (slot === "icon") stage = <IconStage versions={versions} focus={focus} unit={unit} units={paletteUnits} onFocus={focusIndex} />;
-    else if (focused.key === "current") stage = <ModelStage versions={conceptCurrent} focus={0} allowCompare={false} frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
+    else if (focused.key === "current") stage = <ModelStage key={mode} versions={conceptCurrent} focus={0} allowCompare={false} frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
     else stage = <ConceptStage version={focused} />;
   }
 
   return (
     <div className="lab">
+      <StudioBar mode={mode} onMode={m => { setMode(m); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); if (s !== "art") setSlot("model"); }} />
       <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
@@ -350,14 +360,14 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
             : !unit ? <p className="lab-empty">No units.</p>
-            : stage}
-          {unit && focused && !lineupOnly && (
+            : surface === "arena" ? <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} /> : stage}
+          {unit && focused && surface !== "arena" && !lineupOnly && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} />
           )}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
-        {unit && focused && decide ? (
+        {unit && surface !== "art" ? <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} /> : unit && focused && decide ? (
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         ) : <aside className="lab-panel" />}

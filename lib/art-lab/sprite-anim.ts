@@ -33,6 +33,11 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     const make = by("WithMakeAnimation");
     if (make) out.push({ id: "make", label: "Build-up", body: make, note: "Build-up: the turret and overlays appear once construction completes." });
   }
+  const used = new Set(out.map(a => a.body?.name));
+  for (const s of seqs) {
+    if (used.has(s.name) || s.name === "icon" || s.name === sprite.turret?.sequence || s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) continue;
+    if (/damaged|deploy|shoot|attack|die|prone|make|build|land|takeoff/.test(s.name)) out.push({ id: s.name, label: s.name.replace(/-/g, " "), body: s, note: "Sequence art preview; activity timing is controlled by the game." });
+  }
   return out.filter(a => a.body);
 }
 

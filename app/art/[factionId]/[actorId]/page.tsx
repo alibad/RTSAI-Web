@@ -123,7 +123,7 @@ export default async function ActorArtPage({ params }: Props) {
         <h2>Generator source</h2>
         {actor.generator.length ? actor.generator.map(g => (
           <div key={g.commit + g.script} className="art-gen">
-            <p><a href={g.scriptUrl} target="_blank" rel="noreferrer"><code>{g.script}</code></a> in {g.repo} at <code>{g.commit.slice(0, 10)}</code>{g.geometry ? <> · meshes from <code>{g.geometry}</code></> : null}</p>
+            <p>{g.scriptUrl ? <a href={g.scriptUrl} target="_blank" rel="noreferrer"><code>{g.script}</code></a> : <code>{g.script}</code>} in {g.repo} at <code>{g.commit.slice(0, 10)}</code>{g.geometry ? <> · meshes from <code>{g.geometry}</code></> : null}</p>
             <ul className="art-list">{g.functions.map(f => <li key={f.url + f.part}><a href={f.url} target="_blank" rel="noreferrer"><code>{f.name}</code></a> <small>{f.file}:{f.line}{f.part ? ` · ${f.part}` : ""}</small></li>)}</ul>
             {g.note && <p className="art-hint">{g.note}</p>}
           </div>

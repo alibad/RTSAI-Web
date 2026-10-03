@@ -3,9 +3,9 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "efb197d679527110bbef66daa6320d58b937e01c",
+  "commit": "2b5218ca378b9243586c3316383cc5dd37a35281",
   "provenanceGeneratedBy": "tools/art-provenance.py",
-  "provenanceSha256": "51cc53a9e1bf5fb3cde61fb98332b1f08d75adf552ec4f6228c1a31a42a7aaa9",
+  "provenanceSha256": "ffca8ff38c25d29b1be1f7071de5a3798a92a82d6ae97c6205c67d2efe4ae944",
   "commercialRa2Data": "None found. No file matches, embeds or was built from Red Alert 2 game data; the art builders read no MIX/SHP/VXL/HVA/PAL/image input, the cameos are text-to-image, and the flags are redrawn identically from code. See docs/art-provenance.md for the method."
  },
  "render": {
@@ -69,6 +69,17 @@
   ]
  },
  "palettes": {
+  "qilin": {
+   "name": "qilin",
+   "file": "voxels/r2qilin.ra2-jade.pal",
+   "remap": [],
+   "basePalette": null,
+   "transparent": [
+    0
+   ],
+   "shadow": [],
+   "definedBy": "World PaletteFromFile@qilin"
+  },
   "modern": {
    "name": "modern",
    "file": "voxels/modern.pal",
@@ -156,6 +167,34 @@
    ],
    "shadow": [],
    "definedBy": "World PaletteFromFile@yemen-voxels"
+  },
+  "qilinplayer": {
+   "name": "qilinplayer",
+   "file": "voxels/r2qilin.ra2-jade.pal",
+   "remap": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "basePalette": "qilin",
+   "transparent": [
+    0
+   ],
+   "shadow": [],
+   "definedBy": "World PlayerColorPalette@qilin"
   },
   "modernplayer": {
    "name": "modernplayer",
@@ -1733,20 +1772,20 @@
    "render": "voxel",
    "voxel": {
     "image": "r2qilin",
-    "scale": 15.2,
+    "scale": 11.7,
     "lightPitch": 150,
     "lightYaw": 800,
     "ambient": [
-     -0.3,
-     -0.3,
-     -0.3
+     -0.5,
+     -0.5,
+     -0.5
     ],
     "diffuse": [
-     0.75,
-     0.75,
-     0.75
+     1.4,
+     1.4,
+     1.4
     ],
-    "palette": "modernplayer",
+    "palette": "qilinplayer",
     "normals": {
      "palette": "normals",
      "type": "RedAlert2"
@@ -1770,21 +1809,21 @@
          "name": "body",
          "scale": 0.0833333358168602,
          "size": [
-          41,
-          31,
-          15
+          48,
+          28,
+          16
          ],
          "bounds": [
-          -20,
-          -15,
+          -22.100000381469727,
+          -13.510000228881836,
           -1,
-          21,
-          16,
-          14
+          25.899999618530273,
+          14.489999771118164,
+          15
          ],
          "normalsMode": 4,
-         "voxels": 8560,
-         "remapVoxels": 687
+         "voxels": 8115,
+         "remapVoxels": 163
         }
        ],
        "frames": 1,
@@ -1815,21 +1854,21 @@
          "name": "body",
          "scale": 0.0833333358168602,
          "size": [
-          47,
-          21,
-          10
+          50,
+          22,
+          14
          ],
          "bounds": [
-          -13,
-          -10,
-          10,
-          34,
-          11,
-          20
+          -14.100000381469727,
+          -10.510000228881836,
+          12,
+          35.900001525878906,
+          11.489999771118164,
+          26
          ],
          "normalsMode": 4,
-         "voxels": 1486,
-         "remapVoxels": 218
+         "voxels": 1883,
+         "remapVoxels": 122
         }
        ],
        "frames": 1,
@@ -1880,8 +1919,8 @@
    "sprite": null,
    "files": [
     "icons/r2qilin.png",
-    "voxels/modern.pal",
     "voxels/r2qilin.hva",
+    "voxels/r2qilin.ra2-jade.pal",
     "voxels/r2qilin.vxl",
     "voxels/r2qilintur.hva",
     "voxels/r2qilintur.vxl"
@@ -1890,42 +1929,13 @@
    "catalogUnitId": "cnqilin",
    "generator": [
     {
-     "repo": "alibad/OpenRA-AI (main)",
-     "commit": "26d154415ebc0530f893a5b80af0e4ad38677b7f",
-     "script": "scripts/ra2_faction_voxels.py",
-     "functions": [
-      {
-       "name": "models()[\"r2qilin\"]",
-       "file": "scripts/ra2_faction_voxels.py",
-       "line": 30,
-       "part": "body: body (element 0)",
-       "url": "https://github.com/alibad/OpenRA-AI/blob/26d154415ebc0530f893a5b80af0e4ad38677b7f/scripts/ra2_faction_voxels.py#L30"
-      },
-      {
-       "name": "_qilin_hull",
-       "file": "scripts/china_directional_assets.py",
-       "line": 48,
-       "url": "https://github.com/alibad/OpenRA-AI/blob/26d154415ebc0530f893a5b80af0e4ad38677b7f/scripts/china_directional_assets.py#L48",
-       "part": "body"
-      },
-      {
-       "name": "models()[\"r2qilin\"]",
-       "file": "scripts/ra2_faction_voxels.py",
-       "line": 30,
-       "part": "turret: turret/rotor (element 1)",
-       "url": "https://github.com/alibad/OpenRA-AI/blob/26d154415ebc0530f893a5b80af0e4ad38677b7f/scripts/ra2_faction_voxels.py#L30"
-      },
-      {
-       "name": "_qilin_turret",
-       "file": "scripts/china_directional_assets.py",
-       "line": 62,
-       "url": "https://github.com/alibad/OpenRA-AI/blob/26d154415ebc0530f893a5b80af0e4ad38677b7f/scripts/china_directional_assets.py#L62",
-       "part": "turret"
-      }
-     ],
-     "scriptUrl": "https://github.com/alibad/OpenRA-AI/blob/26d154415ebc0530f893a5b80af0e4ad38677b7f/scripts/ra2_faction_voxels.py",
-     "geometry": null,
-     "note": null
+     "repo": "RTSAI-Art (local)",
+     "commit": "6ac68b6",
+     "script": "tools/mesh_to_vxl.py → tools/palette_pass.py",
+     "functions": [],
+     "scriptUrl": null,
+     "geometry": "units/r2qilin/candidates/voxel-v4-ra2-jade/r2qilin.vxl",
+     "note": "Committed local Forge candidate; this repository has no public remote."
     }
    ]
   },
@@ -24888,22 +24898,53 @@
     }
    }
   },
+  "voxels/r2qilin.ra2-jade.pal": {
+   "url": "/art-lab/voxels/r2qilin.ra2-jade.pal",
+   "modPath": "mods/rtsai/modern-factions/voxels/r2qilin.ra2-jade.pal",
+   "bytes": 768,
+   "sha256": "0e3d2f5e17acb0d289c7d567f3965bc042f673c81cb5552f06f3e9c0295d69e6",
+   "provenance": {
+    "sha256": "0e3d2f5e17acb0d289c7d567f3965bc042f673c81cb5552f06f3e9c0295d69e6",
+    "type": "voxel palette",
+    "origin": "procedural",
+    "generator": "forge-voxel",
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "commit": "6ac68b6",
+     "path": "units/r2qilin/candidates/voxel-v4-ra2-jade/r2qilin.voxel-v4-ra2-jade.pal"
+    },
+    "tool": "RTSAI-Art tools/palette_pass.py",
+    "date": "2026-10-04",
+    "generation": {
+     "model": "gpt-image-2.5-sunburst",
+     "seed": null,
+     "prompt": "Single isolated game-asset model of one unit for a fictional real-time strategy video game, for 3D reconstruction: three-quarter view from the front-left and about 25 degrees above, the whole unit in frame with margin, nothing else in the image, transparent background, no ground, no shadow. Subject: a low-profile main battle tank with a faceted, wedge-fronted welded turret, a single long smoothbore cannon, six road wheels per side behind angular side skirts, rear engine grilles and a short sensor mast on the turret roof. Clean pre-rendered 3D game-asset look with flat, even, shadowless studio lighting (no strong highlights, no baked cast shadows) so the surface colors are true. Crisp panel lines, large readable shapes. Faction look: high-tech, precise and networked. Dark jade green and grey-green camouflage in large angular blocks, matte composite armor built from faceted wedge-shaped plates, low sleek silhouettes, small sensor domes and short antenna masts, dark gunmetal running gear, cyan-tinted optics and sensor glass. Player-color panels (the turret side panels and a narrow band along the top of the side skirts) are painted flat signal red. Exactly the design shown in the concept sheet provided. No text, no letters, no numbers, no logos, no flags, no insignia, no national or unit markings, no watermark, no user interface.",
+     "runtime": "TRELLIS mesh, CPU Forge palette pass"
+    }
+   }
+  },
   "voxels/r2qilin.vxl": {
    "url": "/art-lab/voxels/r2qilin.vxl",
    "modPath": "mods/rtsai/modern-factions/voxels/r2qilin.vxl",
-   "bytes": 37453,
-   "sha256": "ed1d08d085303fa58e3a28cb67e1447e4cc9f230de1ca7b178413ac1f9fbc814",
+   "bytes": 37615,
+   "sha256": "24def496ebd35045914a79bffccaccf581e1ecb85368c133f00bcfcbadbacd49",
    "provenance": {
-    "sha256": "ed1d08d085303fa58e3a28cb67e1447e4cc9f230de1ca7b178413ac1f9fbc814",
+    "sha256": "24def496ebd35045914a79bffccaccf581e1ecb85368c133f00bcfcbadbacd49",
     "type": "RA2 voxel model",
-    "origin": "rendered-from-project-geometry",
-    "generator": "project-geometry",
-    "script": "scripts/ra2_faction_voxels.py",
+    "origin": "generated",
+    "generator": "forge-voxel",
     "source": {
-     "repo": "OpenRA-AI",
-     "path": "apps/installer/ra2/modern-factions/voxels/r2qilin.vxl",
-     "commit": "26d154415ebc0530f893a5b80af0e4ad38677b7f",
-     "date": "2026-09-05"
+     "repo": "RTSAI-Art (local)",
+     "commit": "6ac68b6",
+     "path": "units/r2qilin/candidates/voxel-v4-ra2-jade/r2qilin.vxl"
+    },
+    "tool": "RTSAI-Art tools/palette_pass.py",
+    "date": "2026-10-04",
+    "generation": {
+     "model": "gpt-image-2.5-sunburst",
+     "seed": null,
+     "prompt": "Single isolated game-asset model of one unit for a fictional real-time strategy video game, for 3D reconstruction: three-quarter view from the front-left and about 25 degrees above, the whole unit in frame with margin, nothing else in the image, transparent background, no ground, no shadow. Subject: a low-profile main battle tank with a faceted, wedge-fronted welded turret, a single long smoothbore cannon, six road wheels per side behind angular side skirts, rear engine grilles and a short sensor mast on the turret roof. Clean pre-rendered 3D game-asset look with flat, even, shadowless studio lighting (no strong highlights, no baked cast shadows) so the surface colors are true. Crisp panel lines, large readable shapes. Faction look: high-tech, precise and networked. Dark jade green and grey-green camouflage in large angular blocks, matte composite armor built from faceted wedge-shaped plates, low sleek silhouettes, small sensor domes and short antenna masts, dark gunmetal running gear, cyan-tinted optics and sensor glass. Player-color panels (the turret side panels and a narrow band along the top of the side skirts) are painted flat signal red. Exactly the design shown in the concept sheet provided. No text, no letters, no numbers, no logos, no flags, no insignia, no national or unit markings, no watermark, no user interface.",
+     "runtime": "TRELLIS mesh, CPU Forge palette pass"
     }
    }
   },
@@ -24929,19 +24970,25 @@
   "voxels/r2qilintur.vxl": {
    "url": "/art-lab/voxels/r2qilintur.vxl",
    "modPath": "mods/rtsai/modern-factions/voxels/r2qilintur.vxl",
-   "bytes": 15315,
-   "sha256": "87731af7797f3f6e0ee55859c1eb7499a206f9425bce20602fa63346c679ee8d",
+   "bytes": 16989,
+   "sha256": "311002a79dacc89be33add7d60bce03ea70d13c553eb24446afb7af9119f43d3",
    "provenance": {
-    "sha256": "87731af7797f3f6e0ee55859c1eb7499a206f9425bce20602fa63346c679ee8d",
+    "sha256": "311002a79dacc89be33add7d60bce03ea70d13c553eb24446afb7af9119f43d3",
     "type": "RA2 voxel model",
-    "origin": "rendered-from-project-geometry",
-    "generator": "project-geometry",
-    "script": "scripts/ra2_faction_voxels.py",
+    "origin": "generated",
+    "generator": "forge-voxel",
     "source": {
-     "repo": "OpenRA-AI",
-     "path": "apps/installer/ra2/modern-factions/voxels/r2qilintur.vxl",
-     "commit": "26d154415ebc0530f893a5b80af0e4ad38677b7f",
-     "date": "2026-09-05"
+     "repo": "RTSAI-Art (local)",
+     "commit": "6ac68b6",
+     "path": "units/r2qilin/candidates/voxel-v4-ra2-jade/dropin/r2qilintur.vxl"
+    },
+    "tool": "RTSAI-Art tools/palette_pass.py",
+    "date": "2026-10-04",
+    "generation": {
+     "model": "gpt-image-2.5-sunburst",
+     "seed": null,
+     "prompt": "Single isolated game-asset model of one unit for a fictional real-time strategy video game, for 3D reconstruction: three-quarter view from the front-left and about 25 degrees above, the whole unit in frame with margin, nothing else in the image, transparent background, no ground, no shadow. Subject: a low-profile main battle tank with a faceted, wedge-fronted welded turret, a single long smoothbore cannon, six road wheels per side behind angular side skirts, rear engine grilles and a short sensor mast on the turret roof. Clean pre-rendered 3D game-asset look with flat, even, shadowless studio lighting (no strong highlights, no baked cast shadows) so the surface colors are true. Crisp panel lines, large readable shapes. Faction look: high-tech, precise and networked. Dark jade green and grey-green camouflage in large angular blocks, matte composite armor built from faceted wedge-shaped plates, low sleek silhouettes, small sensor domes and short antenna masts, dark gunmetal running gear, cyan-tinted optics and sensor glass. Player-color panels (the turret side panels and a narrow band along the top of the side skirts) are painted flat signal red. Exactly the design shown in the concept sheet provided. No text, no letters, no numbers, no logos, no flags, no insignia, no national or unit markings, no watermark, no user interface.",
+     "runtime": "TRELLIS mesh, CPU Forge palette pass"
     }
    }
   },

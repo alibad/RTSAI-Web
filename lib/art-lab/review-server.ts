@@ -16,8 +16,9 @@ import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileS
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { applyReviewAction, migrateEntry, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
-import { cachedFile, rosterPayload, SAFE_NAME, type OriginalsConfig } from "./originals";
+import { cachedFile, classicConfig, rosterPayload, SAFE_NAME, type OriginalsConfig } from "./originals";
 import { reviewEnabled } from "./review-gate";
+import { duelJob, startDuel } from "./duel-server";
 
 const TYPES: Record<string, string> = {
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".json": "application/json; charset=utf-8",
@@ -141,18 +142,39 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
       const path = url.pathname.replace(/^\/api\/art-review/, "") || "/";
       if (!isLocalRequest(req)) return send(res, 403, { error: "Review mode only answers local requests" });
       if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace));
+      if (req.method === "GET" && /^\/duel\/[a-f0-9-]{36}$/.test(path)) {
+        const job = duelJob(path.slice(6), resolve(workspace, "../RTSAI-Web-wt-artlab"));
+        return job ? send(res, 200, job) : send(res, 404, { error: "No such match" });
+      }
+      if (req.method === "POST" && path === "/duel") {
+        if (!originals) return send(res, 404, { error: "Engine not configured" });
+        if (!/^application\/json\b/i.test(req.headers["content-type"] ?? "")) return send(res, 415, { error: "Send application/json" });
+        let body = "";
+        for await (const chunk of req) { body += chunk.toString(); if (body.length > 4096) return send(res, 413, { error: "Too large" }); }
+        try { return send(res, 202, await startDuel(resolve(workspace, "../RTSAI-Web-wt-artlab"), originals, JSON.parse(body))); }
+        catch (error) { return send(res, 400, { error: error instanceof Error ? error.message : "Invalid duel" }); }
+      }
       if (req.method === "GET" && path === "/roster") {
         if (!originals) return send(res, 404, { error: "Original units are not configured" });
-        return send(res, 200, await rosterPayload(originals, url.searchParams.has("refresh")));
+        const mode = url.searchParams.get("mode") ?? "ra2";
+        if (!["ra2", "classic"].includes(mode)) return send(res, 400, { error: "Unknown game mode" });
+        return send(res, 200, await rosterPayload(mode === "classic" ? classicConfig(originals) : originals, url.searchParams.has("refresh")));
       }
-      if (req.method === "GET" && path.startsWith("/ra2/")) {
-        const name = decodeURIComponent(path.slice(5));
-        const file = originals && SAFE_NAME.test(name) ? cachedFile(originals, name) : null;
+      if (req.method === "GET" && (path.startsWith("/ra2/") || path.startsWith("/classic/"))) {
+        const classic = path.startsWith("/classic/");
+        const name = decodeURIComponent(path.slice(classic ? 9 : 5));
+        const file = originals && SAFE_NAME.test(name) ? cachedFile(classic ? classicConfig(originals) : originals, name) : null;
         if (!file) return send(res, 404, { error: "No such file" });
         res.setHeader("Cache-Control", "private, max-age=3600");
         res.statusCode = 200;
         res.setHeader("Content-Type", name.endsWith(".png") ? "image/png" : "application/octet-stream");
         return res.end(readFileSync(file));
+      }
+      if (req.method === "GET" && path.startsWith("/mod/")) {
+        const name = decodeURIComponent(path.slice(5));
+        const cfg = originals && (url.searchParams.get("mode") === "classic" ? classicConfig(originals) : originals);
+        const file = cfg && SAFE_NAME.test(name) ? cachedFile(cfg, `owned/${name}`) : null;
+        return file ? send(res, 200, readFileSync(file), name.endsWith(".png") ? "image/png" : "application/octet-stream") : send(res, 404, { error: "No such mod file" });
       }
       if (req.method === "GET" && path === "/file") {
         const target = safeResolve(workspace, url.searchParams.get("path") ?? "");

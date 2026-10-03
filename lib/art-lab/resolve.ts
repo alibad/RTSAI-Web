@@ -37,6 +37,7 @@ export function packagePath(ref: string): { path: string | null; reason: string 
   const pkg = ref.slice(0, bar);
   const rest = ref.slice(bar + 1);
   if (pkg === "ra2") return { path: `${MOD_DIR}/${rest}`, reason: null };
+  if (pkg === "ra") return { path: `mods/ra/${rest}`, reason: null };
   if (pkg === "common") return { path: `engine/mods/common/${rest}`, reason: null };
   return { path: null, reason: `package ${pkg}| (RA2 game data or engine content)` };
 }
@@ -83,28 +84,29 @@ export type ModData = {
   modelSequences: Map<string, Yaml>;
   messages: Map<string, string>;
   ruleSources: Map<string, string>;
+  weapons?: Map<string, Yaml>;
 };
 
 function manifestList(manifest: Yaml, key: string) {
   return (child(manifest, key)?.value.nodes ?? []).map(n => n.key);
 }
 
-export function loadModData(reader: ModReader): ModData {
-  const manifestNodes = parseMiniYaml(reader.text(`${MOD_DIR}/mod.yaml`), "mod.yaml");
+export function loadModData(reader: ModReader, options: { manifestPath?: string; extra?: Partial<Record<"Rules" | "Sequences" | "Weapons", string[]>> } = {}): ModData {
+  const manifestNodes = parseMiniYaml(reader.text(options.manifestPath ?? `${MOD_DIR}/mod.yaml`), "mod.yaml");
   const manifest: Yaml = { value: null, nodes: manifestNodes };
-  const load = (refs: string[]) => refs.map(ref => {
+  const load = (refs: string[]) => [...new Set(refs)].map(ref => {
     const { path } = packagePath(ref);
     if (!path || !reader.exists(path)) throw new Error(`mod.yaml lists ${ref}, which is not in the mod checkout`);
     return { ref, path, nodes: parseMiniYaml(reader.text(path), ref) };
   });
   const toMap = (nodes: YamlNode[], lower: boolean) => new Map(nodes.map(n => [lower ? n.key.toLowerCase() : n.key, n.value]));
 
-  const ruleFiles = load(manifestList(manifest, "Rules"));
+  const ruleFiles = load([...manifestList(manifest, "Rules"), ...(options.extra?.Rules ?? [])]);
   const rules = toMap(mergeMiniYaml(ruleFiles.map(f => f.nodes)), true);
   const ruleSources = new Map<string, string>();
   for (const file of ruleFiles) for (const n of file.nodes) if (!ruleSources.has(n.key.toLowerCase())) ruleSources.set(n.key.toLowerCase(), file.path);
 
-  const sequenceFiles = load(manifestList(manifest, "Sequences"));
+  const sequenceFiles = load([...manifestList(manifest, "Sequences"), ...(options.extra?.Sequences ?? [])]);
   const sequences = toMap(mergeMiniYaml(sequenceFiles.map(f => f.nodes)), false);
   const rawSequenceKeys = new Map<string, Set<string>>();
   for (const file of sequenceFiles) for (const image of file.nodes) {
@@ -113,13 +115,14 @@ export function loadModData(reader: ModReader): ModData {
     rawSequenceKeys.set(image.key, keys);
   }
   const modelSequences = toMap(mergeMiniYaml(load(manifestList(manifest, "ModelSequences")).map(f => f.nodes)), true);
+  const weapons = toMap(mergeMiniYaml(load([...manifestList(manifest, "Weapons"), ...(options.extra?.Weapons ?? [])]).map(f => f.nodes)), true);
 
   const messages = new Map<string, string>();
   for (const ref of manifestList(manifest, "FluentMessages")) {
     const { path } = packagePath(ref);
     if (path && reader.exists(path)) parseFluent(reader.text(path), messages);
   }
-  return { manifest, rules, sequences, rawSequenceKeys, modelSequences, messages, ruleSources };
+  return { manifest, rules, sequences, rawSequenceKeys, modelSequences, messages, ruleSources, weapons };
 }
 
 type FileUse = { modPath: string; key: string };
@@ -233,7 +236,7 @@ export function resolveActor(reader: ModReader, data: ModData, name: string, act
   const iconSequence = childValue(buildable, "Icon") ?? "icon";
   const cameoRef = sequenceFile(data, spriteImage, iconSequence);
   const cameo = { sequence: iconSequence, file: null as string | null, external: null as ExternalRef | null };
-  const ra2Cameo = !cameoRef.path && ra2 && cameoRef.ref && !cameoRef.ref.includes("|") ? ra2.record(cameoRef.ref.toLowerCase()) : null;
+  const ra2Cameo = ra2 && cameoRef.ref ? ra2.record(cameoRef.ref.toLowerCase()) : null;
   if (cameoRef.path && provenanceKey(cameoRef.path)) cameo.file = recordFile(cameoRef.path);
   else if (ra2Cameo) cameo.file = ra2Cameo;
   else cameo.external = { ref: cameoRef.ref ?? `${spriteImage}.${iconSequence}`, reason: cameoRef.reason ?? "not modern-faction art" };
@@ -484,11 +487,11 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
           shp = { width: decoded.width, height: decoded.height, frames: decoded.frames.length, compression: [...new Set(decoded.frames.map(f => f.compression))].sort() };
         }
       } else {
-        const ra2Key = ra2 && !filename.includes("|") ? ra2.record(filename.toLowerCase()) : null;
+        const ra2Key = ra2 ? ra2.record(filename.toLowerCase()) : null;
         if (ra2Key) {
           entry.file = ra2Key;
           if (/\.shp$/i.test(filename) && !shp) {
-            const decoded = decodeShp(ra2!.bytes(filename.toLowerCase()));
+            const decoded = decodeShp(ra2!.bytes(ra2Key));
             shp = { width: decoded.width, height: decoded.height, frames: decoded.frames.length, compression: [...new Set(decoded.frames.map(f => f.compression))].sort() };
           }
         } else entry.external = { ref: filename, reason: reason ?? "mod or engine file outside modern-factions (not faction art)" };

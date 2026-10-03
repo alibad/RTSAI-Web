@@ -479,7 +479,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       <div className="lab-corner is-br">
         {playable && !is3d && (
           <div className="lab-seg">
-            <select aria-label="Animation" value={animations.some(a => a.id === animation) ? animation : animations[0]?.id} onChange={e => setLab({ animation: e.target.value })}>
+            <select aria-label="Animation" value={animations.some(a => a.id === animation) ? animation : animations[0]?.id} onChange={e => setLab({ animation: e.target.value, playing: true })}>
               {animations.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
             {anim?.animates && <button type="button" aria-pressed={playing} onClick={() => setLab({ playing: !playing })} title={playing ? "Pause" : "Play"}>{playing ? <Pause size={14} /> : <Play size={14} />}</button>}
