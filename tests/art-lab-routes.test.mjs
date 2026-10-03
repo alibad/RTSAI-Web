@@ -40,7 +40,7 @@ test("Review mode and its API do not exist in the production build", async () =>
   const chunks = readdirSync(new URL("../dist/client/_next/static/chunks/", import.meta.url));
   for (const chunk of chunks) {
     const source = readFileSync(new URL(`../dist/client/_next/static/chunks/${chunk}`, import.meta.url), "utf8");
-    assert.doesNotMatch(source, /How review works|Export chosen assets|\/api\/art-review/, `${chunk} carries no review code`);
+    assert.doesNotMatch(source, /Use this in game|Nothing ships until export|Note for the Forge|renderInGameAsync|\/api\/art-review/, `${chunk} carries no review code`);
   }
 });
 

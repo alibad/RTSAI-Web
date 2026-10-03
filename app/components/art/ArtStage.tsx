@@ -5,11 +5,11 @@ import { loadHva, loadPlayerPalette, loadShp, loadVxl, normalsTable, renderInGam
 import type { Palette } from "../../../lib/art-lab/pal";
 import type { Shp } from "../../../lib/art-lab/shp";
 import { partVisibleByDefault, type RenderSpec } from "../../../lib/art-lab/spec";
-import { overlaySequence, pickAnimation, turretSequence } from "../../../lib/art-lab/sprite-anim";
-import { blit, drawShpFrame, framePosition, indexFacing, sequenceFrame, sequenceLength } from "../../../lib/art-lab/sprite-render";
-import type { SpriteArt, SpriteSequence } from "../../../lib/art-lab/types";
-import { facingLabel, localToWorld, rotateYaw, screenVector } from "../../../lib/art-lab/voxel-math";
-import { backdropRgb, PixelCanvas, type PixelImage } from "./PixelCanvas";
+import { composeLayers, rigAnimates, rigFrame, rigLayers, rigLength, spriteRig } from "../../../lib/art-lab/sprite-compose";
+import { indexFacing } from "../../../lib/art-lab/sprite-render";
+import type { SpriteArt } from "../../../lib/art-lab/types";
+import { facingLabel } from "../../../lib/art-lab/voxel-math";
+import { backdropRgb, PixelCanvas } from "./PixelCanvas";
 import { useNearViewport } from "./useInGameRenders";
 import { tintFor, type CameraLink, type MapTint, type ViewSettings } from "./viewSettings";
 import type { StageLabel, VoxelStage } from "./voxel-three";
@@ -167,75 +167,47 @@ function usePalette(spec: RenderSpec, color: string | null) {
   return palette;
 }
 
-type Layer = { shp: Shp; seq: SpriteSequence; facing: number; frame: number; dx?: number; dy?: number };
-
-/**
- * Draws sprite layers around a fixed actor centre so frames never jitter: every layer's ShadowStart frame
- * first (the shadow palette index draws black at alpha 140), then body, turret and overlays in order.
- */
-function compose(layers: Layer[], palette: Palette, base: Shp, baseSeq: SpriteSequence, shadows: boolean): PixelImage {
-  const margin = 8 + Math.max(0, ...layers.map(l => Math.max(Math.abs(l.dx ?? 0), Math.abs(l.dy ?? 0))));
-  const width = base.width + 2 * margin, height = base.height + 2 * margin;
-  const anchorX = Math.round(base.width / 2 + margin - baseSeq.offset[0]);
-  const anchorY = Math.round(base.height / 2 + margin - baseSeq.offset[1]);
-  const data = new Uint8ClampedArray(4 * width * height);
-  const draw = (layer: Layer, index: number) => {
-    if (index < 0 || index >= layer.shp.frames.length) return;
-    const at = framePosition(layer.shp, layer.seq, anchorX + (layer.dx ?? 0), anchorY + (layer.dy ?? 0));
-    blit(data, width, height, drawShpFrame(layer.shp, index, palette), layer.shp.width, layer.shp.height, at.x, at.y);
-  };
-  if (shadows) for (const layer of layers) if (layer.seq.shadowStart >= 0) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing, true));
-  for (const layer of layers) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing));
-  return { width, height, data, anchorX, anchorY };
-}
-
-/** Turreted.Position for a sprite actor: the offset rotated by the quantized body facing, in screen pixels. */
-function turretScreenOffset(offset: [number, number, number] | undefined, bodyFacing: number) {
-  if (!offset || (offset[0] === 0 && offset[1] === 0 && offset[2] === 0)) return { dx: 0, dy: 0 };
-  const v = screenVector(localToWorld(rotateYaw(offset, bodyFacing), false, 85));
-  return { dx: Math.round(v[0]), dy: Math.round(v[1]) };
-}
-
 function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
   const [wrapRef, near] = useNearViewport<HTMLDivElement>("300px");
   const active = eager || near;
-  const animation = pickAnimation(sprite, settings.animation);
-  const body = animation?.body ?? null;
-  const turret = animation?.id === "make" ? null : turretSequence(sprite);
-  const overlay = animation?.id === "make" ? null : overlaySequence(sprite);
+  const rig = useMemo(() => spriteRig(sprite, settings.animation), [sprite, settings.animation]);
+  const body = rig?.body ?? null;
+  const turret = rig?.turret ?? null;
   const bodyShp = useShp(body?.file, active);
   const turretShp = useShp(turret?.file, active);
-  const overlayShp = useShp(overlay?.file, active);
+  const overlayShp = useShp(rig?.overlay?.file, active);
   const palette = usePalette(spec, settings.color);
   const tint = tintFor(settings.tintMap, tints);
+  const shps = useMemo(() => (bodyShp ? { body: bodyShp, turret: turretShp, overlay: overlayShp } : null), [bodyShp, turretShp, overlayShp]);
   const [tick, setTick] = useState(0);
-  const length = body && bodyShp ? sequenceLength(body, bodyShp) : 1;
+  const length = rig && shps ? rigLength(rig, shps) : 1;
+  // Tick only while the picture actually changes: a one-frame stand or idle never re-renders on a timer.
+  const animates = Boolean(rig && shps && rigAnimates(rig, shps));
   useEffect(() => {
-    if (!settings.playing || !body) return;
-    const timer = setInterval(() => setTick(t => t + 1), Math.max(40, body.tick));
+    if (!settings.playing || !body || !animates) return;
+    const timer = setInterval(() => { if (!document.hidden) setTick(t => t + 1); }, Math.max(40, body.tick));
     return () => clearInterval(timer);
-  }, [settings.playing, body]);
-  const frame = body?.reverses && length > 1 ? (() => { const p = tick % (2 * length - 2); return p >= length ? 2 * length - 2 - p : p; })() : tick % Math.max(1, length);
+  }, [settings.playing, body, animates]);
+  const frame = rig ? rigFrame(rig, length, tick) : 0;
+  const overlayTick = rig?.overlay ? tick : 0;
   const facings = body?.facings ?? 1;
-  // A vehicle's turret turns with its body (Turreted: world = body + local); a defence's body never turns.
   const vehicle = facings > 1 && Boolean(turret);
   const quantize = (f: number) => (indexFacing(f, facings) * 1024) / facings;
-  const turretAngleFor = (bodyFacing: number) => (vehicle ? (quantize(bodyFacing) + settings.turretFacing) & 1023 : ((sprite?.turret?.initialFacing ?? 0) + settings.turretFacing) & 1023);
-  const turretAngle = turretAngleFor(settings.facing);
-  const turretOffset = sprite?.turret?.offset;
-  const layersAt = (bodyFacing: number, bodyFrame: number): Layer[] => {
-    const layers: Layer[] = [{ shp: bodyShp!, seq: body!, facing: bodyFacing, frame: bodyFrame }];
-    if (turret && turretShp) layers.push({ shp: turretShp, seq: turret, facing: turretAngleFor(bodyFacing), frame: 0, ...turretScreenOffset(turretOffset, vehicle ? quantize(bodyFacing) : 0) });
-    if (overlay && overlayShp) layers.push({ shp: overlayShp, seq: overlay, facing: 0, frame: tick });
-    return layers;
-  };
-  const image = !body || !bodyShp || !palette ? null : compose(layersAt(settings.facing, frame), palette, bodyShp, body, settings.shadow);
+  const turretAngle = vehicle ? (quantize(settings.facing) + settings.turretFacing) & 1023 : ((rig?.initialFacing ?? 0) + settings.turretFacing) & 1023;
+  const turretOffset = rig?.turretOffset;
+  const image = useMemo(() => (!rig || !shps || !palette ? null
+    : composeLayers(rigLayers(rig, shps, settings.facing, frame, settings.turretFacing, overlayTick), palette, shps.body, rig.body, settings.shadow)),
+  [rig, shps, palette, settings.facing, settings.turretFacing, settings.shadow, frame, overlayTick]);
   const stripCount = Math.max(facings, turret ? turret.facings : 1);
-  const strip = settings.mode === "ingame" || !body || !bodyShp || !palette ? [] : Array.from({ length: stripCount }, (_, i) => {
+  const showStrip = settings.mode !== "ingame";
+  // The strip depends on the frame, never on the facing, so turning the unit does not recompose it.
+  const strip = useMemo(() => (!showStrip || !rig || !shps || !palette ? [] : Array.from({ length: stripCount }, (_, i) => {
     const facing = (i * 1024) / stripCount;
-    return { facing, image: compose(layersAt(facings > 1 ? facing : settings.facing, frame).map(l => (l.seq === turret && facings === 1 ? { ...l, facing } : l)), palette, bodyShp, body, settings.shadow) };
-  });
+    const layers = rigLayers(rig, shps, facings > 1 ? facing : 0, frame, settings.turretFacing, overlayTick).map(l => (l.seq === turret && facings === 1 ? { ...l, facing } : l));
+    return { facing, image: composeLayers(layers, palette, shps.body, rig.body, settings.shadow) };
+  })), [showStrip, rig, shps, palette, stripCount, facings, frame, overlayTick, settings.turretFacing, settings.shadow, turret]);
   const facingIndex = body ? indexFacing(settings.facing, facings) : 0;
+  const animation = rig?.animation;
   return (
     <div className="art-stage-wrap" ref={wrapRef}>
       <div className="art-stage is-sprite">
