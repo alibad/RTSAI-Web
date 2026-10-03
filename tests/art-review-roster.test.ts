@@ -54,14 +54,20 @@ test("rosters come from the rules: starting units, provided prerequisites and fa
 });
 
 test("a Reference prefers the replaced unit of the same role, then the side's standard one", () => {
-  const u = (id: string, roles: string[], cost: number, advanced = false): RosterUnit => ({ id, name: id, category: "vehicle", queue: "Vehicle", order: 0, cost, roles, origin: "original", reference: null, advanced });
+  const u = (id: string, roles: string[], cost: number, advanced = false): RosterUnit => ({ id, name: id, category: "vehicle", queue: "Vehicle", order: 0, cost, roles, origin: "original", reference: null, advanced, domain: "ground" });
   const mbt = { ...u("r2mbt", ["main-battle-tank"], 1100), origin: "new" as const };
   const grizzly = u("mtnk", ["main-battle-tank"], 700);
   const mirage = u("mgtk", ["main-battle-tank"], 1000, true);
   const ifv = u("fv", ["anti-air"], 600);
-  assert.equal(pickReference(mbt, [grizzly, mirage, ifv], []), "mtnk", "the standard tank beats the tech-gated Mirage");
-  assert.equal(pickReference(mbt, [ifv], [u("htnk", ["main-battle-tank"], 900)]), "htnk", "same role outside the replaced list beats a different role");
-  assert.equal(pickReference({ ...mbt, category: "ship" }, [ifv], []), null, "never across categories");
+  assert.equal(pickReference(mbt, [grizzly, mirage, ifv], [])?.id, "mtnk", "the standard tank beats the tech-gated Mirage");
+  assert.equal(pickReference(mbt, [ifv], [u("htnk", ["main-battle-tank"], 900)])?.id, "htnk", "same role outside the replaced list beats a different role");
+  assert.equal(pickReference({ ...mbt, category: "ship" }, [ifv], []), null, "never across domains");
+  const ship = (id: string, roles: string[], cost: number): RosterUnit => ({ ...u(id, roles, cost), category: "ship", domain: "naval" });
+  const heli = { ...u("shad", ["transport"], 1000), category: "aircraft" as const, domain: "air" as const };
+  const kunlun = { ...ship("r2kunlun", ["transport"], 1100), origin: "new" as const };
+  const pick = pickReference(kunlun, [heli, ship("dest", ["naval-screen"], 1000), ship("lcrf", ["transport"], 900)], []);
+  assert.equal(pick?.id, "lcrf", "a landing ship meets the amphibious transport, never the transport helicopter");
+  assert.match(pick!.why, /naval · replaced by this faction · same role \(transport\)/);
 });
 
 test("original-unit layers drawn only when their condition holds on a fresh unit", () => {
@@ -85,11 +91,17 @@ test("every faction's real roster from the sibling RTSAI-Mod (skipped without th
   const reader: ModReader = {
     text: p => readFileSync(join(modRoot, p), "utf8"), bytes: p => new Uint8Array(readFileSync(join(modRoot, p))), exists: p => existsSync(join(modRoot, p)),
   };
-  const { factions } = computeRosters(loadModData(reader));
+  const { factions, stock } = computeRosters(loadModData(reader));
+  const without: string[] = [];
   for (const f of factions) {
     const fresh = f.units.filter(u => u.origin === "new").map(u => u.id).sort();
     assert.deepEqual(fresh, [...artLab.factions.find(a => a.id === f.id)!.actors].sort(), `${f.id}: every new unit, as the Art Lab lists them`);
     for (const u of f.units) assert.ok(!f.replaced.includes(u.id), `${f.id}: ${u.id} is gated off but listed`);
+    // Every Reference shares its unit's domain (infantry, ground, air, naval, defence, base building).
+    for (const u of f.units.filter(x => x.origin === "new")) {
+      if (!u.reference) { without.push(`${f.id}/${u.id} (${u.domain})`); continue; }
+      assert.equal(stock[u.reference].domain, u.domain, `${f.id}: ${u.id} (${u.domain}) is paired with ${u.reference} (${stock[u.reference].domain})`);
+    }
     assert.ok(f.units.some(u => u.origin === "original"), `${f.id} still builds original RA2 units`);
   }
   const ref = (f: string, id: string) => factions.find(x => x.id === f)!.units.find(u => u.id === id)!.reference;
@@ -98,4 +110,10 @@ test("every faction's real roster from the sibling RTSAI-Mod (skipped without th
   assert.equal(ref("saudi", "r2m1a2s"), "mtnk");
   assert.equal(ref("china", "r2cnrifle"), "e1", "rifleman vs the GI");
   assert.ok(factions.find(f => f.id === "china")!.replaced.includes("mtnk"));
+  assert.equal(ref("china", "r2kunlun"), "lcrf", "Kunlun landing ship vs the Allied Amphibious Transport (a hovercraft)");
+  assert.equal(ref("china", "r2crane"), "shad", "a transport helicopter vs the Night Hawk");
+  assert.equal(ref("china", "r2jiaolong"), "sub", "a submarine vs the Typhoon sub");
+  // New units with no original in their domain (none today); listed so a new one shows up in the test output.
+  if (without.length) console.log(`No same-domain original for: ${without.join(", ")}`);
+  assert.deepEqual(without, []);
 });

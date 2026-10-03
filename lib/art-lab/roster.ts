@@ -8,14 +8,19 @@
  *   ones (`~!faction.china`) is always on for the faction. Owned actors provide more prerequisites, to a fixed point.
  *
  * Modern units are the faction's own actors (gated `~faction.<id>`); everything else it can build is stock RA2.
- * A stock unit gated off with `~!faction.<id>` is one the faction replaced. Each new unit's Reference is the
- * replaced stock unit of the same category and role (else the closest stock unit of that category and role).
+ * A stock unit gated off with `~!faction.<id>` is one the faction replaced. Each new unit's Reference is an
+ * original unit of the SAME DOMAIN (infantry, ground, air, naval, defence, base building: never a helicopter for
+ * a ship), chosen in this order: replaced by this faction and the same role; the same role; replaced; any.
  */
 import { child, childValue, traits, type Yaml } from "./miniyaml";
 import { categorize, MODERN_FACTIONS, type ModData } from "./resolve";
 import type { ArtCategory } from "./types";
 
 export type RosterOrigin = "new" | "original" | "modified";
+export type Domain = "infantry" | "ground" | "air" | "naval" | "defense" | "structure";
+const DOMAINS: Record<ArtCategory, Domain> = { infantry: "infantry", vehicle: "ground", aircraft: "air", ship: "naval", defense: "defense", structure: "structure" };
+/** Where a unit lives and fights, from its traits (Aircraft, a ship queue or naval locomotor, infantry body). */
+export const domainOf = (u: Pick<RosterUnit, "category">): Domain => DOMAINS[u.category];
 
 export type RosterUnit = {
   id: string;
@@ -26,8 +31,10 @@ export type RosterUnit = {
   cost: number | null;
   roles: string[];
   origin: RosterOrigin;
-  /** New units: the stock unit to compare against. */
+  /** New units: the stock unit to compare against, and why it was chosen. */
   reference: string | null;
+  referenceWhy?: string;
+  domain: Domain;
   /** Needs a tech or radar building (the side's standard unit does not). */
   advanced: boolean;
 };
@@ -129,26 +136,36 @@ function unitOf(data: ModData, id: string, origin: RosterOrigin): RosterUnit | n
   const techPrereq = tokens(actor).some(t => !t.negated && /tech|radar|naradr/.test(t.name));
   return {
     id, name: (nameKey && data.messages.get(nameKey)) || (nameKey && !nameKey.startsWith("actor-") ? nameKey : null) || id.charAt(0).toUpperCase() + id.slice(1),
-    category, advanced: techPrereq, queue: queue[0] ?? "", order: Number(childValue(buildable, "BuildPaletteOrder") ?? 9999),
+    category, advanced: techPrereq, domain: DOMAINS[category], queue: queue[0] ?? "", order: Number(childValue(buildable, "BuildPaletteOrder") ?? 9999),
     cost: Number.isFinite(cost) ? cost : null,
     roles: list(childValue(child(actor, "StrategicRole")?.value, "Roles")),
     origin, reference: null,
   };
 }
 
-/** The Reference for a new unit: the replaced stock unit of the same category and role, else the closest one. */
-export function pickReference(unit: RosterUnit, replaced: RosterUnit[], stock: RosterUnit[]) {
-  const score = (s: RosterUnit, isReplaced: boolean) => {
-    if (s.category !== unit.category) return -Infinity;
-    const role = s.roles.some(r => unit.roles.includes(r)) ? 50 : 0;
-    const cost = unit.cost !== null && s.cost !== null ? -Math.abs(unit.cost - s.cost) / 200 : -3;
-    // Between equals, the side's standard unit (no tech building) is the fairer reference.
-    return role + (isReplaced ? 30 : 0) + (s.advanced ? 0 : 10) + cost;
+/**
+ * The Reference for a new unit, always from the same domain: the replaced unit with the same role, else any
+ * original with that role, else a replaced one, else any; ties go to the side's standard unit (no tech building)
+ * and then the closest cost. A role match outranks "replaced" so a new submarine meets the Typhoon sub, not the
+ * Allied Dolphin it happens to share a gate with.
+ */
+export function pickReference(unit: RosterUnit, replaced: RosterUnit[], stock: RosterUnit[]): { id: string; why: string } | null {
+  const domain = domainOf(unit);
+  let best: { id: string; score: number; why: string } | null = null;
+  const consider = (s: RosterUnit, isReplaced: boolean) => {
+    if (domainOf(s) !== domain) return;
+    const role = s.roles.find(r => unit.roles.includes(r));
+    const tier = isReplaced && role ? 3 : role ? 2 : isReplaced ? 1 : 0;
+    const cost = unit.cost !== null && s.cost !== null ? Math.abs(unit.cost - s.cost) / 1e5 : 0.005;
+    const score = tier * 10 + (s.advanced ? 0 : 1) - cost;
+    if (best && score <= best.score) return;
+    const why = [domain, isReplaced ? "replaced by this faction" : null, role ? `same role (${role.replace(/-/g, " ")})` : "closest role"].filter(Boolean).join(" · ");
+    best = { id: s.id, score, why };
   };
-  let best: { id: string; score: number } | null = null;
-  for (const s of replaced) { const v = score(s, true); if (v > -Infinity && (!best || v > best.score)) best = { id: s.id, score: v }; }
-  for (const s of stock) { const v = score(s, false); if (v > -Infinity && (!best || v > best.score)) best = { id: s.id, score: v }; }
-  return best?.id ?? null;
+  for (const s of replaced) consider(s, true);
+  for (const s of stock) consider(s, false);
+  const found = best as { id: string; why: string } | null;
+  return found ? { id: found.id, why: found.why } : null;
 }
 
 export function computeRosters(data: ModData, factionIds: readonly string[] = MODERN_FACTIONS): { factions: FactionRoster[]; stock: Record<string, RosterUnit> } {
@@ -181,7 +198,12 @@ export function computeRosters(data: ModData, factionIds: readonly string[] = MO
       if (owned.has(name)) { const u = allStock.get(name); if (u) units.push({ ...u }); }
     }
     const stockPool = [...allStock.values()].filter(s => !replaced.includes(s));
-    for (const u of units) if (u.origin === "new") u.reference = pickReference(u, replaced, stockPool);
+    for (const u of units) {
+      if (u.origin !== "new") continue;
+      const ref = pickReference(u, replaced, stockPool);
+      u.reference = ref?.id ?? null;
+      u.referenceWhy = ref?.why;
+    }
     units.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category) || (a.origin === b.origin ? 0 : a.origin === "new" ? -1 : 1) || a.order - b.order || a.id.localeCompare(b.id));
     return {
       id, name: data.messages.get(childValue(trait?.value, "Name") ?? "") ?? id, side: childValue(trait?.value, "Side") ?? "",

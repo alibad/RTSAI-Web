@@ -149,6 +149,27 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     }
     return m;
   }, [units, roster]);
+  // Dev-only test hook (this whole component is stubbed out of production builds): the exact 1x picture the
+  // stage draws for a unit, for pixel comparisons against the engine's own render.
+  useEffect(() => {
+    const hook = {
+      async frame(id: string, facing: number, color: string | null, turret = 0) {
+        const u = unitIndex.get(id);
+        if (!u) return null;
+        const item = stageItem(u, null);
+        if (!item) return null;
+        const pose = { facing, turret, tick: 0, animation: "stand", color, shadow: true, tint: [1, 1, 1] };
+        for (let i = 0; i < 200; i++) {
+          const f = frames.get(item, pose);
+          if (f) return { width: f.width, height: f.height, anchorX: f.anchorX, anchorY: f.anchorY, png: f.canvas.toDataURL("image/png") };
+          await new Promise(r => setTimeout(r, 25));
+        }
+        return null;
+      },
+    };
+    (window as unknown as { __artReview?: typeof hook }).__artReview = hook;
+    return () => { delete (window as unknown as { __artReview?: typeof hook }).__artReview; };
+  }, [frames, unitIndex]);
   const rosterInfo = useMemo(() => new Map((roster?.factions ?? []).flatMap(f => f.units.map(u => [`${f.id}:${u.id}`, u] as const))), [roster]);
   const rows = useMemo(() => units.map(u => rowFor({ ...u, origin: "new" })), [units, rowFor]);
   const factionIds = useMemo(() => (roster?.factions.map(f => f.id) ?? [...new Set(units.map(u => u.factionId))]), [roster, units]);
@@ -183,9 +204,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const ws = current?.ws;
   const info = unit ? rosterInfo.get(`${factionId}:${unit.id}`) ?? [...rosterInfo.entries()].find(([k]) => k.endsWith(`:${unit.id}`))?.[1] : undefined;
   const reference = info?.reference ? unitIndex.get(info.reference) ?? null : null;
+  const referenceWhy = info?.referenceWhy;
   const paletteUnits = useMemo(() => factionRows.map(r => ({ ...r.unit, factionId })), [factionRows, factionId]);
   const unitKey = unit?.id ?? null;
-  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference) : []), [unit, ws, slot, reference]);
+  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy) : []), [unit, ws, slot, reference, referenceWhy]);
   const focus = Math.max(0, versions.findIndex(v => v.key === focusKey));
   const focused = versions[focus] ?? null;
   const entry = current?.entry ?? emptyEntry();

@@ -23,8 +23,9 @@ export type Version = {
   key: string;
   kind: "current" | "reference" | "candidate";
   candidate: Candidate | null;
-  /** Reference versions: the original unit compared against. */
+  /** Reference versions: the original unit compared against, and why it was chosen. */
   reference?: ReviewUnit;
+  referenceWhy?: string;
   /** "Current", "Voxel A", "Sprite B", "Icon C". */
   label: string;
   /** "VXL", "SHP", "PNG". */
@@ -60,7 +61,7 @@ const fileUrl = (c: Candidate, file: string | null | undefined) => (file ? c.url
  * Current first (labelled "Original" for untouched RA2 units), then for new units the original RA2 unit they
  * replace as "Reference", then the slot's candidates oldest first, labelled by kind and creation order.
  */
-export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, slot: SlotId, reference: ReviewUnit | null = null): Version[] {
+export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, slot: SlotId, reference: ReviewUnit | null = null, referenceWhy?: string): Version[] {
   const candidates = [...candidatesForSlot(ws, slot)].sort(byCreation);
   const labels = versionLabels(candidates);
   const original = unit.origin === "original";
@@ -71,7 +72,7 @@ export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, sl
     image: slot === "icon" ? unit.spec.cameo : null,
   };
   const ref: Version[] = reference && slot !== "concept" ? [{
-    key: `ref:${reference.id}`, kind: "reference", candidate: null, reference, label: "Reference", tag: "RA2",
+    key: `ref:${reference.id}`, kind: "reference", candidate: null, reference, referenceWhy, label: "Reference", tag: "RA2",
     item: slot === "icon" ? null : stageItem(reference, null),
     image: slot === "icon" ? reference.spec.cameo : null,
   }] : [];

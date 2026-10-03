@@ -167,7 +167,7 @@ function Details({ unit, version, all, onClose, reference }: { unit: ReviewUnit;
           <dl className="lab-dl">
             <dt>Art</dt><dd>Untouched Westwood RA2 {unit.spec.voxel ? "voxel model" : "sprite"}, read from your local RA2 data.</dd>
             <dt>Unit</dt><dd>{unit.name} <span className="lab-mono">{unit.id}</span></dd>
-            {version.kind === "reference" && <><dt>Why this one</dt><dd>The original unit this faction&apos;s new one replaces (same role and category).</dd></>}
+            {version.kind === "reference" && <><dt>Why this one</dt><dd>{version.referenceWhy ?? "Same domain"}.</dd></>}
             <dt>Files</dt><dd className="lab-mono lab-files">{(unit.files ?? []).join(" ")}</dd>
             {!!unit.fromModBits?.length && <><dt>Mod override</dt><dd className="lab-mono">{unit.fromModBits.join(" ")}</dd></>}
           </dl>
