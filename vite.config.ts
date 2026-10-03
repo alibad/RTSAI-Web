@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { findTrailer } from "./lib/trailer";
 
@@ -31,6 +31,38 @@ const publicDirectory = fileURLToPath(new URL("./public", import.meta.url));
 const trailer = findTrailer((publicPath) => existsSync(`${publicDirectory}${publicPath}`));
 const define = { "process.env.RTSAI_TRAILER": JSON.stringify(trailer ? JSON.stringify(trailer) : "") };
 
+// Faction Art Lab Review mode: a dev-server-only API over the local RTSAI-Art workspace. `apply: "serve"`
+// keeps it out of every build; the handler also refuses to answer when NODE_ENV is "production".
+function artReviewDevApi(): Plugin {
+  return {
+    name: "rtsai-art-review-dev-api",
+    apply: "serve",
+    async configureServer(server) {
+      if (process.env.NODE_ENV === "production") return;
+      const { createArtReviewMiddleware } = await import("./lib/art-lab/review-server");
+      const root = process.env.RTSAI_ART_DIR ?? fileURLToPath(new URL("../RTSAI-Art", import.meta.url));
+      server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root }));
+    },
+  };
+}
+
+// Production builds swap the Review UI for an empty stub before any bundling or client-reference analysis,
+// so the review code is absent from every production artifact (the page itself answers 404 there).
+function artReviewProductionStub(): Plugin {
+  const stubId = "\0rtsai-art-review-stub";
+  return {
+    name: "rtsai-art-review-production-stub",
+    apply: "build",
+    enforce: "pre",
+    resolveId(source) {
+      return /(^|[\\/])components[\\/]art[\\/]ReviewApp(\.tsx)?$/.test(source) ? stubId : null;
+    },
+    load(id) {
+      return id === stubId ? "export function ReviewApp() { return null; }\n" : null;
+    },
+  };
+}
+
 export default defineConfig(async () => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
@@ -49,7 +81,7 @@ export default defineConfig(async () => {
     return {
       server,
       define,
-      plugins: [tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
+      plugins: [artReviewDevApi(), artReviewProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
@@ -60,6 +92,8 @@ export default defineConfig(async () => {
     server,
     define,
     plugins: [
+      artReviewDevApi(),
+      artReviewProductionStub(),
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

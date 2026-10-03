@@ -155,6 +155,30 @@ alone must never be advertised as a public download. Unknown coverage fails clos
 Download links carry provider-neutral event attributes for the configured
 Firebase analytics layer.
 
+## Faction Art Lab
+
+`/art` is an internal review tool (`noindex`, not in the sitemap or navigation)
+that shows every modern-faction sprite, voxel model and cameo as the game draws
+them. The public RA2 faction and unit pages embed the same viewers.
+
+```powershell
+npm run sync:art     # resolve ../RTSAI-Mod, copy provenance-checked files to public/art-lab
+npm run check:art    # fail if the committed copy is stale
+```
+
+- The sync resolves rules, sequences and model sequences with OpenRA's MiniYaml
+  semantics (`lib/art-lab/miniyaml.ts`) and writes `data/art-lab.json`.
+- It copies only files recorded in `mods/rtsai/modern-factions/ART-PROVENANCE.json`
+  whose bytes match the recorded SHA-256; anything else fails the sync, so no
+  RA2 game data is published.
+- Decoders (`lib/art-lab/{vxl,hva,shp,pal}.ts`) and the voxel transform chain
+  (`voxel-math.ts`, `raster.ts`) follow the engine. three.js loads only when a
+  voxel viewer scrolls into view.
+- Review mode (`/art/review`, `npm run dev` only) reads the Art Forge's local
+  `../RTSAI-Art` workspace (override with `RTSAI_ART_DIR`) through a Vite
+  dev-server API and writes decisions to its `review.json`. Production builds
+  contain neither the tab, the UI nor the API.
+
 ## Deployment
 
 The production site is hosted by Vercel at `rtsai.net` and `www.rtsai.net`.

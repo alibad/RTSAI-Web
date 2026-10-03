@@ -20,7 +20,11 @@ type FeedbackState = FeedbackSettings & {
   category: FeedbackCategory;
   rating: number | null;
   captures: FeedbackCapture[];
+  /** Increments when a page asks the panel to open (the panel still requires sign-in). */
+  launchRequest: number;
   open: () => void;
+  /** Pre-fills the title (and optionally the category), then asks the panel to open. */
+  openWithPrefill: (prefill: { title: string; category?: FeedbackCategory }) => void;
   close: () => void;
   reset: () => void;
   setElementSelecting: (value: boolean) => void;
@@ -77,7 +81,13 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
   category: "General",
   rating: null,
   captures: [],
+  launchRequest: 0,
   open: () => set({ isOpen: true }),
+  openWithPrefill: ({ title, category }) => set((state) => ({
+    title: title.slice(0, 120),
+    ...(category ? { category } : {}),
+    launchRequest: state.launchRequest + 1,
+  })),
   close: () => set({ isOpen: false, isElementSelecting: false }),
   reset: () => set({ isOpen: false, isElementSelecting: false, title: "", description: "", category: "General", rating: null, captures: [] }),
   setElementSelecting: (value) => set({ isElementSelecting: value, isOpen: !value }),
