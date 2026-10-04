@@ -58,7 +58,7 @@ const YIELD_MS = 300;
 
 export const defaultVisibility = (spec: RenderSpec) => Object.fromEntries((spec.voxel?.parts ?? []).map(p => [p.id, partVisibleByDefault(p)]));
 
-function toFrame(image: RasterImage, tint: readonly number[] | null): Frame {
+export function toFrame(image: RasterImage, tint: readonly number[] | null): Frame {
   const { width, height, data } = image;
   if (tint && (tint[0] !== 1 || tint[1] !== 1 || tint[2] !== 1)) {
     for (let i = 0; i < data.length; i += 4) { data[i] *= tint[0]; data[i + 1] *= tint[1]; data[i + 2] *= tint[2]; }

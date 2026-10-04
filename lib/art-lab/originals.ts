@@ -15,7 +15,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, symlink
 import { basename, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { crc32, deflateSync } from "node:zlib";
-import { child, childValue, traits } from "./miniyaml";
+import { child, childValue, traits, parseMiniYaml } from "./miniyaml";
 import { decodePal } from "./pal";
 import { buildRenderSpec, spriteWithUrlsOf } from "./render-spec";
 import { loadModData, MOD_DIR, resolveActor, worldNormals, type ModReader, type Ra2Hook } from "./resolve";
@@ -191,6 +191,55 @@ function spawnConditions(actor: NonNullable<ReturnType<ReturnType<typeof loadMod
 }
 
 const memo = new Map<string, Promise<RosterPayload>>();
+
+/** Resolve only a recorded effect's sequence, into the same private cache as units. No public assets. */
+let visualQueue: Promise<unknown> = Promise.resolve();
+const visualMemo=new Map<string,ReturnType<typeof resolveVisualPayload>>();
+export function visualPayload(cfg: OriginalsConfig, image: string, sequence: string, palette: string) {
+  const key=`${cfg.modRoot}:${image}:${sequence}:${palette}`;
+  const hit=visualMemo.get(key);if(hit)return hit;
+  const pending=visualQueue.then(()=>resolveVisualPayload(cfg,image,sequence,palette));
+  visualQueue=pending.catch(()=>undefined);visualMemo.set(key,pending);
+  if(visualMemo.size>128)visualMemo.delete(visualMemo.keys().next().value!);
+  pending.catch(()=>visualMemo.delete(key));return pending;
+}
+async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequence: string, palette: string) {
+  if (![image, sequence, palette].every(s => SAFE_NAME.test(s))) throw new Error("Invalid effect reference");
+  const reader = modReader(cfg.modRoot);
+  const loaded = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
+  const img = loaded.sequences.get(image), seq = img && child(img, sequence);
+  if (!img || !seq) throw new Error("No such effect sequence");
+  const data = { ...loaded, sequences: new Map([[image, { ...img, nodes: img.nodes.filter(n => n.key === "Defaults" || n.key === sequence) }]]) };
+  const world = loaded.rules.get("world")!;
+  const pal = traits(world, "PaletteFromFile").map(([, n]) => n.value).find(v => childValue(v, "Name") === palette && (!childValue(v, "Tileset") || ["TEMPERATE", "TEMPERAT"].includes(childValue(v, "Tileset")!)));
+  // Classic palettes also come from the current tileset. The existing temperate player palette is identical.
+  const palFile = childValue(pal, "Filename") ?? stockPalettes(loaded).player?.file;
+  if (!palFile) throw new Error("No local effect palette");
+  const numbers = (s: string | null) => (s ?? "").split(",").filter(Boolean).map(Number);
+  const wanted = new Set<string>([palFile]);
+  const actor = parseMiniYaml(`effect:\n\tRenderSprites:\n\t\tImage: ${image}\n\t\tPalette: ${palette}\n\tWithSpriteBody:\n\t\tSequence: ${sequence}\n`)[0].value;
+  const ownFile = (path: string) => {
+    const name = `${createHash("sha256").update(path).digest("hex").slice(0, 12)}-${basename(path).toLowerCase()}`;
+    if (!SAFE_NAME.test(name) || !reader.exists(path)) throw new Error("Missing effect file");
+    mkdirSync(join(cfg.cacheDir, "owned-files"), { recursive: true });
+    writeFileSync(join(cfg.cacheDir, "owned-files", name), reader.bytes(path));
+    return `owned/${name}`;
+  };
+  const local = (name: string) => {
+    const path = name.includes("|") ? name.replace(/^ra2\|/, "mods/rtsai/").replace(/^ra\|/, "mods/ra/").replace(/^common\|/, cfg.mode === "classic" ? "mods/common/" : "engine/mods/common/") : `${cfg.mode === "classic" ? "mods/ra" : MOD_DIR}/bits/${name}`;
+    return reader.exists(path) ? ownFile(path) : null;
+  };
+  const context = (record: (name: string) => string | null) => ({ palettes: {}, normalsTypes: worldNormals(data), recordFile: ownFile, ra2: { record, bytes: (name: string) => cached(cfg, name) ? new Uint8Array(readFileSync(cachePath(cfg, name)!)) : new Uint8Array(0) } });
+  resolveActor(reader, data, "effect", actor, null, context(n => local(n) ?? (wanted.add(n), null)));
+  const paletteKey = local(palFile) ?? palFile;
+  wanted.delete(palFile); if (!paletteKey.startsWith("owned/")) wanted.add(paletteKey);
+  await extractOriginals(cfg, [...wanted]);
+  const resolved = resolveActor(reader, data, "effect", actor, null, context(n => local(n) ?? (cached(cfg, n) ? n : null)));
+  const q = resolved.sprite?.sequences.find(s => s.name === sequence && s.file);
+  if (!q || !cached(cfg, paletteKey)) throw new Error("Effect is unavailable locally");
+  const url = (key: string) => key.startsWith("owned/") ? `/api/art-review/mod/${key.slice(6)}?mode=${cfg.mode ?? "ra2"}` : `/api/art-review/${cfg.mode === "classic" ? "classic" : "ra2"}/${key}`;
+  return { sequence: { ...q, file: url(q.file!) }, palette: { name: palette, url: url(paletteKey), transparent: [0], shadow: numbers(childValue(pal, "ShadowIndex")), remap: [] } satisfies PaletteSpec };
+}
 
 /** Every faction's roster, with the original units' art resolved from the local RA2 cache (extracting on demand). */
 export function rosterPayload(cfg: OriginalsConfig, refresh = false): Promise<RosterPayload> {

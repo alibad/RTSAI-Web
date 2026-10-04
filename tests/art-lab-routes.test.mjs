@@ -38,7 +38,7 @@ test("the Faction Art Lab renders and is never indexed", async () => {
 test("Review mode and its API do not exist in the production build", async () => {
   assert.equal((await render("/art/review")).status, 404);
   assert.notEqual((await render("/api/art-review/state")).status, 200);
-  for (const path of ["/api/art-review/roster?mode=classic", "/api/art-review/classic/e1.shp", "/api/art-review/mod/example.pal", "/api/art-review/duel"]) assert.notEqual((await render(path)).status, 200, path);
+  for (const path of ["/api/art-review/roster?mode=classic", "/api/art-review/classic/e1.shp", "/api/art-review/mod/example.pal", "/api/art-review/duel", "/api/art-review/visual?mode=ra2&image=explosion&sequence=medium_clsn&palette=effect"]) assert.notEqual((await render(path)).status, 200, path);
   const artLab = await (await render("/art")).text();
   assert.doesNotMatch(artLab, /href="\/art\/review"/, "no Review tab in production");
   const chunks = readdirSync(new URL("../dist/client/_next/static/chunks/", import.meta.url));

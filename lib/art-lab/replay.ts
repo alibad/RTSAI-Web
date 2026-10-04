@@ -12,7 +12,7 @@ export function replaySample(samples: DuelSample[], tick: number): DuelSample | 
   const index = sampleIndex(samples, tick), a = samples[index], b = samples[Math.min(index + 1, samples.length - 1)];
   const t = Math.max(0, Math.min(1, (tick - a.tick) / Math.max(1, b.tick - a.tick)));
   const lerp = (x: number, y: number) => x + (y - x) * t;
-  const actors = a.actors.map(p => { const q = b.actors.find(q => q.side === p.side && q.index === p.index); return q ? { ...p, x: lerp(p.x, q.x), y: lerp(p.y, q.y), z: lerp(p.z, q.z), facing: (p.facing + angleDelta(p.facing, q.facing) * t + 1024) % 1024 } : p; });
+  const actors = a.actors.map(p => { const q = b.actors.find(q => q.side === p.side && q.index === p.index); return q ? { ...p, x: lerp(p.x, q.x), y: lerp(p.y, q.y), z: lerp(p.z, q.z), facing: (p.facing + angleDelta(p.facing, q.facing) * t + 1024) % 1024, ...(p.turretFacing!==undefined&&p.turretFacing>=0&&q.turretFacing!==undefined&&q.turretFacing>=0?{turretFacing:(p.turretFacing+angleDelta(p.turretFacing,q.turretFacing)*t+1024)%1024}:{}) } : p; });
   const wrecks = (a.wrecks ?? []).map((p, i) => { const q = b.wrecks?.[i]; return q && q.side === p.side && q.type === p.type ? { ...p, x: lerp(p.x, q.x), y: lerp(p.y, q.y), z: lerp(p.z, q.z), facing: (p.facing + angleDelta(p.facing, q.facing) * t + 1024) % 1024 } : p; });
   return { tick, actors, wrecks };
 }

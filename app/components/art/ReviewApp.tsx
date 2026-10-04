@@ -363,8 +363,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       <StudioBar mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
       <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
-        <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
-          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />
+        {surface !== "arena" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
+          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />}
         <main className={`lab-main${surface !== "arena" && slot === "model" ? " has-actions" : ""}`} id="main-content">
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
@@ -377,13 +377,13 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
           {unit && surface !== "arena" && slot === "model" && <ActionShelf unit={unit} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
-        <aside className="studio-inspector" aria-label="Actor details">
+        {surface !== "arena" && <aside className="studio-inspector" aria-label="Actor details">
         {unit && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
-        {unit && focused && decide && surface !== "arena" && <details className="studio-review-notes"><summary>Art review & notes{counts[slot] ? ` · ${counts[slot]} alternatives` : ""}</summary>
+        {unit && focused && decide && <details className="studio-review-notes"><summary>Art review & notes{counts[slot] ? ` · ${counts[slot]} alternatives` : ""}</summary>
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         </details>}
-        </aside>
+        </aside>}
       </div>
     </div>
   );
