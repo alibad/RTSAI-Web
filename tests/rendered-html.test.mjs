@@ -13,6 +13,24 @@ async function render(pathname = "/") {
   );
 }
 
+test("owner-approved Workshop renders both mode palettes and honest experiment controls", async () => {
+  for (const mode of ["ra2", "ra"]) {
+    const response=await render("/workshop?mode="+mode),html=await response.text();
+    assert.equal(response.status,200);
+    assert.match(html,/<title>Map Workshop/);
+    assert.match(html,/href="\/workshop"/);
+    assert.match(html,/Interactive battlefield/);
+    assert.match(html,/Save scene/);assert.match(html,/Load scene/);assert.match(html,/OpenRA map/);
+    assert.match(html,/Run battle/);assert.match(html,/Terrain generator/);
+    assert.match(html,/Illustrated browser prototype/);assert.match(html,/simplified combat/);
+    assert.match(html,/native engine testing/);
+    const {rosters}=JSON.parse(await readFile(new URL("../data/factions.generated.json",import.meta.url),"utf8"));
+    const faction=rosters.factions.find(f=>f.mode===mode&&f.id==="china");
+    for(const key of faction.actors)assert.ok(html.includes(rosters.actors.find(a=>a.key===key).name),key);
+    assert.doesNotMatch(html,/href="\/(?:studio|capabilities|platform)/);
+  }
+});
+
 test("renders a focused homepage: the RA2 mod promise, three pillars, factions, and an honest download path", async () => {
   const response = await render();
   assert.equal(response.status, 200);

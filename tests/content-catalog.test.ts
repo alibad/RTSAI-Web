@@ -52,6 +52,10 @@ test("complete rosters retain source names, countries and all buildings", async 
     assert.equal(actor.cost, original.cost);
     assert.equal(actor.category, original.category);
     assert.deepEqual(actor.roles, original.roles);
+    assert.equal(actor.behavior.health, original.currentBehavior.health);
+    assert.deepEqual(actor.behavior.weapons, original.currentBehavior.weapons);
+    assert.deepEqual(actor.behavior.actions, original.currentBehavior.actions);
+    assert.deepEqual(actor.behavior.targetTypes, original.currentBehavior.targetTypes);
   }
   assert.equal(rosterFactionById("saudi-arabia", "ra2")?.id, "saudi");
   assert.equal(rosterFactionById("ukraine", "ra2"), undefined);

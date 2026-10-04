@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, readdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
@@ -20,10 +20,31 @@ for (const [mode, repo, rules] of [["ra2", resolve("../RTSAI-Mod"), ["mods/rtsai
   if (rosterSource.modes[mode].unresolved.length) throw new Error(`${mode} roster has unresolved actors`);
 }
 const toMode = mode => mode === "classic" ? "ra" : mode;
+// Direct Building.TerrainTypes facts: yards target as buildings but sit on water.
+async function waterBuildings(directory) {
+  const ids = new Set();
+  for (const entry of await readdir(directory, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".yaml")) continue;
+    const text = (await readFile(resolve(entry.parentPath, entry.name), "utf8")).replace(/\r\n/g, "\n") + "\n";
+    for (const section of text.matchAll(/^([^\s#][^:\n]*):[^\n]*\n((?:\t[^\n]*\n|\n)*)/gm)) {
+      const building = section[2].match(/^\tBuilding(?:@[^:]+)?:[^\n]*\n((?:\t\t[^\n]*\n)*)/m);
+      if (building && /^\t\tTerrainTypes:.*\bWater\b/m.test(building[1])) ids.add(section[1].toLowerCase());
+    }
+  }
+  return ids;
+}
+const waterPlacement = { ra: await waterBuildings(resolve(engine,"mods/ra/rules")), ra2: await waterBuildings(resolve("../RTSAI-Mod/mods/rtsai/rules")) };
 const rosters = {
   sources: Object.fromEntries(Object.entries(rosterSource.modes).map(([mode, facts]) => [toMode(mode), { commit: facts.sourceCommit, snapshotSha256: facts.snapshotSha256 }])),
   factions: rosterSource.factions.map(f => ({ id: f.id, mode: toMode(f.mode), name: f.name, side: f.side, actors: f.actors })),
-  actors: Object.values(rosterSource.actors).map(a => ({ key: a.key, id: a.actor, mode: toMode(a.mode), name: a.name, category: a.category, cost: a.cost, roles: a.roles })),
+  actors: Object.values(rosterSource.actors).map(a => ({ key: a.key, id: a.actor, mode: toMode(a.mode), name: a.name, category: a.category, cost: a.cost, roles: a.roles, behavior: {
+    health: a.currentBehavior?.health ?? null, armor: a.currentBehavior?.armor ?? null,
+    speed: a.currentBehavior?.speed ?? null, footprint: a.currentBehavior?.footprint ?? null,
+    waterPlacement: a.category === "ship" || waterPlacement[toMode(a.mode)].has(a.actor.toLowerCase()),
+    description: a.currentBehavior?.description ?? "", weapons: a.currentBehavior?.weapons ?? [],
+    actions: a.currentBehavior?.actions ?? [],
+    targetTypes: a.currentBehavior?.targetTypes ?? [],
+  } })),
 };
 const actorKeys = new Set(rosters.actors.map(a => a.key));
 if (actorKeys.size !== rosters.actors.length) throw new Error("Duplicate roster actors");

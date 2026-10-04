@@ -23,6 +23,7 @@ export function SiteHeader() {
         <Brand />
         <div className="nav-links">
           <Link href="/factions">Factions</Link>
+          <Link href="/workshop">Workshop</Link>
           <Link href="/download">Download</Link>
         </div>
         <div className="nav-actions">
