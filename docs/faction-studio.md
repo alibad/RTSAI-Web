@@ -11,6 +11,10 @@ npx vite --port 3461
 
 This serve-only option mounts the existing ReviewApp and uses the same loopback API. It does not load the site's
 authentication layout or alter production configuration. The normal Vinext page remains available without the flag.
+Measured limitation on this machine: worker/RSC requests timed out, and the Node preview still intermittently
+stalls while loading client modules. Both mode overviews were inspected when loaded; final Classic screenshot
+shows 159/159 recordings, while the RA2 screenshot was captured at 160/166 before the final six completed.
+The loopback API reports the final 166/166 and 159/159 counts. Do not treat preview reliability as a passed gate.
 
 The mode selector reads canonical RTSAI-Mod for RA2 and canonical OpenRA's default World War III experience
 for Classic. Selectable factions and complete rosters come from merged game rules, not a parallel catalog.
