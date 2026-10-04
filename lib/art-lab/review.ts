@@ -17,6 +17,7 @@ import { child, childValue, parseMiniYaml, type Yaml } from "./miniyaml";
 import type { RenderSpec } from "./spec";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { parseWDist } from "./resolve";
+import type { ImagePlayerColor } from "./image-remap";
 
 export type SlotId = "model" | "icon" | "concept";
 export const slotIds: SlotId[] = ["model", "icon", "concept"];
@@ -54,6 +55,8 @@ export type CandidateMeta = {
   fromConcept?: string;
   variantOf?: string;
   variantNote?: string;
+  /** Separate authored identification regions; absent means this image is a static draft. */
+  playerColor?: ImagePlayerColor;
   imageTo3d?: { service?: string; model?: string; costUsd?: number; license?: Record<string, string> };
   /** Voxel candidates: where the Forge placed the turret pivot (a Turreted.Offset for current rules). */
   voxelize?: { turretOffsetWorld?: number[]; turretPlacement?: string };

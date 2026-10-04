@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { clampZoom } from "../../../../lib/art-lab/review-ui";
 import { setLab, useLab, type Compare } from "./lab-store";
 import { comparePair, type ReviewUnit, type Version } from "./versions";
+import { usePlayerColorImage } from "./usePlayerColorImage";
 
 const CAMEO_W = 60, CAMEO_H = 48;
 
@@ -244,6 +245,7 @@ export function IconStage({ versions, focus, unit, units, onFocus }: { versions:
 
 /** The concept slot: a large image, wheel to zoom about the pointer, drag to pan, double-click to fit. */
 export function ConceptStage({ version }: { version: Version }) {
+  const colored = usePlayerColorImage(version);
   const [ref, size] = useSize<HTMLDivElement>();
   const imgRef = useRef<HTMLImageElement>(null);
   const readoutRef = useRef<HTMLSpanElement>(null);
@@ -308,10 +310,11 @@ export function ConceptStage({ version }: { version: Version }) {
         if (Math.abs(v.scale - v.fit) < 1e-3) zoomAt(1 / v.scale, e.clientX - rect.left, e.clientY - rect.top); else fit();
       }}>
       {version.image && (
-        <img ref={imgRef} src={version.image} alt={`${version.label} concept`} className="lab-concept-img" draggable={false}
+        <img ref={imgRef} src={colored.image ?? version.image} alt={`${version.label} concept`} className="lab-concept-img" draggable={false}
           onLoad={e => { view.current.natural = { w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight }; fit(); }} />
       )}
       <span className="lab-tag lab-pane-tag">{version.label}</span>
+      <span className="lab-tag lab-pane-tag is-right">{colored.error ?? (colored.supported ? "Player color preview" : "Static draft · remap pending")}</span>
       <div className="lab-corner is-br">
         <div className="lab-seg" role="group" aria-label="Zoom">
           <button type="button" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.25, size.width / 2, size.height / 2)}><Minus size={14} /></button>
