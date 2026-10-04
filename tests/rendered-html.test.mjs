@@ -13,6 +13,19 @@ async function render(pathname = "/") {
   );
 }
 
+test("campaign studio renders real editing, local video and fictional civilian starter in both modes", async () => {
+  for (const mode of ["ra2", "ra"]) {
+    const response = await render(`/workshop/campaigns?mode=${mode}`), html = await response.text();
+    assert.equal(response.status, 200); assert.match(html, /<title>Campaign Story Builder/);
+    assert.match(html, /Between the Lines/); assert.match(html, /The Last Light/); assert.match(html, /What Remains/);
+    assert.match(html, /Generate intro video/); assert.match(html, /Playtest mission/); assert.match(html, /Export campaign/);
+    assert.match(html, /no paid AI model is called/); assert.match(html, /Silent motion preview/);
+    assert.match(html, /not a verified historical account/); assert.match(html, /Story playthrough/);
+    assert.match(html, /aria-label="Undo campaign edit"/); assert.match(html, /Campaign studio/);
+    assert.doesNotMatch(html, /â†|Â·|â€“/);
+  }
+});
+
 test("new faction dossiers keep complete rosters, source-art labels and honest release status in both modes", async () => {
   for (const faction of ["israel", "hezbollah"]) for (const mode of ["ra", "ra2"]) {
     const response = await render(`/factions/${faction}?mode=${mode}`);

@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: "https://rtsai.net/workshop", lastModified, changeFrequency: "weekly", priority: 0.8 },
     { url: "https://rtsai.net/workshop/evals", lastModified, changeFrequency: "weekly", priority: 0.7 },
+    { url: "https://rtsai.net/workshop/campaigns", lastModified, changeFrequency: "weekly", priority: 0.7 },
     { url: "https://rtsai.net/factions", lastModified, changeFrequency: "weekly", priority: 0.9 },
     ...factionPaths.map(path => ({ url: `https://rtsai.net${path}`, lastModified })),
     ...units.map(unit => ({ url: `https://rtsai.net/units/${unit.id}`, lastModified: new Date("2026-10-02") })),

@@ -8,6 +8,7 @@ import { workshopArchive } from "../../lib/workshop-export";
 import { useAuth } from "./AuthProvider";
 import { WorkshopEarth } from "./WorkshopEarth";
 import type { EarthFeature } from "../../lib/oramap";
+import { campaignPreviewStorage, campaignResultStorage, checkMission, parsePreview } from "../../lib/campaign";
 
 type Tool = "select" | "place" | "move" | "attack" | "pan" | "land" | "water" | "road" | "ore" | "erase";
 type Phase = "edit" | "running" | "paused";
@@ -41,7 +42,8 @@ export function starterScene(mode: GameMode, seed=42, size: Scene["size"]=64, pr
   return scene;
 }
 
-export function MapWorkshop({initialMode="ra2"}:{initialMode?:GameMode}) {
+export function MapWorkshop({initialMode="ra2",campaignPreview=false}:{initialMode?:GameMode;campaignPreview?:boolean}) {
+  const [campaignContext,setCampaignContext]=useState<ReturnType<typeof parsePreview>|null>(null);
   const [scene,setScene]=useState(()=>starterScene(initialMode));
   const doc=useRef(scene), world=useRef(createWorld(scene));
   const [hud,setHud]=useState(()=>createWorld(scene));
@@ -79,18 +81,20 @@ export function MapWorkshop({initialMode="ra2"}:{initialMode?:GameMode}) {
     mounted.current=true;
     const timer=setTimeout(()=>{
     try{
-      const saved=localStorage.getItem(storageKey);
-      if(saved){const next=parseScene(saved);doc.current=next;world.current=createWorld(next);setHud(createWorld(next));setScene(next);setSeed(next.seed);setSize(next.size);setPreset(next.preset);setTitle(next.title);setSelected(next.pieces[0]?.id??null);setCamera({panX:0,panY:0,zoom:2.3,iso:next.mode==="ra2"});setNotice("Restored your locally saved scene.");}
+      const preview=campaignPreview?sessionStorage.getItem(campaignPreviewStorage):null;
+      if(campaignPreview&&!preview)throw new Error("Reopen this mission from Campaign studio.");
+      const context=preview?parsePreview(preview):null,saved=context?null:localStorage.getItem(storageKey);
+      if(context||saved){const next=context?.scene??parseScene(saved!);setCampaignContext(context);doc.current=next;world.current=createWorld(next);setHud(createWorld(next));setScene(next);setSeed(next.seed);setSize(next.size);setPreset(next.preset);setTitle(next.title);setSelected(next.pieces[0]?.id??null);setCamera({panX:0,panY:0,zoom:2.3,iso:next.mode==="ra2"});setNotice(context?"Campaign playtest. Move the player actor to the destination; use the inspector Repair action for the damaged building. Your regular battlefield is preserved.":"Restored your locally saved scene.");}
     }catch{setNotice("The saved scene could not be restored. Your starter is ready.");}
     loaded.current=true;
     },0);
     return()=>{clearTimeout(timer);mounted.current=false;abort.current?.abort();};
-  },[]);
+  },[campaignPreview]);
   useEffect(()=>{
-    if(!loaded.current)return;
+    if(!loaded.current||campaignPreview)return;
     const timer=setTimeout(()=>{try{localStorage.setItem(storageKey,scenarioJson(scene));}catch{setNotice("Browser storage is full. Use Save scene to keep your work.");}},500);
     return()=>clearTimeout(timer);
-  },[scene]);
+  },[scene,campaignPreview]);
   useEffect(()=>{
     const node=canvas.current;
     if(!node)return;
@@ -213,9 +217,12 @@ export function MapWorkshop({initialMode="ra2"}:{initialMode?:GameMode}) {
   function focus(id:number){const p=world.current.pieces.find(p=>p.id===id);if(!p)return;setSelected(id);const q=project(p,scene.size,camera.iso),map=terrain.current;if(!map)return;const d=dimensionsRef.current,s=fitScale(scene,d.width,d.height,camera.iso)*camera.zoom;setCamera({...camera,panX:(map.width/2-q.x)*s,panY:(map.height/2-q.y)*s});}
   function zoom(factor:number){setCamera({...camera,zoom:Math.max(.7,Math.min(8,camera.zoom*factor))});}
   const weapons=piece?activeWeapons(piece):[];
+  const missionResult=campaignContext?checkMission(campaignContext.mission,hud):null;
+  function returnToCampaign(attach:boolean){if(!campaignContext)return;try{const result=checkMission(campaignContext.mission,world.current);sessionStorage.setItem(campaignResultStorage,JSON.stringify({version:1,campaignId:campaignContext.campaign.id,source:JSON.stringify(campaignContext.campaign),missionId:campaignContext.mission.id,status:result.status,seconds:world.current.time,checks:result.checks,evidence:"browser-prototype",ruleCommit:doc.current.ruleCommit,...(attach?{scene:parseScene(scenarioJson(doc.current))}:{})}));window.location.assign(`/workshop/campaigns?mode=${scene.mode}`);}catch(e){setNotice((e as Error).message);}}
   return <section className="workshop" aria-label="Map workshop">
+    {campaignContext&&missionResult&&<div className="campaign-objectives"><div className="campaign-objectives-heading"><div><h2>{campaignContext.mission.title}<strong>{missionResult.status.toUpperCase()}</strong></h2></div><div className="workshop-row"><button onClick={()=>returnToCampaign(false)}>Return to campaign</button><button onClick={()=>returnToCampaign(true)}>Attach map & return</button></div></div><ul>{missionResult.checks.map(check=><li key={check.id} data-pass={check.pass}>{check.pass?"✓ ":"○ "}{check.title}<small>{check.detail}</small></li>)}</ul><p>Measured browser objectives · approximate playtest. Repair is an inspector action; native campaign scripts and economy are outside this prototype.</p></div>}
     <div className="workshop-topbar">
-      <div className="workshop-modes" aria-label="Game mode">{(["ra2","ra"] as const).map(mode=><button key={mode} aria-pressed={scene.mode===mode} onClick={()=>{if(scene.mode!==mode)generate(mode,true);}}>{mode==="ra2"?"Red Alert 2":"Classic"}</button>)}</div>
+      <div className="workshop-modes" aria-label="Game mode">{(["ra2","ra"] as const).map(mode=><button key={mode} disabled={campaignPreview} aria-pressed={scene.mode===mode} onClick={()=>{if(scene.mode!==mode)generate(mode,true);}}>{mode==="ra2"?"Red Alert 2":"Classic"}</button>)}</div>
       <span className="workshop-local">LOCAL WORKSPACE <b>{scene.pieces.length} actors</b></span>
       <div className="workshop-files"><button onClick={()=>download(new Blob([scenarioJson(doc.current)],{type:"application/json"}),"rtsai-scene.json")}><Download size={14}/>Save scene</button><button onClick={()=>input.current?.click()}><Upload size={14}/>Load scene</button><button className="workshop-export" onClick={exportMap}><Download size={14}/>OpenRA map</button><input ref={input} hidden type="file" accept=".json,application/json" onChange={e=>{const file=e.target.files?.[0];if(file)void importScene(file);e.target.value="";}} /></div>
     </div>
