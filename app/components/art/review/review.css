@@ -631,3 +631,25 @@
 .source-file code { overflow-wrap:anywhere; font-size:10px; color:#bdc2b2; }
 .enc-source-label { color:#dcc681!important; font-size:10px!important; }
 @media(max-width:650px) { .source-mod-list { grid-template-columns:1fr; } .studio-source-dialog { padding:18px; } }
+.mesh-studio { color:var(--text); background:#141a14; border:1px solid var(--line-2); border-radius:10px; padding:0; width:min(1240px,calc(100vw - 24px)); height:min(850px,calc(100dvh - 30px)); max-width:none; max-height:none; overflow:hidden; }
+.mesh-studio::backdrop { background:#000b; }
+.mesh-studio>header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line-2); }
+.mesh-studio h2 { color:#f4f1e5; margin:7px 0; font-size:21px; }
+.mesh-studio .lab-label { display:flex; align-items:center; gap:8px; }
+.mesh-job-summary { display:grid; grid-template-columns:1fr auto; gap:4px 12px; font-size:12px; text-align:right; }.mesh-job-summary span { color:#a6ad9a; grid-column:1; }.mesh-job-summary button { grid-column:2; grid-row:1/4; }
+.mesh-studio-body { display:grid; grid-template-columns:265px minmax(0,1fr); height:calc(100% - 90px); }
+.mesh-studio-body>aside { display:flex; flex-direction:column; gap:12px; padding:16px; border-right:1px solid var(--line-2); min-height:0; }.mesh-studio-body>aside>small { color:#a6ad9a; }
+.mesh-actor-list { min-height:0; overflow:auto; display:flex; flex-direction:column; gap:7px; }
+.mesh-actor-list button { display:flex; align-items:center; gap:10px; text-align:left; padding:9px; border:1px solid transparent; border-radius:6px; background:#1c231b; color:#e5e5d7; cursor:pointer; }
+.mesh-actor-list button[aria-pressed=true] { border-color:#cdb56f; background:#293021; }.mesh-actor-list img { object-fit:cover; border-radius:3px; flex-shrink:0; }.mesh-actor-list svg { flex-shrink:0; color:#9ca88f; }
+.mesh-actor-list span { display:flex; flex-direction:column; gap:5px; }.mesh-actor-list b { font-size:12px; }.mesh-actor-list small { color:#b0b9a5; font-size:10px; }
+.mesh-studio-body>main { min-width:0; min-height:0; padding:18px 22px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+.mesh-actor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }.mesh-actor-head span { color:#a6ad9a; font-size:12px; }
+.mesh-versions { display:flex; gap:8px; flex-wrap:wrap; }.mesh-versions button { padding:7px 10px; border:1px solid var(--line-2); border-radius:5px; color:#cdd1bf; background:#1b231a; cursor:pointer; font-size:12px; }.mesh-versions button[aria-pressed=true] { border-color:#e7c978; color:#f3d78b; }
+.mesh-viewport { position:relative; flex:1; min-height:260px; border:1px solid var(--line-2); border-radius:8px; background:#111811; overflow:hidden; }.mesh-viewport canvas { display:block; width:100%; height:100%; }.mesh-loading { position:absolute; inset:40% 10%; text-align:center; color:#e4d28d; }
+.mesh-empty { position:absolute; inset:20px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; color:#abb59f; }.mesh-empty h3 { color:#e4e5d8; font-size:17px; }.mesh-empty p { max-width:390px; font-size:13px; line-height:1.6; }
+.mesh-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; }.mesh-controls>span { margin-right:auto; color:#a6ad9a; }.mesh-controls label { display:flex; align-items:center; gap:8px; }.mesh-controls input { width:30px; height:24px; background:none; border:none; }
+.mesh-turret { display:flex; align-items:center; gap:12px; font-size:12px; color:#a6ad9a; }.mesh-turret input { flex:1; accent-color:#e6c978; }
+.mesh-evidence { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:12px; }.mesh-evidence b { color:#f3d78b; }.mesh-evidence>span { margin-left:auto; color:#bbc3ae; }.mesh-evidence p { width:100%; margin:0; color:#a6ad9a; line-height:1.5; }
+.mesh-work { font-size:11px; color:#b6bfab; }.mesh-work p { line-height:1.6; }
+@media(max-width:700px) { .mesh-studio-body { grid-template-columns:180px minmax(0,1fr); }.mesh-studio>header,.mesh-studio-body>main { padding:12px; }.mesh-studio>header h2 {font-size:17px}.mesh-job-summary {gap:6px}.mesh-job-summary span {display:none}.mesh-actor-list img {display:none} }

@@ -1,13 +1,13 @@
 "use client";
-import { Building2, Film, Swords, Palette, Library } from "lucide-react";
+import { Building2, Film, Swords, Palette, Library, Box } from "lucide-react";
 import { ActorSourceDetails } from "./Sources";
 import type { BehaviorFacts } from "../../../../lib/art-lab/behavior";
 import { spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { setLab, useLab } from "./lab-store";
 import type { ReviewUnit } from "./versions";
 
-export function StudioBar({ mode, onMode, surface, onSurface, onSources }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "arena"; onSurface: (s: "art" | "arena") => void; onSources: () => void }) {
-  return <header className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).map(({ id, label, Icon }) => <button key={id} aria-current={(surface === id || id === "art" && surface !== "arena") ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>)}</nav><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><select className="studio-mode" aria-label="Game mode" value={mode} onChange={e => onMode(e.target.value as "ra2" | "classic")}><option value="ra2">Red Alert 2</option><option value="classic">Red Alert · Classic</option></select></header>;
+export function StudioBar({ mode, onMode, surface, onSurface, onSources, onModels }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "arena"; onSurface: (s: "art" | "arena") => void; onSources: () => void; onModels: () => void }) {
+  return <header className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).map(({ id, label, Icon }) => <button key={id} aria-current={(surface === id || id === "art" && surface !== "arena") ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>)}</nav><button className="lab-ghost" onClick={onModels}><Box size={16}/>3D models</button><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><select className="studio-mode" aria-label="Game mode" value={mode} onChange={e => onMode(e.target.value as "ra2" | "classic")}><option value="ra2">Red Alert 2</option><option value="classic">Red Alert · Classic</option></select></header>;
 }
 
 /** Actions live beside the art they control; unsupported rotations are explained rather than faked. */

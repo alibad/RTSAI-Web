@@ -9,6 +9,7 @@ import type { RosterPayload } from "../../../lib/art-lab/originals";
 import { railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
 import { ActionShelf, BehaviorPanel, StudioBar } from "./review/Studio";
+import { MeshStudio } from "./review/MeshStudio";
 import { SourceLibrary } from "./review/Sources";
 import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
@@ -60,6 +61,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const [toast, setToast] = useState("");
   const [help, setHelp] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [modelsOpen, setModelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [now, setNow] = useState(0);
   const [frames] = useState(() => new FrameStore());
@@ -134,6 +136,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       if (params.get("mode") === "classic") setMode("classic");
       const surface = params.get("view");
       if (surface === "arena") setSurface(surface);
+      if (params.get("models") === "1") { setLab({spin:false,playing:false,view3d:"off"}); setModelsOpen(true); }
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
       if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
@@ -362,8 +365,9 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}`}>
+      {modelsOpen && <MeshStudio mode={mode} actor={selected} frames={frames} onClose={() => setModelsOpen(false)} />}
       {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} />}
-      <StudioBar onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
+      <StudioBar onModels={() => { setLab({ spin: false, playing: false, view3d: "off" }); setModelsOpen(true); }} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
       <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface !== "arena" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}

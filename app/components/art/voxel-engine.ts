@@ -7,6 +7,7 @@
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import type { MeshView } from "./mesh-view";
 import type { Palette } from "../../../lib/art-lab/pal";
 import { aimInGame, projectLabels, renderShadowSprite, shadowSpriteTarget, type InGameBox, type ModelPose, type RasterFrame, type StageLabel, type VoxelModel } from "./voxel-three";
 
@@ -33,6 +34,7 @@ export class VoxelEngine {
   private drawing = false;
   private disposed = false;
   private lastLabels = "";
+  private meshView:MeshView|null=null;
 
   constructor() {
     this.canvas = document.createElement("canvas");
@@ -108,6 +110,7 @@ export class VoxelEngine {
     this.controls?.dispose();
     this.controls = null;
     this.view = null;
+    this.meshView=null;
     this.aimed = false;
     this.canvas.remove();
     this.renderer.setPixelRatio(1);
@@ -116,6 +119,7 @@ export class VoxelEngine {
 
   /** Shows a model in the 3D view (orbit or exploded); the camera direction survives model and pose changes. */
   show(view: EngineView) {
+    if(this.meshView)return;
     this.view = view;
     this.draw();
   }
@@ -130,6 +134,7 @@ export class VoxelEngine {
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     this.updateFrustum();
+    this.meshView?.resize(width,height);
     this.draw();
   }
 
@@ -143,6 +148,11 @@ export class VoxelEngine {
 
   /** Draws the 3D view now (on input or state change only). */
   draw() {
+    if(this.meshView){
+      if(this.disposed||!this.canvas.parentElement)return;
+      this.renderer.setRenderTarget(null);this.renderer.setClearColor(0x111811,1);this.renderer.clear(true,true,true);
+      this.renderer.render(this.meshView.scene,this.meshView.camera);return;
+    }
     const view = this.view;
     if (!view || this.disposed || this.drawing || !this.canvas.parentElement) return;
     this.drawing = true;
@@ -200,4 +210,12 @@ export class VoxelEngine {
     this.renderer.forceContextLoss();
     this.canvas.remove();
   }
+
+  showMesh(view:MeshView,host:HTMLElement){
+    this.detach();this.meshView=view;host.appendChild(this.canvas);
+    this.controls=new OrbitControls(view.camera,this.canvas);this.controls.enableDamping=false;this.controls.target.copy(view.target);this.controls.update();this.controls.addEventListener("change",()=>this.draw());
+    this.resize();this.draw();
+  }
+  resetMesh(){if(!this.meshView)return;this.meshView.reset();this.controls?.target.copy(this.meshView.target);this.controls?.update();this.draw();}
+  async prepareMesh(view:MeshView){await this.renderer.compileAsync(view.scene,view.camera);}
 }

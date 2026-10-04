@@ -57,7 +57,7 @@ test("review API answers 404 to everything when NODE_ENV is production", async (
     const handler = createArtReviewMiddleware({ root, env: "production" });
     const originals = { modRoot: root, supportDir: root, cacheDir: root };
     const prodWithOriginals = createArtReviewMiddleware({ root, env: "production", originals });
-    for (const url of ["/roster", "/ra2/gi.shp", "/ra2/secret.txt", "/visual?mode=ra2&image=explosion&sequence=medium_clsn&palette=effect"]) assert.equal((await call(prodWithOriginals, "GET", url)).status, 404, `${url} in production`);
+    for (const url of ["/models?mode=ra2", "/roster", "/ra2/gi.shp", "/ra2/secret.txt", "/visual?mode=ra2&image=explosion&sequence=medium_clsn&palette=effect"]) assert.equal((await call(prodWithOriginals, "GET", url)).status, 404, `${url} in production`);
     for (const [method, url] of [["GET", "/state"], ["GET", "/file?path=units/r2qilin/spec.json"], ["POST", "/action"]] as const) {
       const reply = await call(handler, method, url, { body: "{}", headers: { "content-type": "application/json" } });
       assert.equal(reply.status, 404, `${method} ${url}`);

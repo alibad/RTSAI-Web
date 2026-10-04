@@ -105,6 +105,7 @@ export class FrameStore {
   private emitScheduled = false;
   private inflight = new Set<string>();
   private alive = true;
+  private paused = false;
   /** Bumped whenever an asset finishes loading (for useSyncExternalStore). */
   assetsVersion = 0;
   readonly errors = new Map<string, string>();
@@ -149,6 +150,14 @@ export class FrameStore {
 
   /** The one shared WebGL engine (created when the first voxel loads). */
   get engine() { return this.engineInstance; }
+  pauseRendering() { this.paused=true; this.clearQueue(); }
+  resumeRendering() { this.paused=false; this.emit("assets"); }
+  async sharedEngine() {
+    const three=await this.loadThree();
+    if(!this.alive)throw new Error("Studio closed");
+    return this.ensureEngine(three);
+  }
+  private ensureEngine(three:Three){this.engineInstance ??= new three.VoxelEngine();return this.engineInstance;}
 
   private key(item: StageItem, pose: Pose, rig?: SpriteRig | null, shps?: RigShps | null) {
     const tint = pose.tint.join(",");
@@ -188,6 +197,7 @@ export class FrameStore {
    * is requested from the GPU ahead of everything else and arrives through `subscribe`; this returns null.
    */
   get(item: StageItem, pose: Pose): Frame | null {
+    if(this.paused)return this.peek(item,pose);
     if (!this.ensure(item, pose)) return null;
     const { rig, shps } = item.spec.voxel ? { rig: null, shps: null } : this.spriteParts(item, pose.animation);
     const key = this.key(item, pose, rig, shps);
@@ -198,6 +208,7 @@ export class FrameStore {
 
   /** Queues a frame: `visible` ones (on screen now) go first and never wait for input to settle. */
   want(item: StageItem, pose: Pose, visible = false) {
+    if(this.paused)return;
     const { rig, shps } = item.spec.voxel ? { rig: null, shps: null } : this.spriteParts(item, pose.animation);
     const key = this.key(item, pose, rig, shps);
     if (this.frames.has(key)) return;
@@ -304,7 +315,7 @@ export class FrameStore {
         Promise.all(v.parts.map(async p => ({ id: p.id, label: p.label, vxl: await loadVxl(p.vxl), hva: await loadHva(p.hva), offset: p.offset, turretOffset: p.turretOffset, showShadow: p.showShadow }))),
       ]);
       if (!this.alive) { this.models.delete(this.identity(spec)); return; }
-      this.engineInstance ??= new three.VoxelEngine();
+      this.ensureEngine(three);
       this.models.set(this.identity(spec), new three.VoxelModel({ ...v, normals: normalsTable(v.normals) }, parts));
       this.trimModels(this.identity(spec));
       this.loaded();
@@ -382,7 +393,7 @@ export class FrameStore {
    */
   private process() {
     this.timer = null;
-    if (!this.alive) return;
+    if (!this.alive || this.paused) return;
     const start = performance.now();
     const quiet = start >= this.quietUntil;
     let produced = false;

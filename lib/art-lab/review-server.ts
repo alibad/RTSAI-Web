@@ -21,6 +21,7 @@ import { cachedFile, classicConfig, rosterPayload, visualPayload, SAFE_NAME, typ
 import { reviewEnabled } from "./review-gate";
 import { duelJob, startDuel } from "./duel-server";
 import { baselineCounts, rebuildSummary, type RebuildCampaign } from "./rebuild";
+import { readModelLibrary } from "./model-library-server";
 
 const TYPES: Record<string, string> = {
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".json": "application/json; charset=utf-8",
@@ -159,7 +160,11 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         return send(res, 200, summary);
       }
       const reviewMode = url.searchParams.get("mode") ?? "ra2";
-      if ((path === "/state" || path === "/action") && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if (["/state", "/action", "/models"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if (req.method === "GET" && path === "/models") {
+        const models=readModelLibrary(workspace,reviewMode as "ra2"|"classic");
+        return models?send(res,200,models):send(res,404,{error:"Run the local model inventory first."});
+      }
       if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace, reviewMode as "ra2" | "classic"));
       if (req.method === "GET" && /^\/duel\/[a-f0-9-]{36}$/.test(path)) {
         const job = duelJob(path.slice(6), resolve(workspace, "../RTSAI-Web-wt-artlab"));
