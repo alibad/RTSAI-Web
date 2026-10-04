@@ -13,6 +13,24 @@ async function render(pathname = "/") {
   );
 }
 
+test("new faction dossiers keep complete rosters, source-art labels and honest release status in both modes", async () => {
+  for (const faction of ["israel", "hezbollah"]) for (const mode of ["ra", "ra2"]) {
+    const response = await render(`/factions/${faction}?mode=${mode}`);
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, /Authored source render · visual approval pending/);
+    assert.match(html, /Native visual approval and broad balance validation are pending/);
+    assert.match(html, /Units, buildings &amp; defenses/);
+    assert.match(html, /Development · release unconfirmed/);
+    assert.equal((html.match(/class="unit-card"/g) ?? []).length, 6);
+    assert.match(html, faction === "israel" ? /Coordination Relay/ : /Signal Post/);
+    assert.doesNotMatch(html, /Classic · in-game portrait/);
+  }
+  const observer = await (await render('/units/ilobserver?mode=ra')).text();
+  assert.match(observer, /light defensive weapon/);
+  assert.doesNotMatch(observer, /no direct damage/);
+});
+
 test("AI evaluations render both modes, policy controls and separated native evidence",async()=>{
   for(const mode of ["ra2","ra"]){const response=await render("/workshop/evals?mode="+mode),html=await response.text();assert.equal(response.status,200);assert.match(html,/<title>AI Behavior Lab/);assert.match(html,/Run comparison/);assert.match(html,/Run native comparison/);assert.match(html,/browser simulator|approximate simulator/);assert.match(html,/Neither is a model-quality evaluation/);assert.match(html,/Native arenas use a fixed separation/);assert.match(html,/Use saved Workshop scene/);assert.match(html,/Export evidence/);assert.doesNotMatch(html,/â†|Â·|â€“/);}
 });
@@ -53,7 +71,7 @@ test("renders a focused homepage: the RA2 mod promise, three pillars, factions, 
   assert.match(html, /A Red Alert 2 mod for OpenRA/);
   assert.match(html, /Download (?:<!-- -->)?0\.1\.0-alpha\.13/);
   assert.match(html, /WHAT YOU GET/);
-  assert.match(html, /Five modern nations/);
+  assert.match(html, /Distinct factions/);
   assert.match(html, /An AI co-commander/);
   assert.match(html, /Red Alert 2 on OpenRA/);
   assert.match(html, /<i>In development<\/i>/, "pillar 3 says In development until the mod manifest is published");
@@ -132,7 +150,7 @@ test("renders companion and download routes; parked routes stay reachable but un
   assert.match(capabilityAtlas, /Research track/);
   assert.match(capabilityAtlas, /THE BUILD ARCHIVE/);
   assert.match(capabilityAtlas, /See the factions/);
-  assert.match(capabilityAtlas, /216<\/b> optimized visual artifacts/);
+  assert.match(capabilityAtlas, /288<\/b> optimized visual artifacts/);
   assert.match(capabilityAtlas, /Red Sea 2026 key art/);
   assert.match(capabilityAtlas, /Türkiye/);
   assert.match(capabilityAtlas, /China/);
@@ -204,7 +222,7 @@ test("privacy explains the hosted AI co-commander in plain language", async () =
 
 test("faction-to-unit-to-install journey retains mode and refuses unsupported combinations", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
-  assert.match(directory, /5(?:<!-- -->)? faction variants/);
+  assert.match(directory, /7(?:<!-- -->)? modern factions have detailed dossiers/);
   const defaultDirectory = await (await render("/factions")).text();
   assert.match(defaultDirectory, /\/factions\/china\?mode=ra2/);
   assert.match(directory, /\/factions\/china\?mode=ra2/);

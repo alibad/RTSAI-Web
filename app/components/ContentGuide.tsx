@@ -10,7 +10,7 @@ export function ModeNav({ mode, path }: { mode: GameMode; path: string }) {
 export function CatalogImage({ id, portrait = false, priority = false }: { id: string; portrait?: boolean; priority?: boolean }) {
   const asset = mediaById(id);
   if (!asset) return null;
-  const label = asset.category === "concept" ? "Concept art" : asset.category === "cameo" ? "Classic · in-game portrait" : asset.category === "unit" ? "Classic · sprite sheet" : "Classic · game evidence";
+  const label = "nativeApproval" in asset && asset.nativeApproval === "pending" ? "Authored source render · visual approval pending" : asset.category === "concept" ? "Concept art" : asset.category === "cameo" ? "Classic · in-game portrait" : asset.category === "unit" ? "Classic · sprite sheet" : "Classic · game evidence";
   return <figure className={`catalog-image ${portrait ? "is-portrait" : ""}`}><img src={asset.src} width={asset.width} height={asset.height} alt={asset.title} loading={priority ? "eager" : "lazy"} /><figcaption>{label}</figcaption></figure>;
 }
 export function ReleaseCallout({ faction, mode }: { faction: Faction; mode: GameMode }) {

@@ -5,8 +5,8 @@ import { availability, catalog, factionById, factions, mediaById, resolveMode, u
 import { verifyEvidence } from "../scripts/release-evidence.mjs";
 test("shared catalog has complete faction, unit, mode and media relationships", () => {
   assert.equal(catalog.schemaVersion, 1);
-  assert.equal(new Set(factions.map(f => f.id)).size, 5);
-  assert.equal(new Set(units.map(u => u.id)).size, 12);
+  assert.equal(new Set(factions.map(f => f.id)).size, 7);
+  assert.equal(new Set(units.map(u => u.id)).size, 47);
   assert.deepEqual(catalog.modes.map(m => m.id), ["ra", "ra2"]);
   for (const f of factions) {
     assert.ok(mediaById(f.heroAssetId));
@@ -35,11 +35,36 @@ test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(unitById("missing"), undefined);
   assert.equal(downloadHref("china", "ra2"), "/download?faction=china&mode=ra2");
 });
+test("both new factions expose complete native domains while release claims remain unconfirmed", () => {
+  for (const id of ["israel", "hezbollah"]) for (const mode of ["ra", "ra2"] as const) {
+    const faction = factionById(id)!;
+    assert.equal(availability(faction, mode), "Development · release unconfirmed");
+    const roster = rosterFactionById(id, mode)!;
+    const actors = rosterActors(roster);
+    assert.deepEqual(new Set(actors.map(a => a.category)), new Set(["infantry", "vehicle", "aircraft", "ship", "defense", "structure"]));
+    const prefix = (mode === "ra2" ? "r2" : "") + (id === "israel" ? "il" : "hz");
+    const relay = actors.find(a => a.id === prefix + "relay")!;
+    const workshop = actors.find(a => a.id === prefix + "workshop")!;
+    assert.equal(relay.behavior.weapons.length, 0);
+    assert.equal(workshop.behavior.weapons.length, 0);
+    assert.ok(relay.behavior.actions.some(a => a.label === "Support aura"));
+    assert.ok(workshop.behavior.actions.some(a => a.label === "Power"));
+    if (mode === "ra") for (const defense of actors.filter(a => a.category === "defense" && a.id.startsWith(prefix))) {
+      const roles: readonly string[] = defense.roles;
+      assert.ok(roles.includes("defense"), defense.id);
+      assert.ok(!roles.includes("line-infantry") && !roles.includes("light-vehicle"), defense.id);
+    }
+    for (const unit of unitsForFaction(id, mode)) {
+      assert.ok(actors.some(a => a.id === unit.variants[mode]?.actorId.toLowerCase()), unit.id);
+      for (const asset of unit.assetIds) assert.equal(mediaById(asset)?.faction, id);
+    }
+  }
+});
 test("complete rosters retain source names, countries and all buildings", async () => {
   const source = JSON.parse(await readFile(new URL("../../RTSAI-Art/rebuild/catalog.json", import.meta.url), "utf8"));
-  assert.equal(rosterFactions("ra2").length, 14);
-  assert.equal(rosterFactions("ra").length, 10);
-  assert.equal(rosters.actors.length, 325);
+  assert.equal(rosterFactions("ra2").length, 16);
+  assert.equal(rosterFactions("ra").length, 12);
+  assert.equal(rosters.actors.length, 396);
   for (const faction of rosters.factions) {
     const original = source.factions.find((f: {id: string; mode: string}) => f.id === faction.id && f.mode === (faction.mode === "ra" ? "classic" : "ra2"));
     assert.equal(faction.name, original.name);

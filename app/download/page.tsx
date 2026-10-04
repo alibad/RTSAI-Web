@@ -8,7 +8,7 @@ import { availability, factionById, resolveMode, rosterFactionById } from "../..
 
 export const metadata: Metadata = {
   title: "Download RTS AI | Red Alert 2 mod for OpenRA",
-  description: "RTS AI is a Red Alert 2 mod for OpenRA with five modern nations and an AI co-commander. You need your own Red Alert 2; the mod imports it on first launch.",
+  description: "RTS AI is a Red Alert 2 mod for OpenRA with modern factions and an AI co-commander. You need your own Red Alert 2; the mod imports it on first launch.",
   alternates: { canonical: "/download" },
 };
 
@@ -202,7 +202,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           ) : (
             <div className="mod-pending">
               <span className="pending-download" aria-disabled="true">Mod download not yet published</span>
-              <Link className="text-action" href="/factions">Meet the five nations</Link>
+              <Link className="text-action" href="/factions">Meet the factions</Link>
             </div>
           )}
         </section>

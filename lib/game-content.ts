@@ -23,7 +23,7 @@ export function rosterHref(faction: RosterFaction) { return `/factions/${dossier
 export const categoryLabels: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Naval", defense: "Defenses", structure: "Buildings" };
 export function resolveMode(value: string | string[] | undefined, fallback: GameMode = "ra2"): GameMode { return value === "ra" || value === "ra2" ? value : fallback; }
 /** Names and roles differ by mode; the catalog validator keeps each one equal to what the game shows. */
-export function unitLabel(unit: Unit, mode: GameMode) { const variant = (unit.variants as Partial<Record<GameMode, { name: string; role: string }>>)[mode]; return { name: variant?.name ?? unit.name, role: variant?.role ?? unit.role }; }
+export function unitLabel(unit: Unit, mode: GameMode) { const variant = (unit.variants as Partial<Record<GameMode, { name: string; role: string; description?: string }>>)[mode]; return { name: variant?.name ?? unit.name, role: variant?.role ?? unit.role, description: variant?.description ?? unit.story }; }
 export function factionById(id: string) { return factions.find(faction => faction.id === id); }
 export function unitById(id: string) { return units.find(unit => unit.id === id); }
 export function mediaById(id: string) { return gameMedia.find(asset => asset.id === id); }

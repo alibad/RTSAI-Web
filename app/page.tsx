@@ -27,7 +27,7 @@ export default async function Home() {
       id: "factions",
       icon: Flag,
       status: `${inRa2.length} of ${factions.length} in RA2`,
-      title: "Five modern nations",
+      title: "Modern factions",
       description: `${listFormat.format(factions.map((faction) => faction.name))}, each with its own doctrine, signature units and counters.`,
       href: "/factions",
       action: "Meet the factions",
@@ -59,7 +59,7 @@ export default async function Home() {
         "@id": `${canonicalUrl}/#website`,
         url: canonicalUrl,
         name: "RTS AI",
-        description: "An OpenRA mod for Red Alert 2 with five modern nations and an AI co-commander.",
+        description: "An OpenRA mod for Red Alert 2 with modern factions and an AI co-commander.",
         inLanguage: "en",
       },
       mod && modInstaller
@@ -68,7 +68,7 @@ export default async function Home() {
           "@id": `${canonicalUrl}/#rtsai-mod`,
           name: "RTS AI",
           url: `${canonicalUrl}/download`,
-          description: `A Red Alert 2 mod for OpenRA with five modern nations and an AI co-commander. ${RA2_REQUIREMENT}`,
+          description: `A Red Alert 2 mod for OpenRA with modern factions and an AI co-commander. ${RA2_REQUIREMENT}`,
           applicationCategory: "GameApplication",
           operatingSystem: "Windows 10, Windows 11",
           softwareVersion: mod.version,
@@ -104,7 +104,7 @@ export default async function Home() {
           <div className="hero-copy">
             <Link className="eyebrow hero-release-link" href="/factions"><span className="live-dot" /> A Red Alert 2 mod for OpenRA <ArrowRight size={13} /></Link>
             <h1>Your battlefield.<br /><em>Now it talks back.</em></h1>
-            <p className="hero-lede">Five modern nations on the Red Alert 2 battlefield, and an AI co-commander that watches your match, speaks when it matters, and takes command only when you hand it over.</p>
+            <p className="hero-lede">Modern factions on the Red Alert 2 battlefield, and an AI co-commander that watches your match, speaks when it matters, and takes command only when you hand it over.</p>
             <div className="hero-actions">
               <Link className="primary-action" href="/factions"><Flag size={17} /> Meet the factions</Link>
               <Link className="text-action" href="/download">{mod ? `Download RTS AI ${mod.version}` : "Classic alpha download"} <ArrowRight size={17} /></Link>
@@ -122,7 +122,7 @@ export default async function Home() {
         <section className="home-experiences" aria-labelledby="pillars-title">
           <div className="home-section-heading">
             <span className="section-number">WHAT YOU GET</span>
-            <h2 id="pillars-title">Five nations.<br />One co-commander.</h2>
+            <h2 id="pillars-title">Distinct factions.<br />One co-commander.</h2>
             <p>You bring your own copy of Red Alert 2. The mod brings the factions and the AI.</p>
           </div>
           <div className="home-experience-grid">
@@ -139,7 +139,7 @@ export default async function Home() {
         </section>
 
         <section className="home-nations" aria-labelledby="faction-entry-title">
-          <div className="faction-group-heading"><div><span className="section-number">FACTIONS / RED ALERT 2</span><h2 id="faction-entry-title">Find your way to fight.</h2><p>Meet the five modern nations, then explore every faction’s full force.</p></div><Link className="text-action" href="/factions">All factions <ArrowRight size={17} /></Link></div>
+          <div className="faction-group-heading"><div><span className="section-number">FACTIONS / RED ALERT 2</span><h2 id="faction-entry-title">Find your way to fight.</h2><p>Meet the modern factions, then explore every faction’s full force.</p></div><Link className="text-action" href="/factions">All factions <ArrowRight size={17} /></Link></div>
           <div className="faction-tile-grid">{rosterFactions("ra2").filter(f => dossierForRoster(f)).map(f => <FactionCard key={f.id} faction={f} compact />)}</div>
         </section>
 

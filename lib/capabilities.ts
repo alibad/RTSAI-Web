@@ -1,3 +1,5 @@
+import { gameMedia } from "./game-media.generated";
+
 export const capabilityCategories = [
   { id: "all", label: "Everything" },
   { id: "companion", label: "Companion" },
@@ -166,7 +168,7 @@ export const capabilities: Capability[] = [
     playerExperience: "Distinct rosters, directional vehicle sprites, faction-specific voices, UI art, effects, and battlefield evidence make every force feel authored.",
     howItWorks: "Assets and rules live in the mod structure, are audited against OpenRA's directional, palette, and packaging requirements, and are indexed into the public build archive.",
     boundary: "Assets are original or appropriately licensed and remain separate from private model infrastructure.",
-    proofPoints: ["216 visual artifacts", "4 faction tracks", "Native render evidence"], docsUrl: `${source}/blob/main/docs/red-sea-2026.md`, docsLabel: "Asset inventory",
+    proofPoints: [`${gameMedia.length} visual artifacts`, "Authored faction artwork", "Source and native evidence labeled separately"], docsUrl: `${source}/blob/main/docs/red-sea-2026.md`, docsLabel: "Asset inventory",
   },
   {
     id: "reusable-theatres", category: "theatres", status: "In progress", surface: "Platform", title: "Reusable theatre framework",

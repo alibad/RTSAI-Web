@@ -106,10 +106,13 @@ def run_job(job, output, content):
                 support = job_root / f"{policy}-{rep}" / "support"
                 support.mkdir(parents=True)
                 bh.link_directory(support / "Content", content)
+                if not ra2:
+                    (support / "settings.yaml").write_text("ExperienceSettings:\n\tProfile: world-war-iii\n", encoding="utf-8")
                 fixture(support / bh.user_map_dir(mods / bh.MOD) / "ai-behavior-arena", data["mode"], data, policy, rep)
                 env = {k: v for k, v in os.environ.items() if not k.startswith(("OPENRA_AI_", "RTSAI_"))}
                 env["DOTNET_ROLL_FORWARD"] = "Major"
-                command = ["dotnet", str(engine / "bin/OpenRA.dll"), f"Engine.EngineDir={engine}", f"Engine.ModSearchPaths={mods},{engine / 'mods'}", f"Engine.SupportDir={support}", f"Game.Mod={bh.MOD}", "Game.Platform=Null", "Game.FetchNews=false", "Launch.Map=ai-behavior-arena", "Launch.Benchmark=benchmark-"]
+                env["OPENRA_AI_DISABLE_AUTOSTART"] = "1"
+                command = ["dotnet", str(engine / "bin/OpenRA.dll"), f"Engine.EngineDir={engine}", f"Engine.ModSearchPaths={mods}" if not ra2 else f"Engine.ModSearchPaths={mods},{engine / 'mods'}", f"Engine.SupportDir={support}", f"Game.Mod={bh.MOD}", "Game.Platform=Null", "Game.FetchNews=false", "Launch.Map=ai-behavior-arena", "Launch.Benchmark=benchmark-"]
                 with (support.parent / "engine.log").open("w", encoding="utf-8") as log:
                     with LOCK:
                         if job["cancelled"]: return

@@ -11,7 +11,7 @@ const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 const canonicalOrigin = new URL("https://rtsai.net");
 const title = "RTS AI — Red Alert 2 with an AI Co-Commander";
 const description =
-  "An OpenRA mod for Red Alert 2: five modern nations and an AI co-commander that watches your match, answers by voice, and takes command only when you hand it over.";
+  "An OpenRA mod for Red Alert 2: modern factions and an AI co-commander that watches your match, answers by voice, and takes command only when you hand it over.";
 
 export const metadata: Metadata = {
   metadataBase: canonicalOrigin,

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "RTS AI — OpenRA AI Companion",
     short_name: "RTS AI",
-    description: "An OpenRA mod for Red Alert 2 with five modern nations and an AI co-commander.",
+    description: "An OpenRA mod for Red Alert 2 with modern factions and an AI co-commander.",
     start_url: "/",
     scope: "/",
     display: "standalone",

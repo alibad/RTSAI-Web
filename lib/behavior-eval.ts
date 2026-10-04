@@ -14,6 +14,8 @@ export const experiments = [
   { id: "air", name: "Air interception", detail: "Target eligibility, aircraft attack and destruction", ra2: ["fv", "orca"], ra: ["cnmantis", "yak"] },
   { id: "defense", name: "Defense assault", detail: "Range advantage versus a stationary defense", ra2: ["mtnk", "nalasr"], ra: ["2tnk", "ftur"] },
   { id: "naval", name: "Naval engagement", detail: "Water movement and ship-to-ship fire", ra2: ["dest", "sub"], ra: ["dd", "ss"] },
+  { id: "levant-armor", name: "Israel / Hezbollah armor", detail: "Protected armor versus a mobile anti-armor screen", ra2: ["r2merkava", "r2hzrecoilless"], ra: ["merkava", "hzrecoilless"] },
+  { id: "levant-air", name: "Israel / Hezbollah air defense", detail: "Air-only targeting versus a consumable attack drone", ra2: ["r2ilshield", "r2hzdrone"], ra: ["ilshield", "hzdrone"] },
 ] as const;
 export function defaultConfig(mode: GameMode = "ra2", experiment = "armor"): EvalConfig {
   const preset = experiments.find(p => p.id === experiment) ?? experiments[0];

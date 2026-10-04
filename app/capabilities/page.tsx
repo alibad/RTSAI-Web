@@ -8,7 +8,7 @@ import { capabilities } from "../../lib/capabilities";
 
 export const metadata: Metadata = {
   title: "Capability Atlas | RTS AI",
-  description: "Explore the RTS AI companion, Earth-to-battlefield studio, four original faction tracks, 216 visual artifacts, and the research roadmap behind the platform.",
+  description: "Explore the RTS AI companion, Earth-to-battlefield studio, authored faction art, local behavior tools, and the research roadmap behind the platform.",
   alternates: { canonical: "/capabilities" },
   robots: { index: false, follow: true },
 };

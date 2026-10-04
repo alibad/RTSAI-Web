@@ -9,7 +9,7 @@ export function FactionCard({ faction, compact = false }: { faction: RosterFacti
   const buildings = actors.filter(a => a.category === "structure" || a.category === "defense").length;
   const accent = dossier?.accent ?? (faction.side === "Allies" ? "#85afcc" : "#ce8779");
   return <Link href={rosterHref(faction)} className={`faction-tile ${compact ? "is-compact" : ""}`} style={{ "--faction-accent": accent } as CSSProperties}>
-    <div className="faction-tile-top"><Shield size={24} aria-hidden="true" /><span>{dossier ? "Modern nation" : faction.side}</span><ArrowUpRight size={17} aria-hidden="true" /></div>
+    <div className="faction-tile-top"><Shield size={24} aria-hidden="true" /><span>{dossier ? "Modern faction" : faction.side}</span><ArrowUpRight size={17} aria-hidden="true" /></div>
     <h3>{faction.name}</h3>
     {dossier && <p>{dossier.tagline}</p>}
     {!compact && <div className="faction-tile-counts"><span>{actors.length - buildings} units</span><span>{buildings} buildings & defenses</span></div>}
