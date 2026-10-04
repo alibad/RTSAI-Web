@@ -6,8 +6,8 @@ import { gameSource, SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { getGameRelease } from "../lib/release";
 import { getModRelease, isPublished, RA2_REQUIREMENT, windowsInstaller } from "../lib/mod-release";
 import { buildTrailer } from "../lib/trailer";
-import { factions } from "../lib/game-content";
-import { CatalogImage } from "./components/ContentGuide";
+import { factions, dossierForRoster, rosterFactions } from "../lib/game-content";
+import { FactionCard } from "./components/FactionCard";
 
 const canonicalUrl = "https://rtsai.net";
 const listFormat = new Intl.ListFormat("en", { style: "long", type: "conjunction" });
@@ -22,7 +22,6 @@ export default async function Home() {
   const modInstaller = windowsInstaller(modRelease);
   const trailer = buildTrailer();
   const inRa2 = factions.filter((faction) => faction.variants.ra2.status === "implemented");
-  const comingToRa2 = factions.filter((faction) => faction.variants.ra2.status !== "implemented");
   const pillars = [
     {
       id: "factions",
@@ -36,7 +35,7 @@ export default async function Home() {
     {
       id: "companion",
       icon: BrainCircuit,
-      status: "Playable now",
+      status: "Classic alpha",
       title: "An AI co-commander",
       description: "It sees only what you can see, speaks up when it matters, answers spoken questions, and plays for you only when you switch AUTO on.",
       href: "/companion",
@@ -108,13 +107,14 @@ export default async function Home() {
             <p className="hero-lede">Five modern nations on the Red Alert 2 battlefield, and an AI co-commander that watches your match, speaks when it matters, and takes command only when you hand it over.</p>
             <div className="hero-actions">
               <Link className="primary-action" href="/factions"><Flag size={17} /> Meet the factions</Link>
-              <Link className="text-action" href="/download">{mod ? `Download RTS AI ${mod.version}` : "Play the current alpha"} <ArrowRight size={17} /></Link>
+              <Link className="text-action" href="/download">{mod ? `Download RTS AI ${mod.version}` : "Classic alpha download"} <ArrowRight size={17} /></Link>
             </div>
             <div className="hero-proof">
               <span><ShieldCheck size={15} /> Sees only what you see</span>
               <span><Mic size={15} /> Ask by voice</span>
               <span><Zap size={15} /> AUTO when you say so</span>
             </div>
+            <p className="hero-release-note">{mod ? `RTS AI ${mod.version} for Windows` : "RA2 in development · Classic alpha available now"}</p>
           </div>
           {trailer ? <HeroTrailer video={trailer.video} poster={trailer.poster} /> : <CompanionDemo />}
         </header>
@@ -138,14 +138,9 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="home-faction-entry" aria-labelledby="faction-entry-title">
-          <CatalogImage id="red-sea-key-art" />
-          <div>
-            <span className="section-number">FACTIONS / RED ALERT 2</span>
-            <h2 id="faction-entry-title">A side worth knowing.<br />A force worth mastering.</h2>
-            <p>{listFormat.format(inRa2.map((faction) => faction.name))} {inRa2.length === 1 ? "is" : "are"} being built for Red Alert 2 now{comingToRa2.length > 0 ? `; ${listFormat.format(comingToRa2.map((faction) => faction.name))} follow` : ""}. Every faction keeps one identity across the game and this guide.</p>
-            <Link className="primary-action" href="/factions">Explore the factions <ArrowRight size={17} /></Link>
-          </div>
+        <section className="home-nations" aria-labelledby="faction-entry-title">
+          <div className="faction-group-heading"><div><span className="section-number">FACTIONS / RED ALERT 2</span><h2 id="faction-entry-title">Find your way to fight.</h2><p>Meet the five modern nations, then explore every faction’s full force.</p></div><Link className="text-action" href="/factions">All factions <ArrowRight size={17} /></Link></div>
+          <div className="faction-tile-grid">{rosterFactions("ra2").filter(f => dossierForRoster(f)).map(f => <FactionCard key={f.id} faction={f} compact />)}</div>
         </section>
 
         <section className="closing-section home-closing">

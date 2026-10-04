@@ -1,9 +1,7 @@
 "use client";
 
-import { AudioLines, Mic2, Pause, Play, Radio, Volume2 } from "lucide-react";
+import { AudioLines, ArrowRight, Pause, Play, Radio } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "./AuthProvider";
-import { trackAnalyticsEvent } from "../../lib/firebase-client";
 
 const situations = [
   {
@@ -30,37 +28,21 @@ const situations = [
 ] as const;
 
 export function CompanionDemo() {
-  const { user, openAuth } = useAuth();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [listening, setListening] = useState(false);
   const situation = situations[index];
 
   useEffect(() => {
-    if (paused || listening) return;
+    if (paused) return;
     const timer = window.setInterval(() => setIndex((current) => (current + 1) % situations.length), 5600);
     return () => window.clearInterval(timer);
-  }, [listening, paused]);
-
-  function ask() {
-    if (!user) {
-      void trackAnalyticsEvent("auth_gate_view", { feature: "companion_ask" });
-      openAuth("Create an account to ask the AI companion");
-      return;
-    }
-    void trackAnalyticsEvent("companion_ask", { surface: "homepage_demo" });
-    setListening(true);
-    window.setTimeout(() => {
-      setIndex((current) => (current + 1) % situations.length);
-      setListening(false);
-    }, 1350);
-  }
+  }, [paused]);
 
   return (
     <div className="companion-demo" aria-label="Interactive AI companion preview">
       <div className="demo-topline">
-        <span>COMPANION / LIVE</span>
-        <span className="demo-route"><Radio size={12} /> OBSERVATION ONLY</span>
+        <span>CO-COMMANDER</span>
+        <span className="demo-route"><Radio size={12} /> EXAMPLE SCENARIOS</span>
       </div>
       <div className="battle-state">
         <div className="mini-map" aria-hidden="true">
@@ -74,22 +56,22 @@ export function CompanionDemo() {
           <span>SECTOR<b>{situation.sector}</b></span>
         </div>
       </div>
-      <div className="spoken-line" aria-live="polite">
-        {listening ? <Volume2 className="pulse" size={20} /> : <AudioLines size={20} />}
+      <div className="spoken-line" aria-live={paused ? "polite" : "off"}>
+        <AudioLines size={20} />
         <div>
-          <span>{listening ? "LISTENING / RELEASE TO ASK" : situation.label}</span>
-          <p>{listening ? "Listening for your question…" : `“${situation.line}”`}</p>
+          <span>{situation.label}</span>
+          <p>{`“${situation.line}”`}</p>
         </div>
       </div>
       <div className="demo-controls">
         <button type="button" onClick={() => setPaused((value) => !value)} aria-pressed={paused}>
           {paused ? <Play size={14} /> : <Pause size={14} />} {paused ? "Resume" : "Pause"}
         </button>
-        <button type="button" onClick={ask} disabled={listening}><Mic2 size={14} /> Ask</button>
+        <button type="button" onClick={() => { setPaused(true); setIndex(current => (current + 1) % situations.length); }}>Next scenario <ArrowRight size={14} /></button>
         <div className="scenario-dots" aria-label={`Scenario ${index + 1} of ${situations.length}`}>
           {situations.map((_, scenarioIndex) => <i key={scenarioIndex} className={scenarioIndex === index ? "active" : ""} />)}
         </div>
-        <span>1.4s</span>
+        <span>Illustration</span>
       </div>
     </div>
   );

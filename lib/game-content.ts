@@ -11,6 +11,16 @@ export const units = catalog.units;
 export type Faction = (typeof factions)[number];
 export type Unit = (typeof units)[number];
 export const modes = catalog.modes;
+export const rosters = snapshot.rosters;
+export type RosterFaction = (typeof rosters.factions)[number];
+export function rosterFactions(mode: GameMode) { return rosters.factions.filter(f => f.mode === mode); }
+export function rosterFactionById(id: string, mode: GameMode) {
+  return rosterFactions(mode).find(f => f.id === (id === "saudi-arabia" ? "saudi" : id));
+}
+export function rosterActors(faction: RosterFaction) { const keys = new Set(faction.actors); return rosters.actors.filter(a => keys.has(a.key)); }
+export function dossierForRoster(faction: RosterFaction) { return factionById(faction.id === "saudi" ? "saudi-arabia" : faction.id); }
+export function rosterHref(faction: RosterFaction) { return `/factions/${dossierForRoster(faction)?.id ?? faction.id}?mode=${faction.mode}`; }
+export const categoryLabels: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Naval", defense: "Defenses", structure: "Buildings" };
 export function resolveMode(value: string | string[] | undefined, fallback: GameMode = "ra2"): GameMode { return value === "ra" || value === "ra2" ? value : fallback; }
 /** Names and roles differ by mode; the catalog validator keeps each one equal to what the game shows. */
 export function unitLabel(unit: Unit, mode: GameMode) { const variant = (unit.variants as Partial<Record<GameMode, { name: string; role: string }>>)[mode]; return { name: variant?.name ?? unit.name, role: variant?.role ?? unit.role }; }

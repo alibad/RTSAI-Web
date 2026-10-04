@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getGameRelease } from "../../lib/release";
 import { getModRelease, isPublished, RA2_REQUIREMENT, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
-import { availability, factionById, resolveMode } from "../../lib/game-content";
+import { availability, factionById, resolveMode, rosterFactionById } from "../../lib/game-content";
 
 export const metadata: Metadata = {
   title: "Download RTS AI | Red Alert 2 mod for OpenRA",
@@ -69,8 +69,9 @@ const requirements = [
 export default async function DownloadPage({ searchParams }: { searchParams: Promise<{ faction?: string | string[]; mode?: string | string[] }> }) {
   const selection = await searchParams;
   const mode = resolveMode(selection.mode, "ra2");
-  const faction = typeof selection.faction === "string" ? factionById(selection.faction) : undefined;
-  const selectionStatus = faction ? availability(faction, mode) : undefined;
+  const dossier = typeof selection.faction === "string" ? factionById(selection.faction) : undefined;
+  const faction = dossier ?? (typeof selection.faction === "string" ? rosterFactionById(selection.faction, mode) : undefined);
+  const selectionStatus = dossier ? availability(dossier, mode) : faction ? "Development · release unconfirmed" : undefined;
   const mod = getModRelease();
   const published = isPublished(mod) ? mod : null;
   const installer = windowsInstaller(mod);
@@ -129,8 +130,8 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             <div className="mod-coming-soon" role="status">
               <Hourglass size={20} aria-hidden="true" />
               <div>
-                <b>First RTS AI mod release coming soon</b>
-                <p>There is no public build of the Red Alert 2 mod yet, so there is nothing to download here today. Its Windows installer, file sizes and SHA-256 checksums will appear on this page when it is published.</p>
+                <b>Red Alert 2 is in development</b>
+                <p>The first public Windows build is not available yet. Its installer and verified checksums will appear here after release.</p>
                 <a className="text-action" href="#classic-alpha">See the previous Classic alpha</a>
               </div>
             </div>
@@ -146,11 +147,12 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           </aside>
         )}
 
+        <details className="planned-setup" open={Boolean(published)}><summary>{published ? "Setup and system requirements" : "Planned RA2 setup and system requirements"}</summary>
         <section className="download-section mod-setup" aria-labelledby="ai-choice-title">
           <div className="download-intro">
             <span className="section-number">01 / THE INSTALLER ASKS ONE QUESTION</span>
             <h2 id="ai-choice-title">How should your co-commander think?</h2>
-            <p>Pick one when you install. You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">what hosted AI sends</Link>.</p>
+            <p>{published ? "Pick one when you install." : "These choices are planned for the RA2 installer. Hosted AI still needs a live service acceptance test before release."} You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">what hosted AI sends</Link>.</p>
           </div>
           <div className="ai-choices">
             {aiChoices.map((choice) => (
@@ -180,12 +182,13 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             </div>
           )}
         </section>
+        </details>
 
-        <section className="download-section mod-downloads" id="mod-downloads" aria-labelledby="mod-downloads-title">
+        <section className={`download-section mod-downloads ${published ? "" : "is-unpublished"}`} id="mod-downloads" aria-labelledby="mod-downloads-title">
           <div className="download-intro">
-            <span className="section-number">03 / DOWNLOADS</span>
-            <h2 id="mod-downloads-title">{published ? `RTS AI ${published.version}` : "First RTS AI mod release coming soon"}</h2>
-            <p>{published ? "Every file comes from the public GitHub release. Compare its SHA-256 before you run it." : "No mod files are published yet, and we do not post placeholder links. Factions and the co-commander are in development; follow the faction guide in the meantime."}</p>
+            <span className="section-number">{published ? "DOWNLOADS" : "RED ALERT 2"}</span>
+            <h2 id="mod-downloads-title">{published ? `RTS AI ${published.version}` : "Release status"}</h2>
+            <p>{published ? "Every file comes from the public GitHub release. Compare its SHA-256 before you run it." : "Explore the current factions while their art and gameplay are refined."}</p>
           </div>
           {published ? (
             <ul className="mod-asset-list" aria-label={`RTS AI ${published.version} files`}>

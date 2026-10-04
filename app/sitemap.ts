@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
-import { factions, units } from "../lib/game-content";
+import { dossierForRoster, rosters, units } from "../lib/game-content";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date("2026-10-02");
+  const lastModified = new Date("2026-10-04");
+  const factionPaths = [...new Set(rosters.factions.map(f => `/factions/${dossierForRoster(f)?.id ?? f.id}${rosters.factions.some(other => other.id === f.id && other.mode === "ra2") ? "" : "?mode=ra"}`))];
   return [
-    { url: "https://rtsai.net/factions", lastModified: new Date("2026-10-02"), changeFrequency: "weekly", priority: 0.9 },
-    ...factions.map(faction => ({ url: `https://rtsai.net/factions/${faction.id}`, lastModified: new Date("2026-10-02") })),
+    { url: "https://rtsai.net/factions", lastModified, changeFrequency: "weekly", priority: 0.9 },
+    ...factionPaths.map(path => ({ url: `https://rtsai.net${path}`, lastModified })),
     ...units.map(unit => ({ url: `https://rtsai.net/units/${unit.id}`, lastModified: new Date("2026-10-02") })),
     { url: "https://rtsai.net/", lastModified, changeFrequency: "weekly", priority: 1 },
     { url: "https://rtsai.net/companion", lastModified, changeFrequency: "weekly", priority: 0.9 },

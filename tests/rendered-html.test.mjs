@@ -36,7 +36,10 @@ test("renders a focused homepage: the RA2 mod promise, three pillars, factions, 
   assert.match(html, /Red Alert 2 on OpenRA/);
   assert.match(html, /<i>In development<\/i>/, "pillar 3 says In development until the mod manifest is published");
   assert.doesNotMatch(html, /<i>Alpha<\/i>/);
-  assert.match(html, /Play the current alpha/);
+  assert.match(html, /Classic alpha download/);
+  assert.match(html, /RA2 in development · Classic alpha available now/);
+  assert.match(html, /EXAMPLE SCENARIOS/);
+  assert.doesNotMatch(html, /COMPANION \/ LIVE|1\.4s/);
   assert.doesNotMatch(html, /RTSAI-Mod\/releases|Download RTS AI (?:<!-- -->)?\d/);
   assert.match(html, /Türkiye/);
   assert.match(html, /Interactive AI companion preview/);
@@ -146,7 +149,7 @@ test("the download page leads with the RA2 requirement and renders no mod links 
   assert.match(html, /href="\/privacy#ai-co-commander"/);
 
   // Unpublished: honest "coming soon", no mod links, no unsigned-build note.
-  assert.match(html, /First RTS AI mod release coming soon/);
+  assert.match(html, /Red Alert 2 is in development/);
   assert.match(html, /Mod download not yet published/);
   assert.doesNotMatch(html, /RTSAI-Mod\/releases/);
   assert.doesNotMatch(html, /data-analytics-event="mod_download"/);
@@ -211,6 +214,34 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
     const response = await render(path);
     assert.equal(response.status, 404, path);
   }
+});
+
+test("the complete faction guide covers every current country and building without claiming release coverage", async () => {
+  const { rosters, catalog } = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
+  for (const mode of ["ra2", "ra"]) {
+    const directory = await (await render(`/factions?mode=${mode}`)).text();
+    const countries = rosters.factions.filter(f => f.mode === mode);
+    for (const country of countries) {
+      const id = catalog.factions.find(f => f.variants[mode].engineFactionId === country.id)?.id ?? country.id;
+      assert.ok(directory.includes(`/factions/${id}?mode=${mode}`), `${mode}/${id} has a directory card`);
+      const response = await render(`/factions/${id}?mode=${mode}`);
+      assert.equal(response.status, 200, `${mode}/${id}`);
+      const html = await response.text();
+      assert.match(html, /Units, buildings &amp; defenses/);
+      for (const key of country.actors) {
+        const actor = rosters.actors.find(a => a.key === key);
+        const escapedName = actor.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("'", "&#x27;").replaceAll('"', "&quot;");
+        assert.ok(html.includes(escapedName), `${mode}/${id}: ${actor.name} is shown`);
+      }
+      if (mode === "ra2") assert.doesNotMatch(html, /In public Windows release/);
+    }
+  }
+  const unavailable = await (await render("/factions/ukraine?mode=ra2")).text();
+  assert.match(unavailable, /No roster in this mode/);
+  assert.match(unavailable, /\/factions\/ukraine\?mode=ra/);
+  const stockDownload = await (await render("/download?faction=america&mode=ra2")).text();
+  assert.match(stockDownload, /America \/ Red Alert 2/);
+  assert.match(stockDownload, /RA2 release not yet certified/);
 });
 
 test("keeps account identity out of Analytics event parameters", async () => {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AccountNav } from "./AccountNav";
 
 export const gameSource = "https://github.com/alibad/OpenRA-AI";
+export const modSource = "https://github.com/alibad/RTSAI-Mod";
 
 function Brand({ footer = false }: { footer?: boolean }) {
   return (
@@ -25,11 +26,10 @@ export function SiteHeader() {
           <Link href="/download">Download</Link>
         </div>
         <div className="nav-actions">
-          <a className="nav-source" href={gameSource} target="_blank" rel="noreferrer"><Github size={15} /> Game source</a>
+          <a className="nav-source" href={modSource} target="_blank" rel="noreferrer"><Github size={15} /> Game source</a>
           <AccountNav />
         </div>
       </nav>
-      <p className="legal-strip">Independent project. EA has not endorsed and does not support this product.</p>
     </>
   );
 }
@@ -38,11 +38,11 @@ export function SiteFooter() {
   return (
     <footer>
       <Brand footer />
-      <p>EA has not endorsed and does not support this product. OpenRA AI is an independent GPL-3.0 project.</p>
+      <p>Independent project. EA has not endorsed and does not support this product.</p>
       <div>
         <Link href="/companion">How the companion works</Link>
-        <a href={gameSource}>Game source</a>
-        <a href={`${gameSource}/blob/main/LICENSE`}>License</a>
+        <a href={modSource}>Game source</a>
+        <a href={`${gameSource}/blob/main/LICENSE`}>Companion license</a>
         <Link href="/privacy">Privacy</Link>
       </div>
     </footer>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { availability, catalog, factionById, factions, mediaById, resolveMode, unitById, units, unitsForFaction, downloadHref } from "../lib/game-content";
+import { availability, catalog, factionById, factions, mediaById, resolveMode, unitById, units, unitsForFaction, downloadHref, rosters, rosterActors, rosterFactions, rosterFactionById } from "../lib/game-content";
 import { verifyEvidence } from "../scripts/release-evidence.mjs";
 test("shared catalog has complete faction, unit, mode and media relationships", () => {
   assert.equal(catalog.schemaVersion, 1);
@@ -34,6 +34,28 @@ test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(factionById("__proto__"), undefined);
   assert.equal(unitById("missing"), undefined);
   assert.equal(downloadHref("china", "ra2"), "/download?faction=china&mode=ra2");
+});
+test("complete rosters retain source names, countries and all buildings", async () => {
+  const source = JSON.parse(await readFile(new URL("../../RTSAI-Art/rebuild/catalog.json", import.meta.url), "utf8"));
+  assert.equal(rosterFactions("ra2").length, 14);
+  assert.equal(rosterFactions("ra").length, 10);
+  assert.equal(rosters.actors.length, 325);
+  for (const faction of rosters.factions) {
+    const original = source.factions.find((f: {id: string; mode: string}) => f.id === faction.id && f.mode === (faction.mode === "ra" ? "classic" : "ra2"));
+    assert.equal(faction.name, original.name);
+    assert.deepEqual(faction.actors, original.actors);
+    assert.equal(rosterActors(faction).length, faction.actors.length);
+  }
+  for (const actor of rosters.actors) {
+    const original = source.actors[actor.key];
+    assert.equal(actor.name, original.name);
+    assert.equal(actor.cost, original.cost);
+    assert.equal(actor.category, original.category);
+    assert.deepEqual(actor.roles, original.roles);
+  }
+  assert.equal(rosterFactionById("saudi-arabia", "ra2")?.id, "saudi");
+  assert.equal(rosterFactionById("ukraine", "ra2"), undefined);
+  assert.equal(rosterFactionById("__proto__", "ra2"), undefined);
 });
 test("snapshot carries provenance and archive no longer offers fake modes", async () => {
   const snapshot = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));

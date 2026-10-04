@@ -585,5 +585,4847 @@
       "licenseStatus": "review-required",
       "note": "Existing project art and captured Classic assets. Labels are provenance, not independent redistribution clearance. RA2 screenshots are not substituted with Classic images."
     }
+  },
+  "rosters": {
+    "sources": {
+      "ra2": {
+        "commit": "2b5218ca378b9243586c3316383cc5dd37a35281",
+        "snapshotSha256": "41cfe124ec7a4a5c98fd88a23e98037d1e9075b1ae4ba075007b490794266387"
+      },
+      "ra": {
+        "commit": "5ddc34cb91e52953d4844c169075a0dbbd79e139",
+        "snapshotSha256": "f0699eec421cf0a5b878efa99c0c872a5cd6566262a8a67bbe252377680f4d43"
+      }
+    },
+    "factions": [
+      {
+        "id": "america",
+        "mode": "ra2",
+        "name": "America",
+        "side": "Allies",
+        "actors": [
+          "ra2:e1",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:tany",
+          "ra2:cleg",
+          "ra2:cmin",
+          "ra2:mtnk",
+          "ra2:fv",
+          "ra2:sref",
+          "ra2:mgtk",
+          "ra2:amcv",
+          "ra2:orca",
+          "ra2:jumpjet",
+          "ra2:shad",
+          "ra2:lcrf",
+          "ra2:dest",
+          "ra2:aegis",
+          "ra2:dlph",
+          "ra2:carrier",
+          "ra2:gapill",
+          "ra2:nasam",
+          "ra2:atesla",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:amradr",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "germany",
+        "mode": "ra2",
+        "name": "Germany",
+        "side": "Allies",
+        "actors": [
+          "ra2:e1",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:tany",
+          "ra2:cleg",
+          "ra2:cmin",
+          "ra2:mtnk",
+          "ra2:fv",
+          "ra2:tnkd",
+          "ra2:sref",
+          "ra2:mgtk",
+          "ra2:amcv",
+          "ra2:orca",
+          "ra2:jumpjet",
+          "ra2:shad",
+          "ra2:lcrf",
+          "ra2:dest",
+          "ra2:aegis",
+          "ra2:dlph",
+          "ra2:carrier",
+          "ra2:gapill",
+          "ra2:nasam",
+          "ra2:atesla",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "england",
+        "mode": "ra2",
+        "name": "England",
+        "side": "Allies",
+        "actors": [
+          "ra2:e1",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:snipe",
+          "ra2:spy",
+          "ra2:tany",
+          "ra2:cleg",
+          "ra2:cmin",
+          "ra2:mtnk",
+          "ra2:fv",
+          "ra2:sref",
+          "ra2:mgtk",
+          "ra2:amcv",
+          "ra2:orca",
+          "ra2:jumpjet",
+          "ra2:shad",
+          "ra2:lcrf",
+          "ra2:dest",
+          "ra2:aegis",
+          "ra2:dlph",
+          "ra2:carrier",
+          "ra2:gapill",
+          "ra2:nasam",
+          "ra2:atesla",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "france",
+        "mode": "ra2",
+        "name": "France",
+        "side": "Allies",
+        "actors": [
+          "ra2:e1",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:tany",
+          "ra2:cleg",
+          "ra2:cmin",
+          "ra2:mtnk",
+          "ra2:fv",
+          "ra2:sref",
+          "ra2:mgtk",
+          "ra2:amcv",
+          "ra2:orca",
+          "ra2:jumpjet",
+          "ra2:shad",
+          "ra2:lcrf",
+          "ra2:dest",
+          "ra2:aegis",
+          "ra2:dlph",
+          "ra2:carrier",
+          "ra2:gapill",
+          "ra2:nasam",
+          "ra2:atesla",
+          "ra2:gtgcan",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "korea",
+        "mode": "ra2",
+        "name": "Korea",
+        "side": "Allies",
+        "actors": [
+          "ra2:e1",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:tany",
+          "ra2:cleg",
+          "ra2:cmin",
+          "ra2:mtnk",
+          "ra2:fv",
+          "ra2:sref",
+          "ra2:mgtk",
+          "ra2:amcv",
+          "ra2:beag",
+          "ra2:jumpjet",
+          "ra2:shad",
+          "ra2:lcrf",
+          "ra2:dest",
+          "ra2:aegis",
+          "ra2:dlph",
+          "ra2:carrier",
+          "ra2:gapill",
+          "ra2:nasam",
+          "ra2:atesla",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "cuba",
+        "mode": "ra2",
+        "name": "Cuba",
+        "side": "Soviets",
+        "actors": [
+          "ra2:e2",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:dron",
+          "ra2:shk",
+          "ra2:flakt",
+          "ra2:terror",
+          "ra2:ivan",
+          "ra2:yuri",
+          "ra2:harv",
+          "ra2:htnk",
+          "ra2:htk",
+          "ra2:apoc",
+          "ra2:smcv",
+          "ra2:zep",
+          "ra2:sapc",
+          "ra2:sub",
+          "ra2:hyd",
+          "ra2:sqd",
+          "ra2:nalasr",
+          "ra2:naflak",
+          "ra2:tesla",
+          "ra2:napowr",
+          "ra2:nawall",
+          "ra2:nahand",
+          "ra2:narefn",
+          "ra2:naweap",
+          "ra2:nayard",
+          "ra2:napsis",
+          "ra2:naradr",
+          "ra2:nadept",
+          "ra2:nairon",
+          "ra2:natech",
+          "ra2:namisl",
+          "ra2:nanrct",
+          "ra2:naclon"
+        ]
+      },
+      {
+        "id": "libya",
+        "mode": "ra2",
+        "name": "Libya",
+        "side": "Soviets",
+        "actors": [
+          "ra2:e2",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:dron",
+          "ra2:shk",
+          "ra2:flakt",
+          "ra2:ivan",
+          "ra2:yuri",
+          "ra2:harv",
+          "ra2:htnk",
+          "ra2:htk",
+          "ra2:dtruck",
+          "ra2:apoc",
+          "ra2:smcv",
+          "ra2:zep",
+          "ra2:sapc",
+          "ra2:sub",
+          "ra2:hyd",
+          "ra2:sqd",
+          "ra2:nalasr",
+          "ra2:naflak",
+          "ra2:tesla",
+          "ra2:napowr",
+          "ra2:nawall",
+          "ra2:nahand",
+          "ra2:narefn",
+          "ra2:naweap",
+          "ra2:nayard",
+          "ra2:napsis",
+          "ra2:naradr",
+          "ra2:nadept",
+          "ra2:nairon",
+          "ra2:natech",
+          "ra2:namisl",
+          "ra2:nanrct",
+          "ra2:naclon"
+        ]
+      },
+      {
+        "id": "iraq",
+        "mode": "ra2",
+        "name": "Iraq",
+        "side": "Soviets",
+        "actors": [
+          "ra2:e2",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:dron",
+          "ra2:shk",
+          "ra2:flakt",
+          "ra2:ivan",
+          "ra2:deso",
+          "ra2:yuri",
+          "ra2:harv",
+          "ra2:htnk",
+          "ra2:htk",
+          "ra2:apoc",
+          "ra2:smcv",
+          "ra2:zep",
+          "ra2:sapc",
+          "ra2:sub",
+          "ra2:hyd",
+          "ra2:sqd",
+          "ra2:nalasr",
+          "ra2:naflak",
+          "ra2:tesla",
+          "ra2:napowr",
+          "ra2:nawall",
+          "ra2:nahand",
+          "ra2:narefn",
+          "ra2:naweap",
+          "ra2:nayard",
+          "ra2:napsis",
+          "ra2:naradr",
+          "ra2:nadept",
+          "ra2:nairon",
+          "ra2:natech",
+          "ra2:namisl",
+          "ra2:nanrct",
+          "ra2:naclon"
+        ]
+      },
+      {
+        "id": "russia",
+        "mode": "ra2",
+        "name": "Russia",
+        "side": "Soviets",
+        "actors": [
+          "ra2:e2",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:dron",
+          "ra2:shk",
+          "ra2:flakt",
+          "ra2:ivan",
+          "ra2:yuri",
+          "ra2:harv",
+          "ra2:htnk",
+          "ra2:htk",
+          "ra2:ttnk",
+          "ra2:apoc",
+          "ra2:smcv",
+          "ra2:zep",
+          "ra2:sapc",
+          "ra2:sub",
+          "ra2:hyd",
+          "ra2:sqd",
+          "ra2:nalasr",
+          "ra2:naflak",
+          "ra2:tesla",
+          "ra2:napowr",
+          "ra2:nawall",
+          "ra2:nahand",
+          "ra2:narefn",
+          "ra2:naweap",
+          "ra2:nayard",
+          "ra2:napsis",
+          "ra2:naradr",
+          "ra2:nadept",
+          "ra2:nairon",
+          "ra2:natech",
+          "ra2:namisl",
+          "ra2:nanrct",
+          "ra2:naclon"
+        ]
+      },
+      {
+        "id": "china",
+        "mode": "ra2",
+        "name": "China",
+        "side": "Allies",
+        "actors": [
+          "ra2:r2cnrifle",
+          "ra2:r2cnportable",
+          "ra2:r2cnnetwork",
+          "ra2:r2redspear",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:r2qilin",
+          "ra2:r2zbd",
+          "ra2:r2lynx",
+          "ra2:r2mantis",
+          "ra2:r2phl",
+          "ra2:cmin",
+          "ra2:amcv",
+          "ra2:r2skyspear",
+          "ra2:r2cloud",
+          "ra2:r2crane",
+          "ra2:r2kunlun",
+          "ra2:r2luyang",
+          "ra2:r2haiying",
+          "ra2:r2jiaolong",
+          "ra2:r2haiwang",
+          "ra2:r2bastion",
+          "ra2:r2skyshield",
+          "ra2:r2spectrum",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "iran",
+        "mode": "ra2",
+        "name": "Iran",
+        "side": "Soviets",
+        "actors": [
+          "ra2:r2basij",
+          "ra2:r2toophan",
+          "ra2:r2dronecontrol",
+          "ra2:r2shadowone",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:r2karrar",
+          "ra2:r2raad",
+          "ra2:r2fajr",
+          "ra2:r2coast",
+          "ra2:harv",
+          "ra2:htk",
+          "ra2:smcv",
+          "ra2:r2mohajer",
+          "ra2:r2loiter",
+          "ra2:r2toufan",
+          "ra2:r2azar",
+          "ra2:r2peykaap",
+          "ra2:r2ghadir",
+          "ra2:sapc",
+          "ra2:r2irbunker",
+          "ra2:r2iraasite",
+          "ra2:r2ircoast",
+          "ra2:napowr",
+          "ra2:nawall",
+          "ra2:nahand",
+          "ra2:narefn",
+          "ra2:naweap",
+          "ra2:nayard",
+          "ra2:napsis",
+          "ra2:naradr",
+          "ra2:nadept",
+          "ra2:nairon",
+          "ra2:natech",
+          "ra2:namisl",
+          "ra2:nanrct",
+          "ra2:naclon"
+        ]
+      },
+      {
+        "id": "turkey",
+        "mode": "ra2",
+        "name": "Türkiye",
+        "side": "Allies",
+        "actors": [
+          "ra2:r2trrifle",
+          "ra2:r2trat",
+          "ra2:r2trdroneop",
+          "ra2:r2greywolf",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:r2aras",
+          "ra2:r2bozkir",
+          "ra2:r2gokkalkan",
+          "ra2:r2yildirim",
+          "ra2:r2deniz",
+          "ra2:r2sancak",
+          "ra2:cmin",
+          "ra2:amcv",
+          "ra2:r2sahin",
+          "ra2:r2kuzgun",
+          "ra2:r2turna",
+          "ra2:r2poyraz",
+          "ra2:r2ege",
+          "ra2:r2marmara",
+          "ra2:lcrf",
+          "ra2:r2hisar",
+          "ra2:r2siper",
+          "ra2:r2boran",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "saudi",
+        "mode": "ra2",
+        "name": "Saudi Arabia",
+        "side": "Allies",
+        "actors": [
+          "ra2:r2sang",
+          "ra2:r2saat",
+          "ra2:r2sajtac",
+          "ra2:r2falcon",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:spy",
+          "ra2:r2m1a2s",
+          "ra2:r2bradley",
+          "ra2:r2sads",
+          "ra2:r2caesar",
+          "ra2:cmin",
+          "ra2:amcv",
+          "ra2:r2f15sa",
+          "ra2:r2ah64sa",
+          "ra2:r2sadiq",
+          "ra2:r2riyadh",
+          "ra2:r2jubail",
+          "ra2:lcrf",
+          "ra2:r2saguard",
+          "ra2:r2sapatriot",
+          "ra2:r2satow",
+          "ra2:gapowr",
+          "ra2:gawall",
+          "ra2:gapile",
+          "ra2:garefn",
+          "ra2:gaweap",
+          "ra2:gayard",
+          "ra2:gaairc",
+          "ra2:gagap",
+          "ra2:gadept",
+          "ra2:gaspysat",
+          "ra2:gacsph",
+          "ra2:gatech",
+          "ra2:gaweat",
+          "ra2:gaorep"
+        ]
+      },
+      {
+        "id": "yemen",
+        "mode": "ra2",
+        "name": "Yemen",
+        "side": "Soviets",
+        "actors": [
+          "ra2:r2ymr",
+          "ra2:r2yrpg",
+          "ra2:r2yspot",
+          "ra2:r2wadighost",
+          "ra2:engineer",
+          "ra2:dog",
+          "ra2:r2technical",
+          "ra2:r2ytechrr",
+          "ra2:r2yzu",
+          "ra2:r2ymlr",
+          "ra2:harv",
+          "ra2:htk",
+          "ra2:smcv",
+          "ra2:r2samad",
+          "ra2:r2sahaab",
+          "ra2:r2hodeidah",
+          "ra2:r2mokha",
+          "ra2:sapc",
+          "ra2:r2ybunker",
+          "ra2:r2yzunest",
+          "ra2:r2ycoastal",
+          "ra2:napowr",
+          "ra2:nawall",
+          "ra2:nahand",
+          "ra2:narefn",
+          "ra2:naweap",
+          "ra2:nayard",
+          "ra2:napsis",
+          "ra2:naradr",
+          "ra2:nadept",
+          "ra2:nairon",
+          "ra2:natech",
+          "ra2:namisl",
+          "ra2:nanrct",
+          "ra2:naclon"
+        ]
+      },
+      {
+        "id": "england",
+        "mode": "ra",
+        "name": "England",
+        "side": "Allies",
+        "actors": [
+          "classic:e1",
+          "classic:e3",
+          "classic:medi",
+          "classic:e6",
+          "classic:spy",
+          "classic:spy.england",
+          "classic:mech",
+          "classic:e7",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:mrj",
+          "classic:ctnk",
+          "classic:mgg",
+          "classic:stnk",
+          "classic:truk",
+          "classic:tran",
+          "classic:mh60",
+          "classic:heli",
+          "classic:lst",
+          "classic:pt",
+          "classic:dd",
+          "classic:ca",
+          "classic:pbox",
+          "classic:hbox",
+          "classic:gun",
+          "classic:agun",
+          "classic:powr",
+          "classic:sbag",
+          "classic:tent",
+          "classic:brik",
+          "classic:silo",
+          "classic:syrd",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:gap",
+          "classic:hpad",
+          "classic:pdox",
+          "classic:atek",
+          "classic:mslo"
+        ]
+      },
+      {
+        "id": "france",
+        "mode": "ra",
+        "name": "France",
+        "side": "Allies",
+        "actors": [
+          "classic:e1",
+          "classic:e3",
+          "classic:medi",
+          "classic:e6",
+          "classic:spy",
+          "classic:spy.england",
+          "classic:mech",
+          "classic:e7",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:mrj",
+          "classic:ctnk",
+          "classic:mgg",
+          "classic:stnk",
+          "classic:truk",
+          "classic:tran",
+          "classic:mh60",
+          "classic:heli",
+          "classic:lst",
+          "classic:pt",
+          "classic:dd",
+          "classic:ca",
+          "classic:pbox",
+          "classic:hbox",
+          "classic:gun",
+          "classic:agun",
+          "classic:powr",
+          "classic:sbag",
+          "classic:tent",
+          "classic:brik",
+          "classic:silo",
+          "classic:syrd",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:gap",
+          "classic:hpad",
+          "classic:pdox",
+          "classic:atek",
+          "classic:mslo",
+          "classic:fpwr",
+          "classic:tenf",
+          "classic:syrf",
+          "classic:weaf",
+          "classic:domf",
+          "classic:fixf",
+          "classic:fapw",
+          "classic:atef",
+          "classic:pdof",
+          "classic:mslf",
+          "classic:facf"
+        ]
+      },
+      {
+        "id": "germany",
+        "mode": "ra",
+        "name": "Germany",
+        "side": "Allies",
+        "actors": [
+          "classic:e1",
+          "classic:e3",
+          "classic:medi",
+          "classic:e6",
+          "classic:spy",
+          "classic:spy.england",
+          "classic:mech",
+          "classic:e7",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:mrj",
+          "classic:ctnk",
+          "classic:mgg",
+          "classic:stnk",
+          "classic:truk",
+          "classic:tran",
+          "classic:mh60",
+          "classic:heli",
+          "classic:lst",
+          "classic:pt",
+          "classic:dd",
+          "classic:ca",
+          "classic:pbox",
+          "classic:hbox",
+          "classic:gun",
+          "classic:agun",
+          "classic:powr",
+          "classic:sbag",
+          "classic:tent",
+          "classic:brik",
+          "classic:silo",
+          "classic:syrd",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:gap",
+          "classic:hpad",
+          "classic:pdox",
+          "classic:atek",
+          "classic:mslo"
+        ]
+      },
+      {
+        "id": "russia",
+        "mode": "ra",
+        "name": "Russia",
+        "side": "Soviet",
+        "actors": [
+          "classic:e1",
+          "classic:e3",
+          "classic:e2",
+          "classic:dog",
+          "classic:e6",
+          "classic:e4",
+          "classic:thf",
+          "classic:shok",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:4tnk",
+          "classic:dtrk",
+          "classic:ttnk",
+          "classic:truk",
+          "classic:qtnk",
+          "classic:yak",
+          "classic:mig",
+          "classic:lst",
+          "classic:ss",
+          "classic:msub",
+          "classic:ftur",
+          "classic:tsla",
+          "classic:sam",
+          "classic:powr",
+          "classic:fenc",
+          "classic:barr",
+          "classic:brik",
+          "classic:silo",
+          "classic:spen",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:afld",
+          "classic:iron",
+          "classic:mslo",
+          "classic:stek",
+          "classic:kenn"
+        ]
+      },
+      {
+        "id": "ukraine",
+        "mode": "ra",
+        "name": "Ukraine",
+        "side": "Soviet",
+        "actors": [
+          "classic:e1",
+          "classic:e3",
+          "classic:e2",
+          "classic:dog",
+          "classic:e6",
+          "classic:e4",
+          "classic:thf",
+          "classic:shok",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:4tnk",
+          "classic:dtrk",
+          "classic:ttnk",
+          "classic:truk",
+          "classic:qtnk",
+          "classic:yak",
+          "classic:mig",
+          "classic:lst",
+          "classic:ss",
+          "classic:msub",
+          "classic:ftur",
+          "classic:tsla",
+          "classic:sam",
+          "classic:powr",
+          "classic:fenc",
+          "classic:barr",
+          "classic:brik",
+          "classic:silo",
+          "classic:spen",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:afld",
+          "classic:afld.ukraine",
+          "classic:iron",
+          "classic:mslo",
+          "classic:stek",
+          "classic:kenn"
+        ]
+      },
+      {
+        "id": "saudi",
+        "mode": "ra",
+        "name": "Saudi Arabia",
+        "side": "Allies",
+        "actors": [
+          "classic:sang",
+          "classic:saat",
+          "classic:sajtac",
+          "classic:falcon1",
+          "classic:e1",
+          "classic:e3",
+          "classic:medi",
+          "classic:e6",
+          "classic:spy",
+          "classic:spy.england",
+          "classic:mech",
+          "classic:e7",
+          "classic:m1a2s",
+          "classic:sads",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:mrj",
+          "classic:ctnk",
+          "classic:mgg",
+          "classic:stnk",
+          "classic:truk",
+          "classic:ah64sa",
+          "classic:f15sa",
+          "classic:tran",
+          "classic:mh60",
+          "classic:yak",
+          "classic:heli",
+          "classic:sa_intc",
+          "classic:sa_frgt",
+          "classic:sa_fss",
+          "classic:lst",
+          "classic:pt",
+          "classic:dd",
+          "classic:ca",
+          "classic:pbox",
+          "classic:hbox",
+          "classic:gun",
+          "classic:agun",
+          "classic:safld",
+          "classic:powr",
+          "classic:sbag",
+          "classic:tent",
+          "classic:brik",
+          "classic:silo",
+          "classic:syrd",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:gap",
+          "classic:hpad",
+          "classic:pdox",
+          "classic:atek",
+          "classic:mslo"
+        ]
+      },
+      {
+        "id": "yemen",
+        "mode": "ra",
+        "name": "Yemen",
+        "side": "Soviet",
+        "actors": [
+          "classic:ymr",
+          "classic:yrpg",
+          "classic:yspot",
+          "classic:wadighost",
+          "classic:e1",
+          "classic:e3",
+          "classic:e2",
+          "classic:dog",
+          "classic:e6",
+          "classic:e4",
+          "classic:thf",
+          "classic:shok",
+          "classic:tech",
+          "classic:ymlr",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:4tnk",
+          "classic:dtrk",
+          "classic:ttnk",
+          "classic:truk",
+          "classic:qtnk",
+          "classic:samad",
+          "classic:yak",
+          "classic:mig",
+          "classic:ye_usv",
+          "classic:ye_mslc",
+          "classic:ye_surve",
+          "classic:lst",
+          "classic:ss",
+          "classic:msub",
+          "classic:ftur",
+          "classic:tsla",
+          "classic:sam",
+          "classic:powr",
+          "classic:fenc",
+          "classic:barr",
+          "classic:brik",
+          "classic:silo",
+          "classic:spen",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:afld",
+          "classic:iron",
+          "classic:mslo",
+          "classic:stek",
+          "classic:kenn"
+        ]
+      },
+      {
+        "id": "turkey",
+        "mode": "ra",
+        "name": "Turkey",
+        "side": "Allies",
+        "actors": [
+          "classic:trrifle",
+          "classic:trat",
+          "classic:trdroneop",
+          "classic:greywolf",
+          "classic:e1",
+          "classic:e3",
+          "classic:medi",
+          "classic:e6",
+          "classic:spy",
+          "classic:spy.england",
+          "classic:mech",
+          "classic:e7",
+          "classic:aras8",
+          "classic:denizkaplan",
+          "classic:gokkalkan",
+          "classic:bozkir",
+          "classic:yildirim",
+          "classic:sancak",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:mrj",
+          "classic:ctnk",
+          "classic:mgg",
+          "classic:stnk",
+          "classic:truk",
+          "classic:kuzgunm",
+          "classic:turnaah",
+          "classic:sahinx",
+          "classic:tran",
+          "classic:mh60",
+          "classic:heli",
+          "classic:poyraz",
+          "classic:ege",
+          "classic:marmara",
+          "classic:lst",
+          "classic:pt",
+          "classic:dd",
+          "classic:ca",
+          "classic:pbox",
+          "classic:hbox",
+          "classic:gun",
+          "classic:agun",
+          "classic:powr",
+          "classic:sbag",
+          "classic:tent",
+          "classic:brik",
+          "classic:silo",
+          "classic:syrd",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:gap",
+          "classic:hpad",
+          "classic:pdox",
+          "classic:atek",
+          "classic:mslo"
+        ]
+      },
+      {
+        "id": "iran",
+        "mode": "ra",
+        "name": "Iran",
+        "side": "Soviet",
+        "actors": [
+          "classic:irbas",
+          "classic:iratgm",
+          "classic:irdc",
+          "classic:shadowone",
+          "classic:e1",
+          "classic:e3",
+          "classic:e2",
+          "classic:dog",
+          "classic:e6",
+          "classic:e4",
+          "classic:thf",
+          "classic:shok",
+          "classic:irraad",
+          "classic:irkarr",
+          "classic:irfajr",
+          "classic:ircoast",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:4tnk",
+          "classic:dtrk",
+          "classic:ttnk",
+          "classic:truk",
+          "classic:qtnk",
+          "classic:irloiter",
+          "classic:irmohajer",
+          "classic:irtoufan",
+          "classic:irazar",
+          "classic:yak",
+          "classic:mig",
+          "classic:irpey",
+          "classic:irghadir",
+          "classic:lst",
+          "classic:ss",
+          "classic:msub",
+          "classic:ftur",
+          "classic:tsla",
+          "classic:sam",
+          "classic:irhpad",
+          "classic:powr",
+          "classic:fenc",
+          "classic:barr",
+          "classic:brik",
+          "classic:silo",
+          "classic:spen",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:afld",
+          "classic:iron",
+          "classic:mslo",
+          "classic:stek",
+          "classic:kenn"
+        ]
+      },
+      {
+        "id": "china",
+        "mode": "ra",
+        "name": "China",
+        "side": "Allies",
+        "actors": [
+          "classic:cnrifle",
+          "classic:cnportable",
+          "classic:cnnetwork",
+          "classic:redspear",
+          "classic:e1",
+          "classic:e3",
+          "classic:medi",
+          "classic:e6",
+          "classic:spy",
+          "classic:spy.england",
+          "classic:mech",
+          "classic:e7",
+          "classic:cnlynx",
+          "classic:cnzbd",
+          "classic:cnmantis",
+          "classic:cnqilin",
+          "classic:cnphl",
+          "classic:harv",
+          "classic:1tnk",
+          "classic:apc",
+          "classic:ftrk",
+          "classic:jeep",
+          "classic:mcv",
+          "classic:2tnk",
+          "classic:3tnk",
+          "classic:arty",
+          "classic:v2rl",
+          "classic:mnly",
+          "classic:mrj",
+          "classic:ctnk",
+          "classic:mgg",
+          "classic:stnk",
+          "classic:truk",
+          "classic:cncloud",
+          "classic:cncrane",
+          "classic:cnskyspear",
+          "classic:tran",
+          "classic:mh60",
+          "classic:heli",
+          "classic:cnhaiying",
+          "classic:cnkunlun",
+          "classic:cnjiaolong",
+          "classic:cnluyang",
+          "classic:cnhaiwang",
+          "classic:lst",
+          "classic:pt",
+          "classic:dd",
+          "classic:ca",
+          "classic:cnbastion",
+          "classic:cnskyshield",
+          "classic:pbox",
+          "classic:hbox",
+          "classic:gun",
+          "classic:agun",
+          "classic:cnspectrum",
+          "classic:powr",
+          "classic:sbag",
+          "classic:tent",
+          "classic:brik",
+          "classic:silo",
+          "classic:syrd",
+          "classic:proc",
+          "classic:weap",
+          "classic:dome",
+          "classic:fix",
+          "classic:apwr",
+          "classic:gap",
+          "classic:hpad",
+          "classic:pdox",
+          "classic:atek",
+          "classic:mslo"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "ra2:aegis",
+        "id": "aegis",
+        "mode": "ra2",
+        "name": "Aegis Cruiser",
+        "category": "ship",
+        "cost": 1200,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:amcv",
+        "id": "amcv",
+        "mode": "ra2",
+        "name": "Mobile Construction Vehicle",
+        "category": "vehicle",
+        "cost": 3000,
+        "roles": []
+      },
+      {
+        "key": "ra2:amradr",
+        "id": "amradr",
+        "mode": "ra2",
+        "name": "American Airforce Command Headquarters",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:apoc",
+        "id": "apoc",
+        "mode": "ra2",
+        "name": "Apocalypse Tank",
+        "category": "vehicle",
+        "cost": 1750,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:atesla",
+        "id": "atesla",
+        "mode": "ra2",
+        "name": "Prism Tower",
+        "category": "defense",
+        "cost": 1500,
+        "roles": []
+      },
+      {
+        "key": "ra2:beag",
+        "id": "beag",
+        "mode": "ra2",
+        "name": "Black Eagle",
+        "category": "aircraft",
+        "cost": 1200,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:carrier",
+        "id": "carrier",
+        "mode": "ra2",
+        "name": "Aircraft Carrier",
+        "category": "ship",
+        "cost": 2000,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:cleg",
+        "id": "cleg",
+        "mode": "ra2",
+        "name": "Chrono Legionnaire",
+        "category": "infantry",
+        "cost": 1500,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:cmin",
+        "id": "cmin",
+        "mode": "ra2",
+        "name": "Chrono Miner",
+        "category": "vehicle",
+        "cost": 1400,
+        "roles": []
+      },
+      {
+        "key": "ra2:deso",
+        "id": "deso",
+        "mode": "ra2",
+        "name": "Desolator",
+        "category": "infantry",
+        "cost": 600,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:dest",
+        "id": "dest",
+        "mode": "ra2",
+        "name": "Destroyer",
+        "category": "ship",
+        "cost": 1000,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:dlph",
+        "id": "dlph",
+        "mode": "ra2",
+        "name": "Dolphin",
+        "category": "ship",
+        "cost": 500,
+        "roles": [
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "ra2:dog",
+        "id": "dog",
+        "mode": "ra2",
+        "name": "Attack Dog",
+        "category": "infantry",
+        "cost": 200,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:dron",
+        "id": "dron",
+        "mode": "ra2",
+        "name": "Terror Drone",
+        "category": "infantry",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "ra2:dtruck",
+        "id": "dtruck",
+        "mode": "ra2",
+        "name": "Demolition Truck",
+        "category": "vehicle",
+        "cost": 1500,
+        "roles": []
+      },
+      {
+        "key": "ra2:e1",
+        "id": "e1",
+        "mode": "ra2",
+        "name": "G.I.",
+        "category": "infantry",
+        "cost": 200,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:e2",
+        "id": "e2",
+        "mode": "ra2",
+        "name": "Conscript",
+        "category": "infantry",
+        "cost": 100,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:engineer",
+        "id": "engineer",
+        "mode": "ra2",
+        "name": "Engineer",
+        "category": "infantry",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "ra2:flakt",
+        "id": "flakt",
+        "mode": "ra2",
+        "name": "Flak Trooper",
+        "category": "infantry",
+        "cost": 300,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:fv",
+        "id": "fv",
+        "mode": "ra2",
+        "name": "Infantry Fighting Vehicle",
+        "category": "vehicle",
+        "cost": 600,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:gaairc",
+        "id": "gaairc",
+        "mode": "ra2",
+        "name": "Airforce Command Headquarters",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gacsph",
+        "id": "gacsph",
+        "mode": "ra2",
+        "name": "Chronosphere",
+        "category": "structure",
+        "cost": 2500,
+        "roles": []
+      },
+      {
+        "key": "ra2:gadept",
+        "id": "gadept",
+        "mode": "ra2",
+        "name": "Service Depot",
+        "category": "structure",
+        "cost": 800,
+        "roles": []
+      },
+      {
+        "key": "ra2:gagap",
+        "id": "gagap",
+        "mode": "ra2",
+        "name": "Gap Generator",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gaorep",
+        "id": "gaorep",
+        "mode": "ra2",
+        "name": "Ore Purifier",
+        "category": "structure",
+        "cost": 2500,
+        "roles": []
+      },
+      {
+        "key": "ra2:gapile",
+        "id": "gapile",
+        "mode": "ra2",
+        "name": "Barracks",
+        "category": "structure",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "ra2:gapill",
+        "id": "gapill",
+        "mode": "ra2",
+        "name": "Pill Box",
+        "category": "defense",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "ra2:gapowr",
+        "id": "gapowr",
+        "mode": "ra2",
+        "name": "Power Plant",
+        "category": "structure",
+        "cost": 800,
+        "roles": []
+      },
+      {
+        "key": "ra2:garefn",
+        "id": "garefn",
+        "mode": "ra2",
+        "name": "Ore Refinery",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gaspysat",
+        "id": "gaspysat",
+        "mode": "ra2",
+        "name": "Spy Satellite Uplink",
+        "category": "structure",
+        "cost": 1500,
+        "roles": []
+      },
+      {
+        "key": "ra2:gatech",
+        "id": "gatech",
+        "mode": "ra2",
+        "name": "Battle Lab",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gawall",
+        "id": "gawall",
+        "mode": "ra2",
+        "name": "Allied Wall",
+        "category": "structure",
+        "cost": 100,
+        "roles": []
+      },
+      {
+        "key": "ra2:gaweap",
+        "id": "gaweap",
+        "mode": "ra2",
+        "name": "War Factory",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gaweat",
+        "id": "gaweat",
+        "mode": "ra2",
+        "name": "Weather Controller",
+        "category": "structure",
+        "cost": 5000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gayard",
+        "id": "gayard",
+        "mode": "ra2",
+        "name": "Naval Yard",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:gtgcan",
+        "id": "gtgcan",
+        "mode": "ra2",
+        "name": "Grand Cannon",
+        "category": "defense",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:harv",
+        "id": "harv",
+        "mode": "ra2",
+        "name": "War Miner",
+        "category": "vehicle",
+        "cost": 1400,
+        "roles": []
+      },
+      {
+        "key": "ra2:htk",
+        "id": "htk",
+        "mode": "ra2",
+        "name": "Flak Track",
+        "category": "vehicle",
+        "cost": 500,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:htnk",
+        "id": "htnk",
+        "mode": "ra2",
+        "name": "Rhino Heavy Tank",
+        "category": "vehicle",
+        "cost": 900,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:hyd",
+        "id": "hyd",
+        "mode": "ra2",
+        "name": "Sea Scorpion",
+        "category": "ship",
+        "cost": 900,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:ivan",
+        "id": "ivan",
+        "mode": "ra2",
+        "name": "Crazy Ivan",
+        "category": "infantry",
+        "cost": 600,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:jumpjet",
+        "id": "jumpjet",
+        "mode": "ra2",
+        "name": "Rocketeer",
+        "category": "aircraft",
+        "cost": 600,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:lcrf",
+        "id": "lcrf",
+        "mode": "ra2",
+        "name": "Amphibious Transport",
+        "category": "ship",
+        "cost": 900,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:mgtk",
+        "id": "mgtk",
+        "mode": "ra2",
+        "name": "Mirage Tank",
+        "category": "vehicle",
+        "cost": 1000,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:mtnk",
+        "id": "mtnk",
+        "mode": "ra2",
+        "name": "Grizzly Battle Tank",
+        "category": "vehicle",
+        "cost": 700,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:naclon",
+        "id": "naclon",
+        "mode": "ra2",
+        "name": "Cloning Vats",
+        "category": "structure",
+        "cost": 2500,
+        "roles": []
+      },
+      {
+        "key": "ra2:nadept",
+        "id": "nadept",
+        "mode": "ra2",
+        "name": "Service Depot",
+        "category": "structure",
+        "cost": 800,
+        "roles": []
+      },
+      {
+        "key": "ra2:naflak",
+        "id": "naflak",
+        "mode": "ra2",
+        "name": "Flak Cannon",
+        "category": "defense",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:nahand",
+        "id": "nahand",
+        "mode": "ra2",
+        "name": "Barracks",
+        "category": "structure",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "ra2:nairon",
+        "id": "nairon",
+        "mode": "ra2",
+        "name": "Iron Curtain Device",
+        "category": "structure",
+        "cost": 2500,
+        "roles": []
+      },
+      {
+        "key": "ra2:nalasr",
+        "id": "nalasr",
+        "mode": "ra2",
+        "name": "Sentry Gun",
+        "category": "defense",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "ra2:namisl",
+        "id": "namisl",
+        "mode": "ra2",
+        "name": "Nuclear Missile Silo",
+        "category": "structure",
+        "cost": 5000,
+        "roles": []
+      },
+      {
+        "key": "ra2:nanrct",
+        "id": "nanrct",
+        "mode": "ra2",
+        "name": "Nuclear Reactor",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:napowr",
+        "id": "napowr",
+        "mode": "ra2",
+        "name": "Tesla Reactor",
+        "category": "structure",
+        "cost": 600,
+        "roles": []
+      },
+      {
+        "key": "ra2:napsis",
+        "id": "napsis",
+        "mode": "ra2",
+        "name": "Psychic Sensor",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:naradr",
+        "id": "naradr",
+        "mode": "ra2",
+        "name": "Radar Tower",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:narefn",
+        "id": "narefn",
+        "mode": "ra2",
+        "name": "Ore Refinery",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:nasam",
+        "id": "nasam",
+        "mode": "ra2",
+        "name": "Patriot Missile System",
+        "category": "defense",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:natech",
+        "id": "natech",
+        "mode": "ra2",
+        "name": "Battle Lab",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:nawall",
+        "id": "nawall",
+        "mode": "ra2",
+        "name": "Soviet Wall",
+        "category": "structure",
+        "cost": 100,
+        "roles": []
+      },
+      {
+        "key": "ra2:naweap",
+        "id": "naweap",
+        "mode": "ra2",
+        "name": "War Factory",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "ra2:nayard",
+        "id": "nayard",
+        "mode": "ra2",
+        "name": "Naval Yard",
+        "category": "structure",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:orca",
+        "id": "orca",
+        "mode": "ra2",
+        "name": "Harrier",
+        "category": "aircraft",
+        "cost": 1200,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2ah64sa",
+        "id": "r2ah64sa",
+        "mode": "ra2",
+        "name": "AH-64E Apache",
+        "category": "aircraft",
+        "cost": 1700,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2aras",
+        "id": "r2aras",
+        "mode": "ra2",
+        "name": "Aras-8 Infantry Carrier",
+        "category": "vehicle",
+        "cost": 650,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:r2azar",
+        "id": "r2azar",
+        "mode": "ra2",
+        "name": "Azar Strike Aircraft",
+        "category": "aircraft",
+        "cost": 2050,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2basij",
+        "id": "r2basij",
+        "mode": "ra2",
+        "name": "Basij Rifleman",
+        "category": "infantry",
+        "cost": 90,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2bastion",
+        "id": "r2bastion",
+        "mode": "ra2",
+        "name": "Bastion Autocannon",
+        "category": "defense",
+        "cost": 650,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2boran",
+        "id": "r2boran",
+        "mode": "ra2",
+        "name": "Boran Anti-Armor Turret",
+        "category": "defense",
+        "cost": 1300,
+        "roles": []
+      },
+      {
+        "key": "ra2:r2bozkir",
+        "id": "r2bozkir",
+        "mode": "ra2",
+        "name": "Bozkir Battle Tank",
+        "category": "vehicle",
+        "cost": 900,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:r2bradley",
+        "id": "r2bradley",
+        "mode": "ra2",
+        "name": "Bradley IFV",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:r2caesar",
+        "id": "r2caesar",
+        "mode": "ra2",
+        "name": "CAESAR Howitzer",
+        "category": "vehicle",
+        "cost": 1250,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2cloud",
+        "id": "r2cloud",
+        "mode": "ra2",
+        "name": "Cloud Recon Drone",
+        "category": "aircraft",
+        "cost": 1000,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2cnnetwork",
+        "id": "r2cnnetwork",
+        "mode": "ra2",
+        "name": "Network Technician",
+        "category": "infantry",
+        "cost": 550,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2cnportable",
+        "id": "r2cnportable",
+        "mode": "ra2",
+        "name": "Portable Missile Team",
+        "category": "infantry",
+        "cost": 400,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2cnrifle",
+        "id": "r2cnrifle",
+        "mode": "ra2",
+        "name": "Combined-Arms Rifleman",
+        "category": "infantry",
+        "cost": 170,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2coast",
+        "id": "r2coast",
+        "mode": "ra2",
+        "name": "Coastal Missile Launcher",
+        "category": "vehicle",
+        "cost": 1500,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2crane",
+        "id": "r2crane",
+        "mode": "ra2",
+        "name": "Crane Airlift",
+        "category": "aircraft",
+        "cost": 1200,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:r2deniz",
+        "id": "r2deniz",
+        "mode": "ra2",
+        "name": "Deniz Kaplan Amphibious Carrier",
+        "category": "vehicle",
+        "cost": 950,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:r2dronecontrol",
+        "id": "r2dronecontrol",
+        "mode": "ra2",
+        "name": "Drone Coordinator",
+        "category": "infantry",
+        "cost": 550,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2ege",
+        "id": "r2ege",
+        "mode": "ra2",
+        "name": "Ege Missile Corvette",
+        "category": "ship",
+        "cost": 1200,
+        "roles": [
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "ra2:r2f15sa",
+        "id": "r2f15sa",
+        "mode": "ra2",
+        "name": "F-15SA Eagle",
+        "category": "aircraft",
+        "cost": 2200,
+        "roles": [
+          "interceptor",
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2fajr",
+        "id": "r2fajr",
+        "mode": "ra2",
+        "name": "Fajr Rocket Artillery",
+        "category": "vehicle",
+        "cost": 1300,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2falcon",
+        "id": "r2falcon",
+        "mode": "ra2",
+        "name": "Falcon One",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2ghadir",
+        "id": "r2ghadir",
+        "mode": "ra2",
+        "name": "Ghadir Submarine",
+        "category": "ship",
+        "cost": 1050,
+        "roles": [
+          "submarine"
+        ]
+      },
+      {
+        "key": "ra2:r2gokkalkan",
+        "id": "r2gokkalkan",
+        "mode": "ra2",
+        "name": "Gokkalkan Air Defense",
+        "category": "vehicle",
+        "cost": 950,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2greywolf",
+        "id": "r2greywolf",
+        "mode": "ra2",
+        "name": "Grey Wolf",
+        "category": "infantry",
+        "cost": 1800,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2haiwang",
+        "id": "r2haiwang",
+        "mode": "ra2",
+        "name": "Haiwang Drone Carrier",
+        "category": "ship",
+        "cost": 2400,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2haiying",
+        "id": "r2haiying",
+        "mode": "ra2",
+        "name": "Haiying Missile Corvette",
+        "category": "ship",
+        "cost": 950,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2hisar",
+        "id": "r2hisar",
+        "mode": "ra2",
+        "name": "Hisar Sentry Turret",
+        "category": "defense",
+        "cost": 550,
+        "roles": []
+      },
+      {
+        "key": "ra2:r2hodeidah",
+        "id": "r2hodeidah",
+        "mode": "ra2",
+        "name": "Hodeidah Missile Craft",
+        "category": "ship",
+        "cost": 1100,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2iraasite",
+        "id": "r2iraasite",
+        "mode": "ra2",
+        "name": "Raad AA Site",
+        "category": "defense",
+        "cost": 950,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2irbunker",
+        "id": "r2irbunker",
+        "mode": "ra2",
+        "name": "Gun Bunker",
+        "category": "defense",
+        "cost": 450,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2ircoast",
+        "id": "r2ircoast",
+        "mode": "ra2",
+        "name": "Denial Missile Battery",
+        "category": "defense",
+        "cost": 1250,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2jiaolong",
+        "id": "r2jiaolong",
+        "mode": "ra2",
+        "name": "Jiaolong Submarine",
+        "category": "ship",
+        "cost": 1300,
+        "roles": [
+          "submarine"
+        ]
+      },
+      {
+        "key": "ra2:r2jubail",
+        "id": "r2jubail",
+        "mode": "ra2",
+        "name": "Al Jubail Support Ship",
+        "category": "ship",
+        "cost": 1500,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2karrar",
+        "id": "r2karrar",
+        "mode": "ra2",
+        "name": "Karrar Battle Tank",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:r2kunlun",
+        "id": "r2kunlun",
+        "mode": "ra2",
+        "name": "Kunlun Landing Ship",
+        "category": "ship",
+        "cost": 1100,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:r2kuzgun",
+        "id": "r2kuzgun",
+        "mode": "ra2",
+        "name": "Kuzgun Recon Drone",
+        "category": "aircraft",
+        "cost": 1000,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2loiter",
+        "id": "r2loiter",
+        "mode": "ra2",
+        "name": "Loiter Munition",
+        "category": "aircraft",
+        "cost": 500,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2luyang",
+        "id": "r2luyang",
+        "mode": "ra2",
+        "name": "Luyang Destroyer",
+        "category": "ship",
+        "cost": 1250,
+        "roles": [
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "ra2:r2lynx",
+        "id": "r2lynx",
+        "mode": "ra2",
+        "name": "Lynx Command Scout",
+        "category": "vehicle",
+        "cost": 600,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2m1a2s",
+        "id": "r2m1a2s",
+        "mode": "ra2",
+        "name": "M1A2S Battle Tank",
+        "category": "vehicle",
+        "cost": 1100,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:r2mantis",
+        "id": "r2mantis",
+        "mode": "ra2",
+        "name": "Mantis Air Defense",
+        "category": "vehicle",
+        "cost": 950,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2marmara",
+        "id": "r2marmara",
+        "mode": "ra2",
+        "name": "Marmara Frigate",
+        "category": "ship",
+        "cost": 2000,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2mohajer",
+        "id": "r2mohajer",
+        "mode": "ra2",
+        "name": "Mohajer Recon Drone",
+        "category": "aircraft",
+        "cost": 950,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2mokha",
+        "id": "r2mokha",
+        "mode": "ra2",
+        "name": "Mokha Surveillance Craft",
+        "category": "ship",
+        "cost": 900,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2peykaap",
+        "id": "r2peykaap",
+        "mode": "ra2",
+        "name": "Peykaap Missile Craft",
+        "category": "ship",
+        "cost": 750,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2phl",
+        "id": "r2phl",
+        "mode": "ra2",
+        "name": "Longbow Rocket Artillery",
+        "category": "vehicle",
+        "cost": 1500,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2poyraz",
+        "id": "r2poyraz",
+        "mode": "ra2",
+        "name": "Poyraz Patrol Craft",
+        "category": "ship",
+        "cost": 650,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2qilin",
+        "id": "r2qilin",
+        "mode": "ra2",
+        "name": "Qilin Battle Tank",
+        "category": "vehicle",
+        "cost": 700,
+        "roles": [
+          "main-battle-tank"
+        ]
+      },
+      {
+        "key": "ra2:r2raad",
+        "id": "r2raad",
+        "mode": "ra2",
+        "name": "Raad Air Defense",
+        "category": "vehicle",
+        "cost": 1000,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2redspear",
+        "id": "r2redspear",
+        "mode": "ra2",
+        "name": "Red Spear",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2riyadh",
+        "id": "r2riyadh",
+        "mode": "ra2",
+        "name": "Al Riyadh Frigate",
+        "category": "ship",
+        "cost": 1850,
+        "roles": [
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "ra2:r2saat",
+        "id": "r2saat",
+        "mode": "ra2",
+        "name": "ATGM Team",
+        "category": "infantry",
+        "cost": 500,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2sadiq",
+        "id": "r2sadiq",
+        "mode": "ra2",
+        "name": "Al Sadiq Fast Interceptor",
+        "category": "ship",
+        "cost": 650,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2sads",
+        "id": "r2sads",
+        "mode": "ra2",
+        "name": "Mobile Air Defense System",
+        "category": "vehicle",
+        "cost": 1050,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2saguard",
+        "id": "r2saguard",
+        "mode": "ra2",
+        "name": "Guard Tower",
+        "category": "defense",
+        "cost": 600,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2sahaab",
+        "id": "r2sahaab",
+        "mode": "ra2",
+        "name": "Sahaab USV",
+        "category": "ship",
+        "cost": 300,
+        "roles": [
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "ra2:r2sahin",
+        "id": "r2sahin",
+        "mode": "ra2",
+        "name": "Sahin-X Interceptor",
+        "category": "aircraft",
+        "cost": 1800,
+        "roles": [
+          "interceptor"
+        ]
+      },
+      {
+        "key": "ra2:r2sajtac",
+        "id": "r2sajtac",
+        "mode": "ra2",
+        "name": "Saudi JTAC",
+        "category": "infantry",
+        "cost": 600,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2samad",
+        "id": "r2samad",
+        "mode": "ra2",
+        "name": "Samad Drone",
+        "category": "aircraft",
+        "cost": 700,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2sancak",
+        "id": "r2sancak",
+        "mode": "ra2",
+        "name": "Sancak Support Vehicle",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2sang",
+        "id": "r2sang",
+        "mode": "ra2",
+        "name": "Saudi National Guard",
+        "category": "infantry",
+        "cost": 220,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2sapatriot",
+        "id": "r2sapatriot",
+        "mode": "ra2",
+        "name": "Patriot Battery",
+        "category": "defense",
+        "cost": 1200,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2satow",
+        "id": "r2satow",
+        "mode": "ra2",
+        "name": "TOW Emplacement",
+        "category": "defense",
+        "cost": 1100,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2shadowone",
+        "id": "r2shadowone",
+        "mode": "ra2",
+        "name": "Shadow One",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2siper",
+        "id": "r2siper",
+        "mode": "ra2",
+        "name": "Siper Air-Defense Battery",
+        "category": "defense",
+        "cost": 1100,
+        "roles": []
+      },
+      {
+        "key": "ra2:r2skyshield",
+        "id": "r2skyshield",
+        "mode": "ra2",
+        "name": "Skyshield Battery",
+        "category": "defense",
+        "cost": 1000,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2skyspear",
+        "id": "r2skyspear",
+        "mode": "ra2",
+        "name": "Skyspear Interceptor",
+        "category": "aircraft",
+        "cost": 1700,
+        "roles": [
+          "interceptor"
+        ]
+      },
+      {
+        "key": "ra2:r2spectrum",
+        "id": "r2spectrum",
+        "mode": "ra2",
+        "name": "Spectrum Relay",
+        "category": "structure",
+        "cost": 1200,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2technical",
+        "id": "r2technical",
+        "mode": "ra2",
+        "name": "Armed Technical",
+        "category": "vehicle",
+        "cost": 400,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2toophan",
+        "id": "r2toophan",
+        "mode": "ra2",
+        "name": "Toophan AT Team",
+        "category": "infantry",
+        "cost": 450,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2toufan",
+        "id": "r2toufan",
+        "mode": "ra2",
+        "name": "Toufan Gunship",
+        "category": "aircraft",
+        "cost": 1450,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2trat",
+        "id": "r2trat",
+        "mode": "ra2",
+        "name": "Portable AT Specialist",
+        "category": "infantry",
+        "cost": 400,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2trdroneop",
+        "id": "r2trdroneop",
+        "mode": "ra2",
+        "name": "Forward Drone Operator",
+        "category": "infantry",
+        "cost": 550,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2trrifle",
+        "id": "r2trrifle",
+        "mode": "ra2",
+        "name": "Mechanized Rifleman",
+        "category": "infantry",
+        "cost": 155,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2turna",
+        "id": "r2turna",
+        "mode": "ra2",
+        "name": "Turna-AH Gunship",
+        "category": "aircraft",
+        "cost": 1600,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "ra2:r2wadighost",
+        "id": "r2wadighost",
+        "mode": "ra2",
+        "name": "Wadi Ghost",
+        "category": "infantry",
+        "cost": 1650,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2ybunker",
+        "id": "r2ybunker",
+        "mode": "ra2",
+        "name": "Mountain Bunker",
+        "category": "defense",
+        "cost": 450,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2ycoastal",
+        "id": "r2ycoastal",
+        "mode": "ra2",
+        "name": "Coastal Missile Battery",
+        "category": "defense",
+        "cost": 1200,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2yildirim",
+        "id": "r2yildirim",
+        "mode": "ra2",
+        "name": "Yildirim Howitzer",
+        "category": "vehicle",
+        "cost": 1200,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2ymlr",
+        "id": "r2ymlr",
+        "mode": "ra2",
+        "name": "Mobile Missile Launcher",
+        "category": "vehicle",
+        "cost": 900,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:r2ymr",
+        "id": "r2ymr",
+        "mode": "ra2",
+        "name": "Mountain Rifleman",
+        "category": "infantry",
+        "cost": 135,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:r2yrpg",
+        "id": "r2yrpg",
+        "mode": "ra2",
+        "name": "RPG Hunter",
+        "category": "infantry",
+        "cost": 300,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2yspot",
+        "id": "r2yspot",
+        "mode": "ra2",
+        "name": "Drone Spotter",
+        "category": "infantry",
+        "cost": 525,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:r2ytechrr",
+        "id": "r2ytechrr",
+        "mode": "ra2",
+        "name": "Recoilless Technical",
+        "category": "vehicle",
+        "cost": 550,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:r2yzu",
+        "id": "r2yzu",
+        "mode": "ra2",
+        "name": "ZU-23 Technical",
+        "category": "vehicle",
+        "cost": 600,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2yzunest",
+        "id": "r2yzunest",
+        "mode": "ra2",
+        "name": "ZU-23 Nest",
+        "category": "defense",
+        "cost": 800,
+        "roles": [
+          "anti-air"
+        ]
+      },
+      {
+        "key": "ra2:r2zbd",
+        "id": "r2zbd",
+        "mode": "ra2",
+        "name": "Sea Dragon IFV",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:sapc",
+        "id": "sapc",
+        "mode": "ra2",
+        "name": "Amphibious Transport",
+        "category": "ship",
+        "cost": 900,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:shad",
+        "id": "shad",
+        "mode": "ra2",
+        "name": "Night Hawk",
+        "category": "aircraft",
+        "cost": 1000,
+        "roles": [
+          "transport"
+        ]
+      },
+      {
+        "key": "ra2:shk",
+        "id": "shk",
+        "mode": "ra2",
+        "name": "Tesla Trooper",
+        "category": "infantry",
+        "cost": 500,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:smcv",
+        "id": "smcv",
+        "mode": "ra2",
+        "name": "Mobile Construction Vehicle",
+        "category": "vehicle",
+        "cost": 3000,
+        "roles": []
+      },
+      {
+        "key": "ra2:snipe",
+        "id": "snipe",
+        "mode": "ra2",
+        "name": "Sniper",
+        "category": "infantry",
+        "cost": 600,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:spy",
+        "id": "spy",
+        "mode": "ra2",
+        "name": "Spy",
+        "category": "infantry",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "ra2:sqd",
+        "id": "sqd",
+        "mode": "ra2",
+        "name": "Giant Squid",
+        "category": "ship",
+        "cost": 1000,
+        "roles": [
+          "submarine"
+        ]
+      },
+      {
+        "key": "ra2:sref",
+        "id": "sref",
+        "mode": "ra2",
+        "name": "Prism Tank",
+        "category": "vehicle",
+        "cost": 1200,
+        "roles": [
+          "artillery"
+        ]
+      },
+      {
+        "key": "ra2:sub",
+        "id": "sub",
+        "mode": "ra2",
+        "name": "Typhoon Attack Sub",
+        "category": "ship",
+        "cost": 1000,
+        "roles": [
+          "submarine"
+        ]
+      },
+      {
+        "key": "ra2:tany",
+        "id": "tany",
+        "mode": "ra2",
+        "name": "Tanya",
+        "category": "infantry",
+        "cost": 1000,
+        "roles": [
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "ra2:terror",
+        "id": "terror",
+        "mode": "ra2",
+        "name": "Terrorist",
+        "category": "infantry",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "ra2:tesla",
+        "id": "tesla",
+        "mode": "ra2",
+        "name": "Tesla Coil",
+        "category": "defense",
+        "cost": 1500,
+        "roles": []
+      },
+      {
+        "key": "ra2:tnkd",
+        "id": "tnkd",
+        "mode": "ra2",
+        "name": "Tank Destroyer",
+        "category": "vehicle",
+        "cost": 900,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:ttnk",
+        "id": "ttnk",
+        "mode": "ra2",
+        "name": "Tesla Tank",
+        "category": "vehicle",
+        "cost": 1200,
+        "roles": [
+          "anti-armor"
+        ]
+      },
+      {
+        "key": "ra2:yuri",
+        "id": "yuri",
+        "mode": "ra2",
+        "name": "Yuri",
+        "category": "infantry",
+        "cost": 1200,
+        "roles": [
+          "support"
+        ]
+      },
+      {
+        "key": "ra2:zep",
+        "id": "zep",
+        "mode": "ra2",
+        "name": "Kirov Airship",
+        "category": "aircraft",
+        "cost": 2000,
+        "roles": [
+          "strike-aircraft"
+        ]
+      },
+      {
+        "key": "classic:1tnk",
+        "id": "1tnk",
+        "mode": "ra",
+        "name": "Light Tank",
+        "category": "vehicle",
+        "cost": 700,
+        "roles": [
+          "scout",
+          "reconnaissance",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:2tnk",
+        "id": "2tnk",
+        "mode": "ra",
+        "name": "Medium Tank",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:3tnk",
+        "id": "3tnk",
+        "mode": "ra",
+        "name": "Heavy Tank",
+        "category": "vehicle",
+        "cost": 1150,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:4tnk",
+        "id": "4tnk",
+        "mode": "ra",
+        "name": "Mammoth Tank",
+        "category": "vehicle",
+        "cost": 2000,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:afld",
+        "id": "afld",
+        "mode": "ra",
+        "name": "Airfield",
+        "category": "structure",
+        "cost": 500,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:afld.ukraine",
+        "id": "afld.ukraine",
+        "mode": "ra",
+        "name": "Airfield",
+        "category": "structure",
+        "cost": 500,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:agun",
+        "id": "agun",
+        "mode": "ra",
+        "name": "AA Gun",
+        "category": "defense",
+        "cost": 800,
+        "roles": [
+          "defense",
+          "emplacement",
+          "base-protection"
+        ]
+      },
+      {
+        "key": "classic:ah64sa",
+        "id": "ah64sa",
+        "mode": "ra",
+        "name": "AH-64E Apache",
+        "category": "aircraft",
+        "cost": 1850,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:apc",
+        "id": "apc",
+        "mode": "ra",
+        "name": "Armored Personnel Carrier",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "transit-entrance",
+          "tunnel",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:apwr",
+        "id": "apwr",
+        "mode": "ra",
+        "name": "Advanced Power Plant",
+        "category": "structure",
+        "cost": 500,
+        "roles": [
+          "power",
+          "infrastructure"
+        ]
+      },
+      {
+        "key": "classic:aras8",
+        "id": "aras8",
+        "mode": "ra",
+        "name": "Aras-8 Wheeled IFV",
+        "category": "vehicle",
+        "cost": 900,
+        "roles": [
+          "artillery",
+          "indirect-fire",
+          "siege"
+        ]
+      },
+      {
+        "key": "classic:arty",
+        "id": "arty",
+        "mode": "ra",
+        "name": "Artillery",
+        "category": "vehicle",
+        "cost": 850,
+        "roles": [
+          "artillery",
+          "indirect-fire",
+          "siege"
+        ]
+      },
+      {
+        "key": "classic:atef",
+        "id": "atef",
+        "mode": "ra",
+        "name": "Fake Allied Tech Center",
+        "category": "structure",
+        "cost": 150,
+        "roles": []
+      },
+      {
+        "key": "classic:atek",
+        "id": "atek",
+        "mode": "ra",
+        "name": "Allied Tech Center",
+        "category": "structure",
+        "cost": 1500,
+        "roles": [
+          "technology",
+          "radar",
+          "upgrade"
+        ]
+      },
+      {
+        "key": "classic:barr",
+        "id": "barr",
+        "mode": "ra",
+        "name": "Soviet Barracks",
+        "category": "structure",
+        "cost": 500,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:bozkir",
+        "id": "bozkir",
+        "mode": "ra",
+        "name": "Bozkir Main Battle Tank",
+        "category": "vehicle",
+        "cost": 1400,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:brik",
+        "id": "brik",
+        "mode": "ra",
+        "name": "Concrete Wall",
+        "category": "structure",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "classic:ca",
+        "id": "ca",
+        "mode": "ra",
+        "name": "Cruiser",
+        "category": "ship",
+        "cost": 2400,
+        "roles": []
+      },
+      {
+        "key": "classic:cnbastion",
+        "id": "cnbastion",
+        "mode": "ra",
+        "name": "Bastion Ground-Defense Turret",
+        "category": "defense",
+        "cost": 750,
+        "roles": []
+      },
+      {
+        "key": "classic:cncloud",
+        "id": "cncloud",
+        "mode": "ra",
+        "name": "Cloud Shadow UAV",
+        "category": "aircraft",
+        "cost": 900,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:cncrane",
+        "id": "cncrane",
+        "mode": "ra",
+        "name": "Crane Assault Helicopter",
+        "category": "aircraft",
+        "cost": 1650,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:cnhaiwang",
+        "id": "cnhaiwang",
+        "mode": "ra",
+        "name": "Haiwang Drone Assault Ship",
+        "category": "ship",
+        "cost": 2800,
+        "roles": [
+          "carrier",
+          "drone-mothership",
+          "wing-controller"
+        ]
+      },
+      {
+        "key": "classic:cnhaiying",
+        "id": "cnhaiying",
+        "mode": "ra",
+        "name": "Haiying Missile Patrol Craft",
+        "category": "ship",
+        "cost": 650,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:cnjiaolong",
+        "id": "cnjiaolong",
+        "mode": "ra",
+        "name": "Jiaolong Attack Submarine",
+        "category": "ship",
+        "cost": 1150,
+        "roles": [
+          "submarine",
+          "naval-ambush"
+        ]
+      },
+      {
+        "key": "classic:cnkunlun",
+        "id": "cnkunlun",
+        "mode": "ra",
+        "name": "Kunlun Amphibious Dock Ship",
+        "category": "ship",
+        "cost": 1200,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:cnluyang",
+        "id": "cnluyang",
+        "mode": "ra",
+        "name": "Luyang Network Frigate",
+        "category": "ship",
+        "cost": 1500,
+        "roles": [
+          "destroyer",
+          "fleet-escort",
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "classic:cnlynx",
+        "id": "cnlynx",
+        "mode": "ra",
+        "name": "Lynx Unmanned Ground Vehicle",
+        "category": "vehicle",
+        "cost": 650,
+        "roles": [
+          "scout",
+          "reconnaissance",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:cnmantis",
+        "id": "cnmantis",
+        "mode": "ra",
+        "name": "Mantis Mobile Air Defense",
+        "category": "vehicle",
+        "cost": 1000,
+        "roles": [
+          "anti-air",
+          "escort",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:cnnetwork",
+        "id": "cnnetwork",
+        "mode": "ra",
+        "name": "Battlefield Network Specialist",
+        "category": "infantry",
+        "cost": 550,
+        "roles": [
+          "engineer",
+          "capture",
+          "repair"
+        ]
+      },
+      {
+        "key": "classic:cnphl",
+        "id": "cnphl",
+        "mode": "ra",
+        "name": "Longbow Modular Rocket System",
+        "category": "vehicle",
+        "cost": 1450,
+        "roles": [
+          "artillery",
+          "indirect-fire",
+          "siege"
+        ]
+      },
+      {
+        "key": "classic:cnportable",
+        "id": "cnportable",
+        "mode": "ra",
+        "name": "Portable Missile Team",
+        "category": "infantry",
+        "cost": 360,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:cnqilin",
+        "id": "cnqilin",
+        "mode": "ra",
+        "name": "Qilin Main Battle Tank",
+        "category": "vehicle",
+        "cost": 1200,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:cnrifle",
+        "id": "cnrifle",
+        "mode": "ra",
+        "name": "PLA Combined-Arms Rifleman",
+        "category": "infantry",
+        "cost": 130,
+        "roles": [
+          "rifle",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:cnskyshield",
+        "id": "cnskyshield",
+        "mode": "ra",
+        "name": "Sky Shield Air-Defense Battery",
+        "category": "defense",
+        "cost": 900,
+        "roles": []
+      },
+      {
+        "key": "classic:cnskyspear",
+        "id": "cnskyspear",
+        "mode": "ra",
+        "name": "Sky Spear Command Fighter",
+        "category": "aircraft",
+        "cost": 2250,
+        "roles": [
+          "interceptor",
+          "air-superiority"
+        ]
+      },
+      {
+        "key": "classic:cnspectrum",
+        "id": "cnspectrum",
+        "mode": "ra",
+        "name": "Spectrum Control Node",
+        "category": "structure",
+        "cost": 1100,
+        "roles": []
+      },
+      {
+        "key": "classic:cnzbd",
+        "id": "cnzbd",
+        "mode": "ra",
+        "name": "Sea Dragon Amphibious IFV",
+        "category": "vehicle",
+        "cost": 1050,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:ctnk",
+        "id": "ctnk",
+        "mode": "ra",
+        "name": "Chrono Tank",
+        "category": "vehicle",
+        "cost": 1350,
+        "roles": []
+      },
+      {
+        "key": "classic:dd",
+        "id": "dd",
+        "mode": "ra",
+        "name": "Destroyer",
+        "category": "ship",
+        "cost": 1000,
+        "roles": [
+          "destroyer",
+          "fleet-escort",
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "classic:denizkaplan",
+        "id": "denizkaplan",
+        "mode": "ra",
+        "name": "Deniz Kaplan Amphibious IFV",
+        "category": "vehicle",
+        "cost": 1050,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:dog",
+        "id": "dog",
+        "mode": "ra",
+        "name": "Attack Dog",
+        "category": "infantry",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "classic:dome",
+        "id": "dome",
+        "mode": "ra",
+        "name": "Radar Dome",
+        "category": "structure",
+        "cost": 1500,
+        "roles": [
+          "technology",
+          "radar",
+          "upgrade"
+        ]
+      },
+      {
+        "key": "classic:domf",
+        "id": "domf",
+        "mode": "ra",
+        "name": "Fake Radar Dome",
+        "category": "structure",
+        "cost": 180,
+        "roles": []
+      },
+      {
+        "key": "classic:dtrk",
+        "id": "dtrk",
+        "mode": "ra",
+        "name": "Demolition Truck",
+        "category": "vehicle",
+        "cost": 2500,
+        "roles": []
+      },
+      {
+        "key": "classic:e1",
+        "id": "e1",
+        "mode": "ra",
+        "name": "Rifle Infantry",
+        "category": "infantry",
+        "cost": 100,
+        "roles": [
+          "rifle",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:e2",
+        "id": "e2",
+        "mode": "ra",
+        "name": "Grenadier",
+        "category": "infantry",
+        "cost": 150,
+        "roles": []
+      },
+      {
+        "key": "classic:e3",
+        "id": "e3",
+        "mode": "ra",
+        "name": "Rocket Soldier",
+        "category": "infantry",
+        "cost": 300,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:e4",
+        "id": "e4",
+        "mode": "ra",
+        "name": "Flame Infantry",
+        "category": "infantry",
+        "cost": 300,
+        "roles": []
+      },
+      {
+        "key": "classic:e6",
+        "id": "e6",
+        "mode": "ra",
+        "name": "Engineer",
+        "category": "infantry",
+        "cost": 400,
+        "roles": [
+          "engineer",
+          "capture",
+          "repair"
+        ]
+      },
+      {
+        "key": "classic:e7",
+        "id": "e7",
+        "mode": "ra",
+        "name": "Tanya",
+        "category": "infantry",
+        "cost": 1800,
+        "roles": []
+      },
+      {
+        "key": "classic:ege",
+        "id": "ege",
+        "mode": "ra",
+        "name": "Ege Corvette",
+        "category": "ship",
+        "cost": 1050,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:f15sa",
+        "id": "f15sa",
+        "mode": "ra",
+        "name": "F-15SA Eagle",
+        "category": "aircraft",
+        "cost": 2200,
+        "roles": [
+          "interceptor",
+          "air-superiority"
+        ]
+      },
+      {
+        "key": "classic:facf",
+        "id": "facf",
+        "mode": "ra",
+        "name": "Fake Construction Yard",
+        "category": "structure",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "classic:falcon1",
+        "id": "falcon1",
+        "mode": "ra",
+        "name": "Falcon One",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:fapw",
+        "id": "fapw",
+        "mode": "ra",
+        "name": "Fake Advanced Power Plant",
+        "category": "structure",
+        "cost": 50,
+        "roles": []
+      },
+      {
+        "key": "classic:fenc",
+        "id": "fenc",
+        "mode": "ra",
+        "name": "Wire Fence",
+        "category": "structure",
+        "cost": 30,
+        "roles": []
+      },
+      {
+        "key": "classic:fix",
+        "id": "fix",
+        "mode": "ra",
+        "name": "Service Depot",
+        "category": "structure",
+        "cost": 1200,
+        "roles": []
+      },
+      {
+        "key": "classic:fixf",
+        "id": "fixf",
+        "mode": "ra",
+        "name": "Fake Service Depot",
+        "category": "structure",
+        "cost": 120,
+        "roles": []
+      },
+      {
+        "key": "classic:fpwr",
+        "id": "fpwr",
+        "mode": "ra",
+        "name": "Fake Power Plant",
+        "category": "structure",
+        "cost": 30,
+        "roles": []
+      },
+      {
+        "key": "classic:ftrk",
+        "id": "ftrk",
+        "mode": "ra",
+        "name": "Mobile Flak",
+        "category": "vehicle",
+        "cost": 600,
+        "roles": [
+          "anti-air",
+          "escort",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:ftur",
+        "id": "ftur",
+        "mode": "ra",
+        "name": "Flame Tower",
+        "category": "defense",
+        "cost": 600,
+        "roles": [
+          "defense",
+          "emplacement",
+          "base-protection"
+        ]
+      },
+      {
+        "key": "classic:gap",
+        "id": "gap",
+        "mode": "ra",
+        "name": "Gap Generator",
+        "category": "structure",
+        "cost": 800,
+        "roles": []
+      },
+      {
+        "key": "classic:gokkalkan",
+        "id": "gokkalkan",
+        "mode": "ra",
+        "name": "Gokkalkan Air-Defense Vehicle",
+        "category": "vehicle",
+        "cost": 1250,
+        "roles": [
+          "anti-air",
+          "escort",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:greywolf",
+        "id": "greywolf",
+        "mode": "ra",
+        "name": "Grey Wolf",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:gun",
+        "id": "gun",
+        "mode": "ra",
+        "name": "Turret",
+        "category": "defense",
+        "cost": 800,
+        "roles": [
+          "defense",
+          "emplacement",
+          "base-protection"
+        ]
+      },
+      {
+        "key": "classic:harv",
+        "id": "harv",
+        "mode": "ra",
+        "name": "Ore Truck",
+        "category": "vehicle",
+        "cost": 1100,
+        "roles": [
+          "transit-entrance",
+          "tunnel",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:hbox",
+        "id": "hbox",
+        "mode": "ra",
+        "name": "Camo Pillbox",
+        "category": "defense",
+        "cost": 750,
+        "roles": []
+      },
+      {
+        "key": "classic:heli",
+        "id": "heli",
+        "mode": "ra",
+        "name": "Longbow",
+        "category": "aircraft",
+        "cost": 2000,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:hpad",
+        "id": "hpad",
+        "mode": "ra",
+        "name": "Helipad",
+        "category": "structure",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "classic:iratgm",
+        "id": "iratgm",
+        "mode": "ra",
+        "name": "ATGM Team",
+        "category": "infantry",
+        "cost": 475,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:irazar",
+        "id": "irazar",
+        "mode": "ra",
+        "name": "Azar Interceptor",
+        "category": "aircraft",
+        "cost": 2050,
+        "roles": [
+          "interceptor",
+          "air-superiority"
+        ]
+      },
+      {
+        "key": "classic:irbas",
+        "id": "irbas",
+        "mode": "ra",
+        "name": "Basij Rifle Section",
+        "category": "infantry",
+        "cost": 70,
+        "roles": [
+          "rifle",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:ircoast",
+        "id": "ircoast",
+        "mode": "ra",
+        "name": "Coastal Missile Battery",
+        "category": "vehicle",
+        "cost": 1250,
+        "roles": [
+          "scout",
+          "reconnaissance",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:irdc",
+        "id": "irdc",
+        "mode": "ra",
+        "name": "Drone Controller",
+        "category": "infantry",
+        "cost": 550,
+        "roles": [
+          "engineer",
+          "capture",
+          "repair"
+        ]
+      },
+      {
+        "key": "classic:irfajr",
+        "id": "irfajr",
+        "mode": "ra",
+        "name": "Fajr Rocket Carrier",
+        "category": "vehicle",
+        "cost": 1050,
+        "roles": [
+          "artillery",
+          "indirect-fire",
+          "siege"
+        ]
+      },
+      {
+        "key": "classic:irghadir",
+        "id": "irghadir",
+        "mode": "ra",
+        "name": "Ghadir Midget Submarine",
+        "category": "ship",
+        "cost": 1050,
+        "roles": [
+          "submarine",
+          "naval-ambush"
+        ]
+      },
+      {
+        "key": "classic:irhpad",
+        "id": "irhpad",
+        "mode": "ra",
+        "name": "Forward Aviation Pad",
+        "category": "structure",
+        "cost": 650,
+        "roles": []
+      },
+      {
+        "key": "classic:irkarr",
+        "id": "irkarr",
+        "mode": "ra",
+        "name": "Karrar Main Battle Tank",
+        "category": "vehicle",
+        "cost": 1350,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:irloiter",
+        "id": "irloiter",
+        "mode": "ra",
+        "name": "Simorgh Loitering Munition",
+        "category": "aircraft",
+        "cost": 600,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:irmohajer",
+        "id": "irmohajer",
+        "mode": "ra",
+        "name": "Mohajer Recon Drone",
+        "category": "aircraft",
+        "cost": 850,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:iron",
+        "id": "iron",
+        "mode": "ra",
+        "name": "Iron Curtain",
+        "category": "structure",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "classic:irpey",
+        "id": "irpey",
+        "mode": "ra",
+        "name": "Peykaap Missile Boat",
+        "category": "ship",
+        "cost": 750,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:irraad",
+        "id": "irraad",
+        "mode": "ra",
+        "name": "Raad Mobile Air Defense",
+        "category": "vehicle",
+        "cost": 950,
+        "roles": [
+          "anti-air",
+          "escort",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:irtoufan",
+        "id": "irtoufan",
+        "mode": "ra",
+        "name": "Toufan Gunship",
+        "category": "aircraft",
+        "cost": 1700,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:jeep",
+        "id": "jeep",
+        "mode": "ra",
+        "name": "Ranger",
+        "category": "vehicle",
+        "cost": 500,
+        "roles": [
+          "scout",
+          "reconnaissance",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:kenn",
+        "id": "kenn",
+        "mode": "ra",
+        "name": "Kennel",
+        "category": "structure",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "classic:kuzgunm",
+        "id": "kuzgunm",
+        "mode": "ra",
+        "name": "Kuzgun-M Tactical Drone",
+        "category": "aircraft",
+        "cost": 950,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:lst",
+        "id": "lst",
+        "mode": "ra",
+        "name": "Transport",
+        "category": "ship",
+        "cost": 500,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:m1a2s",
+        "id": "m1a2s",
+        "mode": "ra",
+        "name": "M1A2S",
+        "category": "vehicle",
+        "cost": 1250,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:marmara",
+        "id": "marmara",
+        "mode": "ra",
+        "name": "Marmara Frigate",
+        "category": "ship",
+        "cost": 2200,
+        "roles": [
+          "destroyer",
+          "fleet-escort",
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "classic:mcv",
+        "id": "mcv",
+        "mode": "ra",
+        "name": "Mobile Construction Vehicle",
+        "category": "vehicle",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "classic:mech",
+        "id": "mech",
+        "mode": "ra",
+        "name": "Mechanic",
+        "category": "infantry",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "classic:medi",
+        "id": "medi",
+        "mode": "ra",
+        "name": "Medic",
+        "category": "infantry",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "classic:mgg",
+        "id": "mgg",
+        "mode": "ra",
+        "name": "Mobile Gap Generator",
+        "category": "vehicle",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "classic:mh60",
+        "id": "mh60",
+        "mode": "ra",
+        "name": "Black Hawk",
+        "category": "aircraft",
+        "cost": 1500,
+        "roles": []
+      },
+      {
+        "key": "classic:mig",
+        "id": "mig",
+        "mode": "ra",
+        "name": "MiG Attack Plane",
+        "category": "aircraft",
+        "cost": 2000,
+        "roles": [
+          "logistics-consumer"
+        ]
+      },
+      {
+        "key": "classic:mnly",
+        "id": "mnly",
+        "mode": "ra",
+        "name": "Minelayer",
+        "category": "vehicle",
+        "cost": 800,
+        "roles": []
+      },
+      {
+        "key": "classic:mrj",
+        "id": "mrj",
+        "mode": "ra",
+        "name": "Mobile Radar Jammer",
+        "category": "vehicle",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "classic:mslf",
+        "id": "mslf",
+        "mode": "ra",
+        "name": "Fake Missile Silo",
+        "category": "structure",
+        "cost": 250,
+        "roles": []
+      },
+      {
+        "key": "classic:mslo",
+        "id": "mslo",
+        "mode": "ra",
+        "name": "Missile Silo",
+        "category": "structure",
+        "cost": 2500,
+        "roles": []
+      },
+      {
+        "key": "classic:msub",
+        "id": "msub",
+        "mode": "ra",
+        "name": "Missile Submarine",
+        "category": "ship",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "classic:pbox",
+        "id": "pbox",
+        "mode": "ra",
+        "name": "Pillbox",
+        "category": "defense",
+        "cost": 600,
+        "roles": []
+      },
+      {
+        "key": "classic:pdof",
+        "id": "pdof",
+        "mode": "ra",
+        "name": "Fake Chronosphere",
+        "category": "structure",
+        "cost": 150,
+        "roles": []
+      },
+      {
+        "key": "classic:pdox",
+        "id": "pdox",
+        "mode": "ra",
+        "name": "Chronosphere",
+        "category": "structure",
+        "cost": 1500,
+        "roles": []
+      },
+      {
+        "key": "classic:powr",
+        "id": "powr",
+        "mode": "ra",
+        "name": "Power Plant",
+        "category": "structure",
+        "cost": 300,
+        "roles": [
+          "power",
+          "infrastructure"
+        ]
+      },
+      {
+        "key": "classic:poyraz",
+        "id": "poyraz",
+        "mode": "ra",
+        "name": "Poyraz Unmanned Surface Vessel",
+        "category": "ship",
+        "cost": 500,
+        "roles": [
+          "submarine",
+          "naval-ambush"
+        ]
+      },
+      {
+        "key": "classic:proc",
+        "id": "proc",
+        "mode": "ra",
+        "name": "Ore Refinery",
+        "category": "structure",
+        "cost": 1400,
+        "roles": []
+      },
+      {
+        "key": "classic:pt",
+        "id": "pt",
+        "mode": "ra",
+        "name": "Gunboat",
+        "category": "ship",
+        "cost": 500,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:qtnk",
+        "id": "qtnk",
+        "mode": "ra",
+        "name": "MAD Tank",
+        "category": "vehicle",
+        "cost": 2000,
+        "roles": []
+      },
+      {
+        "key": "classic:redspear",
+        "id": "redspear",
+        "mode": "ra",
+        "name": "Red Spear",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:sa_frgt",
+        "id": "sa_frgt",
+        "mode": "ra",
+        "name": "Al Riyadh Multi-role Frigate",
+        "category": "ship",
+        "cost": 1850,
+        "roles": [
+          "destroyer",
+          "fleet-escort",
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "classic:sa_fss",
+        "id": "sa_fss",
+        "mode": "ra",
+        "name": "Al Jubail Fleet Support Ship",
+        "category": "ship",
+        "cost": 1500,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:sa_intc",
+        "id": "sa_intc",
+        "mode": "ra",
+        "name": "Al Sadiq Fast Interceptor",
+        "category": "ship",
+        "cost": 650,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:saat",
+        "id": "saat",
+        "mode": "ra",
+        "name": "Saudi ATGM Team",
+        "category": "infantry",
+        "cost": 575,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:sads",
+        "id": "sads",
+        "mode": "ra",
+        "name": "Mobile Air Defense System",
+        "category": "vehicle",
+        "cost": 1050,
+        "roles": [
+          "anti-air",
+          "escort",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:safld",
+        "id": "safld",
+        "mode": "ra",
+        "name": "Airfield",
+        "category": "structure",
+        "cost": 500,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:sahinx",
+        "id": "sahinx",
+        "mode": "ra",
+        "name": "Sahin-X Multirole Fighter",
+        "category": "aircraft",
+        "cost": 2300,
+        "roles": [
+          "logistics-consumer"
+        ]
+      },
+      {
+        "key": "classic:sajtac",
+        "id": "sajtac",
+        "mode": "ra",
+        "name": "Saudi JTAC",
+        "category": "infantry",
+        "cost": 650,
+        "roles": [
+          "engineer",
+          "capture",
+          "repair"
+        ]
+      },
+      {
+        "key": "classic:sam",
+        "id": "sam",
+        "mode": "ra",
+        "name": "SAM Site",
+        "category": "defense",
+        "cost": 700,
+        "roles": [
+          "defense",
+          "emplacement",
+          "base-protection"
+        ]
+      },
+      {
+        "key": "classic:samad",
+        "id": "samad",
+        "mode": "ra",
+        "name": "Samad Drone",
+        "category": "aircraft",
+        "cost": 700,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:sancak",
+        "id": "sancak",
+        "mode": "ra",
+        "name": "Sancak Electronic-Warfare Carrier",
+        "category": "vehicle",
+        "cost": 1350,
+        "roles": [
+          "scout",
+          "reconnaissance",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:sang",
+        "id": "sang",
+        "mode": "ra",
+        "name": "Saudi National Guard",
+        "category": "infantry",
+        "cost": 180,
+        "roles": [
+          "rifle",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:sbag",
+        "id": "sbag",
+        "mode": "ra",
+        "name": "Sandbag Wall",
+        "category": "structure",
+        "cost": 30,
+        "roles": []
+      },
+      {
+        "key": "classic:shadowone",
+        "id": "shadowone",
+        "mode": "ra",
+        "name": "Shadow One",
+        "category": "infantry",
+        "cost": 1900,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:shok",
+        "id": "shok",
+        "mode": "ra",
+        "name": "Shock Trooper",
+        "category": "infantry",
+        "cost": 350,
+        "roles": []
+      },
+      {
+        "key": "classic:silo",
+        "id": "silo",
+        "mode": "ra",
+        "name": "Silo",
+        "category": "structure",
+        "cost": 150,
+        "roles": []
+      },
+      {
+        "key": "classic:spen",
+        "id": "spen",
+        "mode": "ra",
+        "name": "Sub Pen",
+        "category": "structure",
+        "cost": 800,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:spy",
+        "id": "spy",
+        "mode": "ra",
+        "name": "Spy",
+        "category": "infantry",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "classic:spy.england",
+        "id": "spy.england",
+        "mode": "ra",
+        "name": "Spy.england",
+        "category": "infantry",
+        "cost": 250,
+        "roles": []
+      },
+      {
+        "key": "classic:ss",
+        "id": "ss",
+        "mode": "ra",
+        "name": "Submarine",
+        "category": "ship",
+        "cost": 950,
+        "roles": [
+          "submarine",
+          "naval-ambush"
+        ]
+      },
+      {
+        "key": "classic:stek",
+        "id": "stek",
+        "mode": "ra",
+        "name": "Soviet Tech Center",
+        "category": "structure",
+        "cost": 1500,
+        "roles": [
+          "technology",
+          "radar",
+          "upgrade"
+        ]
+      },
+      {
+        "key": "classic:stnk",
+        "id": "stnk",
+        "mode": "ra",
+        "name": "Phase Transport",
+        "category": "vehicle",
+        "cost": 1000,
+        "roles": []
+      },
+      {
+        "key": "classic:syrd",
+        "id": "syrd",
+        "mode": "ra",
+        "name": "Naval Yard",
+        "category": "structure",
+        "cost": 1000,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:syrf",
+        "id": "syrf",
+        "mode": "ra",
+        "name": "Fake Naval Yard",
+        "category": "structure",
+        "cost": 100,
+        "roles": []
+      },
+      {
+        "key": "classic:tech",
+        "id": "tech",
+        "mode": "ra",
+        "name": "Armed Technical",
+        "category": "vehicle",
+        "cost": 350,
+        "roles": [
+          "scout",
+          "reconnaissance",
+          "light-vehicle"
+        ]
+      },
+      {
+        "key": "classic:tenf",
+        "id": "tenf",
+        "mode": "ra",
+        "name": "Fake Allied Barracks",
+        "category": "structure",
+        "cost": 50,
+        "roles": []
+      },
+      {
+        "key": "classic:tent",
+        "id": "tent",
+        "mode": "ra",
+        "name": "Allied Barracks",
+        "category": "structure",
+        "cost": 500,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:thf",
+        "id": "thf",
+        "mode": "ra",
+        "name": "Thief",
+        "category": "infantry",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "classic:tran",
+        "id": "tran",
+        "mode": "ra",
+        "name": "Chinook",
+        "category": "aircraft",
+        "cost": 900,
+        "roles": [
+          "transport",
+          "evacuation",
+          "logistics"
+        ]
+      },
+      {
+        "key": "classic:trat",
+        "id": "trat",
+        "mode": "ra",
+        "name": "Portable AT Specialist",
+        "category": "infantry",
+        "cost": 425,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:trdroneop",
+        "id": "trdroneop",
+        "mode": "ra",
+        "name": "Forward Drone Operator",
+        "category": "infantry",
+        "cost": 550,
+        "roles": [
+          "engineer",
+          "capture",
+          "repair"
+        ]
+      },
+      {
+        "key": "classic:trrifle",
+        "id": "trrifle",
+        "mode": "ra",
+        "name": "Mechanized Rifleman",
+        "category": "infantry",
+        "cost": 140,
+        "roles": [
+          "rifle",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:truk",
+        "id": "truk",
+        "mode": "ra",
+        "name": "Supply Truck",
+        "category": "vehicle",
+        "cost": 500,
+        "roles": []
+      },
+      {
+        "key": "classic:tsla",
+        "id": "tsla",
+        "mode": "ra",
+        "name": "Tesla Coil",
+        "category": "defense",
+        "cost": 1200,
+        "roles": []
+      },
+      {
+        "key": "classic:ttnk",
+        "id": "ttnk",
+        "mode": "ra",
+        "name": "Tesla Tank",
+        "category": "vehicle",
+        "cost": 1350,
+        "roles": []
+      },
+      {
+        "key": "classic:turnaah",
+        "id": "turnaah",
+        "mode": "ra",
+        "name": "Turna-AH Attack Helicopter",
+        "category": "aircraft",
+        "cost": 1750,
+        "roles": [
+          "interceptor",
+          "air-superiority"
+        ]
+      },
+      {
+        "key": "classic:v2rl",
+        "id": "v2rl",
+        "mode": "ra",
+        "name": "V2 Rocket Launcher",
+        "category": "vehicle",
+        "cost": 900,
+        "roles": [
+          "artillery",
+          "indirect-fire",
+          "siege"
+        ]
+      },
+      {
+        "key": "classic:wadighost",
+        "id": "wadighost",
+        "mode": "ra",
+        "name": "Wadi Ghost",
+        "category": "infantry",
+        "cost": 1650,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:weaf",
+        "id": "weaf",
+        "mode": "ra",
+        "name": "Fake War Factory",
+        "category": "structure",
+        "cost": 200,
+        "roles": []
+      },
+      {
+        "key": "classic:weap",
+        "id": "weap",
+        "mode": "ra",
+        "name": "War Factory",
+        "category": "structure",
+        "cost": 2000,
+        "roles": [
+          "production",
+          "reinforcement"
+        ]
+      },
+      {
+        "key": "classic:yak",
+        "id": "yak",
+        "mode": "ra",
+        "name": "Yak Attack Plane",
+        "category": "aircraft",
+        "cost": 1350,
+        "roles": [
+          "strike-aircraft",
+          "close-air-support"
+        ]
+      },
+      {
+        "key": "classic:ye_mslc",
+        "id": "ye_mslc",
+        "mode": "ra",
+        "name": "Hodeidah Missile Craft",
+        "category": "ship",
+        "cost": 1200,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:ye_surve",
+        "id": "ye_surve",
+        "mode": "ra",
+        "name": "Mokha Coastal Surveillance Craft",
+        "category": "ship",
+        "cost": 900,
+        "roles": [
+          "destroyer",
+          "fleet-escort",
+          "anti-submarine"
+        ]
+      },
+      {
+        "key": "classic:ye_usv",
+        "id": "ye_usv",
+        "mode": "ra",
+        "name": "Sahaab Uncrewed Surface Vessel",
+        "category": "ship",
+        "cost": 300,
+        "roles": [
+          "patrol-craft",
+          "naval-screen"
+        ]
+      },
+      {
+        "key": "classic:yildirim",
+        "id": "yildirim",
+        "mode": "ra",
+        "name": "Yildirim Self-Propelled Howitzer",
+        "category": "vehicle",
+        "cost": 1150,
+        "roles": [
+          "main-battle-tank",
+          "armor",
+          "frontline"
+        ]
+      },
+      {
+        "key": "classic:ymlr",
+        "id": "ymlr",
+        "mode": "ra",
+        "name": "Mobile Missile Launcher",
+        "category": "vehicle",
+        "cost": 750,
+        "roles": [
+          "artillery",
+          "indirect-fire",
+          "siege"
+        ]
+      },
+      {
+        "key": "classic:ymr",
+        "id": "ymr",
+        "mode": "ra",
+        "name": "Yemeni Mountain Rifleman",
+        "category": "infantry",
+        "cost": 75,
+        "roles": [
+          "rifle",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:yrpg",
+        "id": "yrpg",
+        "mode": "ra",
+        "name": "Yemeni RPG Hunter",
+        "category": "infantry",
+        "cost": 325,
+        "roles": [
+          "anti-armor",
+          "line-infantry"
+        ]
+      },
+      {
+        "key": "classic:yspot",
+        "id": "yspot",
+        "mode": "ra",
+        "name": "Yemeni Drone Spotter",
+        "category": "infantry",
+        "cost": 525,
+        "roles": [
+          "engineer",
+          "capture",
+          "repair"
+        ]
+      }
+    ]
   }
 }
