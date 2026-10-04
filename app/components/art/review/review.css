@@ -633,11 +633,12 @@
 @media(max-width:650px) { .source-mod-list { grid-template-columns:1fr; } .studio-source-dialog { padding:18px; } }
 .mesh-studio { color:var(--text); background:#141a14; border:1px solid var(--line-2); border-radius:10px; padding:0; width:min(1240px,calc(100vw - 24px)); height:min(850px,calc(100dvh - 30px)); max-width:none; max-height:none; overflow:hidden; }
 .mesh-studio::backdrop { background:#000b; }
+.mesh-studio[open] { display:flex; flex-direction:column; }
 .mesh-studio>header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line-2); }
 .mesh-studio h2 { color:#f4f1e5; margin:7px 0; font-size:21px; }
 .mesh-studio .lab-label { display:flex; align-items:center; gap:8px; }
 .mesh-job-summary { display:grid; grid-template-columns:1fr auto; gap:4px 12px; font-size:12px; text-align:right; }.mesh-job-summary span { color:#a6ad9a; grid-column:1; }.mesh-job-summary button { grid-column:2; grid-row:1/4; }
-.mesh-studio-body { display:grid; grid-template-columns:265px minmax(0,1fr); height:calc(100% - 90px); }
+.mesh-studio-body { display:grid; grid-template-columns:265px minmax(0,1fr); flex:1; min-height:0; }
 .mesh-studio-body>aside { display:flex; flex-direction:column; gap:12px; padding:16px; border-right:1px solid var(--line-2); min-height:0; }.mesh-studio-body>aside>small { color:#a6ad9a; }
 .mesh-actor-list { min-height:0; overflow:auto; display:flex; flex-direction:column; gap:7px; }
 .mesh-actor-list button { display:flex; align-items:center; gap:10px; text-align:left; padding:9px; border:1px solid transparent; border-radius:6px; background:#1c231b; color:#e5e5d7; cursor:pointer; }

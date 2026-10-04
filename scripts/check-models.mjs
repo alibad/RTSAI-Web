@@ -30,6 +30,7 @@ try {
   for(const [name,color] of [["red","#d54939"],["blue","#3867ef"],["green","#39a865"],["yellow","#e9c640"],["purple","#a45de2"],["cyan","#42c7d8"]]){
     await dialog.getByRole("textbox",{name:"GLB player color"}).fill(color);
     await dialog.screenshot({path:resolve(output,`mantis-${name}.png`)});
+    if(name==="red"||name==="blue")await dialog.locator(".mesh-viewport").screenshot({path:resolve(output,`mantis-${name}-view.png`)});
   }
   const canvas=dialog.locator(".mesh-viewport canvas"),box=await canvas.boundingBox();
   await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);await page.mouse.down();await page.mouse.move(box.x+box.width*.72,box.y+box.height*.55,{steps:12});await page.mouse.up();
@@ -44,6 +45,7 @@ try {
     await dialog.getByRole("button",{name:"New design · GLB draft",exact:true}).waitFor();
     await dialog.getByText("Loading GLB…",{exact:true}).waitFor({state:"hidden",timeout:30000});
     await dialog.screenshot({path:resolve(output,`${actor}-glb.png`)});
+    await dialog.locator(".mesh-viewport").screenshot({path:resolve(output,`${actor}-view.png`)});
   }
   const report=await page.evaluate(()=>({gpuContexts:window.__gpuContexts,longTasks:window.__longTasks}));assert.equal(report.gpuContexts,1,"GLB views share one context");
   await page.keyboard.press("Escape");assert.equal(await dialog.count(),0);
