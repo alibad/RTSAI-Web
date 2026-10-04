@@ -13,6 +13,10 @@ async function render(pathname = "/") {
   );
 }
 
+test("AI evaluations render both modes, policy controls and separated native evidence",async()=>{
+  for(const mode of ["ra2","ra"]){const response=await render("/workshop/evals?mode="+mode),html=await response.text();assert.equal(response.status,200);assert.match(html,/<title>AI Behavior Lab/);assert.match(html,/Run comparison/);assert.match(html,/Run native comparison/);assert.match(html,/browser simulator|approximate simulator/);assert.match(html,/Neither is a model-quality evaluation/);assert.match(html,/Native arenas use a fixed separation/);assert.match(html,/Use saved Workshop scene/);assert.match(html,/Export evidence/);assert.doesNotMatch(html,/â†|Â·|â€“/);}
+});
+
 test("owner-approved Workshop renders both mode palettes and honest experiment controls", async () => {
   for (const mode of ["ra2", "ra"]) {
     const response=await render("/workshop?mode="+mode),html=await response.text();
