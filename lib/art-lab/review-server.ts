@@ -12,13 +12,15 @@
  *
  * RTSAI-Art files are read in place; nothing is copied into public/.
  */
-import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { applyReviewAction, migrateEntry, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
 import { cachedFile, classicConfig, rosterPayload, SAFE_NAME, type OriginalsConfig } from "./originals";
 import { reviewEnabled } from "./review-gate";
 import { duelJob, startDuel } from "./duel-server";
+import { baselineCounts, rebuildSummary, type RebuildCampaign } from "./rebuild";
 
 const TYPES: Record<string, string> = {
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".json": "application/json; charset=utf-8",
@@ -62,7 +64,9 @@ function unitWorkspace(root: string, actor: string): UnitWorkspace | undefined {
   return readState(root).units.find(u => u.actor === actor);
 }
 
-export function readState(root: string): ReviewState {
+export function readState(root: string, mode: "ra2" | "classic" = "ra2", fileRoot = root): ReviewState {
+  if (mode === "classic") return readState(join(root, "modes", "classic"), "ra2", root);
+  const url = (path: string) => `${FILE_ROUTE}${encodeURIComponent(relative(fileRoot, join(root, path)).split(sep).join("/"))}`;
   const errors: string[] = [];
   const exists = existsSync(root);
   const units: UnitWorkspace[] = [];
@@ -73,7 +77,7 @@ export function readState(root: string): ReviewState {
       const cdir = `units/${actor}/candidates/${id}`;
       const meta = readJson<CandidateMeta>(join(root, cdir, "meta.json"));
       const files = listFiles(join(root, cdir));
-      const urls = Object.fromEntries(files.map(f => [f, `${FILE_ROUTE}${encodeURIComponent(`${cdir}/${f}`)}`]));
+      const urls = Object.fromEntries(files.map(f => [f, url(`${cdir}/${f}`)]));
       if (!meta) { errors.push(`${cdir}/meta.json is missing or not JSON`); candidates.push({ id, actor, createdAt: "", kind: "unknown", files: {}, dir: cdir, urls, metaError: "meta.json missing or invalid" }); continue; }
       // The candidate's proposed rules/sequences (MiniYaml) travel with it so the viewer reads the real layout.
       const rulesFile = meta.files?.rules ? safeResolve(root, `${cdir}/${meta.files.rules}`) : null;
@@ -84,7 +88,7 @@ export function readState(root: string): ReviewState {
     candidates.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const comparisons = listFiles(join(root, "reference-local", "comparisons"), 0)
       .filter(f => f.toLowerCase().startsWith(`${actor}-`) && /\.(png|jpe?g|webp)$/i.test(f))
-      .map(f => `${FILE_ROUTE}${encodeURIComponent(`reference-local/comparisons/${f}`)}`);
+      .map(f => url(`reference-local/comparisons/${f}`));
     units.push({ actor, spec: readJson(join(dir, "spec.json")), candidates, comparisons });
   }
   // Present every entry in the current (version 2, per-slot) shape; the file itself is rewritten only on a decision.
@@ -106,7 +110,9 @@ export function readState(root: string): ReviewState {
 }
 
 /** Read-modify-write of review.json (fresh read, atomic replace) so concurrent Forge edits are not lost. */
-export function writeAction(root: string, action: ReviewAction) {
+export function writeAction(root: string, action: ReviewAction, mode: "ra2" | "classic" = "ra2") {
+  if (mode === "classic") root = join(root, "modes", "classic");
+  mkdirSync(root, { recursive: true });
   const path = join(root, "review.json");
   const current = readJson<ReviewFile>(path) ?? {};
   const next = applyReviewAction(current, action, new Date().toISOString(), kindsOf(unitWorkspace(root, action.actor)));
@@ -141,7 +147,20 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
       const url = new URL(req.url ?? "/", "http://localhost");
       const path = url.pathname.replace(/^\/api\/art-review/, "") || "/";
       if (!isLocalRequest(req)) return send(res, 403, { error: "Review mode only answers local requests" });
-      if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace));
+      if (req.method === "GET" && path === "/rebuild") {
+        const campaign = readJson<RebuildCampaign>(join(workspace, "rebuild", "catalog.json"));
+        if (!campaign) return send(res, 404, { error: "The local rebuild catalog has not been generated." });
+        const summary = rebuildSummary(campaign);
+        try {
+          const hash = createHash("sha256");
+          for (const file of ["rebuild_baseline.py", "studio_duel.py", "studio_duel.lua"]) hash.update(readFileSync(join(workspace, "tools", file)));
+          summary.nativeBaseline = baselineCounts(campaign, readJson(join(workspace, "rebuild", "native-baseline.json")), hash.digest("hex"));
+        } catch { /* A workspace without the native runner still exposes the art scope. */ }
+        return send(res, 200, summary);
+      }
+      const reviewMode = url.searchParams.get("mode") ?? "ra2";
+      if ((path === "/state" || path === "/action") && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace, reviewMode as "ra2" | "classic"));
       if (req.method === "GET" && /^\/duel\/[a-f0-9-]{36}$/.test(path)) {
         const job = duelJob(path.slice(6), resolve(workspace, "../RTSAI-Web-wt-artlab"));
         return job ? send(res, 200, job) : send(res, 404, { error: "No such match" });
@@ -191,7 +210,7 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         const problem = validateAction(action);
         if (problem) return send(res, 400, { error: problem });
         if (!existsSync(workspace)) return send(res, 409, { error: `No RTSAI-Art workspace at ${workspace}` });
-        return send(res, 200, { entry: writeAction(workspace, action as ReviewAction) });
+        return send(res, 200, { entry: writeAction(workspace, action as ReviewAction, reviewMode as "ra2" | "classic") });
       }
       return send(res, 404, { error: "Not found" });
     } catch (error) {

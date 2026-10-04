@@ -3,15 +3,28 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { classicConfig, rosterPayload, type OriginalsConfig } from "./originals";
+import { classicConfig, rosterPayload, type OriginalsConfig, type RosterPayload } from "./originals";
 
-export type DuelSide = { id: string; count: number; deploy: boolean; health?: number };
-export type DuelRequest = { mode: "ra2" | "classic"; a: DuelSide; b: DuelSide; gap: number; level: number };
+export type DuelSide = { id: string; count: number; deploy: boolean; health?: number; faction?: string; ruleKey?: string };
+export type DuelRequest = { mode: "ra2" | "classic"; a: DuelSide; b: DuelSide; gap: number; level: number; waterSide?: "none" | "a" | "b" | "both" };
 export type DuelSample = { tick: number; actors: { side: number; index: number; x: number; y: number; z: number; facing: number; health: number; maxHealth: number }[]; wrecks?: { side: number; type: string; x: number; y: number; z: number; facing: number }[] };
 export type DuelResult = { evidence: "measured"; engine: string; request: DuelRequest; ticksPerSecond: number; samples: DuelSample[]; events?: { tick: number; kind: string; side: number; index: number; attackerSide: number; attackerIndex: number; damage: number }[]; limitations: string };
 type Job = { id: string; status: "running" | "complete" | "failed"; error?: string; result?: DuelResult };
 const jobs = new Map<string, Job>();
 let running = false;
+
+/** A unit may only use a faction whose real roster contains it. Legacy callers get a valid owner. */
+export function duelFaction(data: Pick<RosterPayload, "factions">, actor: string, requested: string | undefined, mode: "ra2" | "classic") {
+  const available = data.factions.filter(f => f.units.some(u => u.id === actor));
+  if (requested !== undefined) {
+    if (!available.some(f => f.id === requested)) throw new Error("This faction cannot build the selected actor");
+    return requested;
+  }
+  const preferred = mode === "classic" ? "england" : "america";
+  const faction = available.find(f => f.id === preferred) ?? available[0];
+  if (!faction) throw new Error("No faction can build the selected actor");
+  return faction.id;
+}
 
 export async function startDuel(webRoot: string, cfg: OriginalsConfig, input: unknown): Promise<Job> {
   if (running) throw new Error("An engine match is already running. Wait for it to finish.");
@@ -24,11 +37,12 @@ export async function startDuel(webRoot: string, cfg: OriginalsConfig, input: un
     const s = r[side];
     const actor = s && Object.hasOwn(data.stock, s.id) ? data.stock[s.id] : undefined;
     if (!actor?.behavior.health || !Number.isInteger(s.count) || s.count < 1 || s.count > 6 || typeof s.deploy !== "boolean") throw new Error("Pick a living actor and one to six units");
-    if (actor.info?.domain === "naval") throw new Error("This Arena currently uses land; naval encounters require a water map.");
     if (s.health !== undefined && (!Number.isInteger(s.health) || s.health < 1 || s.health > 100000)) throw new Error("Invalid health experiment");
     if (s.deploy && !actor.behavior.actions.some(a => a.id === "GrantConditionOnDeploy")) throw new Error("This Arena supports condition deployment; actor transformations need a separate scenario.");
-    request[side] = { id: s.id, count: s.count, deploy: s.deploy, ...(s.health ? { health: s.health } : {}) };
+    request[side] = { id: s.id, ruleKey: actor.ruleKey, count: s.count, deploy: s.deploy, faction: duelFaction(data, s.id, s.faction, r.mode), ...(s.health ? { health: s.health } : {}) };
   }
+  const navyA = data.stock[request.a.id].info?.domain === "naval", navyB = data.stock[request.b.id].info?.domain === "naval";
+  request.waterSide = navyA && navyB ? "both" : navyA ? "a" : navyB ? "b" : "none";
   if (request.a.id === request.b.id && request.a.health !== request.b.health) throw new Error("Both copies of the same actor share an experimental health rule.");
   if (running) throw new Error("An engine match is already running. Wait for it to finish.");
   const id = randomUUID(), dir = resolve(webRoot, ".cache/studio-jobs", id);

@@ -7,15 +7,30 @@ import type { Shp } from "./shp";
 import type { SpriteSequence } from "./types";
 
 /** Facing index for a WAngle facing: 0 = north, counter-clockwise (OpenRA Util.IndexFacing). */
-export function indexFacing(facing: number, facings: number) {
+// OpenRA.Mods.Cnc.Util: exclusive frame boundaries and the authored yaw for each frame.
+export const classicFacingRanges = [20, 56, 88, 132, 156, 184, 212, 240, 268, 296, 324, 352, 384, 416, 452, 488, 532, 568, 604, 644, 668, 696, 724, 752, 780, 808, 836, 864, 896, 928, 964, 1000] as const;
+export const classicFacingAngles = [0, 40, 74, 112, 146, 172, 200, 228, 256, 284, 312, 340, 370, 402, 436, 472, 512, 552, 588, 626, 658, 684, 712, 740, 768, 796, 824, 852, 882, 914, 948, 984] as const;
+
+export function indexFacing(facing: number, facings: number, useClassicFacings = false) {
+  if (useClassicFacings && facings === 32) {
+    const index = classicFacingRanges.findIndex(boundary => (facing & 1023) < boundary);
+    return index < 0 ? 0 : index;
+  }
   const step = 1024 / facings;
   return Math.floor((((facing + step / 2) | 0) & 1023) / step);
+}
+
+/** BodyOrientation quantization is separate from a sequence's frame mapping. */
+export function quantizeFacing(facing: number, facings: number, classicBodyOrientation = false) {
+  if (!facings) return facing;
+  const index = indexFacing(facing, facings, classicBodyOrientation);
+  return classicBodyOrientation && facings === 32 ? classicFacingAngles[index] : index * 1024 / facings;
 }
 
 /** The SHP frame OpenRA shows for animation frame `frame` at `facing` (shadow = the ShadowStart copy). */
 export function sequenceFrame(seq: SpriteSequence, frame: number, facing: number, shadow = false) {
   const length = seq.length === "*" ? 1 : seq.length;
-  const facingIndex = indexFacing(facing, seq.facings);
+  const facingIndex = indexFacing(facing, seq.facings, seq.useClassicFacings);
   const inner = seq.reverseFacings ? (seq.facings - facingIndex) % seq.facings : facingIndex;
   const f = ((frame % length) + length) % length;
   const i = seq.transpose ? f * seq.facings + inner : inner * seq.stride + f;

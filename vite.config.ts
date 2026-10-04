@@ -66,7 +66,27 @@ function artReviewProductionStub(): Plugin {
   };
 }
 
-export default defineConfig(async () => {
+// The standalone Studio is a client app. A local Node preview can mount that
+// same component directly, avoiding worker/RSC transport startup on Windows.
+function artReviewClientPreview(): Plugin {
+  return {
+    name: "rtsai-art-review-client-preview",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (process.env.NODE_ENV === "production" || req.method !== "GET" || req.url?.split("?")[0] !== "/art/review") return next();
+        try {
+          const html = await server.transformIndexHtml(req.url, '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title></head><body><div id="art-lab-root"></div><script type="module" src="/app/art/review/local-entry.tsx"></script></body></html>');
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(html);
+        } catch (error) { next(error); }
+      });
+    },
+  };
+}
+
+export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -76,6 +96,20 @@ export default defineConfig(async () => {
   const server = isCodexSeatbeltSandbox
     ? { watch: { useFsEvents: false, usePolling: true } }
     : undefined;
+
+  // Art Lab can use Vite's native Node dev server without a worker transport.
+  // This opt-in is serve-only; production always retains its configured host.
+  if (command === "serve" && process.env.RTSAI_ARTLAB_NODE_DEV === "1") {
+    const { default: react } = await import("@vitejs/plugin-react");
+    return {
+      server,
+      define,
+      cacheDir: "node_modules/.vite-art-lab",
+      optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
+      resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
+      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), tailwindcss(), react()],
+    };
+  }
 
   // Vercel is the canonical production host. Nitro packages the Vinext
   // application as a Vercel-compatible server and static asset bundle.

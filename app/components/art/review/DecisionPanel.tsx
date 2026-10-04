@@ -52,7 +52,7 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
 
   let primary: React.ReactNode = null;
   if (referenceOnly) {
-    primary = <div className="lab-refonly"><span className="lab-pill">Reference only</span><small>Original RA2 art</small></div>;
+    primary = <div className="lab-refonly"><span className="lab-pill">Reference only</span><small>Original game art</small></div>;
   } else if (chosen) {
     primary = (
       <div className="lab-chosen">
@@ -74,7 +74,7 @@ export function DecisionPanel({ unit, slot, version, decision, comments, labelFo
     <aside className="lab-panel" aria-label="Decision">
       <header className="lab-panel-head">
         <h1>{unit.name}</h1>
-        <p>{unit.factionName} · {unit.role}<span className={`lab-origin-pill is-${unit.origin ?? "new"}`}>{unit.origin === "original" ? "Original RA2" : unit.origin === "modified" ? "Modified" : "New"}</span></p>
+        <p>{unit.factionName} · {unit.role}<span className={`lab-origin-pill is-${unit.origin ?? "new"}`}>{unit.origin === "original" ? "Original" : unit.origin === "modified" ? "Modified" : "New"}</span></p>
       </header>
 
       <div className="lab-focus-row">

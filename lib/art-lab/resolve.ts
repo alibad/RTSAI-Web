@@ -79,6 +79,7 @@ const floats3 = (value: string | null | undefined, fallback: Vec3): Vec3 => {
 export type ModData = {
   manifest: Yaml;
   rules: Map<string, Yaml>;
+  ruleKeys: Map<string, string>;
   sequences: Map<string, Yaml>;
   rawSequenceKeys: Map<string, Set<string>>;
   modelSequences: Map<string, Yaml>;
@@ -102,7 +103,9 @@ export function loadModData(reader: ModReader, options: { manifestPath?: string;
   const toMap = (nodes: YamlNode[], lower: boolean) => new Map(nodes.map(n => [lower ? n.key.toLowerCase() : n.key, n.value]));
 
   const ruleFiles = load([...manifestList(manifest, "Rules"), ...(options.extra?.Rules ?? [])]);
-  const rules = toMap(mergeMiniYaml(ruleFiles.map(f => f.nodes)), true);
+  const mergedRules = mergeMiniYaml(ruleFiles.map(f => f.nodes));
+  const rules = toMap(mergedRules, true);
+  const ruleKeys = new Map(mergedRules.map(n => [n.key.toLowerCase(), n.key]));
   const ruleSources = new Map<string, string>();
   for (const file of ruleFiles) for (const n of file.nodes) if (!ruleSources.has(n.key.toLowerCase())) ruleSources.set(n.key.toLowerCase(), file.path);
 
@@ -122,7 +125,7 @@ export function loadModData(reader: ModReader, options: { manifestPath?: string;
     const { path } = packagePath(ref);
     if (path && reader.exists(path)) parseFluent(reader.text(path), messages);
   }
-  return { manifest, rules, sequences, rawSequenceKeys, modelSequences, messages, ruleSources, weapons };
+  return { manifest, rules, ruleKeys, sequences, rawSequenceKeys, modelSequences, messages, ruleSources, weapons };
 }
 
 type FileUse = { modPath: string; key: string };
@@ -470,7 +473,7 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
     const entry: SpriteSequence = {
       name: node.key, file: null, external: null, start, length: lengthValue,
       stride: num(field(seq, "Stride"), typeof lengthValue === "number" ? lengthValue : 0),
-      facings, reverseFacings, transpose: bool(field(seq, "Transpose"), false), tick: num(field(seq, "Tick"), 40),
+      facings, reverseFacings, useClassicFacings: bool(field(seq, "UseClassicFacings"), false), transpose: bool(field(seq, "Transpose"), false), tick: num(field(seq, "Tick"), 40),
       zOffset: parseWDist(field(seq, "ZOffset")), shadowStart: num(field(seq, "ShadowStart"), -1),
       offset: parseVec3(field(seq, "Offset")), frames: field(seq, "Frames") ? list(field(seq, "Frames")).map(Number) : null,
       reverses: bool(field(seq, "Reverses"), false),
@@ -500,10 +503,12 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
     sequences.push(entry);
   }
   const playerPalette = childValue(renderSprites, "PlayerPalette") ?? "player";
-  const body = child(actor, "BodyOrientation")?.value;
+  const classicBody = child(actor, "ClassicFacingBodyOrientation")?.value;
+  const body = classicBody ?? child(actor, "BodyOrientation")?.value;
   return {
     image, palette: childValue(renderSprites, "Palette") ?? playerPalette, shp, sequences,
     quantizedFacings: body && childValue(body, "QuantizedFacings") ? num(childValue(body, "QuantizedFacings"), 0) : null,
+    classicFacingBodyOrientation: Boolean(classicBody),
     turret,
   };
 }

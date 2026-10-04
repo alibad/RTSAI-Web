@@ -107,6 +107,27 @@ test("review API in development: state, safe file reads and review.json writes",
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("Classic and RA2 candidates and decisions stay separate even with the same actor id", async () => {
+  const root = workspace();
+  try {
+    const dir = join(root, "modes/classic/units/r2qilin/candidates/fixture-1");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "meta.json"), JSON.stringify({ id: "fixture-1", actor: "r2qilin", kind: "cameo", files: { cameo: "cameo.png" } }));
+    writeFileSync(join(dir, "cameo.png"), Buffer.from([1, 2, 3]));
+    const handler = createArtReviewMiddleware({ root, env: "development" });
+    const classic = JSON.parse((await call(handler, "GET", "/state?mode=classic")).body);
+    assert.match(classic.units[0].candidates[0].urls["cameo.png"], /path=modes%2Fclassic%2Funits/);
+    const post = (mode: string, candidate: string) => call(handler, "POST", `/action?mode=${mode}`, { body: JSON.stringify({ type: "choose", actor: "r2qilin", slot: "icon", candidate }), headers: { "content-type": "application/json" } });
+    assert.equal((await post("ra2", "current")).status, 200);
+    assert.equal((await post("classic", "fixture-1")).status, 200);
+    assert.equal(JSON.parse(readFileSync(join(root, "review.json"), "utf8")).r2qilin.slots.icon.chosen, "current");
+    assert.equal(JSON.parse(readFileSync(join(root, "modes/classic/review.json"), "utf8")).r2qilin.slots.icon.chosen, "fixture-1");
+    assert.equal((await call(handler, "GET", "/state?mode=invalid")).status, 400);
+    assert.equal((await post("invalid", "current")).status, 400);
+    assert.equal((await call(createArtReviewMiddleware({ root, env: "production" }), "GET", "/state?mode=classic")).status, 404);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("review model: per-slot decisions, keep current, reject, and the decision queue", () => {
   let file: ReviewFile = {};
   file = applyReviewAction(file, { type: "comment", actor: "r2lynx", slot: "model", text: "Lower the turret" }, "2026-10-03T01:00:00Z");

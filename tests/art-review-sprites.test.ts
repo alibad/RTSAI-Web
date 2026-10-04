@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { candidateRenderSpec, candidateVehicleSprite, declaredTurretOffset, parseCandidateRules, type Candidate } from "../lib/art-lab/review";
+import { candidateRenderSpec, candidateSprite, candidateVehicleSprite, declaredTurretOffset, parseCandidateRules, type Candidate, validateAction } from "../lib/art-lab/review";
 import { artLab, renderSpec } from "../lib/art-lab/manifest";
 import { pickAnimation, turretSequence } from "../lib/art-lab/sprite-anim";
 
@@ -28,13 +28,31 @@ const spriteCandidate = (rulesText: string | null): Candidate => ({
 
 test("the candidate's rules snippet is read with MiniYaml: sequences, Turreted.Offset, palette and trait changes", () => {
   const rules = parseCandidateRules(snippet, "r2qilin");
-  assert.deepEqual(rules.sequences.idle, { file: "r2qilin.shp", start: 0, length: 1, facings: 32, shadowStart: 32, offset: [0, 0, 0], tick: 40 });
+  assert.deepEqual(rules.sequences.idle, { file: "r2qilin.shp", start: 0, length: 1, stride: 1, facings: 32, reverseFacings: false, useClassicFacings: false, transpose: false, reverses: false, frames: null, zOffset: 0, shadowStart: 32, offset: [0, 0, 0], tick: 40 });
   assert.equal(rules.sequences.turret.start, 64);
   assert.equal(rules.sequences.turret.shadowStart, 96);
   assert.deepEqual(rules.turretOffset, [-45, 0, 0]);
   assert.deepEqual(rules.palette, { transparent: [0], shadow: [1], remap: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] });
   assert.deepEqual(rules.removed, ["RenderVoxels", "WithVoxelBody", "WithVoxelTurret"]);
   assert.ok(rules.traits.includes("WithFacingSpriteBody") && rules.traits.includes("WithSpriteTurret"));
+});
+
+test("building candidates keep distinct construction files and Classic frame layout defaults", () => {
+  const current = renderSpec(artLab.actors.r2qilin);
+  const rulesText = "AFLD.Ukraine:\n\tClassicFacingBodyOrientation:\n\t\tQuantizedFacings: 32\nafLD.ukraine:\n\tDefaults:\n\t\tFilename: body.shp\n\t\tFacings: -32\n\t\tUseClassicFacings: True\n\t\tStride: 4\n\tmake:\n\t\tFilename: make.shp\n\t\tFacings: 1\n\t\tLength: *\n\tidle:\n\t\tLength: 2\n\t\tTranspose: True\n\t\tFrames: 4,5,6,7\n\t\tReverses: True\n\t\tZOffset: 1c0\n";
+  const candidate: Candidate = { ...spriteCandidate(rulesText), actor: "afld.ukraine", files: { shp: ["body.shp", "make.shp"] }, urls: { "body.shp": "/x/body.shp", "make.shp": "/x/make.shp" } };
+  const built = candidateVehicleSprite(current, candidate)!;
+  const idle = built.sprite.sequences.find(s => s.name === "idle")!;
+  const make = built.sprite.sequences.find(s => s.name === "make")!;
+  assert.equal(built.spec.sprite!.stand!.name, "idle", "construction is not the resting pose");
+  assert.equal(make.file, "/x/make.shp"); assert.equal(make.length, "*");
+  assert.equal(idle.file, "/x/body.shp"); assert.equal(idle.stride, 4);
+  assert.equal(idle.reverseFacings, true); assert.equal(idle.useClassicFacings, true); assert.equal(idle.transpose, true);
+  assert.equal(idle.zOffset, 1024); assert.deepEqual(idle.frames, [4, 5, 6, 7]);
+  assert.equal(built.sprite.classicFacingBodyOrientation, true);
+  assert.equal(candidateSprite(built.spec, built.sprite, { ...candidate, sprite: undefined, rulesText: null }), null, "multiple SHPs need an explicit layout");
+  assert.equal(validateAction({ type: "comment", actor: "afld.ukraine", text: "Review construction" }), null);
+  assert.equal(validateAction({ type: "comment", actor: "../afld", text: "Bad path" }), "Bad actor");
 });
 
 test("a vehicle sprite candidate draws body + turret with shadows from the declared layout, never guessed", () => {

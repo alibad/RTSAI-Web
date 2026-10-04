@@ -51,7 +51,7 @@ export function originalsConfig(webRoot: string, env: NodeJS.ProcessEnv = proces
   };
 }
 
-export type StockArt = { spec: RenderSpec; sprite: SpriteArt | null; files: string[]; fromModBits: string[]; info: RosterUnit | null; behavior: BehaviorFacts };
+export type StockArt = { spec: RenderSpec; sprite: SpriteArt | null; files: string[]; fromModBits: string[]; info: RosterUnit | null; behavior: BehaviorFacts; ruleKey?: string };
 export type RosterPayload = {
   mode?: "ra2" | "classic";
   factions: FactionRoster[];
@@ -306,7 +306,7 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     } : null;
     const owned = { ...art, sprite, factionId: "" };
     const spec = buildRenderSpec(owned, url, name => paletteSpec(paletteRefs[name ?? "player"] ?? null), cameoUrl);
-    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id) };
+    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id), ruleKey: data.ruleKeys.get(id) };
   }
   return { mode: cfg.mode ?? "ra2", factions, stock, unresolved: [...ids].filter(id => !stock[id]), extraction: { requested: wanted.size, cached: [...wanted].filter(n => cached(cfg, n)).length, missing, error, ms: Date.now() - started } };
 }

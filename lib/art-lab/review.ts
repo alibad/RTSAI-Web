@@ -16,6 +16,7 @@
 import { child, childValue, parseMiniYaml, type Yaml } from "./miniyaml";
 import type { RenderSpec } from "./spec";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
+import { parseWDist } from "./resolve";
 
 export type SlotId = "model" | "icon" | "concept";
 export const slotIds: SlotId[] = ["model", "icon", "concept"];
@@ -60,7 +61,9 @@ export type CandidateMeta = {
   sprite?: {
     shp?: string;
     facings?: number;
-    sequences?: Record<string, { start?: number; facings?: number; shadowStart?: number; length?: number; usedBy?: string }>;
+    classicFacingBodyOrientation?: boolean;
+    quantizedFacings?: number;
+    sequences?: Record<string, Partial<Pick<SpriteSequence, "start" | "facings" | "shadowStart" | "length" | "stride" | "reverseFacings" | "useClassicFacings" | "transpose" | "tick" | "offset" | "frames" | "reverses">> & { file?: string; usedBy?: string }>;
     turret?: { sequence?: string; name?: string; offset?: number[] };
     palette?: { file?: string; transparent?: number[]; shadow?: number[]; remap?: number[] };
   };
@@ -153,7 +156,7 @@ export function migrateEntry(raw: unknown, kindOf: (candidate: string) => string
   return entry;
 }
 
-const ACTOR = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const ACTOR = /^[a-z0-9][a-z0-9_.-]{0,63}$/;
 const CANDIDATE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 
 /** Validates an action from the browser; returns an error message or null. */
@@ -309,6 +312,10 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
 export function candidateSprite(spec: RenderSpec, sprite: SpriteArt | null, candidate: Candidate): { spec: RenderSpec; sprite: SpriteArt } | null {
   const shp = candidate.files.shp?.[0];
   if (!shp || !sprite || !spec.sprite) return null;
+  // Building make/body/turret files require a declared mapping. Guessing that
+  // every sequence lives in the first SHP can make a broken candidate look valid.
+  const sourceFiles = new Set(sprite.sequences.filter(s => s.file && !s.inherited && !s.file.endsWith(".png")).map(s => s.file));
+  if (candidate.files.shp!.length > 1 || sourceFiles.size > 1) return null;
   const shpUrl = candidate.urls[shp.replace(/\\/g, "/")];
   const palUrl = candidate.files.pal ? candidate.urls[candidate.files.pal] : null;
   if (!shpUrl) return null;
@@ -328,7 +335,9 @@ const parseVec = (text: string | null) => { const parts = (text ?? "").split(","
 const parseInts = (text: string | null) => (text ?? "").split(",").map(t => t.trim()).filter(Boolean).map(Number).filter(Number.isFinite);
 
 export type CandidateRules = {
-  sequences: Record<string, { file: string | null; start: number; length: number; facings: number; shadowStart: number; offset: Vec3; tick: number }>;
+  sequences: Record<string, Omit<SpriteSequence, "name" | "external" | "usedBy" | "inherited">>;
+  classicFacingBodyOrientation: boolean | null;
+  quantizedFacings: number | null;
   turretOffset: Vec3 | null;
   turretInitialFacing: number | null;
   palette: { transparent: number[]; shadow: number[]; remap: number[] } | null;
@@ -342,21 +351,27 @@ export type CandidateRules = {
  */
 export function parseCandidateRules(text: string, actor: string): CandidateRules {
   const nodes = parseMiniYaml(text, "openra-snippet.yaml");
-  const out: CandidateRules = { sequences: {}, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [] };
-  const isSequence = (n: Yaml) => n.nodes.some(c => ["Filename", "Start", "Facings", "Length", "ShadowStart"].includes(c.key));
+  const out: CandidateRules = { sequences: {}, classicFacingBodyOrientation: null, quantizedFacings: null, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [] };
+  const isSequence = (n: Yaml) => n.nodes.some(c => ["Filename", "Start", "Facings", "Length", "ShadowStart", "Stride", "Frames", "UseClassicFacings", "Transpose"].includes(c.key));
   let playerPalette: string | null = null;
-  for (const node of nodes.filter(n => n.key === actor)) {
+  for (const node of nodes.filter(n => n.key.toLowerCase() === actor.toLowerCase())) {
     const children = node.value.nodes;
-    if (children.some(c => isSequence(c.value)) && children.every(c => isSequence(c.value) || c.key === "Defaults" || c.key.startsWith("Inherits"))) {
+    if (children.some(c => isSequence(c.value)) && children.every(c => isSequence(c.value) || !c.value.nodes.length || c.key === "Defaults" || c.key.startsWith("Inherits"))) {
+      const defaults = child(node.value, "Defaults")?.value;
       for (const seq of children) {
-        if (!isSequence(seq.value)) continue;
+        if (seq.key === "Defaults" || seq.key.startsWith("Inherits")) continue;
         const v = seq.value;
-        const filename = childValue(v, "Filename");
+        const field = (key: string) => childValue(v, key) ?? childValue(defaults, key);
+        const filename = field("Filename");
+        const length = field("Length") === "*" ? "*" : Number(field("Length") ?? 1);
+        const facings = Number(field("Facings") ?? 1);
         out.sequences[seq.key] = {
           file: filename ? filename.split("|").pop()!.split("/").pop()! : null,
-          start: Number(childValue(v, "Start") ?? 0), length: Number(childValue(v, "Length") ?? 1),
-          facings: Number(childValue(v, "Facings") ?? 1), shadowStart: Number(childValue(v, "ShadowStart") ?? -1),
-          offset: parseVec(childValue(v, "Offset")) ?? [0, 0, 0], tick: Number(childValue(v, "Tick") ?? 40),
+          start: Number(field("Start") ?? 0), length, stride: Number(field("Stride") ?? (typeof length === "number" ? length : 0)),
+          facings: Math.abs(facings), reverseFacings: facings < 0, useClassicFacings: /^true$/i.test(field("UseClassicFacings") ?? ""),
+          transpose: /^true$/i.test(field("Transpose") ?? ""), reverses: /^true$/i.test(field("Reverses") ?? ""), frames: field("Frames") ? parseInts(field("Frames")) : null,
+          zOffset: parseWDist(field("ZOffset")), shadowStart: Number(field("ShadowStart") ?? -1),
+          offset: parseVec(field("Offset")) ?? [0, 0, 0], tick: Number(field("Tick") ?? 40),
         };
       }
     } else {
@@ -366,6 +381,10 @@ export function parseCandidateRules(text: string, actor: string): CandidateRules
       const initial = childValue(turreted, "InitialFacing");
       if (initial !== null) out.turretInitialFacing = Number(initial);
       playerPalette = childValue(child(node.value, "RenderSprites")?.value, "PlayerPalette") ?? playerPalette;
+      const orientation = child(node.value, "ClassicFacingBodyOrientation")?.value ?? child(node.value, "BodyOrientation")?.value;
+      if (child(node.value, "ClassicFacingBodyOrientation")) out.classicFacingBodyOrientation = true;
+      if (child(node.value, "-ClassicFacingBodyOrientation")) out.classicFacingBodyOrientation = false;
+      if (childValue(orientation, "QuantizedFacings") !== null) out.quantizedFacings = Number(childValue(orientation, "QuantizedFacings"));
     }
   }
   const palettes = nodes.find(n => n.key === "^Palettes")?.value;
@@ -395,7 +414,7 @@ export function declaredTurretOffset(candidate: Candidate): Vec3 | null {
  * A pre-rendered vehicle sprite candidate (body + turret, with shadow frames) for a unit that is a voxel model
  * today. The frame layout comes from the candidate's rules snippet, else from meta.sprite; it is never guessed.
  */
-export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate): { spec: RenderSpec; sprite: SpriteArt; layoutSource: string } | null {
+export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate, currentSprite?: SpriteArt | null): { spec: RenderSpec; sprite: SpriteArt; layoutSource: string } | null {
   if (candidate.kind !== "sprite" || !candidate.files.shp?.length) return null;
   const rules = candidate.rulesText ? parseCandidateRules(candidate.rulesText, candidate.actor) : null;
   const metaSeqs = candidate.sprite?.sequences ?? {};
@@ -410,17 +429,18 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
   for (const name of names) {
     const r = fromRules ? rules!.sequences[name] : null;
     const m = metaSeqs[name];
-    const file = shpUrl(r?.file ?? null);
+    const file = shpUrl(r?.file ?? m?.file ?? null);
     if (!file) continue;
     const length = r?.length ?? m?.length ?? 1;
     const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy ?? "") ? ["WithSpriteTurret"] : ["WithFacingSpriteBody"];
     sequences.push({
-      name, file, external: null, start: r?.start ?? m?.start ?? 0, length, stride: length, facings: r?.facings ?? m?.facings ?? 1,
-      reverseFacings: false, transpose: false, tick: r?.tick ?? 40, zOffset: 0, shadowStart: r?.shadowStart ?? m?.shadowStart ?? -1,
-      offset: r?.offset ?? [0, 0, 0], frames: null, reverses: false, usedBy, inherited: false,
+      name, file, external: null, start: r?.start ?? m?.start ?? 0, length, stride: r?.stride ?? m?.stride ?? (typeof length === "number" ? length : 0), facings: r?.facings ?? m?.facings ?? 1,
+      reverseFacings: r?.reverseFacings ?? m?.reverseFacings ?? false, useClassicFacings: r?.useClassicFacings ?? m?.useClassicFacings ?? false,
+      transpose: r?.transpose ?? m?.transpose ?? false, tick: r?.tick ?? m?.tick ?? 40, zOffset: r?.zOffset ?? 0, shadowStart: r?.shadowStart ?? m?.shadowStart ?? -1,
+      offset: r?.offset ?? m?.offset ?? [0, 0, 0], frames: r?.frames ?? m?.frames ?? null, reverses: r?.reverses ?? m?.reverses ?? false, usedBy, inherited: false,
     });
   }
-  const body = sequences.find(s => s.usedBy.includes("WithFacingSpriteBody"));
+  const body = sequences.find(s => s.name === "idle" || s.name === "stand") ?? sequences.find(s => s.usedBy.includes("WithFacingSpriteBody"));
   if (!body) return null;
   const turretSeq = sequences.find(s => s.usedBy.includes("WithSpriteTurret")) ?? null;
   const pal = candidate.files.pal ? candidate.urls[candidate.files.pal] : null;
@@ -433,7 +453,8 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
   } : current.palette;
   const turretOffset = rules?.turretOffset ?? vec3(candidate.sprite?.turret?.offset) ?? [0, 0, 0];
   const sprite: SpriteArt = {
-    image: current.id, palette: palette?.name ?? "", shp: null, sequences, quantizedFacings: body.facings,
+    image: current.id, palette: palette?.name ?? "", shp: null, sequences, quantizedFacings: rules?.quantizedFacings ?? candidate.sprite?.quantizedFacings ?? currentSprite?.quantizedFacings ?? body.facings,
+    classicFacingBodyOrientation: rules?.classicFacingBodyOrientation ?? candidate.sprite?.classicFacingBodyOrientation ?? currentSprite?.classicFacingBodyOrientation ?? false,
     turret: turretSeq ? { sequence: turretSeq.name, name: candidate.sprite?.turret?.name ?? "primary", offset: turretOffset, initialFacing: rules?.turretInitialFacing ?? 0 } : null,
   };
   return {

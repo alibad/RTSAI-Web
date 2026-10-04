@@ -13,7 +13,7 @@ import type { RasterImage } from "../../../../lib/art-lab/raster";
 import type { Shp } from "../../../../lib/art-lab/shp";
 import { partVisibleByDefault, type RenderSpec } from "../../../../lib/art-lab/spec";
 import { composeRig, rigAnimates, rigFiles, rigFrame, rigLength, spriteRig, type RigShps, type SpriteRig } from "../../../../lib/art-lab/sprite-compose";
-import { indexFacing } from "../../../../lib/art-lab/sprite-render";
+import { indexFacing, quantizeFacing } from "../../../../lib/art-lab/sprite-render";
 import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { VoxelEngine } from "../voxel-engine";
 import type { VoxelModel } from "../voxel-three";
@@ -157,11 +157,12 @@ export class FrameStore {
     // Facings that pick the same SHP frames share one cached picture (an 8-facing soldier has 8, not 32).
     const tick = rig.overlay ? pose.tick % 960 : rigFrame(rig, rigLength(rig, shps), pose.tick);
     const facings = rig.body.facings;
-    const body = indexFacing(pose.facing, facings);
+    const body = indexFacing(pose.facing, facings, rig.body.useClassicFacings);
     const vehicle = facings > 1 && Boolean(rig.turret);
-    const turretAngle = vehicle ? ((body * 1024) / facings + pose.turret) & 1023 : (rig.initialFacing + pose.turret) & 1023;
-    const turret = rig.turret ? indexFacing(turretAngle, rig.turret.facings) : 0;
-    return `${this.identity(item.spec)}|s|${pose.animation}|${tick}|${body}|${turret}|${pose.color}|${pose.shadow}|${tint}`;
+    const bodyAngle = quantizeFacing(pose.facing, rig.quantizedFacings, rig.classicFacingBodyOrientation);
+    const turretAngle = vehicle ? (bodyAngle + pose.turret) & 1023 : (rig.initialFacing + pose.turret) & 1023;
+    const turret = rig.turret ? indexFacing(turretAngle, rig.turret.facings, rig.turret.useClassicFacings) : 0;
+    return `${this.identity(item.spec)}|s|${pose.animation}|${tick}|${body}|${vehicle ? bodyAngle : 0}|${turret}|${pose.color}|${pose.shadow}|${tint}`;
   }
 
   private spriteParts(item: StageItem, animation: string) {

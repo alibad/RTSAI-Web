@@ -7,7 +7,7 @@ import type { Palette } from "./pal";
 import type { RasterImage } from "./raster";
 import type { Shp } from "./shp";
 import { overlaySequence, pickAnimation, turretSequence, type SpriteAnimation } from "./sprite-anim";
-import { blit, drawShpFrame, framePosition, indexFacing, sequenceFrame, sequenceLength } from "./sprite-render";
+import { blit, drawShpFrame, framePosition, quantizeFacing, sequenceFrame, sequenceLength } from "./sprite-render";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { localToWorld, rotateYaw, screenVector } from "./voxel-math";
 
@@ -21,6 +21,8 @@ export type SpriteRig = {
   overlay: SpriteSequence | null;
   initialFacing: number;
   turretOffset: Vec3 | undefined;
+  quantizedFacings: number;
+  classicFacingBodyOrientation: boolean;
 };
 
 export type RigShps = { body: Shp; turret: Shp | null; overlay: Shp | null };
@@ -37,6 +39,8 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
     overlay: make ? null : damagedLayer(overlaySequence(sprite)),
     initialFacing: sprite?.turret?.initialFacing ?? 0,
     turretOffset: sprite?.turret?.offset,
+    quantizedFacings: sprite?.quantizedFacings ?? animation.body.facings,
+    classicFacingBodyOrientation: sprite?.classicFacingBodyOrientation ?? false,
   };
 }
 
@@ -74,7 +78,7 @@ export function turretScreenOffset(offset: Vec3 | undefined, bodyFacing: number)
 export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bodyFrame: number, turretFacing: number, tick: number): SpriteLayer[] {
   const facings = rig.body.facings;
   const vehicle = facings > 1 && Boolean(rig.turret);
-  const quantize = (f: number) => (indexFacing(f, facings) * 1024) / facings;
+  const quantize = (f: number) => quantizeFacing(f, rig.quantizedFacings, rig.classicFacingBodyOrientation);
   const layers: SpriteLayer[] = [{ shp: shps.body, seq: rig.body, facing: bodyFacing, frame: bodyFrame }];
   if (rig.turret && shps.turret) {
     const angle = vehicle ? (quantize(bodyFacing) + turretFacing) & 1023 : (rig.initialFacing + turretFacing) & 1023;

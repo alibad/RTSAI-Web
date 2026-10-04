@@ -1,12 +1,12 @@
 "use client";
-import { Building2, Film, Swords, Palette } from "lucide-react";
+import { Building2, Film, Swords, Palette, Layers3 } from "lucide-react";
 import type { BehaviorFacts } from "../../../../lib/art-lab/behavior";
 import { spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { setLab, useLab } from "./lab-store";
 import type { ReviewUnit } from "./versions";
 
-export function StudioBar({ mode, onMode, surface, onSurface }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "actions" | "arena"; onSurface: (s: "art" | "actions" | "arena") => void }) {
-  return <div className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><div className="lab-seg" aria-label="Game mode"><button aria-pressed={mode === "ra2"} onClick={() => onMode("ra2")}>Red Alert 2</button><button aria-pressed={mode === "classic"} onClick={() => onMode("classic")}>Red Alert · Classic</button></div><div className="lab-seg" aria-label="Studio workspace">{([{ id: "art", label: "Art", Icon: Palette }, { id: "actions", label: "Actions", Icon: Film }, { id: "arena", label: "Arena", Icon: Swords }] as const).map(({ id, label, Icon }) => <button key={id} aria-pressed={surface === id} onClick={() => onSurface(id)}><Icon size={14} />{label}</button>)}</div></div>;
+export function StudioBar({ mode, onMode, surface, onSurface }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "actions" | "arena" | "rebuild"; onSurface: (s: "art" | "actions" | "arena" | "rebuild") => void }) {
+  return <div className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><div className="lab-seg" aria-label="Game mode"><button aria-pressed={mode === "ra2"} onClick={() => onMode("ra2")}>Red Alert 2</button><button aria-pressed={mode === "classic"} onClick={() => onMode("classic")}>Red Alert · Classic</button></div><div className="lab-seg" aria-label="Studio workspace">{([{ id: "rebuild", label: "Rebuild", Icon: Layers3 }, { id: "art", label: "Art", Icon: Palette }, { id: "actions", label: "Actions", Icon: Film }, { id: "arena", label: "Arena", Icon: Swords }] as const).map(({ id, label, Icon }) => <button key={id} aria-pressed={surface === id} onClick={() => onSurface(id)}><Icon size={14} />{label}</button>)}</div></div>;
 }
 
 export function BehaviorPanel({ unit, facts }: { unit: ReviewUnit; facts: BehaviorFacts | null }) {

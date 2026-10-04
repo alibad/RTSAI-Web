@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { child, childValue, mergeMiniYaml, parseMiniYaml, YamlError, type Yaml } from "../lib/art-lab/miniyaml";
 import { cameraMatrix, facingLabel, partMatrices, transformVector, wcos, wrotMatrix, wrotQuaternion } from "../lib/art-lab/voxel-math";
-import { indexFacing, sequenceFrame } from "../lib/art-lab/sprite-render";
+import { indexFacing, quantizeFacing, sequenceFrame } from "../lib/art-lab/sprite-render";
+import { rigLayers, spriteRig } from "../lib/art-lab/sprite-compose";
 import { poseParts, quantizedNormal, rasterizeUnit } from "../lib/art-lab/raster";
 import { decodeVxl } from "../lib/art-lab/vxl";
 import { decodeHva } from "../lib/art-lab/hva";
@@ -14,6 +15,29 @@ import type { SpriteSequence } from "../lib/art-lab/types";
 
 const merged = (...files: string[]) => new Map(mergeMiniYaml(files.map((f, i) => parseMiniYaml(f, `f${i}`))).map(n => [n.key, n.value]));
 const actor = (m: Map<string, Yaml>, k: string) => m.get(k)!;
+
+test("Classic frames match all 1024 engine angles, including wrap, reverse and shadows", () => {
+  // Independent contract copied from OpenRA.Mods.Cnc/Util.cs (exclusive maxima).
+  const boundaries = [20, 56, 88, 132, 156, 184, 212, 240, 268, 296, 324, 352, 384, 416, 452, 488, 532, 568, 604, 644, 668, 696, 724, 752, 780, 808, 836, 864, 896, 928, 964, 1000];
+  const seq: SpriteSequence = { name: "idle", file: "fixture", external: null, start: 32, length: 1, stride: 1, facings: 32, reverseFacings: false, transpose: false, tick: 40, zOffset: 0, shadowStart: 96, offset: [0, 0, 0], frames: null, reverses: false, usedBy: [], inherited: false, useClassicFacings: true };
+  for (let f = 0; f < 1024; f++) {
+    let expected = boundaries.findIndex(boundary => f < boundary);
+    if (expected < 0) expected = 0;
+    assert.equal(sequenceFrame(seq, 0, f), 32 + expected, `facing ${f}`);
+    assert.equal(sequenceFrame(seq, 0, f, true), 96 + expected);
+    assert.equal(sequenceFrame({ ...seq, reverseFacings: true }, 0, f), 32 + (32 - expected) % 32);
+  }
+  assert.equal(indexFacing(35, 32), 1, "RA2 keeps uniform frames");
+  assert.equal(indexFacing(35, 32, true), 1);
+  assert.equal(indexFacing(50, 32, true), 1, "Classic stays in frame 1 until 56");
+  assert.equal(indexFacing(-1, 32, true), 0);
+  assert.equal(quantizeFacing(50, 32, true), 40, "authored yaw, not 32");
+  assert.equal(quantizeFacing(50, 0, true), 50, "disabled quantization");
+  assert.equal(quantizeFacing(50, 32), 64);
+  const rig = spriteRig({ image: "fixture", palette: "p", shp: null, sequences: [seq, { ...seq, name: "turret", start: 64 }], quantizedFacings: null, classicFacingBodyOrientation: true, turret: { sequence: "turret", name: "primary", offset: [30, 0, 0], initialFacing: 0 } }, "stand")!;
+  const layers = rigLayers(rig, { body: {} as never, turret: {} as never, overlay: null }, 50, 0, 0, 0);
+  assert.equal(layers[1].facing, 40, "turret follows the actual Classic body yaw");
+});
 
 test("MiniYaml parses tabs and 4-space indents, comments and escapes", () => {
   const nodes = parseMiniYaml("A: 1 # comment\n\tB: x\\#y\n    C:\n\t\tD: \\  padded  \\\n# whole line\nE:\n");

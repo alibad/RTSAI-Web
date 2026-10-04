@@ -104,6 +104,7 @@ export type SpriteSequence = {
   stride: number;
   facings: number;
   reverseFacings: boolean;
+  useClassicFacings?: boolean;
   transpose: boolean;
   tick: number;
   zOffset: number;
@@ -123,6 +124,7 @@ export type SpriteArt = {
   shp: { width: number; height: number; frames: number; compression: number[] } | null;
   sequences: SpriteSequence[];
   quantizedFacings: number | null;
+  classicFacingBodyOrientation?: boolean;
   turret: { sequence: string; name: string; offset: Vec3; initialFacing: number } | null;
 };
 

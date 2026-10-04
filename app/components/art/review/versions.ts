@@ -44,12 +44,12 @@ export function stageItem(unit: ReviewUnit, candidate: Candidate | null): StageI
     if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite });
     return itemCache.get(key)!;
   }
-  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${(candidate.files.vxl ?? []).join(",")}:${(candidate.files.shp ?? []).join(",")}:${candidate.rulesText?.length ?? 0}`;
+  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${JSON.stringify(unit.spec)}:${JSON.stringify(candidate.urls)}:${JSON.stringify(candidate.sprite)}:${JSON.stringify(candidate.voxelize)}:${candidate.rulesText ?? ""}`;
   if (!itemCache.has(key)) {
     // Voxel candidates draw in the voxel slot; sprite candidates use their own frame layout (rules snippet or
     // meta.sprite) when the unit is a voxel today, else the unit's current sprite sequences.
     const voxel = candidateRenderSpec(unit.spec, candidate);
-    const sprite = voxel ? null : candidateVehicleSprite(unit.spec, candidate) ?? candidateSprite(unit.spec, unit.sprite, candidate);
+    const sprite = voxel ? null : candidateVehicleSprite(unit.spec, candidate, unit.sprite) ?? candidateSprite(unit.spec, unit.sprite, candidate);
     itemCache.set(key, voxel ? { key: candidate.id, spec: voxel, sprite: null } : sprite ? { key: candidate.id, spec: sprite.spec, sprite: sprite.sprite } : null);
   }
   return itemCache.get(key)!;
@@ -67,12 +67,12 @@ export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, sl
   const original = unit.origin === "original";
   const current: Version = {
     key: "current", kind: "current", candidate: null, label: original ? "Original" : "Current",
-    tag: original ? "RA2" : slot === "icon" ? "PNG" : unit.spec.voxel ? "VXL" : "SHP",
+    tag: slot === "icon" ? "PNG" : unit.spec.voxel ? "VXL" : "SHP",
     item: slot === "icon" ? null : stageItem(unit, null),
     image: slot === "icon" ? unit.spec.cameo : null,
   };
   const ref: Version[] = reference && slot !== "concept" ? [{
-    key: `ref:${reference.id}`, kind: "reference", candidate: null, reference, referenceWhy, label: "Reference", tag: "RA2",
+    key: `ref:${reference.id}`, kind: "reference", candidate: null, reference, referenceWhy, label: "Reference", tag: slot === "icon" ? "PNG" : reference.spec.voxel ? "VXL" : "SHP",
     item: slot === "icon" ? null : stageItem(reference, null),
     image: slot === "icon" ? reference.spec.cameo : null,
   }] : [];

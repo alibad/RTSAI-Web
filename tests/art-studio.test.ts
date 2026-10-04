@@ -8,6 +8,53 @@ import { loadModData } from "../lib/art-lab/resolve";
 import { loadClassicData } from "../lib/art-lab/classic";
 import { computeRosters } from "../lib/art-lab/roster";
 import { assertPublishable, type ProvenanceRecord } from "../lib/art-lab/provenance";
+import { duelFaction } from "../lib/art-lab/duel-server";
+import { baselineCounts, rebuildComplete, rebuildSummary, type RebuildCampaign } from "../lib/art-lab/rebuild";
+import { rebuildDependencies } from "../lib/art-lab/rebuild-dependencies";
+
+test("rebuild dependencies follow wrecks, transformations and weapon effects without image access", () => {
+  const files: Record<string, string> = {
+    "mods/rtsai/mod.yaml": "Rules:\n\tra2|rules/test.yaml\nWeapons:\n\tra2|weapons/test.yaml\nSequences:\n\tra2|sequences/test.yaml\n",
+    "mods/rtsai/rules/test.yaml": "air:\n\tRenderSprites:\n\tSpawnActorOnDeath:\n\t\tActor: wreck\n\tArmament:\n\t\tWeapon: Gun\nwreck:\n\tRenderSprites:\n\tTransforms:\n\t\tIntoActor: air\n\tFallsToEarth:\n\t\tExplosion: Gun\n",
+    "mods/rtsai/weapons/test.yaml": "Gun:\n\tProjectile: Bullet\n\t\tImage: projectile\n\tWarhead@1: CreateEffect\n\t\tImage: impact\n",
+    "mods/rtsai/sequences/test.yaml": "air:\n\tidle:\nwreck:\n\tidle:\nprojectile:\n\tidle:\nimpact:\n\texplode:\n",
+  };
+  const data = loadModData({ text: p => files[p], exists: p => p in files, bytes: () => { throw new Error("pixels forbidden"); } });
+  const graph = rebuildDependencies(data, ["air"]);
+  assert.equal(graph.actors.wreck.buildable, false);
+  assert.equal(graph.actors.air.buildable, true);
+  assert.deepEqual(Object.keys(graph.actors), ["air", "wreck"], "cycles terminate");
+  assert.equal(graph.weapons.gun.projectile, "Bullet");
+  assert.deepEqual(graph.images.impact.sequences, ["explode"]);
+});
+
+test("native encounters use a faction that really builds each actor", () => {
+  const unit = (id: string) => ({ id } as never);
+  const data = { factions: [{ id: "america", units: [unit("e1")] }, { id: "china", units: [unit("r2qilin"), unit("e1")] }, { id: "france", units: [unit("e1")] }] } as never;
+  assert.equal(duelFaction(data, "r2qilin", undefined, "ra2"), "china");
+  assert.equal(duelFaction(data, "e1", undefined, "ra2"), "america");
+  assert.equal(duelFaction(data, "e1", "france", "ra2"), "france");
+  assert.throws(() => duelFaction(data, "r2qilin", "america", "ra2"), /cannot build/);
+  assert.throws(() => duelFaction(data, "not-an-actor", undefined, "ra2"), /No faction/);
+});
+
+test("rebuild discovery never counts as completed art; summaries omit the image contracts", () => {
+  const gates = Object.fromEntries(["design", "model", "icon", "actions", "visual", "native_encounters", "balance", "owner"].map(g => [g, { state: "pending", evidence: [] }]));
+  const catalog = { schemaVersion: 1, modes: {}, factions: [], actors: { "classic:e1": { key: "classic:e1", mode: "classic", actor: "e1", gates, currentContract: { originalUrl: "/local-only" }, rebuild: { evidence: "inferred", requiredObservations: [], dependencyAudit: "pending" } } } } as unknown as RebuildCampaign;
+  assert.equal(rebuildComplete(catalog.actors["classic:e1"]), false);
+  assert.equal("currentContract" in rebuildSummary(catalog).actors["classic:e1"], false);
+  for (const g of Object.values(catalog.actors["classic:e1"].gates)) g.state = "pass";
+  assert.equal(rebuildComplete(catalog.actors["classic:e1"]), false, "a pass needs evidence");
+  for (const g of Object.values(catalog.actors["classic:e1"].gates)) g.evidence.push("local-reviewed-artifact");
+  assert.equal(rebuildComplete(catalog.actors["classic:e1"]), true);
+});
+
+test("native progress excludes stale actors and runner changes, and counts recordings rather than victories", () => {
+  const catalog = { modes: { classic: { actors: 2 }, ra2: { actors: 1 } }, actors: { "classic:e1": { mode: "classic", baselineSha256: "a" }, "classic:e2": { mode: "classic", baselineSha256: "b" }, "ra2:e1": { mode: "ra2", baselineSha256: "c" } } } as unknown as RebuildCampaign;
+  const native = { runnerSha256: "runner", actors: { "classic:e1": { status: "complete", baselineSha256: "a", damageEvents: 0 }, "classic:e2": { status: "complete", baselineSha256: "old", damageEvents: 5 }, "ra2:e1": { status: "failed", baselineSha256: "c" } } };
+  assert.deepEqual(baselineCounts(catalog, native, "runner"), { classic: { recorded: 1, failed: 0, withDamage: 0, total: 2 }, ra2: { recorded: 0, failed: 1, withDamage: 0, total: 1 } });
+  assert.equal(baselineCounts(catalog, native, "changed").classic.recorded, 0);
+});
 
 test("Classic LCW base and previous-frame XOR decode through the shared sprite loader", () => {
   const b = new Uint8Array(49), v = new DataView(b.buffer);
@@ -45,6 +92,8 @@ test("Classic default experience loads all ten countries and buildings", { skip:
   assert.equal(factions.find(f => f.id === "england")?.name, "England");
   assert.equal(factions.find(f => f.id === "china")?.units.find(u => u.id === "cnqilin")?.origin, "new");
   assert.equal(factions.find(f => f.id === "england")?.units.find(u => u.id === "e1")?.name, "Rifle Infantry");
+  assert.equal(factions.find(f => f.id === "england")?.units.find(u => u.id === "pbox")?.category, "defense");
+  assert.equal(data.ruleKeys.get("afld.ukraine"), "AFLD.Ukraine", "map overrides must retain exact rule key case");
   assert.ok(factions.every(f => f.units.some(u => u.category === "structure")));
   assert.ok(behaviorFacts(data, "yak").actions.some(a => a.label === "Falling wreck"));
 });

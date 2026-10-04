@@ -50,7 +50,7 @@ export type FactionRoster = {
 
 const list = (value: string | null | undefined) => (value ?? "").split(",").map(s => s.trim()).filter(Boolean);
 const QUEUES = new Set(["Infantry", "Vehicle", "Aircraft", "Ship", "Building", "Defense", "Support"]);
-const WEAPONS = ["Armament", "AttackTurreted", "AttackOmni", "AttackTesla"];
+const WEAPONS = ["Armament", "AttackTurreted", "AttackOmni", "AttackTesla", "AttackGarrisoned"];
 const ORDER: ArtCategory[] = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
 
 type Token = { name: string; negated: boolean };
@@ -132,6 +132,8 @@ function unitOf(data: ModData, id: string, origin: RosterOrigin): RosterUnit | n
   const cost = child(actor, "Valued") ? Number(childValue(child(actor, "Valued")!.value, "Cost") ?? 0) : null;
   // Walls, superweapons and the like share the Support queue with defences; only armed ones are defences.
   let category = categorize(actor, queue);
+  // A structure with its own armament is a defense even in a Building queue.
+  if (child(actor, "Building") && traits(actor, "Armament").length) category = "defense";
   if (category === "defense" && !WEAPONS.some(w => traits(actor, w).length)) category = "structure";
   const techPrereq = tokens(actor).some(t => !t.negated && /tech|radar|naradr/.test(t.name));
   return {

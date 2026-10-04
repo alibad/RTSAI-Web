@@ -10,6 +10,7 @@ import { CoachMark, railFilters, slotNames, TopBar, UnitRail, type FactionSummar
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
 import { BehaviorPanel, StudioBar } from "./review/Studio";
 import { Arena } from "./review/Arena";
+import { Rebuild } from "./review/Rebuild";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
@@ -31,8 +32,8 @@ const roleText = (roles: string[], category: string) => {
 };
 const railKey = "rtsai-art-review-rail";
 
-async function post(action: ReviewAction): Promise<ReviewEntry> {
-  const response = await fetch(`${API}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action) });
+async function post(action: ReviewAction, mode: "ra2" | "classic"): Promise<ReviewEntry> {
+  const response = await fetch(`${API}/action?mode=${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action) });
   const payload = await response.json() as { entry?: ReviewEntry; error?: string };
   if (!response.ok || !payload.entry) throw new Error(payload.error ?? `HTTP ${response.status}`);
   return payload.entry;
@@ -45,7 +46,8 @@ async function post(action: ReviewAction): Promise<ReviewEntry> {
  */
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
   const [mode, setMode] = useState<"ra2" | "classic">("ra2");
-  const [surface, setSurface] = useState<"art" | "actions" | "arena">("art");
+  const [surface, setSurface] = useState<"art" | "actions" | "arena" | "rebuild">("art");
+  const [linkReady, setLinkReady] = useState(false);
   const [state, setState] = useState<ReviewState | null>(null);
   const [error, setError] = useState("");
   const [faction, setFaction] = useState<string | null>(null);
@@ -89,22 +91,26 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     try { localStorage.setItem(railKey, value ? "collapsed" : "open"); } catch { /* ignore */ }
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const loadingMode = mode;
     try {
-      const response = await fetch(`${API}/state`, { cache: "no-store" });
+      const response = await fetch(`${API}/state?mode=${loadingMode}`, { cache: "no-store", signal });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const next = await response.json() as ReviewState;
+      if (signal?.aborted) return;
       setState(next);
       setError("");
     } catch (cause) {
+      if (signal?.aborted) return;
       setError(`Could not read the RTSAI-Art workspace: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
-  }, []);
+  }, [mode]);
   useEffect(() => {
-    const first = setTimeout(() => void load(), 0);
-    const onFocus = () => void load();
+    const controller = new AbortController();
+    const first = setTimeout(() => void load(controller.signal), 0);
+    const onFocus = () => void load(controller.signal);
     window.addEventListener("focus", onFocus);
-    return () => { clearTimeout(first); window.removeEventListener("focus", onFocus); };
+    return () => { controller.abort(); clearTimeout(first); window.removeEventListener("focus", onFocus); };
   }, [load]);
   // Every faction's roster, with original RA2 units served from the local cache (dev only).
   useEffect(() => {
@@ -126,22 +132,23 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const id = setTimeout(() => {
       if (params.get("mode") === "classic") setMode("classic");
       const surface = params.get("view");
-      if (surface === "arena" || surface === "actions") setSurface(surface);
+      if (surface === "arena" || surface === "actions" || surface === "rebuild") setSurface(surface);
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
       if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
       if (v) setFocusKey(v);
+      setLinkReady(true);
     }, 0);
     return () => clearTimeout(id);
   }, []);
 
   const workspace = useMemo(() => new Map((state?.units ?? []).map(u => [u.actor, u])), [state]);
   const rowFor = useCallback((u: ReviewUnit): Row => {
-    const ws = mode === "ra2" ? workspace.get(u.id) : undefined;
+    const ws = workspace.get(u.id);
     const entry = state?.review[u.id];
     const count = slotIds.reduce((n, s) => n + candidatesForSlot(ws, s).length, 0);
     return { unit: u, ws, entry, count, needs: needsDecision(ws, entry), origin: u.origin ?? "new" };
-  }, [workspace, state, mode]);
+  }, [workspace, state]);
   // Every unit by id: our new units (page data) and the original RA2 units (dev API).
   const unitIndex = useMemo(() => {
     const m = new Map<string, ReviewUnit>((mode === "ra2" ? units : []).map(u => [u.id, { ...u, origin: "new" as const }]));
@@ -201,7 +208,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const test = railFilters.find(f => f.id === filter)?.test ?? (() => true);
     return railRows.filter(test);
   }, [railRows, filter]);
-  const progress = reviewProgress(mode === "ra2" ? rows : []);
+  const progress = reviewProgress(rows);
   const selectedUnit = selected ? unitIndex.get(selected) : undefined;
   const current = selectedUnit ? rowFor(selectedUnit)
     : factionRows.find(r => r.needs) ?? factionRows.find(r => r.count > 0) ?? factionRows[0] ?? null;
@@ -222,8 +229,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const counts = useMemo(() => Object.fromEntries(slotIds.map(s => [s, candidatesForSlot(ws, s).length])) as Record<SlotId, number>, [ws]);
   const labels = useMemo(() => versionLabels(ws?.candidates ?? []), [ws]);
   const conceptCurrent = useMemo(() => versions.slice(0, 1), [versions]);
-  const currentItem = unit ? stageItem(unit, null) : null;
-  const radius = useUnitRadius(frames, slot === "icon" ? null : currentItem, tints);
+  const currentItem = useMemo(() => unit ? stageItem(unit, null) : null, [unit]);
+  const radius = useUnitRadius(frames, surface === "art" && slot !== "icon" ? currentItem : null, tints);
   // Thumbnails at the largest whole zoom that keeps the unit's turning circle inside the card.
   const thumbZoom = radius === null ? 1 : Math.max(1, Math.min(3, Math.floor(104 / (2 * radius))));
   // The lineup already lists every version as a clickable row, so it takes the filmstrip's height.
@@ -235,7 +242,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   // Keep the address bar in step for deep links.
   useEffect(() => {
-    if (!unitKey) return;
+    if (!linkReady || !unitKey) return;
     const url = new URL(window.location.href);
     url.searchParams.set("faction", factionId);
     url.searchParams.set("unit", unitKey);
@@ -244,7 +251,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     url.searchParams.set("view", surface);
     if (focusKey !== "current") url.searchParams.set("v", focusKey); else url.searchParams.delete("v");
     window.history.replaceState(null, "", url);
-  }, [unitKey, factionId, slot, focusKey, mode, surface]);
+  }, [linkReady, unitKey, factionId, slot, focusKey, mode, surface]);
 
   // Preload the neighbours of the focused version (models warm in the stage's frame cache).
   useEffect(() => {
@@ -279,8 +286,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const send = async (action: ReviewAction, message: string) => {
     setBusy(true);
     try {
-      const next = await post(action);
-      setState(s => (s ? { ...s, review: { ...s.review, [action.actor]: next } } : s));
+      const sendingMode = mode;
+      const sendingRoot = state?.root;
+      const next = await post(action, sendingMode);
+      setState(s => (s && s.root === sendingRoot ? { ...s, review: { ...s.review, [action.actor]: next } } : s));
       setToast(message);
       return true;
     } catch (cause) {
@@ -302,10 +311,11 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   // Keyboard: one listener reading the latest render through a ref.
   // Original units and references are for comparison only: no Use, Keep or Reject.
-  const referenceOnly = mode === "classic" || unit?.origin === "original" || focused?.kind === "reference";
+  const referenceOnly = (unit?.origin === "original" && !focused?.candidate) || focused?.kind === "reference";
   const keys = useRef({ visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly });
   useEffect(() => { keys.current = { visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly }; });
   useEffect(() => {
+    if (surface !== "art") return;
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select") || target?.isContentEditable) return;
@@ -339,7 +349,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectUnit, changeSlot]);
+  }, [selectUnit, changeSlot, surface]);
 
   let stage: React.ReactNode = null;
   if (unit && focused) {
@@ -350,8 +360,9 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }
 
   return (
-    <div className="lab">
-      <StudioBar mode={mode} onMode={m => { setMode(m); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); if (s !== "art") setSlot("model"); }} />
+    <div className={`lab${surface === "rebuild" ? " is-rebuild" : ""}`}>
+      <StudioBar mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); if (s !== "art") setSlot("model"); }} />
+      {surface === "rebuild" ? <Rebuild key={mode} mode={mode} state={state} onOpen={(f, a) => { setFaction(f); setSelected(a); setFocusKey("current"); setSurface("art"); setSlot("model"); }} /> : <>
       <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
@@ -373,6 +384,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
         ) : <aside className="lab-panel" />}
       </div>
       <CoachMark />
+      </>}
     </div>
   );
 }
