@@ -26,7 +26,7 @@ export type ModReader = {
  */
 export type Ra2Hook = { record(name: string): string | null; bytes(name: string): Uint8Array };
 
-export const MODERN_FACTIONS = ["china", "iran", "turkey", "saudi", "yemen"] as const;
+export const MODERN_FACTIONS = ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"] as const;
 export const MOD_DIR = "mods/rtsai";
 export const ART_DIR = `${MOD_DIR}/modern-factions`;
 
@@ -140,7 +140,7 @@ export type Resolution = {
   shadowColor: [number, number, number, number];
 };
 
-const FACTION_ACCENTS: Record<string, string> = { china: "#cb4c3b", iran: "#3f9a5b", turkey: "#d9473f", saudi: "#2e8b57", yemen: "#b8873b" };
+const FACTION_ACCENTS: Record<string, string> = { china: "#cb4c3b", iran: "#3f9a5b", turkey: "#d9473f", saudi: "#2e8b57", yemen: "#b8873b", israel: "#80b8ff", hezbollah: "#b3b881" };
 
 export function resolveArtLab(reader: ModReader, data: ModData): Resolution {
   const files = new Map<string, FileUse>();
