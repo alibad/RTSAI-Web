@@ -166,10 +166,13 @@ function FactionPicker({ factions, faction, onFaction, compact }: { factions: Fa
     const at = Math.max(0, factions.findIndex(f => f.id === faction));
     options.current[at]?.focus();
     const onDown = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(null); };
-    const close = () => setOpen(null);
+    const reposition = () => {
+      const r = button.current?.getBoundingClientRect();
+      if (r) setOpen({ top: Math.min(r.bottom + 8, Math.max(8, window.innerHeight - 170)), left: Math.max(8, Math.min(r.left, window.innerWidth - 368)) });
+    };
     window.addEventListener("pointerdown", onDown);
-    window.addEventListener("resize", close);
-    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("resize", close); };
+    window.addEventListener("resize", reposition);
+    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("resize", reposition); };
   }, [open, factions, faction]);
   // Fixed to the viewport so the rail's scroll box never clips it.
   const show = () => { const r = button.current?.getBoundingClientRect(); if (r) setOpen({ top: r.bottom + 8, left: r.left }); };
