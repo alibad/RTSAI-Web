@@ -26,6 +26,9 @@ import { decodeShp } from "./shp";
 import type { PaletteSpec, RenderSpec } from "./spec";
 import { drawShpFrame } from "./sprite-render";
 import type { PaletteRef, SpriteArt } from "./types";
+import { combineSources, type ActorSources } from "./asset-source";
+import { localAssetSource } from "./asset-source-server";
+import type { ProvenanceRecord } from "./provenance";
 
 const run = promisify(execFile);
 
@@ -51,7 +54,7 @@ export function originalsConfig(webRoot: string, env: NodeJS.ProcessEnv = proces
   };
 }
 
-export type StockArt = { spec: RenderSpec; sprite: SpriteArt | null; files: string[]; fromModBits: string[]; info: RosterUnit | null; behavior: BehaviorFacts; ruleKey?: string };
+export type StockArt = { spec: RenderSpec; sprite: SpriteArt | null; files: string[]; fromModBits: string[]; info: RosterUnit | null; behavior: BehaviorFacts; ruleKey?: string; sources?: ActorSources };
 export type RosterPayload = {
   mode?: "ra2" | "classic";
   factions: FactionRoster[];
@@ -254,6 +257,9 @@ export function rosterPayload(cfg: OriginalsConfig, refresh = false): Promise<Ro
 async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const started = Date.now();
   const reader = modReader(cfg.modRoot);
+  const ownedPaths = new Map<string, string>();
+  let provenance: ProvenanceRecord | null = null;
+  try { provenance = JSON.parse(reader.text(`mods/${cfg.mode === "classic" ? "ra" : "rtsai"}/modern-factions/ART-PROVENANCE.json`)); } catch { /* Unknown authorship stays unknown. */ }
   const data = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
   const { factions, stock: stockInfo } = computeRosters(data);
   const ids = new Set<string>();
@@ -265,6 +271,7 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const ownFile = (path: string) => {
     const name = `${createHash("sha256").update(path).digest("hex").slice(0, 12)}-${basename(path).toLowerCase()}`;
     if (!SAFE_NAME.test(name) || !reader.exists(path)) throw new Error(`Missing mod art: ${path}`);
+    ownedPaths.set(`owned/${name}`, path);
     mkdirSync(join(cfg.cacheDir, "owned-files"), { recursive: true });
     writeFileSync(join(cfg.cacheDir, "owned-files", name), reader.bytes(path));
     return `owned/${name}`;
@@ -356,7 +363,11 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     } : null;
     const owned = { ...art, sprite, factionId: "" };
     const spec = buildRenderSpec(owned, url, name => paletteSpec(paletteRefs[name ?? "player"] ?? null), cameoUrl);
-    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id), ruleKey: data.ruleKeys.get(id) };
+    const sourceOf = (file: string) => localAssetSource(file, cfg.mode ?? "ra2", ownedPaths.get(file), () => bytes(file), provenance);
+    const files = art.files.map(sourceOf);
+    const model = combineSources(art.files.filter(f => /\.(vxl|hva|shp)$/.test(f) && f !== art.cameo.file).map(sourceOf), "Current model");
+    const icon = art.cameo.file ? sourceOf(art.cameo.file) : combineSources([], "Current icon");
+    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id), ruleKey: data.ruleKeys.get(id), sources: { model, icon, files, rules: cfg.mode === "classic" ? "RTS AI Classic · OpenRA fork" : "RTS AI · RTSAI-Mod" } };
   }
   return { mode: cfg.mode ?? "ra2", factions, stock, unresolved: [...ids].filter(id => !stock[id]), extraction: { requested: wanted.size, cached: [...wanted].filter(n => cached(cfg, n)).length, missing, error, ms: Date.now() - started } };
 }

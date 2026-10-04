@@ -9,6 +9,7 @@ import type { RosterPayload } from "../../../lib/art-lab/originals";
 import { railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
 import { ActionShelf, BehaviorPanel, StudioBar } from "./review/Studio";
+import { SourceLibrary } from "./review/Sources";
 import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
@@ -58,6 +59,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
   const [help, setHelp] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [now, setNow] = useState(0);
   const [frames] = useState(() => new FrameStore());
@@ -157,7 +159,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       const category = info?.category ?? s.spec.category;
       m.set(id, {
         ...existing, id, factionId: existing?.factionId ?? "", factionName: existing?.factionName ?? "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
-        queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits,
+        queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits, sources: s.sources,
       });
     }
     return m;
@@ -360,7 +362,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}`}>
-      <StudioBar mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
+      {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} />}
+      <StudioBar onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
       <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface !== "arena" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}

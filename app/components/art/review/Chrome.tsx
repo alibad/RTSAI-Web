@@ -4,6 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Check, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
+import { sourceLabel } from "../../../../lib/art-lab/asset-source";
 import { houseColors } from "../../../../lib/art-lab/remap";
 import type { SlotId } from "../../../../lib/art-lab/review";
 import { backdrops } from "../PixelCanvas";
@@ -222,7 +223,7 @@ const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: {
         <span className="lab-cameo">
           {unit.spec.cameo ? <img src={unit.spec.cameo} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="lab-noicon" />}
         </span>
-        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b><small>{origin === "new" ? "Faction artwork" : origin === "modified" ? "Updated artwork" : "Game artwork"}</small></span>}
+        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b><small>{sourceLabel(unit)}</small></span>}
         {count > 0 && (
           <span className={`lab-count${needs ? " is-needs" : " is-done"}`} aria-label={`${count} candidates, ${status}`}>
             {!needs && <Check size={12} strokeWidth={3} aria-hidden="true" />}{count}

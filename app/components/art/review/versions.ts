@@ -5,6 +5,7 @@ import { candidateRenderSpec, candidateSprite, candidateVehicleSprite, candidate
 import { byCreation, kindTags, versionLabels } from "../../../../lib/art-lab/review-ui";
 import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { StageItem } from "./frames";
+import type { ActorSources } from "../../../../lib/art-lab/asset-source";
 
 export type ReviewUnit = {
   id: string; factionId: string; factionName: string; name: string; category: string; role: string;
@@ -16,6 +17,7 @@ export type ReviewUnit = {
   /** Original units: files read from the RA2 cache, and any the mod's own bits override. */
   files?: string[];
   fromModBits?: string[];
+  sources?: ActorSources;
 };
 
 /** One card in the filmstrip: what is in game now, the original RA2 unit it replaces, or one candidate. */
