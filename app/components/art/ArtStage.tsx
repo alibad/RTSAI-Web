@@ -167,6 +167,19 @@ function usePalette(spec: RenderSpec, color: string | null) {
   return palette;
 }
 
+function useOverlayShps(files: (string | null)[], active: boolean) {
+  const key = JSON.stringify(files);
+  const [loaded, setLoaded] = useState<{ key: string; shps: (Shp | null)[] } | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    const urls = JSON.parse(key) as (string | null)[];
+    Promise.all(urls.map(file => file ? loadShp(file) : null)).then(shps => { if (!cancelled) setLoaded({ key, shps }); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [key, active]);
+  return loaded?.key === key ? loaded.shps : null;
+}
+
 function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
   const [wrapRef, near] = useNearViewport<HTMLDivElement>("300px");
   const active = eager || near;
@@ -175,10 +188,10 @@ function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
   const turret = rig?.turret ?? null;
   const bodyShp = useShp(body?.file, active);
   const turretShp = useShp(turret?.file, active);
-  const overlayShp = useShp(rig?.overlay?.file, active);
+  const overlayShps = useOverlayShps(rig?.overlays.map(o => o.seq.file) ?? [], Boolean(active));
   const palette = usePalette(spec, settings.color);
   const tint = tintFor(settings.tintMap, tints);
-  const shps = useMemo(() => (bodyShp ? { body: bodyShp, turret: turretShp, overlay: overlayShp } : null), [bodyShp, turretShp, overlayShp]);
+  const shps = useMemo(() => (bodyShp && overlayShps ? { body: bodyShp, turret: turretShp, overlay: overlayShps[0] ?? null, overlays: overlayShps } : null), [bodyShp, turretShp, overlayShps]);
   const [tick, setTick] = useState(0);
   const length = rig && shps ? rigLength(rig, shps) : 1;
   // Tick only while the picture actually changes: a one-frame stand or idle never re-renders on a timer.

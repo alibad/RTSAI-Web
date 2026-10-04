@@ -454,7 +454,16 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
     turret = { sequence: seq, name: turretName, offset: parseVec3(childValue(t?.value, "Offset")), initialFacing: num(childValue(t?.value, "InitialFacing"), 0) };
   }
   for (const [, node] of traits(actor, "WithMakeAnimation")) addUser(childValue(node.value, "Sequence") ?? "make", "WithMakeAnimation (build-up)");
-  for (const [instance, node] of traits(actor, "WithIdleOverlay")) addUser(childValue(node.value, "Sequence") ?? "idle-overlay", `WithIdleOverlay@${instance}`);
+  const overlays: NonNullable<SpriteArt["overlays"]> = [];
+  for (const [trait, fallback, mode] of [["WithIdleOverlay", "idle-overlay", "loop"], ["WithProductionDoorOverlay", "build-door", "door"], ["WithExitOverlay", "exit-overlay", "activity"], ["WithProductionOverlay", "production", "activity"]] as const) {
+    for (const [instance, node] of traits(actor, trait)) {
+      const sequence = childValue(node.value, "Sequence") ?? fallback;
+      const label = `${trait}${instance ? "@" + instance : ""}`;
+      addUser(sequence, label);
+      addUser(`damaged-${sequence}`, `${label} (damaged)`);
+      overlays.push({ sequence, trait: label, offset: parseVec3(childValue(node.value, "Offset")), requiresCondition: childValue(node.value, "RequiresCondition"), mode });
+    }
+  }
   addUser(childValue(child(actor, "Buildable")?.value, "Icon") ?? "icon", "Buildable icon (cameo)");
 
   const field = (seq: Yaml, key: string) => childValue(seq, key) ?? childValue(defaults, key);
@@ -509,6 +518,6 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
     image, palette: childValue(renderSprites, "Palette") ?? playerPalette, shp, sequences,
     quantizedFacings: body && childValue(body, "QuantizedFacings") ? num(childValue(body, "QuantizedFacings"), 0) : null,
     classicFacingBodyOrientation: Boolean(classicBody),
-    turret,
+    turret, overlays,
   };
 }

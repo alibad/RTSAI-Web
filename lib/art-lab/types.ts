@@ -126,6 +126,8 @@ export type SpriteArt = {
   quantizedFacings: number | null;
   classicFacingBodyOrientation?: boolean;
   turret: { sequence: string; name: string; offset: Vec3; initialFacing: number } | null;
+  /** Decorative layers and doors, in trait order. Activity layers appear only in their preview. */
+  overlays?: { sequence: string; trait: string; offset: Vec3; requiresCondition: string | null; mode: "loop" | "door" | "activity" }[];
 };
 
 export type GeneratorRef = {

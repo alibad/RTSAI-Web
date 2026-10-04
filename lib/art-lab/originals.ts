@@ -301,6 +301,7 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     }
     const sprite = art.sprite ? {
       ...art.sprite,
+      overlays: art.sprite.overlays?.filter(o => !o.requiresCondition || conditionHolds(o.requiresCondition, granted)),
       turret: art.sprite.turret && !conditional.has(art.sprite.turret.sequence) ? art.sprite.turret : null,
       sequences: art.sprite.sequences.map(q => (q.file && q.name !== "icon" ? { ...q, inherited: false } : q)),
     } : null;

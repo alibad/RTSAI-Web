@@ -28,6 +28,7 @@ export type RenderSpec = {
     turret: SpriteSequence | null;
     turretInitialFacing: number | null;
     overlay: SpriteSequence | null;
+    overlays?: { seq: SpriteSequence; offset: Vec3; animated: boolean }[];
   };
 };
 

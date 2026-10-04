@@ -6,7 +6,8 @@ import { decodeVxl, type Vxl } from "./vxl";
 import { parseHexColor, remapPalette } from "./remap";
 import { RA2_NORMALS, TS_NORMALS } from "./normals.generated";
 import { poseParts, rasterizeUnit, type RasterImage } from "./raster";
-import { blit, drawShpFrame, framePosition, sequenceFrame } from "./sprite-render";
+import { blit } from "./sprite-render";
+import { composeLayers, turretScreenOffset, type SpriteLayer } from "./sprite-compose";
 import ShpWorker from "./shp-worker?worker";
 import { partVisibleByDefault, type PaletteSpec, type RenderSpec } from "./spec";
 
@@ -94,18 +95,16 @@ export async function renderInGame(spec: RenderSpec, options: InGameOptions): Pr
   const stand = s?.stand;
   if (!s || !stand?.file) throw new Error(`${spec.id}: no published sprite body`);
   const shp = await loadShp(stand.file);
-  const box = options.frameBox ?? { width: shp.width + 8, height: shp.height + 8, anchorX: Math.round(shp.width / 2 + 4 - stand.offset[0]), anchorY: Math.round(shp.height / 2 + 4 - stand.offset[1]) };
-  const out = new Uint8ClampedArray(4 * box.width * box.height);
-  const layer = (shpFile: Shp, seq: typeof stand, facing: number, frame = 0) => {
-    const index = sequenceFrame(seq, frame, facing);
-    const pixels = drawShpFrame(shpFile, index, palette);
-    const at = framePosition(shpFile, seq, box.anchorX, box.anchorY);
-    blit(out, box.width, box.height, pixels, shpFile.width, shpFile.height, at.x, at.y);
-  };
-  layer(shp, stand, options.facing, options.frame ?? 0);
-  if (s.turret?.file) layer(await loadShp(s.turret.file), s.turret, (options.turretFacing ?? s.turretInitialFacing ?? 0) & 1023);
-  if (s.overlay?.file) layer(await loadShp(s.overlay.file), s.overlay, 0, options.frame ?? 0);
-  return { width: box.width, height: box.height, data: out, anchorX: box.anchorX, anchorY: box.anchorY, notes: [] };
+  const layers: SpriteLayer[] = [{ shp, seq: stand, facing: options.facing, frame: options.frame ?? 0 }];
+  if (s.turret?.file) layers.push({ shp: await loadShp(s.turret.file), seq: s.turret, facing: (options.turretFacing ?? s.turretInitialFacing ?? 0) & 1023, frame: 0 });
+  const overlays = s.overlays ?? (s.overlay ? [{ seq: s.overlay, offset: [0, 0, 0] as [number, number, number], animated: true }] : []);
+  for (const o of overlays) if (o.seq.file) layers.push({ shp: await loadShp(o.seq.file), seq: o.seq, facing: options.facing, frame: o.animated ? options.frame ?? 0 : 0, ...turretScreenOffset(o.offset, stand.facings > 1 ? options.facing : 0) });
+  layers.sort((a, b) => (a.seq.zOffset + a.seq.offset[2]) - (b.seq.zOffset + b.seq.offset[2]));
+  const image = composeLayers(layers, palette, shp, stand, options.shadow !== false);
+  if (!options.frameBox) return { ...image, notes: [] };
+  const box = options.frameBox, data = new Uint8ClampedArray(4 * box.width * box.height);
+  blit(data, box.width, box.height, image.data, image.width, image.height, box.anchorX - image.anchorX, box.anchorY - image.anchorY);
+  return { ...box, data, notes: [] };
 }
 
 /** Multiplies RGB by a map tint (TintPostProcessEffect), leaving alpha. */

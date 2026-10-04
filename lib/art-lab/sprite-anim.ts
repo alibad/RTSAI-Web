@@ -36,7 +36,12 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
   const used = new Set(out.map(a => a.body?.name));
   for (const s of seqs) {
     if (used.has(s.name) || s.name === "icon" || s.name === sprite.turret?.sequence || s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) continue;
-    if (/damaged|deploy|shoot|attack|die|prone|make|build|land|takeoff/.test(s.name)) out.push({ id: s.name, label: s.name.replace(/-/g, " "), body: s, note: "Sequence art preview; activity timing is controlled by the game." });
+    const layer = sprite.overlays?.find(o => s.name === o.sequence || s.name === `damaged-${o.sequence}`);
+    if (layer && layer.mode !== "loop") {
+      const damaged = s.name.startsWith("damaged-");
+      const body = damaged ? seqs.find(q => q.name === `damaged-${out[0]?.body?.name}`) ?? out[0]?.body : out[0]?.body;
+      out.push({ id: s.name, label: `${damaged ? "Damaged · " : ""}${layer.mode === "door" ? "Production door" : s.name.replace(/-/g, " ")}`, body: body ?? null, note: "Layered sequence preview; production timing is controlled by the game." });
+    } else if (/damaged|deploy|shoot|attack|die|prone|make|build|land|takeoff/.test(s.name)) out.push({ id: s.name, label: s.name.replace(/-/g, " "), body: s, note: "Sequence art preview; activity timing is controlled by the game." });
   }
   return out.filter(a => a.body);
 }
@@ -59,4 +64,14 @@ export function turretSequence(sprite: SpriteArt | null) {
 
 export function overlaySequence(sprite: SpriteArt | null) {
   return sprite?.sequences.find(s => own(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) ?? null;
+}
+
+/** Legacy manifests have no layer metadata; resolve all of their decorative sequences as well. */
+export function spriteOverlays(sprite: SpriteArt | null) {
+  if (!sprite) return [];
+  const declarations = sprite.overlays ?? sprite.sequences.filter(s => own(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay")) && !s.name.startsWith("damaged-")).map(s => ({ sequence: s.name, trait: "WithIdleOverlay", offset: [0, 0, 0] as [number, number, number], requiresCondition: null, mode: "loop" as const }));
+  return declarations.flatMap(o => {
+    const seq = sprite.sequences.find(s => s.name === o.sequence && own(s));
+    return seq ? [{ ...o, seq }] : [];
+  });
 }

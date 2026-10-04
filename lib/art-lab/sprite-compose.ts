@@ -6,7 +6,7 @@
 import type { Palette } from "./pal";
 import type { RasterImage } from "./raster";
 import type { Shp } from "./shp";
-import { overlaySequence, pickAnimation, turretSequence, type SpriteAnimation } from "./sprite-anim";
+import { pickAnimation, spriteOverlays, turretSequence, type SpriteAnimation } from "./sprite-anim";
 import { blit, drawShpFrame, framePosition, quantizeFacing, sequenceFrame, sequenceLength } from "./sprite-render";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { localToWorld, rotateYaw, screenVector } from "./voxel-math";
@@ -19,13 +19,14 @@ export type SpriteRig = {
   body: SpriteSequence;
   turret: SpriteSequence | null;
   overlay: SpriteSequence | null;
+  overlays: { seq: SpriteSequence; offset: Vec3; animated: boolean }[];
   initialFacing: number;
   turretOffset: Vec3 | undefined;
   quantizedFacings: number;
   classicFacingBodyOrientation: boolean;
 };
 
-export type RigShps = { body: Shp; turret: Shp | null; overlay: Shp | null };
+export type RigShps = { body: Shp; turret: Shp | null; overlay: Shp | null; overlays?: (Shp | null)[] };
 
 export function spriteRig(sprite: SpriteArt | null, animationId: string): SpriteRig | null {
   const animation = pickAnimation(sprite, animationId);
@@ -33,10 +34,14 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
   const make = animation.id === "make";
   const damaged = animation.id.startsWith("damaged-");
   const damagedLayer = (base: SpriteSequence | null) => damaged && base ? sprite?.sequences.find(s => s.name === `damaged-${base.name}` && s.file) ?? base : base;
+  const overlays = make ? [] : spriteOverlays(sprite).filter(o => o.mode !== "activity" || animation.id === o.seq.name || animation.id === `damaged-${o.seq.name}`).map(o => ({
+    seq: damagedLayer(o.seq)!, offset: o.offset,
+    animated: o.mode === "loop" || animation.id === o.seq.name || animation.id === `damaged-${o.seq.name}`,
+  }));
   return {
     animation, body: animation.body,
     turret: make ? null : damagedLayer(turretSequence(sprite)),
-    overlay: make ? null : damagedLayer(overlaySequence(sprite)),
+    overlay: overlays[0]?.seq ?? null, overlays,
     initialFacing: sprite?.turret?.initialFacing ?? 0,
     turretOffset: sprite?.turret?.offset,
     quantizedFacings: sprite?.quantizedFacings ?? animation.body.facings,
@@ -45,14 +50,14 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
 }
 
 /** SHP files a rig reads (deduplicated). */
-export const rigFiles = (rig: SpriteRig) => [...new Set([rig.body.file, rig.turret?.file, rig.overlay?.file].filter((f): f is string => Boolean(f)))];
+export const rigFiles = (rig: SpriteRig) => [...new Set([rig.body.file, rig.turret?.file, ...rig.overlays.map(o => o.seq.file)].filter((f): f is string => Boolean(f)))];
 
 export const rigLength = (rig: SpriteRig, shps: RigShps) => sequenceLength(rig.body, shps.body);
 
 /** True when the picture changes over time (a multi-frame body or an animated overlay). */
 export function rigAnimates(rig: SpriteRig, shps: RigShps) {
   if (rigLength(rig, shps) > 1) return true;
-  return Boolean(rig.overlay && shps.overlay && sequenceLength(rig.overlay, shps.overlay) > 1);
+  return rig.overlays.some((o, i) => o.animated && (shps.overlays?.[i] ?? (i === 0 ? shps.overlay : null)) && sequenceLength(o.seq, (shps.overlays?.[i] ?? shps.overlay)!) > 1);
 }
 
 /** The body frame shown at animation tick `tick` (ping-pong for reversing sequences). */
@@ -84,8 +89,11 @@ export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bod
     const angle = vehicle ? (quantize(bodyFacing) + turretFacing) & 1023 : (rig.initialFacing + turretFacing) & 1023;
     layers.push({ shp: shps.turret, seq: rig.turret, facing: angle, frame: 0, ...turretScreenOffset(rig.turretOffset, vehicle ? quantize(bodyFacing) : 0) });
   }
-  if (rig.overlay && shps.overlay) layers.push({ shp: shps.overlay, seq: rig.overlay, facing: 0, frame: tick });
-  return layers;
+  for (const [i, o] of rig.overlays.entries()) {
+    const shp = shps.overlays?.[i] ?? (i === 0 ? shps.overlay : null);
+    if (shp) layers.push({ shp, seq: o.seq, facing: bodyFacing, frame: o.animated ? tick : 0, ...turretScreenOffset(o.offset, vehicle ? quantize(bodyFacing) : 0) });
+  }
+  return layers.sort((a, b) => (a.seq.zOffset + a.seq.offset[2]) - (b.seq.zOffset + b.seq.offset[2]));
 }
 
 /**
@@ -93,10 +101,14 @@ export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bod
  * first (the shadow palette index draws black at alpha 140), then body, turret and overlays in order.
  */
 export function composeLayers(layers: SpriteLayer[], palette: Palette, base: Shp, baseSeq: SpriteSequence, shadows: boolean): RasterImage {
-  const margin = 8 + Math.max(0, ...layers.map(l => Math.max(Math.abs(l.dx ?? 0), Math.abs(l.dy ?? 0))));
-  const width = base.width + 2 * margin, height = base.height + 2 * margin;
-  const anchorX = Math.round(base.width / 2 + margin - baseSeq.offset[0]);
-  const anchorY = Math.round(base.height / 2 + margin - baseSeq.offset[1]);
+  // Include every full frame and offset, not just the body: roofs and machinery can be larger than the base.
+  const at = layers.map(l => ({ ...framePosition(l.shp, l.seq, l.dx ?? 0, l.dy ?? 0), width: l.shp.width, height: l.shp.height }));
+  const left = Math.min(-base.width / 2 + baseSeq.offset[0], ...at.map(p => p.x)) - 8;
+  const top = Math.min(-base.height / 2 + baseSeq.offset[1], ...at.map(p => p.y)) - 8;
+  const right = Math.max(base.width / 2 + baseSeq.offset[0], ...at.map(p => p.x + p.width)) + 8;
+  const bottom = Math.max(base.height / 2 + baseSeq.offset[1], ...at.map(p => p.y + p.height)) + 8;
+  const anchorX = Math.ceil(-left), anchorY = Math.ceil(-top);
+  const width = Math.ceil(right + anchorX), height = Math.ceil(bottom + anchorY);
   const data = new Uint8ClampedArray(4 * width * height);
   const draw = (layer: SpriteLayer, index: number) => {
     if (index < 0 || index >= layer.shp.frames.length) return;

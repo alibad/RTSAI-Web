@@ -155,7 +155,7 @@ export class FrameStore {
     if (item.spec.voxel) return `${this.identity(item.spec)}|v|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
     if (!rig || !shps) return `${this.identity(item.spec)}|s|${pose.animation}|${pose.tick}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
     // Facings that pick the same SHP frames share one cached picture (an 8-facing soldier has 8, not 32).
-    const tick = rig.overlay ? pose.tick % 960 : rigFrame(rig, rigLength(rig, shps), pose.tick);
+    const tick = rigAnimates(rig, shps) && rig.overlays.some(o => o.animated) ? pose.tick % 960 : rigFrame(rig, rigLength(rig, shps), pose.tick);
     const facings = rig.body.facings;
     const body = indexFacing(pose.facing, facings, rig.body.useClassicFacings);
     const vehicle = facings > 1 && Boolean(rig.turret);
@@ -171,9 +171,10 @@ export class FrameStore {
     const body = this.shps.get(rig.body.file ?? "");
     const turret = rig.turret?.file ? this.shps.get(rig.turret.file) : null;
     const overlay = rig.overlay?.file ? this.shps.get(rig.overlay.file) : null;
+    const overlays = rig.overlays.map(o => o.seq.file ? this.shps.get(o.seq.file) : null);
     const ok = (s: Slot<Shp> | null | undefined): s is Shp | null => s === null || (typeof s === "object" && s !== null);
-    if (!body || typeof body !== "object" || !ok(turret) || !ok(overlay)) return { rig, shps: null };
-    return { rig, shps: { body, turret, overlay } as RigShps };
+    if (!body || typeof body !== "object" || !ok(turret) || !ok(overlay) || !overlays.every(ok)) return { rig, shps: null };
+    return { rig, shps: { body, turret, overlay, overlays } as RigShps };
   }
 
   /** A cached frame, or null. Never renders. */

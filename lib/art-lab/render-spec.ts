@@ -5,6 +5,7 @@
  */
 import type { PaletteSpec, RenderSpec } from "./spec";
 import type { ActorArt, SpriteArt, SpriteSequence } from "./types";
+import { spriteOverlays } from "./sprite-anim";
 
 type Resolved = Pick<ActorArt, "id" | "factionId" | "name" | "category" | "render" | "cameo" | "voxel" | "sprite">;
 export type UrlOf = (key: string | null | undefined) => string | null;
@@ -33,6 +34,7 @@ export function buildRenderSpec(actor: Resolved, urlOf: UrlOf, paletteOf: (name:
       turret: s.turret ? withUrl(s.sequences.find(q => q.name === s.turret!.sequence), urlOf) : null,
       turretInitialFacing: s.turret?.initialFacing ?? null,
       overlay: withUrl(s.sequences.find(q => q.usedBy.some(u => u.startsWith("WithIdleOverlay")) && q.file && !q.inherited), urlOf),
+      overlays: spriteOverlays(s).filter(o => o.mode !== "activity").map(o => ({ seq: withUrl(o.seq, urlOf)!, offset: o.offset, animated: o.mode === "loop" })),
     } : null,
   };
 }
