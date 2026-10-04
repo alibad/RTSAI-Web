@@ -9,6 +9,7 @@
   "packageManager": "npm@11.19.1",
   "scripts": {
     "dev": "vinext dev",
+    "preview:art": "node --import tsx scripts/art-lab-preview.ts",
     "build": "vinext build",
     "vercel-build": "vite build",
     "start": "vinext start",

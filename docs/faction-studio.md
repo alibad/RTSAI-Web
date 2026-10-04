@@ -1,6 +1,9 @@
 # Faction Studio — local only
 
-Start this worktree with `npm run dev -- --port 3461`, then open `/art/review`.
+Start this worktree with `npm run preview:art`, then open `http://127.0.0.1:3461/art/review?view=rebuild`.
+It compiles the same standalone Studio client into ignored `.cache/art-lab-client` and serves it with the
+same local review API. Bindings are explicitly loopback-only. This avoids the development module transport.
+The normal website development command remains `npm run dev -- --port 3461`.
 
 On Windows, if the worker/RSC development transport times out, use the same Studio component's local client preview:
 
@@ -11,10 +14,11 @@ npx vite --port 3461
 
 This serve-only option mounts the existing ReviewApp and uses the same loopback API. It does not load the site's
 authentication layout or alter production configuration. The normal Vinext page remains available without the flag.
-Measured limitation on this machine: worker/RSC requests timed out, and the Node preview still intermittently
-stalls while loading client modules. Both mode overviews were inspected when loaded; final Classic screenshot
-shows 159/159 recordings, while the RA2 screenshot was captured at 160/166 before the final six completed.
-The loopback API reports the final 166/166 and 159/159 counts. Do not treat preview reliability as a passed gate.
+Measured limitation on this machine: worker/RSC requests timed out, and the Node development preview still
+intermittently stalls while loading client modules. The compiled `preview:art` avoids that transport; its
+rebuild API returned in 50 ms and the RA2 overview showed 166/166 recordings. This is not a full GPU/performance pass.
+Both mode switches and Classic's saved mode on reload were verified in the compiled preview. Final screenshots
+show 166/166 RA2 and 159/159 Classic recordings, with zero fully verified replacement-art rebuilds.
 
 The mode selector reads canonical RTSAI-Mod for RA2 and canonical OpenRA's default World War III experience
 for Classic. Selectable factions and complete rosters come from merged game rules, not a parallel catalog.
