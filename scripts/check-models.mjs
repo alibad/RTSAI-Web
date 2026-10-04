@@ -20,7 +20,7 @@ try {
   for(const type of ["ra2","classic","mod"])await page.route(`**/api/art-review/${type}/**`,r=>r.abort());
   await page.goto("http://127.0.0.1:3461/art/review?faction=china&unit=r2mantis&slot=model&mode=ra2&view=art");
   await page.getByRole("button",{name:"3D models",exact:true}).click();
-  const dialog=page.getByRole("dialog",{name:"Build once. Explore every angle."});await dialog.waitFor();
+  const dialog=page.getByRole("dialog",{name:"Inspect the model. Check the game asset."});await dialog.waitFor();
   await dialog.getByRole("searchbox",{name:"Search 3D models"}).fill("mantis");
   await dialog.locator(".mesh-actor-list button").first().waitFor();assert.equal(await dialog.locator(".mesh-actor-list button").count(),1);
   await dialog.getByRole("button",{name:"New design · GLB draft",exact:true}).waitFor();

@@ -41,3 +41,20 @@ test("model library shares authored meshes across modes, prefers LOD, rejects pa
     assert.match(ra2.actors[0].options[0].status,/inferred player-color mask/);
   }finally{rmSync(root,{recursive:true,force:true});}
 });
+
+test("unverified sprite reconstructions are withheld while actual local game icons remain available",()=>{
+  const root=mkdtempSync(join(tmpdir(),"rtsai-model-gate-"));
+  try{
+    const put=(file:string,data:unknown)=>{const path=join(root,file);mkdirSync(join(path,".."),{recursive:true});writeFileSync(path,typeof data==="string"?data:JSON.stringify(data));};
+    put("models/manifest.json",{actors:{"ra2:wall":{key:"ra2:wall",mode:"ra2",actor:"wall",name:"Wall",category:"structure",factions:["russia"],job:null,status:"needs-authored-model",nativeRender:"sprite"}},jobs:{}});
+    put("models/sprite-reuse.json",{actors:{"ra2:wall":{job:"private"}},jobs:{private:{status:"geometry-draft",candidate:".cache/models/private",qualityGate:{status:"failed",reason:"Cameo used as body"}}}});
+    put(".cache/models/private/meta.json",{files:{webMesh:"web.glb"}});put(".cache/models/private/web.glb","bad-reconstruction");
+    const lib=readModelLibrary(root,"ra2",{wall:"/api/art-review/ra2/wallicon.png"})!;
+    assert.equal(lib.actors[0].thumbnail,"/api/art-review/ra2/wallicon.png");
+    assert.equal(lib.actors[0].nativeThumbnail,lib.actors[0].thumbnail);
+    assert.equal(lib.actors[0].nativeFormat,"SHP");assert.equal(lib.actors[0].options.length,0);
+    assert.equal(lib.actors[0].reconstructionNotice,"Cameo used as body");
+    assert.equal(lib.privateJobs.heldBack,1);assert.equal(lib.coverage.withGlb,0);
+    assert.deepEqual(lib.nativeExports,{vxl:0,hva:0,shp:0});
+  }finally{rmSync(root,{recursive:true,force:true});}
+});

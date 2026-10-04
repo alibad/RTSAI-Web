@@ -3,6 +3,15 @@ import test from "node:test";
 import { candidateRenderSpec, candidateSprite, candidateVehicleSprite, declaredTurretOffset, parseCandidateRules, type Candidate, validateAction } from "../lib/art-lab/review";
 import { artLab, renderSpec } from "../lib/art-lab/manifest";
 import { pickAnimation, turretSequence } from "../lib/art-lab/sprite-anim";
+import type { SpriteArt, SpriteSequence } from "../lib/art-lab/types";
+
+test("an unresolved actor body never falls back to its build-menu icon",()=>{
+  const base:SpriteSequence={name:"idle",file:null,external:null,start:0,length:1,stride:1,facings:1,reverseFacings:false,useClassicFacings:false,transpose:false,tick:40,zOffset:0,shadowStart:-1,offset:[0,0,0],frames:null,reverses:false,usedBy:[],inherited:true};
+  const art:SpriteArt={image:"wall",palette:"player",shp:null,quantizedFacings:null,turret:null,sequences:[base,{...base,name:"icon",file:"/local/wallicon.shp",inherited:false,usedBy:["Buildable icon (cameo)"]}]};
+  assert.equal(pickAnimation(art,"stand"),null);
+  art.sequences[0]={...base,file:"/local/wall.shp",inherited:false,usedBy:["WithSpriteBody"]};
+  assert.equal(pickAnimation(art,"stand")?.body?.file,"/local/wall.shp");
+});
 
 // The shape of the Forge's openra-snippet.yaml for a pre-rendered vehicle sprite (r2qilin sprite-v1).
 const snippet = [

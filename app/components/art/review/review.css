@@ -654,3 +654,5 @@
 .mesh-evidence { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:12px; }.mesh-evidence b { color:#f3d78b; }.mesh-evidence>span { margin-left:auto; color:#bbc3ae; }.mesh-evidence p { width:100%; margin:0; color:#a6ad9a; line-height:1.5; }
 .mesh-work { font-size:11px; color:#b6bfab; }.mesh-work p { line-height:1.6; }
 @media(max-width:700px) { .mesh-studio-body { grid-template-columns:180px minmax(0,1fr); }.mesh-studio>header,.mesh-studio-body>main { padding:12px; }.mesh-studio>header h2 {font-size:17px}.mesh-job-summary {gap:6px}.mesh-job-summary span {display:none}.mesh-actor-list img {display:none} }
+.mesh-native-art { width: 144px; height: 112px; object-fit: contain; image-rendering: pixelated; border-radius: 5px; }
+.mesh-empty p { max-width: 480px; margin: 0 auto 14px; }

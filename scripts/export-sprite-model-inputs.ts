@@ -22,6 +22,7 @@ for(const mode of ["ra2","classic"] as const){
     if(!plan.actors[key]||plan.actors[key].job||spec.voxel)continue;
     try{
       const rig=spriteRig(stock.sprite,"stand");if(!rig||!spec.palette)throw Error("No complete sprite rig/palette");
+      if(rig.body.name==="icon"||rig.body.usedBy.some(u=>u.startsWith("Buildable icon")))throw Error("Build-menu icons cannot be reconstructed as actor bodies");
       const files=await Promise.all(rigFiles(rig).map(async url=>({url,data:await bytes(url)})));
       const shps=new Map(files.map(f=>[f.url,decodeShp(f.data)]));
       const paletteData=await bytes(spec.palette.url),palette=remapPalette(decodePal(paletteData,spec.palette.transparent,spec.palette.shadow),spec.palette.remap,[224,0,0]);
@@ -35,7 +36,7 @@ for(const mode of ["ra2","classic"] as const){
       const png=encodePng(w,h,rgba),digest=sha(png),id=digest.slice(0,24),rel=`.cache/models/sprite-inputs/${id}/input.png`,dir=resolve(root,rel,"..");mkdirSync(dir,{recursive:true});writeFileSync(resolve(root,rel),png);
       const sourceHashes=Object.fromEntries(files.map(f=>[f.url,sha(f.data)]));sourceHashes[spec.palette.url]=sha(paletteData);
       const previous=old?.jobs?.[id]?.inputSha256===digest?old.jobs[id]:{};
-      output.jobs[id]={...previous,id,input:rel,inputSha256:digest,status:previous.status??"queued",privateLocal:true,category:spec.category,source:stock.sources?.model??null,sourceHashes,sourcePixels:{width,height},sourceActor:key};
+      output.jobs[id]={...previous,id,input:rel,inputSha256:digest,status:previous.status??"queued",privateLocal:true,category:spec.category,source:stock.sources?.model??null,sourceHashes,sourcePixels:{width,height},sourceActor:key,sourceBodySequence:rig.body.name,sourceBodyFile:rig.body.file};
       output.actors[key]={key,mode,actor,job:id,name:stock.info?.name??actor,source:stock.sources?.model??null,status:previous.status??"queued"};
     }catch(error){output.actors[key]={key,mode,actor,status:"source-unavailable",error:String(error)};}
   }

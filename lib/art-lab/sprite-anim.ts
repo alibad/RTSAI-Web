@@ -11,7 +11,8 @@ export const animationLabels: Record<string, string> = {
   stand: "Stand", move: "Walk", attack: "Fire", idle: "Idle", die: "Die", prone: "Prone", body: "Idle", make: "Build-up",
 };
 
-const own = (s: SpriteSequence) => Boolean(s.file) && !s.inherited && !(s.file ?? "").endsWith(".png");
+// A build-menu icon is never an actor body, even when the body file is unresolved.
+const own = (s: SpriteSequence) => s.name !== "icon" && !s.usedBy.some(u => u.startsWith("Buildable icon")) && Boolean(s.file) && !s.inherited && !(s.file ?? "").endsWith(".png");
 
 export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
   if (!sprite) return [];

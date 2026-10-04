@@ -162,7 +162,10 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
       const reviewMode = url.searchParams.get("mode") ?? "ra2";
       if (["/state", "/action", "/models"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
       if (req.method === "GET" && path === "/models") {
-        const models=readModelLibrary(workspace,reviewMode as "ra2"|"classic");
+        const mode=reviewMode as "ra2"|"classic";
+        const roster=originals?await rosterPayload(mode==="classic"?classicConfig(originals):originals):null;
+        const thumbnails=Object.fromEntries(Object.entries(roster?.stock??{}).map(([actor,stock])=>[actor,stock.spec.cameo]));
+        const models=readModelLibrary(workspace,mode,thumbnails);
         return models?send(res,200,models):send(res,404,{error:"Run the local model inventory first."});
       }
       if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace, reviewMode as "ra2" | "classic"));
