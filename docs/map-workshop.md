@@ -86,4 +86,3 @@ Live authenticated Earth import remains unverified in this session.
 Screenshots, test logs and exports are ignored under .codex-qa/. Desktop and
 phone screenshots were reviewed visually. No push, deployment, paid API call
 or local model work was performed.
-

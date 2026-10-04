@@ -98,4 +98,3 @@ export function drawWorld(ctx: CanvasRenderingContext2D, scene: Scene, world: Wo
   if(hover) { const p=project({x:Math.round(hover.x),y:Math.round(hover.y)},scene.size,camera.iso); ctx.strokeStyle="#fff2b9aa"; ctx.lineWidth=1.5; if(camera.iso) polygon(ctx,[[p.x,p.y-10],[p.x+20,p.y],[p.x,p.y+10],[p.x-20,p.y]],"#ffffcc12","#fff2b9aa"); else ctx.strokeRect(p.x-12,p.y-12,24,24); }
   ctx.restore();
 }
-

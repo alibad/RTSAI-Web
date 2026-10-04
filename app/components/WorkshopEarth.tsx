@@ -21,4 +21,3 @@ export function WorkshopEarth({ latitude, longitude, onPin }: { latitude: number
   useEffect(()=>{map.current?.jumpTo({center:[longitude,latitude]});marker.current?.setLngLat([longitude,latitude]);},[latitude,longitude]);
   return <div className="workshop-earth" ref={node} aria-label="Earth source map. Click to choose the terrain center." />;
 }
-

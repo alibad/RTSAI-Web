@@ -37,4 +37,3 @@ export function workshopArchive(scene: Scene, preview: Uint8Array) {
   const map=compileWorkshopMap(scene);
   return zipSync({"map.yaml":strToU8(map.yaml),"map.bin":map.binary,"map.png":preview,"workshop-scene.json":strToU8(JSON.stringify(scene)),"workshop-readme.txt":strToU8("RTS AI Workshop\n\nFlat experimental terrain and initial actor placements.\nBrowser battle results are approximate; OpenRA runs the native rules.\nDeploy, rank and manually toggled conditions are browser experiments and are not exported as native actor upgrades.\nRequires "+(scene.mode==="ra2"?"RTSAI-Mod and your own Red Alert 2 files.":"the Classic OpenRA AI development build.")+"\nNo original commercial images or models are included.\nSource rules: "+scene.ruleCommit+"\n")},{level:6});
 }
-

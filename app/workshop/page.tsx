@@ -9,4 +9,3 @@ export default async function WorkshopPage({searchParams}:{searchParams:Promise<
   const mode=resolveMode((await searchParams).mode);
   return <><SiteHeader/><main id="main-content" className="workshop-page"><header className="workshop-intro"><div><span className="eyebrow">THE WORKSHOP</span><h1>Build your battlefield.</h1></div><p>Shape the terrain. Place your forces. Play out an idea.<br/>A local experiment space for Red Alert 2 and Classic.</p></header><MapWorkshop initialMode={mode}/></main><SiteFooter/></>;
 }
-
