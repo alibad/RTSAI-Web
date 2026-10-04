@@ -47,4 +47,4 @@ createServer((req, res) => {
     try { res.writeHead(200, { "Content-Type": mime[extname(file)] ?? "application/octet-stream", "Cache-Control": "no-store" }).end(readFileSync(file)); return; } catch { /* directory or missing file */ }
   }
   res.writeHead(404).end();
-}).listen(3461, "127.0.0.1", () => console.log("Local Studio: http://127.0.0.1:3461/art/review?view=rebuild"));
+}).listen(3461, "127.0.0.1", () => console.log("Local Studio: http://127.0.0.1:3461/art/review"));

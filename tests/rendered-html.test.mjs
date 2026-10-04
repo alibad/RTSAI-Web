@@ -107,7 +107,8 @@ test("renders companion and download routes; parked routes stay reachable but un
   assert.match(capabilityAtlas, /Research track/);
   assert.match(capabilityAtlas, /THE BUILD ARCHIVE/);
   assert.match(capabilityAtlas, /See the factions/);
-  assert.match(capabilityAtlas, /216<\/b> optimized visual artifacts/);
+  const media = JSON.parse(await readFile(new URL("../public/game-media/manifest.json", import.meta.url), "utf8"));
+  assert.match(capabilityAtlas, new RegExp(`${media.length}</b> optimized visual artifacts`));
   assert.match(capabilityAtlas, /Red Sea 2026 key art/);
   assert.match(capabilityAtlas, /Türkiye/);
   assert.match(capabilityAtlas, /China/);
@@ -179,7 +180,7 @@ test("privacy explains the hosted AI co-commander in plain language", async () =
 
 test("faction-to-unit-to-install journey retains mode and refuses unsupported combinations", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
-  assert.match(directory, /5(?:<!-- -->)? faction variants/);
+  assert.match(directory, /7(?:<!-- -->)? faction variants/);
   const defaultDirectory = await (await render("/factions")).text();
   assert.match(defaultDirectory, /\/factions\/china\?mode=ra2/);
   assert.match(directory, /\/factions\/china\?mode=ra2/);

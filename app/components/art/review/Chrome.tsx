@@ -95,7 +95,7 @@ export function HelpPopover({ open, onOpenChange }: { open: boolean; onOpenChang
   );
 }
 
-export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp }: {
+export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false }: {
   slot: SlotId;
   counts: Record<SlotId, number>;
   onSlot: (slot: SlotId) => void;
@@ -104,22 +104,18 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
   tints: MapTint[];
   help: boolean;
   onHelp: (open: boolean) => void;
+  name?: string;
+  encounter?: boolean;
 }) {
   return (
     <header className="lab-top">
-      <div className="lab-brand"><b>Art Lab</b><span>Review</span></div>
-      <div className="lab-seg lab-slots" role="tablist" aria-label="Slot">
-        {(["model", "icon", "concept"] as const).map((id, i) => (
-          <button key={id} type="button" role="tab" aria-selected={slot === id} onClick={() => onSlot(id)} title={`${slotNames[id]} (${i + 1})`}>
-            {slotNames[id]}<small>{counts[id]}</small>
-          </button>
-        ))}
-      </div>
+      <div className="lab-brand"><b>{encounter ? "Combat experiment" : name ?? "Choose an actor"}</b></div>
+      {!encounter && <label className="studio-art-select">Artwork<select aria-label="Artwork" value={slot} onChange={e => onSlot(e.target.value as SlotId)}>{(["model", "icon", "concept"] as const).map(id => <option key={id} value={id}>{id === "model" ? "In-game model" : slotNames[id]}{counts[id] ? ` · ${counts[id]} alternatives` : ""}</option>)}</select></label>}
       <div className="lab-top-right">
-        <span className="lab-progress" title="Units with candidates that have a decision">
+        {total > 0 && !encounter && <span className="lab-progress" title="Units with candidates that have a decision">
           <i style={{ ["--done" as string]: total ? decided / total : 0 }} aria-hidden="true" />
           {decided} of {total} units decided
-        </span>
+        </span>}
         <HelpPopover open={help} onOpenChange={onHelp} />
         <ViewPopover tints={tints} />
       </div>
@@ -142,7 +138,6 @@ export const railFilters: { id: RailFilter; label: string; test: (r: RailRow) =>
 
 const groupNames: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Ships", defense: "Defenses", structure: "Base buildings" };
 const groupOrder = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
-const originTag: Record<Origin, string> = { new: "NEW", original: "BASE", modified: "MOD" };
 const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: base game art", modified: "Modified: modified game art" };
 
 function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
@@ -151,7 +146,7 @@ function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
 }
 
 function Progress({ done, total }: { done: number; total: number }) {
-  if (!total) return <span className="lab-fprog is-none">No candidates</span>;
+  if (!total) return null;
   return (
     <span className="lab-fprog" title={`${done} of ${total} units with candidates decided`}>
       <i style={{ ["--done" as string]: done / total }} aria-hidden="true" />{done}/{total}
@@ -223,9 +218,8 @@ const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: {
         title={`${unit.name} · ${originTitle[origin]}${count ? ` · ${count} candidate${count === 1 ? "" : "s"}, ${status!.toLowerCase()}` : ""}`}>
         <span className="lab-cameo">
           {unit.spec.cameo ? <img src={unit.spec.cameo} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="lab-noicon" />}
-          <i className={`lab-origin is-${origin}`} aria-label={originTitle[origin]}>{originTag[origin]}</i>
         </span>
-        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b></span>}
+        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b><small>{origin === "new" ? "Faction artwork" : origin === "modified" ? "Updated artwork" : "Game artwork"}</small></span>}
         {count > 0 && (
           <span className={`lab-count${needs ? " is-needs" : " is-done"}`} aria-label={`${count} candidates, ${status}`}>
             {!needs && <Check size={12} strokeWidth={3} aria-hidden="true" />}{count}
@@ -269,13 +263,7 @@ export const UnitRail = memo(function UnitRail({ rows, selected, faction, factio
         </div>
         {!collapsed && <div className="studio-rail-tools"><input aria-label="Find an actor" placeholder="Find an actor…" value={search} onChange={e => setSearch(e.target.value)} /><select aria-label="Actor category" value={domain} onChange={e => setDomain(e.target.value)}><option value="all">Everything</option><option value="buildings">Buildings & defenses</option>{groupOrder.filter(c => c !== "structure" && c !== "defense").map(c => <option key={c} value={c}>{groupNames[c]}</option>)}</select></div>}
         {!collapsed && (
-          <div className="lab-filters" role="radiogroup" aria-label="Show">
-            {railFilters.map(f => (
-              <button key={f.id} type="button" role="radio" aria-checked={filter === f.id} className="lab-chip-btn" disabled={!counts[f.id] && f.id !== "all"} onClick={() => onFilter(f.id)}>
-                {f.label}<small>{counts[f.id]}</small>
-              </button>
-            ))}
-          </div>
+          <select className="studio-roster-filter" aria-label="Roster filter" value={filter} onChange={e => onFilter(e.target.value as RailFilter)}>{railFilters.map(f => <option key={f.id} value={f.id} disabled={!counts[f.id] && f.id !== "all"}>{f.id === "all" ? "All artwork" : f.label} · {counts[f.id]}</option>)}</select>
         )}
       </div>
       {groups.map(g => {

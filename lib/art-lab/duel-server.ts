@@ -8,7 +8,7 @@ import { classicConfig, rosterPayload, type OriginalsConfig, type RosterPayload 
 export type DuelSide = { id: string; count: number; deploy: boolean; health?: number; faction?: string; ruleKey?: string };
 export type DuelRequest = { mode: "ra2" | "classic"; a: DuelSide; b: DuelSide; gap: number; level: number; waterSide?: "none" | "a" | "b" | "both" };
 export type DuelSample = { tick: number; actors: { side: number; index: number; x: number; y: number; z: number; facing: number; health: number; maxHealth: number }[]; wrecks?: { side: number; type: string; x: number; y: number; z: number; facing: number }[] };
-export type DuelResult = { evidence: "measured"; engine: string; request: DuelRequest; ticksPerSecond: number; samples: DuelSample[]; events?: { tick: number; kind: string; side: number; index: number; attackerSide: number; attackerIndex: number; damage: number }[]; limitations: string };
+export type DuelResult = { evidence: "measured"; engine: string; request: DuelRequest; ticksPerSecond: number; samples: DuelSample[]; events?: { tick: number; kind: string; side: number; index: number; attackerSide: number; attackerIndex: number; damage: number }[]; effects?: { kind: "crash"; tick: number; side: number; type: string; x: number; y: number; z: number }[]; limitations: string };
 type Job = { id: string; status: "running" | "complete" | "failed"; error?: string; result?: DuelResult };
 const jobs = new Map<string, Job>();
 let running = false;

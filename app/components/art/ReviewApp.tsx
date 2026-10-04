@@ -6,11 +6,10 @@ import { reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
 import { useFeedbackStore } from "../../../lib/stores/feedback-store";
 import type { RosterPayload } from "../../../lib/art-lab/originals";
-import { CoachMark, railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
+import { railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
-import { BehaviorPanel, StudioBar } from "./review/Studio";
+import { ActionShelf, BehaviorPanel, StudioBar } from "./review/Studio";
 import { Arena } from "./review/Arena";
-import { Rebuild } from "./review/Rebuild";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
@@ -46,7 +45,7 @@ async function post(action: ReviewAction, mode: "ra2" | "classic"): Promise<Revi
  */
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
   const [mode, setMode] = useState<"ra2" | "classic">("ra2");
-  const [surface, setSurface] = useState<"art" | "actions" | "arena" | "rebuild">("art");
+  const [surface, setSurface] = useState<"art" | "arena">("art");
   const [linkReady, setLinkReady] = useState(false);
   const [state, setState] = useState<ReviewState | null>(null);
   const [error, setError] = useState("");
@@ -132,7 +131,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const id = setTimeout(() => {
       if (params.get("mode") === "classic") setMode("classic");
       const surface = params.get("view");
-      if (surface === "arena" || surface === "actions" || surface === "rebuild") setSurface(surface);
+      if (surface === "arena") setSurface(surface);
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
       if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
@@ -273,8 +272,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey("current"); setLab({ zoom: null }); }, []);
-  const changeFaction = useCallback((id: string) => { setFaction(id); setSelected(null); setFocusKey("current"); setLab({ zoom: null }); }, []);
+  const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey("current"); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
+  const changeFaction = useCallback((id: string) => { setFaction(id); setSelected(null); setFocusKey("current"); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
   const changeSlot = useCallback((s: SlotId) => { setSlot(s); setFocusKey("current"); setLab({ zoom: null }); }, []);
   const focusIndex = useCallback((i: number) => { const v = versions[i]; if (v) setFocusKey(v.key); }, [versions]);
 
@@ -343,7 +342,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       } else if (key === "n" && k.decide && k.slot !== "concept") { k.decide.choose("current"); handled(); }
       else if (key === "r" && k.decide && candidate) { (k.decision.rejected.includes(candidate.id) ? k.decide.unreject : k.decide.reject)(candidate.id); handled(); }
       else if (key === "c") { noteRef.current?.focus(); handled(); }
-      else if (key === " ") { setLab(s => ({ spin: !s.spin })); handled(); }
+      else if (key === " ") { if (k.unit?.spec.voxel || k.unit?.sprite?.sequences.some(s => Math.abs(s.facings) > 1)) setLab(s => ({ spin: !s.spin })); handled(); }
       else if (key === "?") { setHelp(h => !h); handled(); }
       else if (key === "Escape") setHelp(false);
     };
@@ -360,14 +359,13 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }
 
   return (
-    <div className={`lab${surface === "rebuild" ? " is-rebuild" : ""}`}>
-      <StudioBar mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); if (s !== "art") setSlot("model"); }} />
-      {surface === "rebuild" ? <Rebuild key={mode} mode={mode} state={state} onOpen={(f, a) => { setFaction(f); setSelected(a); setFocusKey("current"); setSurface("art"); setSlot("model"); }} /> : <>
-      <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} />
+    <div className={`lab${surface === "arena" ? " is-encounter" : ""}`}>
+      <StudioBar mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
+      <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
           filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />
-        <main className="lab-main" id="main-content">
+        <main className={`lab-main${surface !== "arena" && slot === "model" ? " has-actions" : ""}`} id="main-content">
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
             : !unit ? <p className="lab-empty">No units.</p>
@@ -376,15 +374,17 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} />
           )}
+          {unit && surface !== "arena" && slot === "model" && <ActionShelf unit={unit} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
-        {unit && surface !== "art" ? <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} /> : unit && focused && decide ? (
+        <aside className="studio-inspector" aria-label="Actor details">
+        {unit && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
+        {unit && focused && decide && surface !== "arena" && <details className="studio-review-notes"><summary>Art review & notes{counts[slot] ? ` · ${counts[slot]} alternatives` : ""}</summary>
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
-        ) : <aside className="lab-panel" />}
+        </details>}
+        </aside>
       </div>
-      <CoachMark />
-      </>}
     </div>
   );
 }

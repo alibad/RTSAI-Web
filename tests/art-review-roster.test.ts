@@ -93,7 +93,7 @@ test("every faction's real roster from the sibling RTSAI-Mod (skipped without th
   };
   const { factions, stock } = computeRosters(loadModData(reader));
   const without: string[] = [];
-  assert.equal(factions.length, 14, "all nine original and five modern selectable countries");
+  assert.equal(factions.length, 16, "all nine original and seven modern selectable countries");
   for (const f of factions) {
     const fresh = f.units.filter(u => u.origin === "new").map(u => u.id).sort();
     assert.deepEqual(fresh, [...(artLab.factions.find(a => a.id === f.id)?.actors ?? [])].sort(), `${f.id}: every new unit, as the Art Lab lists them`);

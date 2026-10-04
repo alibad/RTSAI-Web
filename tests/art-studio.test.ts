@@ -84,10 +84,10 @@ test("configured weapon targets include engine defaults and damage is not labell
 });
 
 const classic = fileURLToPath(new URL("../../OpenRA/", import.meta.url));
-test("Classic default experience loads all ten countries and buildings", { skip: !existsSync(`${classic}/mods/ra/experiences.yaml`) }, () => {
+test("Classic default experience loads current countries and buildings", { skip: !existsSync(`${classic}/mods/ra/experiences.yaml`) }, () => {
   const data = loadClassicData({ text: p => readFileSync(`${classic}/${p}`, "utf8"), bytes: p => new Uint8Array(readFileSync(`${classic}/${p}`)), exists: p => existsSync(`${classic}/${p}`) });
   const { factions } = computeRosters(data);
-  assert.equal(factions.length, 10);
+  for (const id of ["china", "israel", "hezbollah", "england", "ukraine"]) assert.ok(factions.some(f => f.id === id), `${id} is in the actual roster`);
   assert.ok(factions.some(f => f.id === "china"));
   assert.equal(factions.find(f => f.id === "england")?.name, "England");
   assert.equal(factions.find(f => f.id === "china")?.units.find(u => u.id === "cnqilin")?.origin, "new");

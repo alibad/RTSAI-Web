@@ -6,6 +6,9 @@ import type { RosterPayload } from "../../../../lib/art-lab/originals";
 import type { FrameStore } from "./frames";
 import { stageItem, type ReviewUnit } from "./versions";
 import { useLab } from "./lab-store";
+import { angleDelta, eventActor, facingToward, replayBounds, replaySample, sampleIndex } from "../../../../lib/art-lab/replay";
+import type { Frame } from "./frames";
+const projectWorld = (mode: "ra2" | "classic", x: number, y: number, z = 0) => mode === "ra2" ? [(x - y) * 30 / 1024, (x + y) * 15 / 1024 - z * 30 / 1024] : [x * 24 / 1024, y * 24 / 1024 - z * 24 / 1024];
 export function Arena({ mode, units, selected, roster, frames, onSelect }: { mode: "ra2" | "classic"; units: ReviewUnit[]; selected: ReviewUnit; roster: RosterPayload | null; frames: FrameStore; onSelect: (id: string) => void }) {
   const eligible = useMemo(() => units.filter(u => roster?.stock[u.id]?.behavior.health).sort((a, b) => a.name.localeCompare(b.name)), [units, roster]);
   const [a, setA] = useState(eligible.some(u => u.id === selected.id) ? selected.id : eligible[0]?.id ?? selected.id);
@@ -21,8 +24,10 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
   const [result, setResult] = useState<DuelResult | null>(null), [history, setHistory] = useState<DuelResult[]>([]);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [playing, setPlaying] = useState(false), [index, setIndex] = useState(0), [speed, setSpeed] = useState(1), [ranges, setRanges] = useState(true);
-  const canvas = useRef<HTMLCanvasElement>(null), aborted = useRef(false), drawState = useRef({ result, index, a, b, ranges });
-  useEffect(() => { drawState.current = { result, index, a, b, ranges }; });
+  const [camera, setCamera] = useState("follow");
+  const canvas = useRef<HTMLCanvasElement>(null), aborted = useRef(false), drawState = useRef({ result, index, a, b, ranges, camera });
+  const playhead = useRef(0), lastFrames = useRef(new Map<string, Frame>());
+  useEffect(() => { drawState.current = { result, index, a, b, ranges, camera }; });
   useEffect(() => { aborted.current = false; return () => { aborted.current = true; }; }, []);
   const restore = useCallback((r: DuelResult) => {
     setLastSelected(r.request.a.id); setA(r.request.a.id); onSelect(r.request.a.id);
@@ -32,7 +37,7 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
     setGap(r.request.gap); setLevel(r.request.level);
     const baseHealth = roster?.stock[r.request.a.id]?.behavior.health ?? r.request.a.health ?? 1;
     setHealthA(r.request.a.health ? Math.round(r.request.a.health / baseHealth * 100) : 100);
-    setResult(r); setIndex(0); setPlaying(false);
+    playhead.current = 0; lastFrames.current.clear(); setResult(r); setIndex(0); setPlaying(false);
   }, [onSelect, roster]);
   useEffect(() => {
     let stored: string[] = [];
@@ -44,6 +49,8 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
     });
   }, [mode, restore]);
   const actorMap = useMemo(() => new Map(units.map(u => [u.id, u])), [units]);
+  const bounds = useMemo(() => result ? replayBounds(result.samples, (x,y,z) => projectWorld(mode,x,y,z)) : null, [result, mode]);
+  const observedEvents = useMemo(() => [...(result?.events ?? []).map(e => ({ ...e, target: eventActor(result!.samples,e.tick,e.side,e.index), source: eventActor(result!.samples,e.tick,e.attackerSide,e.attackerIndex) })), ...(result?.effects ?? []).map(e=>({...e,index:0,attackerSide:-1,attackerIndex:-1,damage:0,source:null,target:{...e,index:0,facing:0,health:0,maxHealth:1}}))].sort((a,b)=>a.tick-b.tick), [result]);
   const draw = useCallback(() => {
     const el = canvas.current, ctx = el?.getContext("2d"); if (!el || !ctx) return;
     const width = el.clientWidth, height = el.clientHeight, dpr = Math.min(window.devicePixelRatio, 2);
@@ -53,13 +60,12 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
     const state = drawState.current, r = state.result;
     const water = r?.request.waterSide;
     if (water && water !== "none") { ctx.fillStyle = "#142834"; ctx.fillRect(water === "b" ? width / 2 : 0, 0, water === "both" ? width : width / 2, height); }
-    const project = (x: number, y: number, z = 0) => mode === "ra2" ? [(x - y) * 30 / 1024, (x + y) * 15 / 1024 - z * 30 / 1024] : [x * 24 / 1024, y * 24 / 1024 - z * 24 / 1024];
-    const sample: DuelSample = r?.samples[state.index] ?? { tick: 0, actors: [{ side: 0, index: 1, x: -6144, y: 0, z: 0, facing: 768, health: 1, maxHealth: 1 }, { side: 1, index: 1, x: 6144, y: 0, z: 0, facing: 256, health: 1, maxHealth: 1 }] };
-    const all = r?.samples.flatMap(s => s.actors) ?? sample.actors;
-    const points = all.map(p => project(p.x, p.y));
-    const minX = Math.min(...points.map(p => p[0])), maxX = Math.max(...points.map(p => p[0]));
-    const minY = Math.min(...points.map(p => p[1])), maxY = Math.max(...points.map(p => p[1]));
-    const scale = Math.max(.1, Math.min(2, (width - 180) / Math.max(220, maxX - minX), (height - 140) / Math.max(160, maxY - minY)));
+    const project = (x: number, y: number, z = 0) => projectWorld(mode,x,y,z);
+    const sample: DuelSample = (r && replaySample(r.samples,playhead.current)) || { tick: 0, actors: [{ side: 0, index: 1, x: -6144, y: 0, z: 0, facing: 768, health: 1, maxHealth: 1 }, { side: 1, index: 1, x: 6144, y: 0, z: 0, facing: 256, health: 1, maxHealth: 1 }] };
+    const follow = state.camera === "follow";
+    const deaths = observedEvents.filter(e=>e.kind==="destroyed" && e.tick<=sample.tick && e.target).map(e=>e.target!);
+    const { minX, maxX, minY, maxY } = follow ? replayBounds([{...sample,actors:[...sample.actors,...deaths]}],project) : bounds ?? replayBounds([sample],project);
+    const scale = Math.max(.1, Math.min(2.5, (width - 150) / Math.max(follow ? 140 : 220, maxX - minX), (height - 100) / Math.max(follow ? 80 : 160, maxY - minY)));
     const center = [(minX + maxX) / 2, (minY + maxY) / 2];
     const screen = (p: number[]) => [width / 2 + (p[0] - center[0]) * scale, height / 2 + (p[1] - center[1]) * scale];
     ctx.strokeStyle = "rgba(170,200,150,.06)"; ctx.lineWidth = 1;
@@ -78,7 +84,21 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
       const damaged = previous && p.health < previous.health;
       const firing = r?.events?.some(e => e.kind === "damage" && e.tick <= sample.tick && e.tick > sample.tick - 5 && e.attackerSide === p.side && e.attackerIndex === p.index);
       const moving = previous && (previous.x !== p.x || previous.y !== p.y);
-      const frame = frames.get(item, { facing: p.facing, turret: 0, tick: Math.floor(sample.tick / 3), animation: r?.request[p.side === 0 ? "a" : "b"].deploy && item.sprite?.sequences.some(s => s.name === "deployed") ? firing ? "shoot-deployed" : "deployed" : firing ? "attack" : moving ? "move" : "stand", color, shadow: true, tint: [1, 1, 1] });
+      // Turret yaw is not exposed by the Lua recorder: reconstruct aim toward the last damage target,
+      // otherwise the nearest opponent. Native body yaw is preserved, never replaced by screen direction.
+      let lastHit: (typeof observedEvents)[number] | undefined;
+      for (let i=observedEvents.length-1;i>=0;i--) { const e=observedEvents[i]; if(e.kind === "damage" && e.tick <= sample.tick && e.attackerSide === p.side && e.attackerIndex === p.index){lastHit=e;break;} }
+      const enemies = sample.actors.filter(q => q.side !== p.side);
+      const target = enemies.find(q => q.side === lastHit?.side && q.index === lastHit?.index) ?? enemies.sort((a,b) => Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+      const aim = target ? facingToward(target.x-p.x,target.y-p.y) : p.facing;
+      const turretBase = item.spec.voxel || Math.abs(item.sprite?.sequences.find(s => s.name === "idle")?.facings ?? 1) > 1 ? p.facing : item.sprite?.turret?.initialFacing ?? 0;
+      const animation = r?.request[p.side === 0 ? "a" : "b"].deploy && item.sprite?.sequences.some(s => s.name === "deployed") ? firing ? "shoot-deployed" : "deployed" : firing ? "attack" : moving ? "move" : p.health / p.maxHealth < .5 && item.sprite?.sequences.some(s => s.name === "damaged-idle") ? "damaged-idle" : "stand";
+      const info = frames.animationInfo(item,animation);
+      const key = `${unit.id}:${p.side}:${p.index}`;
+      const next = frames.get(item, { facing: Math.round(p.facing / 32) * 32 % 1024, turret: Math.round(angleDelta(turretBase,aim) / 32) * 32, tick: Math.floor(sample.tick * 40 / (info?.tickMs ?? 120)), animation, color, shadow: p.z === 0, tint: [1, 1, 1] });
+      if (next) lastFrames.current.set(key,next);
+      const frame = next ?? lastFrames.current.get(key);
+      if (p.z > 0) { ctx.fillStyle = "#0005"; ctx.beginPath(); ctx.ellipse(ground[0],ground[1],16*scale,7*scale,0,0,Math.PI*2); ctx.fill(); }
       if (frame) { ctx.imageSmoothingEnabled = false; ctx.drawImage(frame.canvas, x - frame.anchorX * scale, y - frame.anchorY * scale, frame.width * scale, frame.height * scale); }
       else { ctx.fillStyle = "#e8b08c"; ctx.font = "10px Arial"; ctx.fillText(frames.failed(item) ?? "Loading art…", x, y - 20); ctx.fillStyle = `#${color}`; ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill(); }
       const bar = Math.max(32, 40 * scale); ctx.fillStyle = "#141814"; ctx.fillRect(x - bar / 2, y - 43 * scale, bar, 4); ctx.fillStyle = `#${color}`; ctx.fillRect(x - bar / 2, y - 43 * scale, bar * p.health / p.maxHealth, 4);
@@ -88,18 +108,44 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
     for (const wreck of sample.wrecks ?? []) {
       const unit = actorMap.get(ids[wreck.side]), item = unit && stageItem(unit, null); if (!item) continue;
       const [x, y] = screen(project(wreck.x, wreck.y, wreck.z));
-      const frame = frames.get(item, { facing: wreck.facing, turret: 0, tick: Math.floor(sample.tick / 3), animation: "stand", color: wreck.side === 0 ? "E04444" : "4477EE", shadow: true, tint: [.45, .45, .45] });
+      const key = `wreck:${unit!.id}:${wreck.side}`;
+      const next = frames.get(item, { facing: Math.round(wreck.facing / 32) * 32 % 1024, turret: 0, tick: 0, animation: "stand", color: wreck.side === 0 ? "E04444" : "4477EE", shadow: wreck.z === 0, tint: [.45, .45, .45] });
+      if (next) lastFrames.current.set(key,next);
+      const frame = next ?? lastFrames.current.get(key);
       if (frame) { ctx.imageSmoothingEnabled = false; ctx.drawImage(frame.canvas, x - frame.anchorX * scale, y - frame.anchorY * scale, frame.width * scale, frame.height * scale); }
       ctx.fillStyle = "#f7d899"; ctx.font = "12px Arial"; ctx.textAlign = "center"; ctx.fillText(wreck.z > 0 ? `Falling wreck · ${(wreck.z / 1024).toFixed(2)}c` : "Wreck", x, y + 30 * scale);
+      if (wreck.z > 0) { ctx.fillStyle = "#5558"; for (let i=0;i<4;i++) { ctx.beginPath(); ctx.arc(x-9*i*scale,y-10*i*scale, (5+i*2)*scale,0,Math.PI*2); ctx.fill(); } }
     }
-  }, [mode, actorMap, frames, roster]);
+    // Effects illustrate measured hit/death timestamps. They never determine damage or outcomes.
+    for (const e of observedEvents) {
+      const age = sample.tick-e.tick; if (age < 0 || age > (e.kind === "destroyed" || e.kind === "crash" ? 65 : 8) || !e.target) continue;
+      const [x,y] = screen(project(e.target.x,e.target.y,e.target.z));
+      if (e.kind === "damage") {
+        if (e.source && age < 4) { const [sx,sy] = screen(project(e.source.x,e.source.y,e.source.z)); ctx.strokeStyle = `rgba(255,219,139,${1-age/4})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sx,sy-9*scale); ctx.lineTo(x,y-9*scale); ctx.stroke(); ctx.fillStyle="#fff3be"; ctx.beginPath(); ctx.arc(sx,sy-9*scale,5*scale,0,Math.PI*2); ctx.fill(); }
+        ctx.fillStyle=`rgba(255,165,62,${1-age/8})`; ctx.beginPath(); ctx.arc(x,y-9*scale,(5+age*2)*scale,0,Math.PI*2); ctx.fill();
+      } else if (e.kind === "destroyed" || e.kind === "crash") {
+        const unit = actorMap.get(ids[e.side]), item = unit && stageItem(unit,null);
+        if (unit?.category === "infantry" && item && age < 30) {
+          const info=frames.animationInfo(item,"die"), sequence=item.sprite?.sequences.find(s=>s.usedBy.some(t=>t.startsWith("WithDeathAnimation")));
+          if(sequence){const f=frames.get(item,{facing:e.target.facing,turret:0,tick:Math.min((info?.length??1)-1,Math.floor(age*40/(info?.tickMs??120))),animation:"die",color:e.side===0?"E04444":"4477EE",shadow:true,tint:[1,1,1]}); if(f)ctx.drawImage(f.canvas,x-f.anchorX*scale,y-f.anchorY*scale,f.width*scale,f.height*scale);}
+          continue;
+        }
+        if (age < 18) { const radius=(8+age*2)*scale, g=ctx.createRadialGradient(x,y-10*scale,0,x,y-10*scale,radius); g.addColorStop(0,"#fff7ce"); g.addColorStop(.3,"#ffc75b"); g.addColorStop(.65,"#ec552bbb"); g.addColorStop(1,"#ed522000"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-10*scale,radius,0,Math.PI*2); ctx.fill(); }
+        for (let i=0;i<8;i++) { const phase=i*2.399, drift=age*(.2+i*.03); ctx.fillStyle=`rgba(74,70,60,${Math.max(0,.65-age/95)})`; ctx.beginPath(); ctx.arc(x+Math.sin(phase)*drift*scale,y-(10+age*.5+Math.cos(phase)*drift)*scale,(5+age*.22)*scale,0,Math.PI*2); ctx.fill(); if(age<22){ ctx.fillStyle="#efae58"; ctx.fillRect(x+Math.cos(phase)*age*2*scale,y-10*scale+Math.sin(phase)*age*scale,3*scale,2*scale); } }
+      }
+    }
+  }, [mode, actorMap, frames, roster, bounds, observedEvents]);
   useEffect(() => { draw(); const off = frames.subscribe(draw), offLab = useLab.subscribe(draw); const observer = new ResizeObserver(draw); if (canvas.current) observer.observe(canvas.current); return () => { off(); offLab(); observer.disconnect(); }; }, [draw, frames]);
-  useEffect(() => { draw(); }, [result, index, a, b, ranges, draw]);
+  useEffect(() => { if (!playing) playhead.current = result?.samples[index]?.tick ?? 0; draw(); }, [result, index, a, b, ranges, camera, draw, playing]);
   useEffect(() => {
     if (!playing || !result) return;
-    const timer = setInterval(() => { if (!document.hidden) setIndex(i => { if (i >= result.samples.length - 1) { setPlaying(false); return i; } return Math.min(result.samples.length - 1, i + 1); }); }, 200 / speed);
-    return () => clearInterval(timer);
-  }, [playing, result, speed]);
+    let handle = 0, previous = performance.now();
+    const step = (now: number) => { const elapsed = Math.min(100,now-previous); previous=now;
+      if (!document.hidden) { playhead.current=Math.min(result.samples.at(-1)!.tick,playhead.current+elapsed/1000*result.ticksPerSecond*speed); draw(); const i=sampleIndex(result.samples,playhead.current); if(i!==drawState.current.index) setIndex(i); if(playhead.current>=result.samples.at(-1)!.tick){setPlaying(false);return;} }
+      handle=requestAnimationFrame(step);
+    };
+    handle=requestAnimationFrame(step); return () => cancelAnimationFrame(handle);
+  }, [playing, result, speed, draw]);
   const run = async () => {
     setBusy(true); setError(""); setPlaying(false);
     try {
@@ -111,7 +157,7 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
         const poll = await fetch(`/api/art-review/duel/${first.id}`); const job = await poll.json();
         if (!poll.ok || job.status === "failed") throw new Error(job.error);
         if (job.status === "complete") { try { const key = `rtsai-studio-notebook:${mode}`; const ids = JSON.parse(localStorage.getItem(key) ?? "[]"); localStorage.setItem(key, JSON.stringify([first.id, ...ids].slice(0, 6))); } catch { /* Storage unavailable: current match still works. */ }
-          setResult(job.result); setHistory(h => [job.result, ...h].slice(0, 6)); setIndex(0); setPlaying(true); break; }
+          playhead.current=0; lastFrames.current.clear(); setResult(job.result); setHistory(h => [job.result, ...h].slice(0, 6)); setIndex(0); setPlaying(true); break; }
       }
     } catch (e) { if (!aborted.current) setError(e instanceof Error ? e.message : "Match failed"); }
     finally { if (!aborted.current) setBusy(false); }
@@ -121,8 +167,11 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
     <div className="arena-matchup">{side(a, setA, countA, setCountA, deployA, setDeployA, "a")}<Swords size={24} />{side(b, setB, countB, setCountB, deployB, setDeployB, "b")}</div>
     <div className="arena-options"><label title="Separation in map columns; RA2's isometric columns span more than one world cell">Starting gap <input type="range" min={4} max={24} value={gap} onChange={e => setGap(Number(e.target.value))} disabled={busy} /><b>{gap} map columns</b></label><label>Veterancy<select value={level} onChange={e => setLevel(Number(e.target.value))} disabled={busy}><option value={0}>Rookie</option><option value={1}>Veteran</option><option value={2}>Elite</option></select></label><label title="A disposable rule override; never changes the mod">Red health<input type="range" min={50} max={200} step={5} value={healthA} onChange={e => setHealthA(Number(e.target.value))} disabled={busy} /><b>{healthA}%</b></label><button className="lab-primary" disabled={busy} onClick={() => void run()}>{busy ? "Running the engine…" : "Run encounter"}</button></div>
     {error && <p className="arena-error" role="alert">{error}</p>}
-    <div className="arena-field"><canvas ref={canvas} aria-label="Combat replay" /><span className="arena-caption">{result ? "Positions & health measured · effects & animation illustrative" : "Preview · run an encounter to measure combat"}</span></div>
-    <div className="arena-timeline"><button className="lab-icon-btn" aria-label="Restart replay" onClick={() => { setIndex(0); setPlaying(true); }} disabled={!result}><RotateCcw size={16} /></button><button className="lab-icon-btn" aria-label={playing ? "Pause replay" : "Play replay"} onClick={() => setPlaying(v => !v)} disabled={!result}>{playing ? <Pause size={17} /> : <Play size={17} />}</button><input aria-label="Replay position" type="range" min={0} max={Math.max(1, (result?.samples.length ?? 1) - 1)} value={index} onChange={e => { setPlaying(false); setIndex(Number(e.target.value)); }} disabled={!result} /><b>{((result?.samples[index]?.tick ?? 0) / 25).toFixed(1)}s</b><select aria-label="Replay speed" value={speed} onChange={e => setSpeed(Number(e.target.value))}><option value={.5}>½×</option><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><label><input type="checkbox" checked={ranges} onChange={e => setRanges(e.target.checked)} /> Range</label></div>
+    <div className="arena-field"><canvas ref={canvas} aria-label="Combat replay" /><span className="arena-caption">{result ? "Measured: combat, body yaw & wreck altitude · Inferred: turret aim & effects" : "Preview · run an encounter to measure combat"}</span></div>
+    <div className="arena-timeline"><button className="lab-icon-btn" aria-label="Restart replay" onClick={() => { playhead.current=0; setIndex(0); setPlaying(true); }} disabled={!result}><RotateCcw size={16} /></button><button className="lab-icon-btn" aria-label={playing ? "Pause replay" : "Play replay"} onClick={() => setPlaying(v => !v)} disabled={!result}>{playing ? <Pause size={17} /> : <Play size={17} />}</button><input aria-label="Replay position" type="range" min={0} max={Math.max(1, (result?.samples.length ?? 1) - 1)} value={index} onChange={e => { setPlaying(false); setIndex(Number(e.target.value)); }} disabled={!result} /><b>{((result?.samples[index]?.tick ?? 0) / 25).toFixed(1)}s</b><select aria-label="Replay speed" value={speed} onChange={e => setSpeed(Number(e.target.value))}><option value={.5}>½×</option><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select><label><input type="checkbox" checked={ranges} onChange={e => setRanges(e.target.checked)} /> Range</label></div>
+    <label className="arena-camera">Camera<select aria-label="Replay camera" value={camera} onChange={e=>setCamera(e.target.value)}><option value="follow">Follow the fight</option><option value="overview">Whole encounter</option></select></label>
+    {result?.effects?.length ? <div className="arena-crashes">{result.effects.map((e,i)=><button className="lab-ghost" key={i} onClick={()=>{setPlaying(false);setIndex(sampleIndex(result.samples,e.tick+5));}}>{(e.tick/result.ticksPerSecond).toFixed(1)}s · Wreck reached ground · view</button>)}</div> : null}
+    {result && <section className="arena-events" aria-label="Measured combat events"><h3>Measured combat events <small>{result.events?.filter(e=>e.kind==="damage").length ?? 0} hits · {result.events?.filter(e=>e.kind==="destroyed").length ?? 0} destroyed</small></h3><div>{result.events?.filter(e=>e.kind==="destroyed").map((e,i)=><button key={i} onClick={()=>{setPlaying(false);setIndex(sampleIndex(result.samples,e.tick+5));}}>{(e.tick/result.ticksPerSecond).toFixed(1)}s · {e.side===0?"Red":"Blue"} destroyed · view</button>)}<button onClick={()=>{setPlaying(false);setIndex(sampleIndex(result.samples,result.events?.find(e=>e.kind==="damage")?.tick ?? 0));}}>First impact</button></div><details><summary>Encounter conditions</summary><p className="lab-hint">{result.limitations}</p></details></section>}
     {history.length > 0 && <div className="arena-history"><h3>Encounter notebook <small>Measured · one run per row</small></h3><table><thead><tr><th>Match</th><th>Red remaining</th><th>Blue remaining</th><th>Time</th></tr></thead><tbody>{history.map((r, i) => { const last = r.samples.at(-1)!; return <tr key={i} onClick={() => restore(r)}><td>{actorMap.get(r.request.a.id)?.name} ×{r.request.a.count} <span>vs</span> {actorMap.get(r.request.b.id)?.name} ×{r.request.b.count}</td><td>{last.actors.filter(a => a.side === 0).length}</td><td>{last.actors.filter(a => a.side === 1).length}</td><td>{last.tick / 25}s</td></tr>; })}</tbody></table></div>}
     <p className="arena-note">Actual faction owners · land, water or coast selected for the actors · no aircraft service base. Use repeated runs and equal costs before drawing balance conclusions.</p>
   </div>;

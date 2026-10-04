@@ -91,7 +91,7 @@ test("resolver: art outside modern-factions is recorded as external, never publi
   const files: Record<string, string | Uint8Array> = {
     "mods/rtsai/mod.yaml": "Rules:\n\tra2|rules/r.yaml\nSequences:\n\tra2|sequences/s.yaml\nModelSequences:\n\tra2|sequences/v.yaml\nFluentMessages:\n\tra2|f.ftl\n",
     "mods/rtsai/rules/r.yaml": [
-      "World:", "\tFaction@c:", "\t\tName: c-name", "\t\tInternalName: china", ...["iran", "turkey", "saudi", "yemen"].flatMap(f => [`\tFaction@${f}:`, `\t\tInternalName: ${f}`]),
+      "World:", "\tFaction@c:", "\t\tName: c-name", "\t\tInternalName: china", ...["iran", "turkey", "saudi", "yemen", "israel", "hezbollah"].flatMap(f => [`\tFaction@${f}:`, `\t\tInternalName: ${f}`]),
       "\tPaletteFromFile@p:", "\t\tName: p", "\t\tFilename: ra2|modern-factions/x.pal",
       "\tPlayerColorPalette@p:", "\t\tBasePalette: p", "\t\tBaseName: pp", "\t\tRemapIndex: 16, 17",
       "^Inf:", "\tWithInfantryBody:", "\tRenderSprites:", "\t\tPlayerPalette: pp",

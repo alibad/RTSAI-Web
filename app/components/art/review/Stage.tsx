@@ -3,7 +3,7 @@
 import { Box, Layers, Minus, Pause, Play, Plus, RotateCw } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { cellZoom, clampZoom, dragFacing, dragTurret, fitZoom, lineupFacings } from "../../../../lib/art-lab/review-ui";
-import { spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
+import { pickAnimation, spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { facingLabel } from "../../../../lib/art-lab/voxel-math";
 import { tintFor, type MapTint } from "../viewSettings";
 import type { StageLabel } from "../voxel-three";
@@ -163,6 +163,8 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const pair = comparePair(versions, focus);
   const compare: Compare = allowCompare && pair ? compareRaw : "single";
   const isVoxel = Boolean(focused?.item?.spec.voxel);
+  const canTurn = isVoxel || Math.abs(pickAnimation(focused?.item?.sprite ?? null, animation)?.body?.facings ?? 1) > 1;
+  const canAim = isVoxel ? Boolean(focused?.item?.spec.voxel?.parts.some(p => p.turretOffset !== null)) : Boolean(focused?.item?.sprite?.turret);
   const is3d = compare === "single" && view3d !== "off" && isVoxel;
   const animations = useMemo(() => (focused?.item && !focused.item.spec.voxel ? spriteAnimations(focused.item.sprite) : []), [focused]);
   const anim = useMemo(() => (focused?.item ? frames.animationInfo(focused.item, animation) : null),
@@ -426,8 +428,8 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     if (d.turn === "swipe") {
       const rect = e.currentTarget.getBoundingClientRect();
       setLab({ swipe: Math.min(0.98, Math.max(0.02, (e.clientX - rect.left) / rect.width)) });
-    } else if (d.turn === "turret") setLab({ turret: dragTurret(d.turret, dx) });
-    else setLab({ facing: dragFacing(d.facing, dx) });
+    } else if (d.turn === "turret" && canAim) setLab({ turret: dragTurret(d.turret, dx) });
+    else if (d.turn === "body" && canTurn) setLab({ facing: dragFacing(d.facing, dx) });
   };
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
@@ -443,8 +445,8 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const partner = pair ? versions[pair[1]] : null;
   const playable = animations.length > 1;
   return (
-    <div ref={stageRef} className={`lab-stage is-${compare}${is3d ? " is-3d" : ""}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-      onContextMenu={e => e.preventDefault()} role="application" aria-label={`${focused?.label ?? "Unit"}: drag to turn, Shift+drag turns the turret, scroll to zoom`}>
+    <div ref={stageRef} className={`lab-stage is-${compare}${is3d ? " is-3d" : ""}${canTurn ? "" : " is-fixed"}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+      onContextMenu={e => e.preventDefault()} role="application" aria-label={`${focused?.label ?? "Unit"}: ${canTurn ? "drag to turn" : "fixed authored view"}${canAim ? ", Shift+drag turns the turret" : ""}, scroll to zoom`}>
       <canvas ref={canvasRef} className="lab-stage-canvas" />
       <div ref={glHostRef} className="lab-stage-gl" hidden={!is3d} />
       <div ref={labelsRef} className="lab-stage-labels" hidden={!is3d} />
@@ -492,8 +494,8 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
           </div>
         )}
         <div className="lab-seg">
-          <SpinButton />
-          <FacingReadout />
+          <SpinButton disabled={!canTurn} />
+          {canTurn ? <FacingReadout /> : <span className="lab-readout">Fixed view</span>}
         </div>
         {!is3d && (
           <div className="lab-seg" role="group" aria-label="Zoom">
@@ -507,7 +509,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   );
 }
 
-function SpinButton() {
+function SpinButton({ disabled = false }: { disabled?: boolean }) {
   const spin = useLab(s => s.spin);
-  return <button type="button" aria-pressed={spin} onClick={() => setLab({ spin: !spin })} title="Spin (Space)"><RotateCw size={14} /><span>Spin</span></button>;
+  return <button type="button" disabled={disabled} aria-pressed={!disabled && spin} onClick={() => setLab({ spin: !spin })} title={disabled ? "One authored view; a flat building sprite cannot rotate" : "Spin (Space)"}><RotateCw size={14} /><span>Spin</span></button>;
 }

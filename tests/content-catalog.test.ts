@@ -5,8 +5,8 @@ import { availability, catalog, factionById, factions, mediaById, resolveMode, u
 import { verifyEvidence } from "../scripts/release-evidence.mjs";
 test("shared catalog has complete faction, unit, mode and media relationships", () => {
   assert.equal(catalog.schemaVersion, 1);
-  assert.equal(new Set(factions.map(f => f.id)).size, 5);
-  assert.equal(new Set(units.map(u => u.id)).size, 12);
+  assert.equal(new Set(factions.map(f => f.id)).size, 7);
+  assert.equal(new Set(units.map(u => u.id)).size, 47);
   assert.deepEqual(catalog.modes.map(m => m.id), ["ra", "ra2"]);
   for (const f of factions) {
     assert.ok(mediaById(f.heroAssetId));
