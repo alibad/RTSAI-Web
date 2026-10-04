@@ -381,7 +381,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} />
           )}
-          {unit && surface !== "arena" && slot === "model" && <ActionShelf unit={unit} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />}
+          {unit && surface !== "arena" && slot === "model" && <ActionShelf unit={unit} version={focused} mode={mode} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
         {surface !== "arena" && <aside className="studio-inspector" aria-label="Actor details">

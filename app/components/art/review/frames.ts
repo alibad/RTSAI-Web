@@ -12,8 +12,9 @@ import type { Palette } from "../../../../lib/art-lab/pal";
 import type { RasterImage } from "../../../../lib/art-lab/raster";
 import type { Shp } from "../../../../lib/art-lab/shp";
 import { partVisibleByDefault, type RenderSpec } from "../../../../lib/art-lab/spec";
-import { composeRig, rigAnimates, rigFiles, rigFrame, rigLength, spriteRig, type RigShps, type SpriteRig } from "../../../../lib/art-lab/sprite-compose";
-import { indexFacing, quantizeFacing } from "../../../../lib/art-lab/sprite-render";
+import { composeRig, rigAnimates, rigFiles, rigPoseLayers, sequenceDurationMs, rigTickMs, spriteRig, type RigShps, type SpriteRig } from "../../../../lib/art-lab/sprite-compose";
+import { sequenceFrame,sequenceLength } from "../../../../lib/art-lab/sprite-render";
+import { voxelAnimationFrames,voxelAnimationParts } from "../../../../lib/art-lab/voxel-animation";
 import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { VoxelEngine } from "../voxel-engine";
 import type { VoxelModel } from "../voxel-three";
@@ -23,8 +24,10 @@ export type StageItem = { key: string; spec: RenderSpec; sprite: SpriteArt | nul
 export type Pose = {
   facing: number;
   turret: number;
-  /** Animation tick (sprites); voxels always show HVA frame 0. */
+  /** Legacy animation tick, or elapsed time for independently timed native layers. */
   tick: number;
+  timeMs?:number;
+  loop?:boolean;
   animation: string;
   color: string | null;
   shadow: boolean;
@@ -41,7 +44,7 @@ export type Frame = {
   left: number; top: number; right: number; bottom: number;
 };
 
-export type AnimationInfo = { length: number; tickMs: number; animates: boolean; labels: { id: string; label: string }[] };
+export type AnimationInfo = { length: number; tickMs: number;durationMs:number; animates: boolean; labels: { id: string; label: string }[] };
 
 type Three = typeof import("../voxel-three") & typeof import("../voxel-engine");
 /** `visible`: the user can see this frame now (filmstrip, lineup). Otherwise it is warm-up for later. */
@@ -161,17 +164,12 @@ export class FrameStore {
 
   private key(item: StageItem, pose: Pose, rig?: SpriteRig | null, shps?: RigShps | null) {
     const tint = pose.tint.join(",");
-    if (item.spec.voxel) return `${this.identity(item.spec)}|v|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
+    if (item.spec.voxel) return `${this.identity(item.spec)}|v|${Object.values(voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40)).join(",")}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
     if (!rig || !shps) return `${this.identity(item.spec)}|s|${pose.animation}|${pose.tick}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
     // Facings that pick the same SHP frames share one cached picture (an 8-facing soldier has 8, not 32).
-    const tick = rigAnimates(rig, shps) && rig.overlays.some(o => o.animated) ? pose.tick % 960 : rigFrame(rig, rigLength(rig, shps), pose.tick);
-    const facings = rig.body.facings;
-    const body = indexFacing(pose.facing, facings, rig.body.useClassicFacings);
-    const vehicle = facings > 1 && Boolean(rig.turret);
-    const bodyAngle = quantizeFacing(pose.facing, rig.quantizedFacings, rig.classicFacingBodyOrientation);
-    const turretAngle = vehicle ? (bodyAngle + pose.turret) & 1023 : (rig.initialFacing + pose.turret) & 1023;
-    const turret = rig.turret ? indexFacing(turretAngle, rig.turret.facings, rig.turret.useClassicFacings) : 0;
-    return `${this.identity(item.spec)}|s|${pose.animation}|${tick}|${body}|${vehicle ? bodyAngle : 0}|${turret}|${pose.color}|${pose.shadow}|${tint}`;
+    const layers=rigPoseLayers(rig,shps,{facing:pose.facing,turretFacing:pose.turret,tick:pose.tick,shadow:pose.shadow,timeMs:pose.timeMs,loop:pose.loop});
+    const picture=layers.map(l=>`${l.seq.file}:${sequenceFrame(l.seq,l.frame,l.facing,false,l.shp)}:${l.dx??0},${l.dy??0}`).join(";");
+    return `${this.identity(item.spec)}|s|${pose.animation}|${picture}|${pose.color}|${pose.shadow}|${tint}`;
   }
 
   private spriteParts(item: StageItem, animation: string) {
@@ -232,10 +230,14 @@ export class FrameStore {
   }
 
   animationInfo(item: StageItem, animation: string): AnimationInfo | null {
-    if (item.spec.voxel) return null;
+    if (item.spec.voxel){
+      const parts=voxelAnimationParts(item.spec);if(!parts.length)return null;
+      return {length:Math.max(...parts.map(p=>p.frames)),tickMs:Math.min(...parts.map(p=>p.tickRate!*40)),durationMs:Math.max(...parts.map(p=>p.frames*p.tickRate!*40)),animates:true,labels:[{id:"body",label:"HVA cycle"}]};
+    }
     const { rig, shps } = this.spriteParts(item, animation);
     if (!rig || !shps) return null;
-    return { length: rigLength(rig, shps), tickMs: Math.max(40, rig.body.tick), animates: rigAnimates(rig, shps), labels: [] };
+    const sequences=[{seq:rig.body,shp:shps.body},...(rig.turret&&shps.turret?[{seq:rig.turret,shp:shps.turret}]:[]),...rig.overlays.flatMap((o,i)=>{const shp=shps.overlays?.[i]??shps.overlay;return o.animated&&shp?[{seq:o.seq,shp}]:[];})];
+    return { length: Math.max(...sequences.map(({seq,shp})=>sequenceLength(seq,shp))), tickMs:rigTickMs(rig,shps),durationMs:Math.max(...sequences.map(({seq,shp})=>sequenceDurationMs(seq,shp))), animates: rigAnimates(rig, shps), labels: [] };
   }
 
   /** The loaded voxel model for the 3D view, or null (loading starts). */
@@ -358,7 +360,7 @@ export class FrameStore {
       if (!urgent && this.inflight.size >= MAX_INFLIGHT) return null;
       this.inflight.add(key);
       engine.renderInGameAsync(model, {
-        facing: pose.facing, turretFacing: pose.turret, frame: 0, visible: defaultVisibility(item.spec), shadow: pose.shadow, airborne: false,
+        facing: pose.facing, turretFacing: pose.turret, frame: 0,partFrames:voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40), visible: defaultVisibility(item.spec), shadow: pose.shadow, airborne: false,
       }, palette, pose.tint).then(image => {
         this.inflight.delete(key);
         if (!this.alive) return;
@@ -373,7 +375,7 @@ export class FrameStore {
     }
     if (!rig || !shps) return null;
     try {
-      const frame = toFrame(composeRig(rig, shps, palette, { facing: pose.facing, turretFacing: pose.turret, tick: pose.tick, shadow: pose.shadow }), pose.tint);
+      const frame = toFrame(composeRig(rig, shps, palette, { facing: pose.facing, turretFacing: pose.turret, tick: pose.tick, shadow: pose.shadow,timeMs:pose.timeMs,loop:pose.loop }), pose.tint);
       this.store(key, frame);
       return frame;
     } catch (e) {

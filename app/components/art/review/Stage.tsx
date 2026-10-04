@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, Layers, Minus, Pause, Play, Plus, RotateCw } from "lucide-react";
+import { Box, Layers, Minus, Plus, RotateCw } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { cellZoom, clampZoom, dragFacing, dragTurret, fitZoom, lineupFacings } from "../../../../lib/art-lab/review-ui";
 import { pickAnimation, spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { facingLabel } from "../../../../lib/art-lab/voxel-math";
+import { voxelAnimationParts,voxelAnimationFrames } from "../../../../lib/art-lab/voxel-animation";
 import { tintFor, type MapTint } from "../viewSettings";
 import type { StageLabel } from "../voxel-three";
 import { defaultVisibility, frameRadius, type Frame, type FrameStore, type Pose, type StageItem } from "./frames";
@@ -12,6 +13,7 @@ import { groundStrip, groundTile, groundWidth } from "./ground";
 import { CompareToggle } from "./ImageStages";
 import { setLab, useLab, type Compare, type LabView } from "./lab-store";
 import { comparePair, type Version } from "./versions";
+import { AnimationTransport } from "./AnimationTransport";
 
 export const DEFAULT_FACING = 896;
 
@@ -19,7 +21,7 @@ export const DEFAULT_FACING = 896;
 export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.label ?? "");
 
 export const poseFrom = (s: LabView, tints: MapTint[], facing = s.facing, tick = 0): Pose => ({
-  facing, turret: s.turret, tick, animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints),
+  facing, turret: s.turret, tick,timeMs:s.animationTime,loop:!/(^die|^make$|deploy|takeoff|^land$|^liedown$|^standup$)/.test(s.animation), animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints),
 });
 
 /** The unit's turning circle at 1x (from what is in game now at the default facing); null while loading. */
@@ -110,7 +112,7 @@ function Inset({ item, frames, tints, radius }: { item: StageItem | null; frames
   const schedule = useDrawScheduler(draw);
   useEffect(() => {
     schedule();
-    const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap || s.ground !== p.ground || s.animation !== p.animation) schedule(); });
+    const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap || s.ground !== p.ground || s.animation !== p.animation||s.animationTime!==p.animationTime) schedule(); });
     const offFrames = frames.subscribe(schedule);
     return () => { offLab(); offFrames(); };
   }, [schedule, frames, item, radius]);
@@ -166,7 +168,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const canTurn = isVoxel || Math.abs(pickAnimation(focused?.item?.sprite ?? null, animation)?.body?.facings ?? 1) > 1;
   const canAim = isVoxel ? Boolean(focused?.item?.spec.voxel?.parts.some(p => p.turretOffset !== null)) : Boolean(focused?.item?.sprite?.turret);
   const is3d = compare === "single" && view3d !== "off" && isVoxel;
-  const animations = useMemo(() => (focused?.item && !focused.item.spec.voxel ? spriteAnimations(focused.item.sprite) : []), [focused]);
+  const animations = useMemo(() => (focused?.item ? focused.item.spec.voxel ? voxelAnimationParts(focused.item.spec).length?[{id:"body",label:"HVA cycle"}]:[] : spriteAnimations(focused.item.sprite) : []), [focused]);
   const anim = useMemo(() => (focused?.item ? frames.animationInfo(focused.item, animation) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `assets` re-reads the cache after loads
     [frames, focused, animation, assets]);
@@ -313,7 +315,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   useEffect(() => {
     const offLab = useLab.subscribe((s, p) => {
       if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap
-        || s.ground !== p.ground || s.swipe !== p.swipe || s.lineupFacings !== p.lineupFacings || s.animation !== p.animation || s.zoom !== p.zoom) schedule();
+        || s.ground !== p.ground || s.swipe !== p.swipe || s.lineupFacings !== p.lineupFacings || s.animation !== p.animation || s.animationTime!==p.animationTime||s.zoom !== p.zoom) schedule();
     });
     const offFrames = frames.subscribe(schedule);
     return () => { offLab(); offFrames(); };
@@ -336,16 +338,21 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
 
   // Sprite animation: advance only while the picture changes, the stage is visible and Play is on.
   useEffect(() => {
-    if (!playing || !anim?.animates || is3d) return;
+    const visible=compare==="single"?[focused]:versions;
+    const infos=visible.flatMap(v=>v.item?[frames.animationInfo(v.item,animation)].filter((i):i is NonNullable<typeof i>=>Boolean(i)):[]);
+    const animated=infos.filter(i=>i.animates);
+    if (!playing || !animated.length) return;
+    const interval=Math.max(16,Math.min(...animated.map(i=>i.tickMs))),duration=Math.max(...infos.map(i=>i.durationMs));
     let timer: ReturnType<typeof setTimeout>;
     const step = () => {
-      if (!document.hidden) { tick.current++; schedule(); }
-      timer = setTimeout(step, anim.tickMs);
+      if (!document.hidden) { tick.current++;setLab(s=>({animationTime:s.animationTime+interval}));schedule(); }
+      if (/(^die|^make$|deploy|takeoff|^land$|^liedown$|^standup$)/.test(animation)&&useLab.getState().animationTime>=duration){setLab({playing:false});return;}
+      timer = setTimeout(step, interval);
     };
-    timer = setTimeout(step, anim.tickMs);
+    timer = setTimeout(step, interval);
     return () => clearTimeout(timer);
-  }, [playing, anim, is3d, schedule]);
-  useEffect(() => { tick.current = 0; }, [focused, animation]);
+  }, [playing, anim, is3d, schedule,compare,focused,versions,frames,animation,assets]);
+  useEffect(() => { tick.current = 0;setLab({animationTime:0}); }, [focused, animation]);
 
   // 3D orbit / exploded view through the page's single WebGL context.
   useEffect(() => {
@@ -374,11 +381,11 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       if (!attached) { engine.attach(host); attached = true; }
       engine.show({
         model: loaded.model, palette: loaded.palette, onLabels: s.view3d === "exploded" ? labels : () => labels([]),
-        pose: { mode: s.view3d === "exploded" ? "exploded" : "orbit", facing: s.facing, turretFacing: s.turret, frame: 0, visible: defaultVisibility(item.spec), shadow: false, airborne: false },
+        pose: { mode: s.view3d === "exploded" ? "exploded" : "orbit", facing: s.facing, turretFacing: s.turret, frame: 0,partFrames:voxelAnimationFrames(item.spec,s.animationTime), visible: defaultVisibility(item.spec), shadow: false, airborne: false },
       });
     };
     show();
-    const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.view3d !== p.view3d) show(); });
+    const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.view3d !== p.view3d||s.animationTime!==p.animationTime) show(); });
     const offFrames = frames.subscribe(kind => { if (kind === "assets") show(); });
     const observer = new ResizeObserver(() => frames.engine?.resize());
     if (host) observer.observe(host);
@@ -395,7 +402,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     if (!el) return;
     let acc = 0;
     const onWheel = (e: WheelEvent) => {
-      if (is3d || (e.target as HTMLElement).closest(".lab-corner")) return;
+      if (is3d || (e.target as HTMLElement).closest(".lab-corner, .lab-animation-row")) return;
       e.preventDefault();
       acc += e.deltaY;
       if (Math.abs(acc) < 40) return;
@@ -412,7 +419,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const drag = useRef<{ x: number; facing: number; turret: number; turn: "body" | "turret" | "swipe"; moved: boolean; id: number } | null>(null);
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (is3d || target.closest(".lab-corner") || (e.button !== 0 && e.button !== 2)) return;
+    if (is3d || target.closest(".lab-corner, .lab-animation-row, button, input, select") || (e.button !== 0 && e.button !== 2)) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const s = useLab.getState();
@@ -443,7 +450,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   };
 
   const partner = pair ? versions[pair[1]] : null;
-  const playable = animations.length > 1;
+  const playable = animations.length > 0;
   return (
     <div ref={stageRef} className={`lab-stage is-${compare}${is3d ? " is-3d" : ""}${canTurn ? "" : " is-fixed"}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onContextMenu={e => e.preventDefault()} role="application" aria-label={`${focused?.label ?? "Unit"}: ${canTurn ? "drag to turn" : "fixed authored view"}${canAim ? ", Shift+drag turns the turret" : ""}, scroll to zoom`}>
@@ -477,14 +484,14 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       )}
 
       {compare !== "lineup" && <div className="lab-corner is-bl"><Inset item={focused?.item ?? null} frames={frames} tints={tints} radius={radius} /></div>}
+      {anim?.animates&&compare!=="lineup"&&<div className="lab-animation-row"><AnimationTransport info={anim}/></div>}
 
       <div className="lab-corner is-br">
-        {playable && !is3d && (
+        {playable && (
           <div className="lab-seg">
             <select aria-label="Animation" value={animations.some(a => a.id === animation) ? animation : animations[0]?.id} onChange={e => setLab({ animation: e.target.value, playing: true })}>
               {animations.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
-            {anim?.animates && <button type="button" aria-pressed={playing} onClick={() => setLab({ playing: !playing })} title={playing ? "Pause" : "Play"}>{playing ? <Pause size={14} /> : <Play size={14} />}</button>}
           </div>
         )}
         {isVoxel && compare === "single" && (

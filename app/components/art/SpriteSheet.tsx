@@ -17,14 +17,14 @@ function frameImage(shp: Shp, index: number, palette: Palette): PixelImage {
 }
 
 function useLoaded(file: string | null, active: boolean) {
-  const [shp, setShp] = useState<Shp | null>(null);
+  const [loaded, setLoaded] = useState<{file:string;shp:Shp} | null>(null);
   useEffect(() => {
     if (!file || !active) return;
     let cancelled = false;
-    loadShp(file).then(s => { if (!cancelled) setShp(s); });
+    loadShp(file).then(s => { if (!cancelled) setLoaded({file,shp:s}); });
     return () => { cancelled = true; };
   }, [file, active]);
-  return shp;
+  return loaded?.file===file?loaded.shp:null;
 }
 
 function usePalette(spec: RenderSpec, color: string | null) {
@@ -37,9 +37,10 @@ function usePalette(spec: RenderSpec, color: string | null) {
   return palette;
 }
 
-function SequenceCard({ seq, shp, palette, facing, settings, tint, selected, onSelect }: {
-  seq: SpriteSequence; shp: Shp; palette: Palette; facing: number; settings: ViewSettings; tint: [number, number, number]; selected: boolean; onSelect: () => void;
+function SequenceCard({ seq, palette, facing, settings, tint, selected, onSelect,active }: {
+  seq: SpriteSequence; active:boolean; palette: Palette; facing: number; settings: ViewSettings; tint: [number, number, number]; selected: boolean; onSelect: () => void;
 }) {
+  const shp=useLoaded(seq.file,active);
   const length = sequenceLength(seq, shp);
   const [frame, setFrame] = useState(0);
   useEffect(() => {
@@ -50,18 +51,18 @@ function SequenceCard({ seq, shp, palette, facing, settings, tint, selected, onS
   const shown = seq.reverses && frame >= length ? 2 * length - 2 - frame : frame;
   const range = useMemo(() => {
     const used: number[] = [];
-    for (let f = 0; f < seq.facings; f++) for (let i = 0; i < length; i++) used.push(sequenceFrame(seq, i, (f * 1024) / seq.facings));
+    for (let f = 0; f < seq.facings; f++) for (let i = 0; i < length; i++) used.push(sequenceFrame(seq, i, (f * 1024) / seq.facings,false,shp));
     const lo = Math.min(...used), hi = Math.max(...used);
     return lo === hi ? String(lo) : `${lo}–${hi}`;
-  }, [seq, length]);
-  const index = sequenceFrame(seq, shown, facing);
-  const image = useMemo(() => frameImage(shp, index, palette), [shp, index, palette]);
-  const shadowIndex = seq.shadowStart >= 0 ? sequenceFrame(seq, shown, facing, true) : -1;
-  const shadow = useMemo(() => (shadowIndex >= 0 ? frameImage(shp, shadowIndex, palette) : null), [shp, shadowIndex, palette]);
+  }, [seq, length,shp]);
+  const index = sequenceFrame(seq, shown, facing,false,shp);
+  const image = useMemo(() => shp?frameImage(shp, index, palette):null, [shp, index, palette]);
+  const shadowIndex = seq.shadowStart >= 0 ? sequenceFrame(seq, shown, facing, true,shp) : -1;
+  const shadow = useMemo(() => (shadowIndex >= 0 && shp ? frameImage(shp, shadowIndex, palette) : null), [shp, shadowIndex, palette]);
   return (
     <button type="button" className={`art-seq ${selected ? "is-selected" : ""}`} onClick={onSelect} aria-pressed={selected}>
       <span className="art-seq-stage">
-        <PixelCanvas image={image} zoom={settings.zoom} backdrop={settings.backdrop} tint={tint} label={`${seq.name} frame ${index}`} />
+        {image&&<PixelCanvas image={image} zoom={settings.zoom} backdrop={settings.backdrop} tint={tint} label={`${seq.name} frame ${index}`} />}
         {shadow && <PixelCanvas image={shadow} zoom={settings.zoom} backdrop={settings.backdrop} tint={tint} label={`${seq.name} shadow frame ${shadowIndex}`} />}
       </span>
       <span className="art-seq-meta">
@@ -85,7 +86,8 @@ export function SpriteSheet({ spec, sprite, tints, settings }: {
   const [selected, setSelected] = useState<string>(spec.sprite?.stand?.name ?? "stand");
   const tint = tintFor(settings.tintMap, tints);
   const own = sprite.sequences.filter(s => s.file && !s.inherited && !s.file.endsWith(".png"));
-  const shpFile = own[0]?.file ?? null;
+  const selectedSeq = own.find(s => s.name === selected) ?? own[0];
+  const shpFile = selectedSeq?.file ?? null;
   const shp = useLoaded(shpFile, near);
   const palette = usePalette(spec, settings.color);
   const bodyFacings = spec.sprite?.stand?.facings ?? 1;
@@ -93,14 +95,13 @@ export function SpriteSheet({ spec, sprite, tints, settings }: {
   const turretAngle = ((spec.sprite?.turretInitialFacing ?? 0) + settings.turretFacing) & 1023;
   const shadowSeqs = own.filter(s => s.shadowStart >= 0);
   const external = sprite.sequences.filter(s => !s.file || s.inherited);
-  const selectedSeq = own.find(s => s.name === selected) ?? own[0];
   // Buildings have one body facing; their multi-facing sequences follow the turret.
   const seqFacing = bodyFacings > 1 || !hasTurret ? settings.facing : turretAngle;
   const highlight = { set: new Set<number>(), current: new Set<number>() };
   if (selectedSeq && shp) {
     const length = sequenceLength(selectedSeq, shp);
     for (let f = 0; f < selectedSeq.facings; f++) for (let i = 0; i < length; i++) {
-      const index = sequenceFrame(selectedSeq, i, (f * 1024) / selectedSeq.facings);
+      const index = sequenceFrame(selectedSeq, i, (f * 1024) / selectedSeq.facings,false,shp);
       highlight.set.add(index);
       if (indexFacing(seqFacing, selectedSeq.facings) === f) highlight.current.add(index);
     }
@@ -111,7 +112,7 @@ export function SpriteSheet({ spec, sprite, tints, settings }: {
       {sprite.shp && <p className="art-hint">SHP {sprite.shp.width}×{sprite.shp.height}, {sprite.shp.frames} frames, compression {sprite.shp.compression.map(c => shpCompressionNames[c] ?? c).join(", ")}. Palette <code>{sprite.palette}</code>. Each card animates at the toolbar&apos;s facing.</p>}
       <div className="art-seqs">
         {shp && palette ? own.map(seq => (
-          <SequenceCard key={seq.name} seq={seq} shp={shp} palette={palette} facing={seqFacing} settings={settings} tint={tint} selected={selectedSeq?.name === seq.name} onSelect={() => setSelected(seq.name)} />
+          <SequenceCard key={seq.name} seq={seq} active={near} palette={palette} facing={seqFacing} settings={settings} tint={tint} selected={selectedSeq?.name === seq.name} onSelect={() => setSelected(seq.name)} />
         )) : <p className="art-stage-status">Loading frames…</p>}
       </div>
       {external.length > 0 && (

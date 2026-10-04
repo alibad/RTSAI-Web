@@ -435,7 +435,7 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
     const file = shpUrl(r?.file ?? m?.file ?? null);
     if (!file) continue;
     const length = r?.length ?? m?.length ?? 1;
-    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy ?? "") ? ["WithSpriteTurret"] : ["WithFacingSpriteBody"];
+    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy??"") ? ["WithSpriteTurret"] : m?.usedBy ? [m.usedBy] : currentSprite?.sequences.find(s=>s.name===name)?.usedBy ?? ["WithFacingSpriteBody"];
     sequences.push({
       name, file, external: null, start: r?.start ?? m?.start ?? 0, length, stride: r?.stride ?? m?.stride ?? (typeof length === "number" ? length : 0), facings: r?.facings ?? m?.facings ?? 1,
       reverseFacings: r?.reverseFacings ?? m?.reverseFacings ?? false, useClassicFacings: r?.useClassicFacings ?? m?.useClassicFacings ?? false,

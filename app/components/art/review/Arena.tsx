@@ -104,7 +104,7 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
       const animation = plan?.deploy && item.sprite?.sequences.some(s => s.name === "deployed") ? firing ? "shoot-deployed" : "deployed" : firing ? "attack" : moving ? "move" : p.health / p.maxHealth < .5 && item.sprite?.sequences.some(s => s.name === "damaged-idle") ? "damaged-idle" : "stand";
       const info = frames.animationInfo(item,animation);
       const key = `${unit.id}:${p.side}:${p.index}`;
-      const next = frames.get(item, { facing: Math.round(p.facing / 32) * 32 % 1024, turret: Math.round(angleDelta(turretBase,aim) / 32) * 32, tick: Math.floor(sample.tick * 40 / (info?.tickMs ?? 120)), animation, color, shadow: p.z === 0, tint: [1, 1, 1] });
+      const next = frames.get(item, { facing: Math.round(p.facing / 32) * 32 % 1024, turret: Math.round(angleDelta(turretBase,aim) / 32) * 32, tick: Math.floor(sample.tick * 40 / (info?.tickMs ?? 120)), timeMs:sample.tick*40, animation, color, shadow: p.z === 0, tint: [1, 1, 1] });
       if (next) lastFrames.current.set(key,next);
       const frame = next ?? lastFrames.current.get(key);
       if (p.z > 0) { ctx.fillStyle = "#0005"; ctx.beginPath(); ctx.ellipse(ground[0],ground[1],16*scale,7*scale,0,0,Math.PI*2); ctx.fill(); }

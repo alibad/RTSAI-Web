@@ -54,9 +54,23 @@ export const rigFiles = (rig: SpriteRig) => [...new Set([rig.body.file, rig.turr
 
 export const rigLength = (rig: SpriteRig, shps: RigShps) => sequenceLength(rig.body, shps.body);
 
+/** Preview time is shared; every layer retains its own authored Tick and frame count. */
+export function sequenceTimeFrame(seq:SpriteSequence,shp:Shp,timeMs:number,loop=true){
+  const length=Math.max(1,sequenceLength(seq,shp)),period=seq.reverses&&length>1?2*length-2:length;
+  const tick=Math.max(0,Math.floor(timeMs/Math.max(1,seq.tick)));
+  const phase=loop?tick%period:Math.min(tick,period-1);
+  return seq.reverses&&phase>=length?period-phase:phase;
+}
+export function sequenceDurationMs(seq:SpriteSequence,shp:Shp){
+  const length=Math.max(1,sequenceLength(seq,shp));
+  return (seq.reverses&&length>1?2*length-2:length)*Math.max(1,seq.tick);
+}
+export const rigTickMs=(rig:SpriteRig,shps:RigShps)=>Math.max(1,Math.min(rig.body.tick,...rig.overlays.filter((o,i)=>o.animated&&sequenceLength(o.seq,shps.overlays?.[i]??shps.overlay)>1).map(o=>o.seq.tick),...(rig.turret&&shps.turret&&sequenceLength(rig.turret,shps.turret)>1?[rig.turret.tick]:[])));
+
 /** True when the picture changes over time (a multi-frame body or an animated overlay). */
 export function rigAnimates(rig: SpriteRig, shps: RigShps) {
   if (rigLength(rig, shps) > 1) return true;
+  if (rig.turret&&shps.turret&&sequenceLength(rig.turret,shps.turret)>1)return true;
   return rig.overlays.some((o, i) => o.animated && (shps.overlays?.[i] ?? (i === 0 ? shps.overlay : null)) && sequenceLength(o.seq, (shps.overlays?.[i] ?? shps.overlay)!) > 1);
 }
 
@@ -80,18 +94,18 @@ export function turretScreenOffset(offset: Vec3 | undefined, bodyFacing: number)
  * Layers for one picture. A vehicle's turret turns with its body (Turreted: world = body + local); a defence's
  * body never turns, so its turret angle is absolute from InitialFacing.
  */
-export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bodyFrame: number, turretFacing: number, tick: number): SpriteLayer[] {
+export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bodyFrame: number, turretFacing: number, tick: number, timeMs?:number,loop=true): SpriteLayer[] {
   const facings = rig.body.facings;
   const vehicle = facings > 1 && Boolean(rig.turret);
   const quantize = (f: number) => quantizeFacing(f, rig.quantizedFacings, rig.classicFacingBodyOrientation);
   const layers: SpriteLayer[] = [{ shp: shps.body, seq: rig.body, facing: bodyFacing, frame: bodyFrame }];
   if (rig.turret && shps.turret) {
     const angle = vehicle ? (quantize(bodyFacing) + turretFacing) & 1023 : (rig.initialFacing + turretFacing) & 1023;
-    layers.push({ shp: shps.turret, seq: rig.turret, facing: angle, frame: 0, ...turretScreenOffset(rig.turretOffset, vehicle ? quantize(bodyFacing) : 0) });
+    layers.push({ shp: shps.turret, seq: rig.turret, facing: angle, frame: timeMs===undefined?tick:sequenceTimeFrame(rig.turret,shps.turret,timeMs,loop), ...turretScreenOffset(rig.turretOffset, vehicle ? quantize(bodyFacing) : 0) });
   }
   for (const [i, o] of rig.overlays.entries()) {
     const shp = shps.overlays?.[i] ?? (i === 0 ? shps.overlay : null);
-    if (shp) layers.push({ shp, seq: o.seq, facing: bodyFacing, frame: o.animated ? tick : 0, ...turretScreenOffset(o.offset, vehicle ? quantize(bodyFacing) : 0) });
+    if (shp) layers.push({ shp, seq: o.seq, facing: bodyFacing, frame: o.animated ? timeMs===undefined?tick:sequenceTimeFrame(o.seq,shp,timeMs,loop) : 0, ...turretScreenOffset(o.offset, vehicle ? quantize(bodyFacing) : 0) });
   }
   return layers.sort((a, b) => (a.seq.zOffset + a.seq.offset[2]) - (b.seq.zOffset + b.seq.offset[2]));
 }
@@ -115,15 +129,19 @@ export function composeLayers(layers: SpriteLayer[], palette: Palette, base: Shp
     const at = framePosition(layer.shp, layer.seq, anchorX + (layer.dx ?? 0), anchorY + (layer.dy ?? 0));
     blit(data, width, height, drawShpFrame(layer.shp, index, palette), layer.shp.width, layer.shp.height, at.x, at.y);
   };
-  if (shadows) for (const layer of layers) if (layer.seq.shadowStart >= 0) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing, true));
-  for (const layer of layers) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing));
+  if (shadows) for (const layer of layers) if (layer.seq.shadowStart >= 0) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing, true,layer.shp));
+  for (const layer of layers) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing,false,layer.shp));
   return { width, height, data, anchorX, anchorY };
 }
 
-export type SpritePose = { facing: number; turretFacing: number; tick: number; shadow: boolean };
+export type SpritePose = { facing: number; turretFacing: number; tick: number; shadow: boolean;timeMs?:number;loop?:boolean };
+
+export function rigPoseLayers(rig:SpriteRig,shps:RigShps,pose:SpritePose){
+  const frame=pose.timeMs===undefined?rigFrame(rig,rigLength(rig,shps),pose.tick):sequenceTimeFrame(rig.body,shps.body,pose.timeMs,pose.loop??true);
+  return rigLayers(rig,shps,pose.facing,frame,pose.turretFacing,pose.tick,pose.timeMs,pose.loop??true);
+}
 
 /** One finished picture of a rig: the body frame for `tick`, turret and overlay, with shadows. */
 export function composeRig(rig: SpriteRig, shps: RigShps, palette: Palette, pose: SpritePose): RasterImage {
-  const frame = rigFrame(rig, rigLength(rig, shps), pose.tick);
-  return composeLayers(rigLayers(rig, shps, pose.facing, frame, pose.turretFacing, pose.tick), palette, shps.body, rig.body, pose.shadow);
+  return composeLayers(rigPoseLayers(rig,shps,pose), palette, shps.body, rig.body, pose.shadow);
 }

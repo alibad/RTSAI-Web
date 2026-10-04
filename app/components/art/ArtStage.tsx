@@ -5,7 +5,7 @@ import { loadHva, loadPlayerPalette, loadShp, loadVxl, normalsTable, renderInGam
 import type { Palette } from "../../../lib/art-lab/pal";
 import type { Shp } from "../../../lib/art-lab/shp";
 import { partVisibleByDefault, type RenderSpec } from "../../../lib/art-lab/spec";
-import { composeLayers, rigAnimates, rigFrame, rigLayers, rigLength, spriteRig } from "../../../lib/art-lab/sprite-compose";
+import { composeLayers, rigAnimates, rigLayers, rigLength, rigTickMs, rigPoseLayers, sequenceTimeFrame, spriteRig } from "../../../lib/art-lab/sprite-compose";
 import { indexFacing } from "../../../lib/art-lab/sprite-render";
 import type { SpriteArt } from "../../../lib/art-lab/types";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
@@ -192,33 +192,33 @@ function SpriteStageView({ spec, sprite, settings, tints, eager }: StageProps) {
   const palette = usePalette(spec, settings.color);
   const tint = tintFor(settings.tintMap, tints);
   const shps = useMemo(() => (bodyShp && overlayShps ? { body: bodyShp, turret: turretShp, overlay: overlayShps[0] ?? null, overlays: overlayShps } : null), [bodyShp, turretShp, overlayShps]);
-  const [tick, setTick] = useState(0);
+  const [timeMs, setTimeMs] = useState(0);
   const length = rig && shps ? rigLength(rig, shps) : 1;
   // Tick only while the picture actually changes: a one-frame stand or idle never re-renders on a timer.
   const animates = Boolean(rig && shps && rigAnimates(rig, shps));
   useEffect(() => {
     if (!settings.playing || !body || !animates) return;
-    const timer = setInterval(() => { if (!document.hidden) setTick(t => t + 1); }, Math.max(40, body.tick));
+    const interval=rig&&shps?Math.max(16,rigTickMs(rig,shps)):40;
+    const timer = setInterval(() => { if (!document.hidden) setTimeMs(t => t + interval); }, interval);
     return () => clearInterval(timer);
-  }, [settings.playing, body, animates]);
-  const frame = rig ? rigFrame(rig, length, tick) : 0;
-  const overlayTick = rig?.overlay ? tick : 0;
+  }, [settings.playing, body, animates,rig,shps]);
+  const frame = rig&&shps ? sequenceTimeFrame(rig.body,shps.body,timeMs) : 0;
   const facings = body?.facings ?? 1;
   const vehicle = facings > 1 && Boolean(turret);
   const quantize = (f: number) => (indexFacing(f, facings) * 1024) / facings;
   const turretAngle = vehicle ? (quantize(settings.facing) + settings.turretFacing) & 1023 : ((rig?.initialFacing ?? 0) + settings.turretFacing) & 1023;
   const turretOffset = rig?.turretOffset;
   const image = useMemo(() => (!rig || !shps || !palette ? null
-    : composeLayers(rigLayers(rig, shps, settings.facing, frame, settings.turretFacing, overlayTick), palette, shps.body, rig.body, settings.shadow)),
-  [rig, shps, palette, settings.facing, settings.turretFacing, settings.shadow, frame, overlayTick]);
+    : composeLayers(rigPoseLayers(rig,shps,{facing:settings.facing,turretFacing:settings.turretFacing,tick:0,timeMs,shadow:settings.shadow}), palette, shps.body, rig.body, settings.shadow)),
+  [rig, shps, palette, settings.facing, settings.turretFacing, settings.shadow, timeMs]);
   const stripCount = Math.max(facings, turret ? turret.facings : 1);
   const showStrip = settings.mode !== "ingame";
   // The strip depends on the frame, never on the facing, so turning the unit does not recompose it.
   const strip = useMemo(() => (!showStrip || !rig || !shps || !palette ? [] : Array.from({ length: stripCount }, (_, i) => {
     const facing = (i * 1024) / stripCount;
-    const layers = rigLayers(rig, shps, facings > 1 ? facing : 0, frame, settings.turretFacing, overlayTick).map(l => (l.seq === turret && facings === 1 ? { ...l, facing } : l));
+    const layers = rigLayers(rig, shps, facings > 1 ? facing : 0, frame, settings.turretFacing, 0,timeMs).map(l => (l.seq === turret && facings === 1 ? { ...l, facing } : l));
     return { facing, image: composeLayers(layers, palette, shps.body, rig.body, settings.shadow) };
-  })), [showStrip, rig, shps, palette, stripCount, facings, frame, overlayTick, settings.turretFacing, settings.shadow, turret]);
+  })), [showStrip, rig, shps, palette, stripCount, facings, frame, timeMs, settings.turretFacing, settings.shadow, turret]);
   const facingIndex = body ? indexFacing(settings.facing, facings) : 0;
   const animation = rig?.animation;
   return (

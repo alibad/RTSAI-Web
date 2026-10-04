@@ -160,7 +160,14 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         return send(res, 200, summary);
       }
       const reviewMode = url.searchParams.get("mode") ?? "ra2";
-      if (["/state", "/action", "/models"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if (["/state", "/action", "/models", "/animations"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if(req.method==="GET"&&path==="/animations"){
+        const actor=url.searchParams.get("actor")??"";
+        if(!SAFE_NAME.test(actor))return send(res,400,{error:"Unknown actor"});
+        const audit=readJson<{measuredAt:string;actors:Record<string,unknown>}>(join(workspace,"animations/catalog.json"));
+        const studies=readJson<{actors:Record<string,unknown>}>(join(workspace,"animations/motion-studies.json"));
+        return send(res,200,{measuredAt:audit?.measuredAt??null,current:audit?.actors[`${reviewMode}:${actor}`]??null,motionStudy:reviewMode==="ra2"?studies?.actors[actor]??null:null});
+      }
       if (req.method === "GET" && path === "/models") {
         const mode=reviewMode as "ra2"|"classic";
         const roster=originals?await rosterPayload(mode==="classic"?classicConfig(originals):originals):null;

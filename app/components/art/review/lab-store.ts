@@ -17,6 +17,7 @@ export type LabView = {
   spin: boolean;
   playing: boolean;
   animation: string;
+  animationTime:number;
   /** Wheel zoom; null fits the unit to the stage. */
   zoom: number | null;
   compare: Compare;
@@ -31,12 +32,12 @@ export type LabView = {
 };
 
 export const defaultView: LabView = {
-  facing: 896, turret: 0, spin: false, playing: false, animation: "stand", zoom: null, compare: "single", view3d: "off",
+  facing: 896, turret: 0, spin: false, playing: false, animation: "stand",animationTime:0, zoom: null, compare: "single", view3d: "off",
   swipe: 0.5, lineupFacings: 4, color: "F21818", ground: "sand", tintMap: "", shadow: true,
 };
 
 export const useLab = create<LabView>(() => ({ ...defaultView }));
-export const setLab = (patch: Partial<LabView> | ((s: LabView) => Partial<LabView>)) => useLab.setState(patch);
+export const setLab = (patch: Partial<LabView> | ((s: LabView) => Partial<LabView>)) => useLab.setState(s=>{const next=typeof patch==="function"?patch(s):patch;return next.animation!==undefined&&next.animation!==s.animation?{...next,animationTime:0}:next;});
 
 const storageKey = "rtsai-art-review-view";
 const remembered = ["color", "ground", "tintMap", "shadow", "lineupFacings"] as const;

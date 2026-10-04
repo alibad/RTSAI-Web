@@ -435,6 +435,7 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
     list(childValue(infantry, "StandSequences") ?? "stand").forEach(s => addUser(s, "WithInfantryBody stand"));
     addUser(childValue(infantry, "MoveSequence") ?? "run", "WithInfantryBody move");
     addUser(childValue(infantry, "DefaultAttackSequence"), "WithInfantryBody attack");
+    for(const node of child(infantry,"AttackSequences")?.value.nodes??[])addUser(node.value.value,"WithInfantryBody attack");
     list(childValue(infantry, "IdleSequences")).forEach(s => addUser(s, "WithInfantryBody idle"));
   }
   const deathPrefixes = traits(actor, "WithDeathAnimation").map(([i, n]) => [i, childValue(n.value, "DeathSequence") ?? "die"] as const);
@@ -472,7 +473,10 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
   for (const node of img?.nodes ?? []) {
     if (node.key === "Defaults") continue;
     const seq = node.value;
-    const filename = field(seq, "Filename");
+    // The local Studio uses the temperate tileset, just like its player palette.
+    // Construction and wall art frequently have only TilesetFilenames.
+    const tilesets=child(seq,"TilesetFilenames")?.value??child(defaults,"TilesetFilenames")?.value;
+    const filename = childValue(tilesets,"TEMPERATE")??field(seq, "Filename");
     const length = field(seq, "Length");
     let facings = num(field(seq, "Facings"), 1);
     const reverseFacings = facings < 0;

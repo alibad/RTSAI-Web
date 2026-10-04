@@ -42,7 +42,10 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
       const damaged = s.name.startsWith("damaged-");
       const body = damaged ? seqs.find(q => q.name === `damaged-${out[0]?.body?.name}`) ?? out[0]?.body : out[0]?.body;
       out.push({ id: s.name, label: `${damaged ? "Damaged · " : ""}${layer.mode === "door" ? "Production door" : s.name.replace(/-/g, " ")}`, body: body ?? null, note: "Layered sequence preview; production timing is controlled by the game." });
-    } else if (/damaged|deploy|shoot|attack|die|prone|make|build|land|takeoff/.test(s.name)) out.push({ id: s.name, label: s.name.replace(/-/g, " "), body: s, note: "Sequence art preview; activity timing is controlled by the game." });
+    } else if (s.usedBy.some(u => u.startsWith("WithInfantryBody")) || /idle|stand|run|walk|damaged|deploy|shoot|attack|die|prone|make|build|land|takeoff|liedown|standup|parachute/.test(s.name)) {
+      const label=s.usedBy.some(u=>u.startsWith("WithInfantryBody idle"))?`Idle ${seqs.filter(q=>q.usedBy.some(u=>u.startsWith("WithInfantryBody idle"))).indexOf(s)+1}`:s.name.replace(/-/g," ");
+      out.push({ id: s.name, label, body: s, note: "Sequence art preview; activity timing is controlled by the game." });
+    }
   }
   return out.filter(a => a.body);
 }

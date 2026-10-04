@@ -28,8 +28,8 @@ export function quantizeFacing(facing: number, facings: number, classicBodyOrien
 }
 
 /** The SHP frame OpenRA shows for animation frame `frame` at `facing` (shadow = the ShadowStart copy). */
-export function sequenceFrame(seq: SpriteSequence, frame: number, facing: number, shadow = false) {
-  const length = seq.length === "*" ? 1 : seq.length;
+export function sequenceFrame(seq: SpriteSequence, frame: number, facing: number, shadow = false, shp?: Shp | null) {
+  const length = Math.max(1, sequenceLength(seq, shp));
   const facingIndex = indexFacing(facing, seq.facings, seq.useClassicFacings);
   const inner = seq.reverseFacings ? (seq.facings - facingIndex) % seq.facings : facingIndex;
   const f = ((frame % length) + length) % length;

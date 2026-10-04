@@ -38,6 +38,7 @@ export type ModelPose = {
   facing: number;
   turretFacing: number;
   frame: number;
+  partFrames?:Record<string,number>;
   visible: Record<string, boolean>;
   shadow: boolean;
   airborne: boolean;
@@ -312,7 +313,8 @@ export class VoxelModel {
     for (const limb of this.limbs) {
       const p = poses.get(limb.part.id)!;
       const rows = limb.part.hva.rows;
-      const row = rows[Math.min(frame, rows.length - 1)]?.[limb.limbIndex] ?? rows[0][limb.limbIndex];
+      const limbFrame=pose.partFrames?.[limb.part.id]??frame;
+      const row = rows[Math.min(limbFrame, rows.length - 1)]?.[limb.limbIndex] ?? rows[0][limb.limbIndex];
       const m = partMatrices({
         scale: this.spec.scale, cameraPitch: this.spec.cameraPitch, lightPitch: this.spec.lightPitch, lightYaw: this.spec.lightYaw,
         pose: { yaw: p.yaw, worldOffset: p.worldOffset }, limb: limb.part.vxl.limbs[limb.limbIndex], hvaRow: row,
