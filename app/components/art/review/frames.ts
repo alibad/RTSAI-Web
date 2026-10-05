@@ -17,7 +17,7 @@ import { sequenceFrame,sequenceLength } from "../../../../lib/art-lab/sprite-ren
 import { voxelAnimationFrames,voxelAnimationParts,voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
 import type { SpriteArt, SpriteSequence } from "../../../../lib/art-lab/types";
 import type { PaletteSpec } from "../../../../lib/art-lab/spec";
-import { FIRE_ACTION, fireKey, fireLayers, firePeriod, fireState, placeholderMuzzle, voxelMuzzleLayers, type FireRules, type MuzzleArt } from "../../../../lib/art-lab/fire";
+import { combineShps, FIRE_ACTION, fireKey, fireLayers, firePeriod, fireState, placeholderMuzzle, voxelMuzzleLayers, type FireRules, type MuzzleArt } from "../../../../lib/art-lab/fire";
 import type { VoxelEngine } from "../voxel-engine";
 import type { VoxelModel } from "../voxel-three";
 
@@ -299,8 +299,15 @@ export class FrameStore {
     this.muzzles.set(key, "loading");
     const query = new URLSearchParams({ mode: "ra2", source: fire.source, image: fire.image, sequence, palette });
     fetch(`/api/art-review/visual?${query}`)
-      .then(r => (r.ok ? r.json() as Promise<{ sequence: SpriteSequence; palette: PaletteSpec }> : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then(async art => { const [shp, pal] = await Promise.all([loadShp(art.sequence.file!), loadPlayerPalette(art.palette, null)]); this.muzzles.set(key, { shp, seq: art.sequence, palette: pal, placeholder: false }); })
+      .then(r => (r.ok ? r.json() as Promise<{ sequence: SpriteSequence; palette: PaletteSpec; combine?: { file: string; start: number; length: number | "*"; offset: [number, number] }[] }> : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(async art => {
+        // A combined sequence (one SHP per facing, e.g. machine-gun flashes) is joined into one frame list.
+        const shpFor = art.combine?.length
+          ? Promise.all(art.combine.map(async p => ({ shp: await loadShp(p.file), start: p.start, length: p.length, offset: p.offset }))).then(combineShps)
+          : loadShp(art.sequence.file!);
+        const [shp, pal] = await Promise.all([shpFor, loadPlayerPalette(art.palette, null)]);
+        this.muzzles.set(key, { shp, seq: art.sequence, palette: pal, placeholder: false });
+      })
       .catch(() => { this.muzzles.set(key, "failed"); })
       .finally(() => this.loaded());
   }

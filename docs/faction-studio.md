@@ -61,7 +61,9 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
   install agent's `meta.previewInstall.rules` first (`/api/art-review/fire`). Muzzle flashes are original RA2 effect
   art, read only through the private originals cache (`/api/art-review/visual`, extracted on demand, never committed
   or bundled); the authored-only view, or an original that is not cached, draws a magenta-ringed placeholder and says
-  "Placeholder flash".
+  "Placeholder flash". Combined sequences (`^WithMachineGunMuzzle`: one `mgun-<facing>.shp` per facing, used by the
+  Night Hawk, Pillbox and Sentry Gun) are joined from their pieces. Original units offer Fire too; their rules load
+  when Fire is first pressed.
 - Every action has a plain-word label from one map (`lib/art-lab/action-labels.ts`): Crawl, Prone fire, Die (alt),
   Lie down, Rotor spin, Propeller, Radar spin, and so on.
 - `node scripts/check-actor-animations.mjs --software` (`RTSAI_STUDIO_URL` picks the Studio, default :3461) checks

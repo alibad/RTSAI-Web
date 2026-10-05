@@ -11,7 +11,7 @@ import { setLab, useLab } from "./lab-store";
 import type { ReviewUnit,Version } from "./versions";
 import { AnimationReadiness } from "./AnimationReadiness";
 import { voxelAnimationParts, voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
-import { fireActions } from "../../../../lib/art-lab/fire";
+import { FIRE_ACTION, fireActions } from "../../../../lib/art-lab/fire";
 
 const noSubscribe = () => () => {};
 /** The installed local app (scripts/local-app.ps1) serves the website beside the Studio and marks the page for it. */
@@ -23,11 +23,12 @@ export function StudioBar({ mode, onMode, surface, onSurface, onSources }: { mod
 }
 
 /** Actions live beside the art they control; unsupported rotations are explained rather than faked. */
-export function ActionShelf({ unit, version,mode,onEncounter }: { unit: ReviewUnit;version:Version|null|undefined;mode:"ra2"|"classic"; onEncounter: () => void }) {
+/** `fireUnknown`: a vehicle whose firing rules are not loaded yet; its Fire button loads them (lib/art-lab/fire.ts). */
+export function ActionShelf({ unit, version,mode,onEncounter,fireUnknown=false }: { unit: ReviewUnit;version:Version|null|undefined;mode:"ra2"|"classic"; onEncounter: () => void; fireUnknown?: boolean }) {
   const animation = useLab(s => s.animation);
   const item=version?.item;
   const sprite=item?.sprite??unit.sprite,spec=item?.spec??unit.spec;
-  const options = [...(spec.voxel ? voxelAnimationParts(spec).length?[{id:"body",label:voxelCycleLabel(spec),body:null,note:null}]:[] : spriteAnimations(sprite)), ...fireActions(item?.fire)];
+  const options = [...(spec.voxel ? voxelAnimationParts(spec).length?[{id:"body",label:voxelCycleLabel(spec),body:null,note:null}]:[] : spriteAnimations(sprite)), ...(fireUnknown ? [{ id: FIRE_ACTION, label: "Fire", body: null, note: null }] : fireActions(item?.fire))];
   const facing = useLab(s => s.facing), turret = useLab(s => s.turret);
   const turns = Boolean(spec.voxel) || options.some(a => Math.abs(a.body?.facings ?? 1) > 1);
   const hasTurret = Boolean(sprite?.turret || spec.voxel?.parts.some(p => p.turretOffset !== null));

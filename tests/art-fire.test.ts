@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test from "node:test";
-import { fireActions, fireLayers, firePeriod, fireState, muzzleScreenOffset, placeholderMuzzle, recoilScreenOffset, voxelMuzzleLayers, withInstalledArmaments, type FireRules } from "../lib/art-lab/fire";
+import { combineShps, fireActions, fireLayers, firePeriod, fireState, muzzleScreenOffset, placeholderMuzzle, recoilScreenOffset, voxelMuzzleLayers, withInstalledArmaments, type FireRules } from "../lib/art-lab/fire";
 import { fireRules } from "../lib/art-lab/fire-server";
 import { rigPoseLayers, spriteRig, stampLayers } from "../lib/art-lab/sprite-compose";
 import type { Shp } from "../lib/art-lab/shp";
@@ -84,4 +84,15 @@ test("fire: rules come from the merged mod rules (local preview copy when presen
   assert.equal(r.source, "preview");
   assert.ok(r.armaments.length > 0 && r.armaments[0].muzzle, "the Qilin's gun has a muzzle sequence");
   assert.ok(r.muzzleOverlay);
+});
+
+test("fire: a combined muzzle (one SHP per facing, ^WithMachineGunMuzzle) joins its pieces' frames in order", () => {
+  const piece = (w: number, h: number, n: number, colour: number): Shp => ({ width: w, height: h, frames: Array.from({ length: n }, () => ({ x: 0, y: 0, width: w, height: h, compression: 0, radarColor: [0, 0, 0, 0] as [number, number, number, number], dataOffset: 0, pixels: new Uint8Array(w * h).fill(colour) })) });
+  const joined = combineShps([{ shp: piece(4, 4, 6, 1), start: 0, length: 6, offset: [0, 0] }, { shp: piece(6, 2, 8, 2), start: 2, length: "*", offset: [1, 0] }]);
+  assert.equal(joined.frames.length, 12, "6 + the 6 frames after Start 2");
+  assert.deepEqual([joined.width, joined.height], [8, 4]);
+  assert.ok(joined.frames.every(f => f.pixels.length === joined.width * joined.height));
+  const second = joined.frames[6].pixels;
+  assert.equal(second[1 * 8 + 0], 0, "the offset piece moved one pixel right");
+  assert.equal(second[1 * 8 + 7], 2);
 });

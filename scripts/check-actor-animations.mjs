@@ -4,7 +4,7 @@
  * Local only; screenshots contain only project-authored art (the page runs with ?authored=1 and original RA2
  * routes are blocked). It never presses a decision key (U, R, C, Z) and never sends a review action.
  *
- *   node scripts/check-actor-animations.mjs [--software] [--actor r2cnportable] [--spin r2mohajer,r2mantis] [--fire r2qilin,r2karrar]
+ *   node scripts/check-actor-animations.mjs [--software] [--actor r2cnportable] [--spin r2mohajer,r2mantis] [--fire r2qilin,r2karrar] [--fire-original america:shad]
  *   RTSAI_STUDIO_URL=http://127.0.0.1:3450 node scripts/check-actor-animations.mjs --software
  *
  * For one infantry candidate (the actor's newest native candidate made from its 3D model) it checks:
@@ -16,7 +16,9 @@
  * local preview copy plays, voxel (HVA frames under the preview's rules) or prerendered sprite (looping frames); and,
  * for each --fire vehicle (the candidate under review and what is in game now), that its Fire action recoils and
  * flashes: the picture changes as the shot plays and settles back. Muzzle flashes are original game art, so this
- * authored-only page must draw the marked placeholder and say so. Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
+ * authored-only page must draw the marked placeholder and say so. Finally (--fire-original faction:actor, an original
+ * RA2 unit with a combined muzzle sequence) the real flash plays from the local originals cache: checked by pixel
+ * hashes only, never a screenshot. Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
  * which another session may hold (C:/Users/Admin/Code/AI/logs/gpu-claim.txt); without it the GPU is claimed.
  */
 import assert from "node:assert/strict";
@@ -37,6 +39,8 @@ const base = (process.env.RTSAI_STUDIO_URL ?? "http://127.0.0.1:3461").replace(/
 const actor = flag("--actor") ?? "r2cnportable";
 const spinActors = (flag("--spin") ?? "r2mohajer,r2mantis").split(",").filter(Boolean);
 const fireActors = (flag("--fire") ?? "r2qilin,r2karrar").split(",").filter(Boolean);
+// An original RA2 unit whose muzzle is a combined sequence (^WithMachineGunMuzzle: one mgun-<facing>.shp per facing).
+const combinedMuzzle = flag("--fire-original") ?? "america:shad";
 const software = args.includes("--software");
 const claim = "C:/Users/Admin/Code/AI/logs/gpu-claim.txt", token = `RTSAI animation check pid=${process.pid}`;
 const existingClaim = existsSync(claim) ? readFileSync(claim, "utf8").trim() : "";
@@ -205,8 +209,37 @@ try {
     if (!version) await page.locator(".lab-stage").screenshot({ path: resolve(output, `${id}-fire.png`) });
   }
 
+  // 7. A combined muzzle (one SHP per facing) from the originals cache, on an original unit: hashes only.
+  const [origFaction, origActor] = combinedMuzzle.split(":");
+  const native = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  native.on("pageerror", e => errors.push(e.message));
+  const served = [];
+  native.on("request", r => { const u = new URL(r.url()); if (u.hostname !== origin) return; if (/^\/api\/art-review\/ra2\//.test(u.pathname)) served.push(u.pathname.split("/").pop()); });
+  await native.addInitScript(() => { try { localStorage.setItem("rtsai-art-review-coach-v3", "1"); } catch { /* storage off */ } });
+  await native.route("**/*", r => (new URL(r.request().url()).hostname === origin ? r.continue() : r.abort()));
+  await native.route("**/api/art-review/action", r => { errors.push("a review action was sent"); return r.abort(); });
+  await native.goto(`${base}/art/review?mode=ra2&faction=${origFaction}&unit=${origActor}`);
+  const nativeFire = native.locator(".studio-action-shelf button", { hasText: /^Fire$/ });
+  await nativeFire.first().waitFor({ timeout: 30000 });
+  await nativeFire.first().click();
+  const nativeTime = native.getByRole("slider", { name: "Animation time" });
+  // The Fire timeline replaces the unit's own cycle once its rules and flash arrive.
+  for (const end = Date.now() + 30000; Date.now() < end && !(Number(await nativeTime.getAttribute("max").catch(() => 0)) >= 600); ) await native.waitForTimeout(250);
+  const nativePause = native.getByRole("button", { name: "Pause animation", exact: true });
+  if (await nativePause.count()) await nativePause.click();
+  const nativeCanvas = native.locator(".lab-stage canvas").first();
+  const nativeAt = async ms => { const step = Number(await nativeTime.getAttribute("step")) || 1; await nativeTime.fill(String(Math.round(ms / step) * step)); await native.waitForTimeout(400); return fingerprint(nativeCanvas); };
+  const flash = [];
+  for (const ms of [0, 40, 80, 120, 160, 200]) flash.push(await nativeAt(ms));
+  assert.ok(new Set(flash).size > 2, `${origActor}: the combined muzzle flash plays`);
+  assert.equal(await native.locator(".lab-fire-note").count(), 0, `${origActor}: the real flash, not the placeholder`);
+  const pieces = served.filter(n => /^mgun-/.test(n));
+  assert.ok(pieces.length >= 8, `${origActor}: every facing's flash came from the local originals cache (${pieces.join(", ")})`);
+  await native.close();
+  const combined = { actor: origActor, frames: new Set(flash).size, pieces: [...new Set(pieces)].length, placeholder: false };
+
   assert.deepEqual(errors, [], "no page errors");
-  const report = { studio: base, renderer, candidate: { actor, id: candidate.id, actions: labels }, idleFrames: new Set(idleHashes).size, playPause: true, recolour: true, fireFrames: new Set(fireHashes).size, dieHeld: true, spins, fires, pageErrors: errors, originalScreenshots: 0 };
+  const report = { studio: base, renderer, candidate: { actor, id: candidate.id, actions: labels }, idleFrames: new Set(idleHashes).size, playPause: true, recolour: true, fireFrames: new Set(fireHashes).size, dieHeld: true, spins, fires, combined, pageErrors: errors, originalScreenshots: 0 };
   writeFileSync(resolve(output, "browser.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report));
 } finally {

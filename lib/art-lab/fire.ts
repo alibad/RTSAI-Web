@@ -197,3 +197,24 @@ export function voxelMuzzleLayers(fire: FireRules, states: ArmamentState[], art:
   });
   return out;
 }
+
+/**
+ * A Combine sequence's frames as one SHP (OpenRA concatenates the pieces' frames in order): each piece's frames
+ * Start..Start+Length, re-centred on a shared canvas and moved by the piece's Offset.
+ */
+export function combineShps(pieces: { shp: Shp; start: number; length: number | "*"; offset: [number, number] }[]): Shp {
+  const width = Math.max(1, ...pieces.map(p => p.shp.width + 2 * Math.abs(p.offset[0])));
+  const height = Math.max(1, ...pieces.map(p => p.shp.height + 2 * Math.abs(p.offset[1])));
+  const frames: Shp["frames"] = [];
+  for (const p of pieces) {
+    const count = p.length === "*" ? Math.max(0, p.shp.frames.length - p.start) : p.length;
+    const x0 = Math.floor((width - p.shp.width) / 2) + p.offset[0], y0 = Math.floor((height - p.shp.height) / 2) + p.offset[1];
+    for (let i = 0; i < count; i++) {
+      const f = p.shp.frames[p.start + i];
+      const pixels = new Uint8Array(width * height);
+      if (f) for (let y = 0; y < p.shp.height; y++) pixels.set(f.pixels.subarray(y * p.shp.width, (y + 1) * p.shp.width), (y0 + y) * width + x0);
+      frames.push({ x: 0, y: 0, width, height, compression: f?.compression ?? 0, radarColor: f?.radarColor ?? [0, 0, 0, 0], dataOffset: 0, pixels });
+    }
+  }
+  return { width, height, frames };
+}

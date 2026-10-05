@@ -25,7 +25,7 @@ import { computeRosters, type FactionRoster, type RosterUnit } from "./roster";
 import { decodeShp } from "./shp";
 import type { PaletteSpec, RenderSpec } from "./spec";
 import { drawShpFrame } from "./sprite-render";
-import type { PaletteRef, SpriteArt } from "./types";
+import type { PaletteRef, SpriteArt, SpriteSequence } from "./types";
 import { combineSources, type ActorSources } from "./asset-source";
 import { localAssetSource } from "./asset-source-server";
 import type { ProvenanceRecord } from "./provenance";
@@ -233,10 +233,35 @@ async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequenc
     return reader.exists(path) ? ownFile(path) : null;
   };
   const context = (record: (name: string) => string | null) => ({ palettes: {}, normalsTypes: worldNormals(data), recordFile: ownFile, ra2: { record, bytes: (name: string) => cached(cfg, name) ? new Uint8Array(readFileSync(cachePath(cfg, name)!)) : new Uint8Array(0) } });
-  resolveActor(reader, data, "effect", actor, null, context(n => local(n) ?? (wanted.add(n), null)));
+  // A Combine sequence (e.g. ^WithMachineGunMuzzle: one mgun-<facing>.shp per facing) is its pieces' frames in order.
+  const combine = child(seq.value, "Combine")?.value.nodes.map(n => ({
+    filename: childValue(n.value, "Filename") ?? "", start: Number(childValue(n.value, "Start") ?? 0),
+    length: childValue(n.value, "Length") === "*" ? "*" as const : Number(childValue(n.value, "Length") ?? 1),
+    offset: (childValue(n.value, "Offset") ?? "0,0").split(",").map(v => Number(v.trim()) || 0).slice(0, 2) as [number, number],
+  })) ?? null;
+  if (combine) {
+    if (!combine.length || !combine.every(p => p.filename && (p.filename.includes("|") || SAFE_NAME.test(p.filename.toLowerCase())))) throw new Error("Unsupported combined effect");
+    for (const p of combine) if (!local(p.filename)) wanted.add(p.filename.toLowerCase());
+  } else resolveActor(reader, data, "effect", actor, null, context(n => local(n) ?? (wanted.add(n), null)));
   const paletteKey = local(palFile) ?? palFile;
   wanted.delete(palFile); if (!paletteKey.startsWith("owned/")) wanted.add(paletteKey);
   await extractOriginals(cfg, [...wanted]);
+  if (combine) {
+    const files = combine.map(p => local(p.filename) ?? p.filename.toLowerCase());
+    if (!files.every(f => cached(cfg, f)) || !cached(cfg, paletteKey)) throw new Error("Effect is unavailable locally");
+    const url = (key: string) => key.startsWith("owned/") ? `/api/art-review/mod/${key.slice(6)}?mode=${cfg.mode ?? "ra2"}` : `/api/art-review/${cfg.mode === "classic" ? "classic" : "ra2"}/${key}`;
+    const field = (key: string) => childValue(seq.value, key) ?? childValue(child(img, "Defaults")?.value, key);
+    const facings = Math.abs(Number(field("Facings") ?? 1)) || 1, length = field("Length") === "*" ? "*" as const : Number(field("Length") ?? 1);
+    const combined: SpriteSequence = {
+      name: sequence, file: null, external: null, start: Number(field("Start") ?? 0), length, stride: Number(field("Stride") ?? (typeof length === "number" ? length : 0)),
+      facings, reverseFacings: Number(field("Facings") ?? 1) < 0, useClassicFacings: false, transpose: /^true$/i.test(field("Transpose") ?? ""), tick: Number(field("Tick") ?? 40),
+      zOffset: 0, shadowStart: -1, offset: [0, 0, 0], frames: null, reverses: false, usedBy: ["WithMuzzleOverlay"], inherited: false,
+    };
+    return {
+      sequence: combined, combine: combine.map((p, i) => ({ file: url(files[i]), start: p.start, length: p.length, offset: p.offset })),
+      palette: { name: palette, url: url(paletteKey), transparent: [0], shadow: numbers(childValue(pal, "ShadowIndex")), remap: [] } satisfies PaletteSpec,
+    };
+  }
   const resolved = resolveActor(reader, data, "effect", actor, null, context(n => local(n) ?? (cached(cfg, n) ? n : null)));
   const q = resolved.sprite?.sequences.find(s => s.name === sequence && s.file);
   if (!q || !cached(cfg, paletteKey)) throw new Error("Effect is unavailable locally");

@@ -20,7 +20,7 @@ import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
 import { rememberView, setLab, useLab } from "./review/lab-store";
 import { ModelStage, useUnitRadius } from "./review/Stage";
 import { candidateFire, slotVersions, stageItem, type FireSources, type ReviewUnit } from "./review/versions";
-import type { FireRules } from "../../../lib/art-lab/fire";
+import { FIRE_ACTION, type FireRules } from "../../../lib/art-lab/fire";
 import { AssetChain, RosterTally, type ChainData } from "./review/Chain";
 import { GlbStage } from "./review/GlbStage";
 import { ReviewBoard } from "./review/ReviewBoard";
@@ -291,10 +291,11 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   // Firing rules for the Fire action of vehicles, ships and aircraft (RA2): main for in game now, the preview copy for
   // candidates. Muzzle flashes are original effect art, so the authored-only view draws the marked placeholder.
   const [fireRules, setFireRules] = useState<Record<string, FireSources>>({});
-  // New units only, fetched the first time their Animations step opens (the rules then stay for the session), so
-  // browsing never pays for parsing the mods or swapping every version's stage item.
-  const fireActor = unit && mode === "ra2" && isNew && ["vehicle", "ship", "aircraft"].includes(unit.category) ? unit.id : null;
-  const fireWanted = Boolean(fireActor && chainStep === "anim");
+  // Fetched the first time a new unit's Animations step opens, or an original unit's Fire is pressed (the rules then
+  // stay for the session), so browsing never pays for parsing the mods or swapping every version's stage item.
+  const labAnimation = useLab(s => s.animation);
+  const fireActor = unit && mode === "ra2" && ["vehicle", "ship", "aircraft"].includes(unit.category) ? unit.id : null;
+  const fireWanted = Boolean(fireActor && (isNew ? chainStep === "anim" : labAnimation === FIRE_ACTION));
   useEffect(() => {
     if (!fireActor || !fireWanted || fireRules[fireActor]) return;
     const get = (source: "main" | "preview") => fetch(`${API}/fire?mode=ra2&actor=${encodeURIComponent(fireActor)}&source=${source}`).then(r => (r.ok ? r.json() as Promise<FireRules> : null)).catch(() => null);
@@ -530,7 +531,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} />
           )}
           {showShelf && unit && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
-            : <ActionShelf unit={unit} version={focused} mode={mode} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
+            : <ActionShelf unit={unit} version={focused} mode={mode} fireUnknown={Boolean(fireActor && !fireRules[fireActor])} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
         {surface === "art" && <aside className="studio-inspector" aria-label="Actor details">
