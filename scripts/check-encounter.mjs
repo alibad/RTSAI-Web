@@ -5,6 +5,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE ?? "C:/Users/Admin/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright-core");
 const output=resolve(".cache/encounter-check");mkdirSync(output,{recursive:true});
+// RTSAI_STUDIO_URL points the check at another Studio, e.g. the installed local app on :3450.
+const studio=process.env.RTSAI_STUDIO_URL??"http://127.0.0.1:3461";
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH??"C:/Program Files/Google/Chrome/Application/chrome.exe",headless:true});
 const page=await browser.newPage({viewport:{width:1430,height:1000}}),errors=[],visualRequests=[];
 page.on("pageerror",e=>errors.push(e.message));page.on("request",r=>{if(r.url().includes("/visual?"))visualRequests.push(r.url());});
@@ -19,7 +21,7 @@ const shp=(effect=false)=>{
 };
 const pal=Buffer.alloc(768);[[0,0,0],[0,0,0],[14,16,15],[54,53,47],[25,26,23],[61,60,54],[55,20,17],[63,48,17],[63,61,43]].forEach((c,i)=>c.forEach((v,j)=>pal[i*3+j]=v));
 try{
-  const roster=await(await fetch("http://127.0.0.1:3461/api/art-review/roster?mode=ra2")).json();
+  const roster=await(await fetch(`${studio}/api/art-review/roster?mode=ra2`)).json();
   const ids=["r2qilin","htnk","r2mantis"].filter(id=>roster.stock[id]);
   roster.factions=roster.factions.map(f=>({...f,units:f.units.filter(u=>ids.includes(u.id)),replaced:[]})).filter(f=>f.units.length);
   roster.stock=Object.fromEntries(ids.map(id=>[id,roster.stock[id]]));
@@ -34,7 +36,7 @@ try{
   await page.route("**/api/art-review/ra2/**",binary);await page.route("**/api/art-review/classic/**",binary);await page.route("**/api/art-review/mod/**",binary);
   await page.route("**/api/art-review/visual?*",async r=>{const native=await r.fetch();const value=await native.json();value.sequence.file="/test-effect.shp";value.palette.url="/test-effect.pal";await r.fulfill({json:value});});
   await page.route("**/test-effect.shp",r=>r.fulfill({body:shp(true),contentType:"application/octet-stream"}));await page.route("**/test-effect.pal",r=>r.fulfill({body:pal,contentType:"application/octet-stream"}));
-  await page.goto("http://127.0.0.1:3461/art/review?faction=china&unit=r2qilin&slot=model&mode=ra2&view=arena");
+  await page.goto(`${studio}/art/review?faction=china&unit=r2qilin&slot=model&mode=ra2&view=arena`);
   const search=page.getByRole("searchbox",{name:"Search encounter units"});await search.waitFor();assert.equal(await page.locator(".enc-placed").count(),2);
   await search.fill("qilin");assert.equal(await page.locator(".enc-unit-card").count(),1);
   const field=page.locator(".enc-field canvas"),box=await field.boundingBox();
