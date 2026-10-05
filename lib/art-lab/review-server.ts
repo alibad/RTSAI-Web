@@ -240,7 +240,21 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
       if (req.method === "GET" && path === "/preview") {
         // The preview overlay is an RA2 mod branch; Classic has none.
         if (reviewMode === "classic") return send(res, 200, { available: false, branch: null, head: null, actors: {}, unmatched: [] });
-        return send(res, 200, readPreviewStatus(workspace, preview));
+        const status = readPreviewStatus(workspace, preview);
+        if (status.available && preview) {
+          // The preview copy has no companion files; OPENRA_AI_HOST=0 keeps the co-commander off cleanly. The RA2
+          // files the player imported live in the support folder the Studio's originals use.
+          const support = originals?.supportDir ?? resolve(web, "../OpenRA/Support");
+          status.launch = {
+            worktree: preview, supportDir: support,
+            engineBuilt: existsSync(join(preview, "engine", "bin", "OpenRA.exe")),
+            ra2Content: existsSync(join(support, "Content", "ra2", "ra2.mix")),
+            companionFiles: existsSync(join(preview, "engine", "companion")),
+            // launch-game.cmd wraps all its arguments in one pair of quotes, so the setting itself stays unquoted.
+            command: `cd /d "${preview}" && set OPENRA_AI_HOST=0&& launch-game.cmd Engine.SupportDir=${support}`,
+          };
+        }
+        return send(res, 200, status);
       }
       if (req.method === "GET" && /^\/duel\/[a-f0-9-]{36}$/.test(path)) {
         const job = duelJob(path.slice(6), web);

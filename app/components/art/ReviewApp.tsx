@@ -22,6 +22,7 @@ import { ModelStage, useUnitRadius } from "./review/Stage";
 import { slotVersions, stageItem, type ReviewUnit } from "./review/versions";
 import { AssetChain, RosterTally, type ChainData } from "./review/Chain";
 import { GlbStage } from "./review/GlbStage";
+import { ReviewBoard } from "./review/ReviewBoard";
 import type { MapTint } from "./viewSettings";
 import "./review/review.css";
 
@@ -55,7 +56,7 @@ async function post(action: ReviewAction, mode: "ra2" | "classic"): Promise<Revi
  */
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
   const [mode, setMode] = useState<"ra2" | "classic">("ra2");
-  const [surface, setSurface] = useState<"art" | "arena">("art");
+  const [surface, setSurface] = useState<"art" | "arena" | "board">("art");
   const [linkReady, setLinkReady] = useState(false);
   const [state, setState] = useState<ReviewState | null>(null);
   const [library, setLibrary] = useState<ModelLibrary | null>(null);
@@ -176,7 +177,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const id = setTimeout(() => {
       if (params.get("mode") === "classic") setMode("classic");
       const surface = params.get("view");
-      if (surface === "arena") setSurface(surface);
+      if (surface === "arena" || surface === "board") setSurface(surface);
       if (params.get("authored") === "1") { setAuthored(true); setFilter("new"); }
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
@@ -215,6 +216,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   // stage draws for a unit, for pixel comparisons against the engine's own render.
   useEffect(() => {
     const hook = {
+      /** GPU resource counts of the shared engine (programs, geometries, textures) for performance checks. */
+      engineInfo() { const info = frames.engine?.renderer.info; return info ? { programs: info.programs?.length ?? 0, geometries: info.memory.geometries, textures: info.memory.textures } : null; },
       async frame(id: string, facing: number, color: string | null, turret = 0) {
         const u = unitIndex.get(id);
         if (!u) return null;
@@ -258,6 +261,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return railRows.filter(test);
   }, [railRows, filter]);
   const progress = reviewProgress(rows);
+  const boardFactions = useMemo(() => [...new Map(units.map(u => [u.factionId, { id: u.factionId, name: u.factionName }])).values()], [units]);
+  const boardUnits = useMemo(() => units.map(u => ({ ...(unitIndex.get(u.id) ?? u), factionId: u.factionId, factionName: u.factionName, origin: "new" as const })), [units, unitIndex]);
+  const boardUnitsFor = useCallback((id: string) => boardUnits.filter(u => u.factionId === id), [boardUnits]);
+  const boardFaction = boardFactions.some(f => f.id === factionId) ? factionId : boardFactions[0]?.id ?? factionId;
   const counts = useMemo(() => (mode === "ra2" && state ? rosterCounts(units.map(u => u.id), workspace, library, preview, state.review) : null), [mode, state, units, workspace, library, preview]);
   const selectedUnit = selected ? unitIndex.get(selected) : undefined;
   const current = selectedUnit && (!authored || selectedUnit.origin !== "original") ? rowFor(selectedUnit)
@@ -318,7 +325,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       preview: Boolean(gameCandidate && preview?.actors[unit.id]?.model === gameCandidate.id),
       light: gameCandidate?.renderLight === "stock" ? "stock light" : gameCandidate?.renderLight ? "own light" : null,
     },
-    actions: actionCoverage(unit.category, (gameItem ?? currentItem)?.spec, (gameItem ?? currentItem)?.sprite),
+    actions: actionCoverage(unit.category, (gameItem ?? currentItem)?.spec, (gameItem ?? currentItem)?.sprite, { spec: currentItem?.spec, sprite: currentItem?.sprite }),
     checks: candidateChecks(gameCandidate),
     decision: decisionState(entry.slots.model, gameCandidate),
   } : null;
@@ -472,24 +479,27 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     else stage = <ConceptStage version={focused} />;
   }
   // The game-model and in-game steps choose between versions; the other steps work on the chosen one.
-  const showFilm = Boolean(unit && focused && surface !== "arena" && !lineupOnly && !(slot === "model" && chain && (versions.length <= 2 || !["now", "game"].includes(chainStep))));
-  const showShelf = Boolean(unit && surface !== "arena" && slot === "model" && (!chain || chainStep === "anim"));
+  const showFilm = Boolean(unit && focused && surface === "art" && !lineupOnly && !(slot === "model" && chain && (versions.length <= 2 || !["now", "game"].includes(chainStep))));
+  const showShelf = Boolean(unit && surface === "art" && slot === "model" && (!chain || chainStep === "anim"));
   const inspector = chain && !iconMode && chainStep === "checks" ? "checks" : "facts";
+  const board = surface === "board" && mode === "ra2";
 
   return (
-    <div className={`lab${surface === "arena" ? " is-encounter" : ""}${authored ? " is-authored" : ""}`}>
+    <div className={`lab${surface === "arena" ? " is-encounter" : ""}${board ? " is-board" : ""}${authored ? " is-authored" : ""}`}>
       {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} />}
-      <StudioBar onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
-      <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"}
+      <StudioBar onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
         tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
-        {surface !== "arena" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
+        {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
           filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />}
-        <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface !== "arena" ? " has-chain" : ""}`} id="main-content">
-          {chain && surface !== "arena" && state && <AssetChain data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
+        <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface === "art" ? " has-chain" : ""}`} id="main-content">
+          {chain && surface === "art" && state && <AssetChain data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
             : !unit ? <p className="lab-empty">No units.</p>
+            : board ? <ReviewBoard factions={boardFactions} factionId={boardFaction} onFaction={changeFaction} unitsFor={boardUnitsFor} allUnits={boardUnits} workspace={workspace} review={state.review} preview={preview}
+                frames={frames} tints={tints} decide={send} onOpen={id => { selectUnit(id); setSurface("art"); }} />
             : surface === "arena" ? <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} /> : stage}
           {showFilm && focused && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
@@ -499,7 +509,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             : <ActionShelf unit={unit} version={focused} mode={mode} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
-        {surface !== "arena" && <aside className="studio-inspector" aria-label="Actor details">
+        {surface === "art" && <aside className="studio-inspector" aria-label="Actor details">
         {unit && inspector === "checks" && chain && <ChecksPanel checks={chain.checks} actions={chain.actions} candidate={chain.game.candidate} label={chain.game.candidate ? label(chain.game.candidate.id) : null} />}
         {unit && inspector === "facts" && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
         {unit && focused && decide && <details className="studio-review-notes" open={chain && !iconMode && chainStep === "call" ? true : undefined} key={`${unit.id}:${chainStep === "call"}`}><summary>Your call & notes{slotCounts[slot] ? ` · ${slotCounts[slot]} alternatives` : ""}</summary>

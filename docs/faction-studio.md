@@ -43,6 +43,27 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
 - `?authored=1` hides original RA2 units and references, for screenshots that may be shared.
 - Other keys: J/K next/previous actor, ←/→ versions, I build icon, P next player colour, 0 true size, ? help.
 
+## Review board (one faction, every new unit)
+
+The **Review board** tab (`?view=board&faction=china`) shows each new unit of the chosen faction as a tile:
+In game now and New at 1× (2× while hovered or focused), the recorded checks verdict (advisory when the family is
+not calibrated), the actions the candidate covers against what the unit uses today, notes, and whether its exact
+files are installed in the local preview copy. The tile's candidate is the one the owner chose, else the newest
+native candidate that is not rejected. Click a tile (or Enter/O) to open the unit in the asset chain.
+
+- Keys: J/→ next, K/← previous, ↑/↓ row, U use, R reject, C note (Enter saves, Esc cancels), Z undo. U and R
+  write the existing `review.json` contract (`choose`/`reject` of that one candidate in the model slot) through
+  `/api/art-review/action`, then move to the next undecided unit. Nothing is written without a key press or click.
+- Counts are per faction and overall: decided X of N, installed in the preview Y of N, units without a game
+  model, plus a list of missing animations.
+- **Play the new look** gives the copyable command for the local preview copy of the game
+  (`RTSAI-Mod-wt-art-preview\launch-game.cmd` with `Engine.SupportDir` pointing at the OpenRA support folder that
+  holds the RA2 content, and `OPENRA_AI_HOST=0` because that worktree has no companion files). It is a local preview;
+  RTSAI-Mod changes only after the owner's decisions.
+- **Poster PNG** exports one before/after image of the faction (every unit, 1×, landed, south-west facing). It is
+  drawn from the new units' committed project art (In game now) and their candidates only: the board never lists
+  original RA2 units, and its pictures skip external RA2 overlays.
+
 Start this worktree with `npm run preview:art`, then open `http://127.0.0.1:3461/art/review?view=rebuild`.
 It compiles the same standalone Studio client into ignored `.cache/art-lab-client` and serves it with the
 same local review API. Bindings are explicitly loopback-only. This avoids the development module transport.

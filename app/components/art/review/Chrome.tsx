@@ -96,7 +96,7 @@ export function HelpPopover({ open, onOpenChange }: { open: boolean; onOpenChang
   );
 }
 
-export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false, tally = null }: {
+export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false, tally = null, heading = null }: {
   slot: SlotId;
   counts: Record<SlotId, number>;
   onSlot: (slot: SlotId) => void;
@@ -109,11 +109,13 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
   encounter?: boolean;
   /** Roster progress for the asset chain; replaces the decided-units bar when given. */
   tally?: React.ReactNode;
+  /** A workspace title in place of the actor name and its artwork switch (the review board). */
+  heading?: string | null;
 }) {
   return (
     <header className="lab-top">
-      <div className="lab-brand"><b>{encounter ? "Combat experiment" : name ?? "Choose an actor"}</b></div>
-      {!encounter && <div className="lab-seg studio-art-switch" role="radiogroup" aria-label="Artwork">{(["model", "icon"] as const).map(id => <button key={id} type="button" role="radio" aria-checked={slot === id} onClick={() => onSlot(id)} title={id === "icon" ? "Build icon (I)" : "Unit and its asset chain"}>{id === "model" ? "Unit" : "Build icon"}{id === "icon" && counts.icon ? <small>{counts.icon}</small> : null}</button>)}</div>}
+      <div className="lab-brand"><b>{heading ?? (encounter ? "Combat experiment" : name ?? "Choose an actor")}</b></div>
+      {!encounter && !heading && <div className="lab-seg studio-art-switch" role="radiogroup" aria-label="Artwork">{(["model", "icon"] as const).map(id => <button key={id} type="button" role="radio" aria-checked={slot === id} onClick={() => onSlot(id)} title={id === "icon" ? "Build icon (I)" : "Unit and its asset chain"}>{id === "model" ? "Unit" : "Build icon"}{id === "icon" && counts.icon ? <small>{counts.icon}</small> : null}</button>)}</div>}
       <div className="lab-top-right">
         {!encounter && tally}
         {total > 0 && !encounter && !tally && <span className="lab-progress" title="Units with candidates that have a decision">
@@ -144,7 +146,7 @@ const groupNames: Record<string, string> = { infantry: "Infantry", vehicle: "Veh
 const groupOrder = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
 const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: base game art", modified: "Modified: modified game art" };
 
-function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
+export function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
   useFlagBitmaps();
   const src = flagImage(id);
   return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size} is-code`} aria-hidden="true">{({america:"US",england:"GB",france:"FR",germany:"DE",korea:"KR",russia:"RU",ukraine:"UA",cuba:"CU",libya:"LY",iraq:"IQ"} as Record<string,string>)[id] ?? id.slice(0,2).toUpperCase()}</span>;

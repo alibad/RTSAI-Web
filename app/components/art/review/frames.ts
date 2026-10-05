@@ -54,7 +54,8 @@ type Job = { item: StageItem; pose: Pose; key: string; visible: boolean };
 type Slot<T> = T | "loading" | "failed";
 
 const MAX_FRAMES = 1600;
-const MAX_MODELS = 10;
+/** Enough to keep one faction's board (in game now and new, about 22 voxel models) resident. */
+const MAX_MODELS = 24;
 const SLICE_MS = 6;
 /** Background GPU readbacks queued at once; more would only delay the frame the user is waiting for. */
 const MAX_INFLIGHT = 1;
@@ -352,7 +353,7 @@ export class FrameStore {
       const m = this.models.get(id);
       if (typeof m === "object") m.dispose();
       this.models.delete(id);
-      for (const k of [...this.frames.keys()]) if (k.startsWith(`${id}|`)) this.frames.delete(k);
+      // Pictures already drawn stay cached (they do not need the model); only new poses rebuild it.
     }
   }
 

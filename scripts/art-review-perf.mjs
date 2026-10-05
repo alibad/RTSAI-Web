@@ -16,7 +16,9 @@
  *   - WebGL contexts created on the page (must be at most 1);
  *   - idle main-thread time (CDP Performance.getMetrics TaskDuration over 4 s with nothing playing);
  *   - the unit rail of the largest faction: picker switches by keyboard, roster filters, J x10, scrolling;
- *   - the asset chain: every step by keyboard (1-7), the GLB load on the main stage, orbit drag, player colours.
+ *   - the asset chain: every step by keyboard (1-7), the GLB load on the main stage, orbit drag, player colours;
+ *   - the review board: load, J/K and arrow navigation, faction switches, hover to 2x, the poster export. It never
+ *     presses a decision key (U, R, C, Z): decisions are the owner's.
  * Exits non-zero when a budget fails.
  */
 import { createRequire } from "node:module";
@@ -231,6 +233,46 @@ async function run(page, client, label, url, rail = false, chain = null) {
   return out;
 }
 
+async function runBoard(page, client) {
+  const out = { unit: "board", steps: [] };
+  await page.goto(`${base}/art/review?mode=ra2&faction=china&view=board`, { waitUntil: "load" });
+  await page.waitForSelector(".board-tile", { timeout: 30000 });
+  await page.waitForTimeout(6000);
+  const step = async (name, fn, { record = true } = {}) => {
+    await page.evaluate(record => {
+      window.__perf.long = []; window.__perf.events = []; window.__perf.frames = [];
+      const gen = (window.__perf.gen = (window.__perf.gen ?? 0) + 1);
+      if (!record) return;
+      const tick = t => { if (window.__perf.gen !== gen) return; window.__perf.frames.push(t); requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    }, record);
+    const extra = await fn();
+    await page.waitForTimeout(250);
+    const r = await page.evaluate(() => { window.__perf.gen++; return { long: window.__perf.long, events: window.__perf.events, frames: window.__perf.frames }; });
+    const s = { name, longTasks: r.long.map(l => Math.round(l.ms)), worstEventMs: Math.round(Math.max(0, ...r.events.map(e => e.ms))), ...stats(r.frames), ...extra };
+    out.steps.push(s);
+    console.log(`board    ${name.padEnd(30)} long>50: ${s.longTasks.filter(x => x > BUDGET.longTaskMs).length ? s.longTasks.join(",") : "none"}  input→paint max ${s.worstEventMs} ms  ${s.fps} fps (worst gap ${s.worstGapMs} ms)${extra ? "  " + JSON.stringify(extra) : ""}`);
+  };
+  const idle = async seconds => {
+    const m0 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
+    await page.waitForTimeout(seconds * 1000);
+    const m1 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
+    return { idleCpuPct: Math.round(((m1.TaskDuration - m0.TaskDuration) / seconds) * 1000) / 10 };
+  };
+  await step("idle (4 s)", () => idle(4), { record: false });
+  await page.locator(".board-tile.is-focused > button").focus();
+  await step("J ×10", async () => { for (let i = 0; i < 10; i++) { await page.keyboard.press("j"); await page.waitForTimeout(120); } return { focused: await page.locator(".board-tile.is-focused .board-name b").textContent() }; });
+  await step("arrows ↓ ↑ ← →", async () => { for (const k of ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"]) { await page.keyboard.press(k); await page.waitForTimeout(150); } });
+  await step("hover 6 tiles (2×)", async () => { const tiles = page.locator(".board-tile > button"); for (let i = 0; i < 6; i++) { await tiles.nth(i).hover(); await page.waitForTimeout(150); } });
+  await step("faction: Türkiye → China", async () => { for (const f of ["Türkiye", "China"]) { await page.locator(".board-factions button", { hasText: f }).click(); await page.waitForTimeout(1500); } return { tiles: await page.locator(".board-tile").count() }; });
+  await step("poster PNG", async () => { const [d] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: /Poster PNG/ }).click()]); return { file: d.suggestedFilename() }; });
+  await step("play card open/close", async () => { await page.getByRole("button", { name: /Play the new look/ }).click(); await page.waitForTimeout(300); await page.keyboard.press("Escape"); await page.waitForTimeout(200); });
+  await step("idle after (4 s)", () => idle(4), { record: false });
+  out.webglContexts = await page.evaluate(() => window.__perf.contexts);
+  console.log(`board    WebGL contexts created: ${out.webglContexts}`);
+  return out;
+}
+
 const browser = await chromium.launch({
   headless: true, executablePath: process.env.CHROME_PATH || undefined,
   args: gpu ? ["--use-angle=d3d11", "--enable-gpu", "--ignore-gpu-blocklist"] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
@@ -253,6 +295,15 @@ try {
     const client = await context.newCDPSession(page);
     await client.send("Performance.enable");
     results.push(await run(page, client, label, `${base}/art/review?${query}`, rail, chain ?? null));
+    await context.close();
+  }
+  {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+    await context.addInitScript(init);
+    const page = await context.newPage();
+    const client = await context.newCDPSession(page);
+    await client.send("Performance.enable");
+    results.push(await runBoard(page, client));
     await context.close();
   }
 } finally {

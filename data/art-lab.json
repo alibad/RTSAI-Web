@@ -3,7 +3,7 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "fa92525e69bd7da26ef7d9872385c7e4acb27e59",
+  "commit": "1a08285d6b1128eff80678b62ea8919b95a8e651",
   "provenanceGeneratedBy": "tools/art-provenance.py",
   "provenanceSha256": "ffca8ff38c25d29b1be1f7071de5a3798a92a82d6ae97c6205c67d2efe4ae944",
   "commercialRa2Data": "None found. No file matches, embeds or was built from Red Alert 2 game data; the art builders read no MIX/SHP/VXL/HVA/PAL/image input, the cameos are text-to-image, and the flags are redrawn identically from code. See docs/art-provenance.md for the method.",

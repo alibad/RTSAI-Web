@@ -29,7 +29,9 @@ export const isChainStep = (value: string | null): value is ChainStep => chainSt
 
 /** Local preview mod (RTSAI-Mod rtsai/art-preview): which candidate each actor's installed files came from. */
 export type PreviewActor = { model: string | null; icon: string | null; files: string[]; rules: boolean };
-export type PreviewStatus = { available: boolean; branch: string | null; head: string | null; actors: Record<string, PreviewActor>; unmatched: string[] };
+/** How to play the preview copy: measured facts about the folders, and the command that launches it. */
+export type PreviewLaunch = { worktree: string; supportDir: string; engineBuilt: boolean; ra2Content: boolean; companionFiles: boolean; command: string };
+export type PreviewStatus = { available: boolean; branch: string | null; head: string | null; actors: Record<string, PreviewActor>; unmatched: string[]; launch?: PreviewLaunch };
 
 const newest = (a: Candidate, b: Candidate) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : a.id < b.id ? 1 : -1);
 
@@ -94,13 +96,21 @@ export type ActionCheck = { id: string; label: string; present: boolean; note?: 
 const infantryActions: [string, string][] = [["stand", "Stand"], ["idle", "Idle"], ["move", "Run"], ["attack", "Fire"], ["prone", "Prone"], ["die", "Die"]];
 
 /** The actions this kind of actor needs, and whether the version's own art provides each one. */
-export function actionCoverage(category: string, spec: RenderSpec | null | undefined, sprite: SpriteArt | null | undefined): ActionCheck[] {
+/**
+ * The actions this actor needs, and whether the version's own art provides each one. What the game's rules use
+ * today (`current`: a turret, a rotor or other HVA cycle) decides what a replacement must have: a jet needs no rotor
+ * and a turretless artillery piece no turret.
+ */
+export function actionCoverage(category: string, spec: RenderSpec | null | undefined, sprite: SpriteArt | null | undefined, current?: { spec?: RenderSpec | null; sprite?: SpriteArt | null } | null): ActionCheck[] {
   if (spec?.voxel) {
     const parts = spec.voxel.parts.filter(p => p.defaultVisible !== false);
+    const now = current?.spec?.voxel?.parts.filter(p => p.defaultVisible !== false) ?? null;
     const out: ActionCheck[] = [{ id: "body", label: "Body", present: parts.some(p => !p.turretOffset) }];
-    if (["vehicle", "ship", "defense"].includes(category) || parts.some(p => p.turretOffset)) out.push({ id: "turret", label: "Turret", present: parts.some(p => p.turretOffset !== null) });
+    const needsTurret = now ? now.some(p => p.turretOffset !== null) : ["vehicle", "ship", "defense"].includes(category);
+    if (needsTurret || parts.some(p => p.turretOffset)) out.push({ id: "turret", label: "Turret", present: parts.some(p => p.turretOffset !== null) });
     const cycling = parts.filter(p => p.frames > 1);
-    if (category === "aircraft" || cycling.length) out.push({
+    const needsCycle = now ? now.some(p => p.tickRate !== null && p.tickRate > 0) : category === "aircraft";
+    if (needsCycle || cycling.length) out.push({
       id: "hva", label: category === "aircraft" ? "Rotor / HVA" : "HVA cycle", present: cycling.some(p => p.tickRate !== null && p.tickRate > 0),
       note: cycling.some(p => !p.tickRate) ? "HVA frames exist, but no TickRate plays them in game." : undefined,
     });
@@ -114,8 +124,8 @@ export function actionCoverage(category: string, spec: RenderSpec | null | undef
   if (category === "defense" || category === "structure") {
     out.push({ id: "make", label: "Build-up", present: has("make") });
     out.push({ id: "damaged", label: "Damaged", present: seqs.some(s => s.name.startsWith("damaged")) });
-    if (category === "defense") out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
-  } else {
+    if (current ? Boolean(current.sprite?.turret) || Boolean(sprite?.turret) : category === "defense") out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
+  } else if (current ? Boolean(current.sprite?.turret) || Boolean(current.spec?.voxel?.parts.some(p => p.turretOffset !== null)) || Boolean(sprite?.turret) : true) {
     out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
   }
   return out;
