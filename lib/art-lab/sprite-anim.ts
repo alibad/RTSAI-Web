@@ -5,7 +5,7 @@
  */
 import type { SpriteArt, SpriteSequence } from "./types";
 
-export type SpriteAnimation = { id: string; label: string; body: SpriteSequence | null; note: string | null };
+export type SpriteAnimation = { id: string; label: string; body: SpriteSequence | null; note: string | null; /** Replaces the turret sequence while it plays (WithTurretAttackAnimation). */ turret?: SpriteSequence | null };
 
 export const animationLabels: Record<string, string> = {
   stand: "Stand", move: "Walk", attack: "Fire", idle: "Idle", die: "Die", prone: "Prone", body: "Idle", make: "Build-up",
@@ -33,10 +33,13 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     out.push({ id: "body", label: "Idle", body: by("WithFacingSpriteBody") ?? by("WithSpriteBody") ?? seqs.find(s => !s.usedBy.some(u => u.startsWith("WithSpriteTurret"))) ?? null, note: null });
     const make = by("WithMakeAnimation");
     if (make) out.push({ id: "make", label: "Build-up", body: make, note: "Build-up: the turret and overlays appear once construction completes." });
+    // A defence fires by swapping its turret sequence (WithTurretAttackAnimation); the body stays as it is.
+    const fire = seqs.find(s => s.usedBy.some(u => u === "WithTurretAttackAnimation"));
+    if (fire && out[0]?.body) out.push({ id: fire.name, label: "Fire", body: out[0].body, turret: fire, note: "Turret fire: the game plays it each time the defence attacks." });
   }
-  const used = new Set(out.map(a => a.body?.name));
+  const used = new Set([...out.map(a => a.body?.name), ...out.map(a => a.turret?.name)]);
   for (const s of seqs) {
-    if (used.has(s.name) || s.name === "icon" || s.name === sprite.turret?.sequence || s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) continue;
+    if (used.has(s.name) || s.name === "icon" || s.name === sprite.turret?.sequence || s.usedBy.some(u => u.startsWith("WithIdleOverlay") || u.startsWith("WithTurretAttackAnimation"))) continue;
     const layer = sprite.overlays?.find(o => s.name === o.sequence || s.name === `damaged-${o.sequence}`);
     if (layer && layer.mode !== "loop") {
       const damaged = s.name.startsWith("damaged-");

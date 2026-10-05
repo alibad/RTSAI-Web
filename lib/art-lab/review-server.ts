@@ -9,6 +9,8 @@
  *   GET  /roster                every faction's build roster, with original RA2 units resolved (originals.ts)
  *   GET  /ra2/<name>            an original RA2 file from the local, gitignored cache (EA copyright: never
  *                               published; this route, like the others, does not exist in production)
+ *   GET  /stamp                 a short fingerprint that changes when candidates, decisions or preview art change
+ *   GET  /preview               which actors the local preview mod (rtsai/art-preview) installs, matched by bytes
  *
  * RTSAI-Art files are read in place; nothing is copied into public/.
  */
@@ -22,6 +24,7 @@ import { reviewEnabled } from "./review-gate";
 import { duelJob, startDuel } from "./duel-server";
 import { baselineCounts, rebuildSummary, type RebuildCampaign } from "./rebuild";
 import { readModelLibrary } from "./model-library-server";
+import { readPreviewStatus, workspaceStamp } from "./preview-server";
 
 const TYPES: Record<string, string> = {
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".json": "application/json; charset=utf-8",
@@ -81,9 +84,14 @@ export function readState(root: string, mode: "ra2" | "classic" = "ra2", fileRoo
       const urls = Object.fromEntries(files.map(f => [f, url(`${cdir}/${f}`)]));
       if (!meta) { errors.push(`${cdir}/meta.json is missing or not JSON`); candidates.push({ id, actor, createdAt: "", kind: "unknown", files: {}, dir: cdir, urls, metaError: "meta.json missing or invalid" }); continue; }
       // The candidate's proposed rules/sequences (MiniYaml) travel with it so the viewer reads the real layout.
-      const rulesFile = meta.files?.rules ? safeResolve(root, `${cdir}/${meta.files.rules}`) : null;
-      let rulesText: string | null = null;
-      try { if (rulesFile && statSync(rulesFile).size < 256 * 1024) rulesText = readFileSync(rulesFile, "utf8"); } catch { rulesText = null; }
+      // A separate sequences file (files.sequences) is part of the same proposal: its layout is the truth.
+      const snippets = [meta.files?.rules, (meta.files as Record<string, unknown> | undefined)?.sequences].filter((f): f is string => typeof f === "string");
+      const texts: string[] = [];
+      for (const file of snippets) {
+        const path = safeResolve(root, `${cdir}/${file}`);
+        try { if (path && statSync(path).size < 256 * 1024) texts.push(readFileSync(path, "utf8")); } catch { /* unreadable: ignored */ }
+      }
+      const rulesText: string | null = texts.length ? texts.join("\n") : null;
       candidates.push({ ...meta, id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls, rulesText });
     }
     candidates.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
@@ -140,8 +148,10 @@ function isLocalRequest(req: IncomingMessage) {
   return true;
 }
 
-export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, originals = null }: { root: string; env?: string; originals?: OriginalsConfig | null }) {
+export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, originals = null, webRoot = process.cwd(), previewMod = null }: { root: string; env?: string; originals?: OriginalsConfig | null; webRoot?: string; previewMod?: string | null }) {
   const workspace = resolve(root);
+  const web = resolve(webRoot);
+  const preview = previewMod ? resolve(previewMod) : null;
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (!reviewEnabled(env)) return send(res, 404, { error: "Not found" });
     try {
@@ -160,7 +170,7 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         return send(res, 200, summary);
       }
       const reviewMode = url.searchParams.get("mode") ?? "ra2";
-      if (["/state", "/action", "/models", "/animations"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if (["/state", "/action", "/models", "/animations", "/stamp", "/preview"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
       if(req.method==="GET"&&path==="/animations"){
         const actor=url.searchParams.get("actor")??"";
         if(!SAFE_NAME.test(actor))return send(res,400,{error:"Unknown actor"});
@@ -176,8 +186,14 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         return models?send(res,200,models):send(res,404,{error:"Run the local model inventory first."});
       }
       if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace, reviewMode as "ra2" | "classic"));
+      if (req.method === "GET" && path === "/stamp") return send(res, 200, { stamp: workspaceStamp(reviewMode === "classic" ? join(workspace, "modes", "classic") : workspace, preview) });
+      if (req.method === "GET" && path === "/preview") {
+        // The preview overlay is an RA2 mod branch; Classic has none.
+        if (reviewMode === "classic") return send(res, 200, { available: false, branch: null, head: null, actors: {}, unmatched: [] });
+        return send(res, 200, readPreviewStatus(workspace, preview));
+      }
       if (req.method === "GET" && /^\/duel\/[a-f0-9-]{36}$/.test(path)) {
-        const job = duelJob(path.slice(6), resolve(workspace, "../RTSAI-Web-wt-artlab"));
+        const job = duelJob(path.slice(6), web);
         return job ? send(res, 200, job) : send(res, 404, { error: "No such match" });
       }
       if (req.method === "POST" && path === "/duel") {
@@ -185,7 +201,7 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         if (!/^application\/json\b/i.test(req.headers["content-type"] ?? "")) return send(res, 415, { error: "Send application/json" });
         let body = "";
         for await (const chunk of req) { body += chunk.toString(); if (body.length > 4096) return send(res, 413, { error: "Too large" }); }
-        try { return send(res, 202, await startDuel(resolve(workspace, "../RTSAI-Web-wt-artlab"), originals, JSON.parse(body))); }
+        try { return send(res, 202, await startDuel(web, originals, JSON.parse(body))); }
         catch (error) { return send(res, 400, { error: error instanceof Error ? error.message : "Invalid duel" }); }
       }
       if (req.method === "GET" && path === "/roster") {

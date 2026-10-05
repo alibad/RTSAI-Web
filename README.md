@@ -171,6 +171,13 @@ npm run check:art    # fail if the committed copy is stale
 - It copies only files recorded in `mods/rtsai/modern-factions/ART-PROVENANCE.json`
   whose bytes match the recorded SHA-256; anything else fails the sync, so no
   RA2 game data is published.
+- The Israel and Hezbollah packs are not in that record yet. `data/levant-art-binding.json`
+  (`node --import tsx scripts/bind-levant-provenance.mjs`) binds each of their files by
+  checkable evidence: the generator's own hash in `levant-art-provenance.json`, a
+  byte-identical re-run of `OpenRA-AI scripts/build-levant-art.py` in a temporary
+  sandbox, or byte identity with a file ART-PROVENANCE.json already records. The sync
+  re-checks every binding against the mod before the same guard runs; unbound files
+  still fail it.
 - Decoders (`lib/art-lab/{vxl,hva,shp,pal}.ts`) and the voxel transform chain
   (`voxel-math.ts`, `raster.ts`) follow the engine. three.js loads only when a
   voxel viewer scrolls into view.

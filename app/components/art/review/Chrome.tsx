@@ -30,9 +30,9 @@ function usePopover() {
 }
 
 export const shortcuts: [string, string][] = [
-  ["J / K", "Next / previous unit"], ["← / →", "Previous / next version"], ["1 2 3", "Model · Icon · Concept"],
+  ["J / K", "Next / previous unit"], ["1 – 7", "Asset chain step"], ["← / →", "Previous / next version"], ["I", "Build icon"],
   ["U", "Use this in game"], ["N", "Keep current"], ["R", "Reject"], ["C", "Write a note"],
-  ["Space", "Spin"], ["Drag", "Turn the unit"], ["Shift+drag", "Turn the turret"], ["Wheel", "Zoom"], ["?", "This help"],
+  ["Space", "Spin"], ["Drag", "Turn the unit"], ["Shift+drag", "Turn the turret"], ["Wheel", "Zoom"], ["0", "True size (1×)"], ["P", "Next player colour"], ["?", "This help"],
 ];
 
 function ViewPopover({ tints }: { tints: MapTint[] }) {
@@ -96,7 +96,7 @@ export function HelpPopover({ open, onOpenChange }: { open: boolean; onOpenChang
   );
 }
 
-export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false }: {
+export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false, tally = null }: {
   slot: SlotId;
   counts: Record<SlotId, number>;
   onSlot: (slot: SlotId) => void;
@@ -107,13 +107,16 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
   onHelp: (open: boolean) => void;
   name?: string;
   encounter?: boolean;
+  /** Roster progress for the asset chain; replaces the decided-units bar when given. */
+  tally?: React.ReactNode;
 }) {
   return (
     <header className="lab-top">
       <div className="lab-brand"><b>{encounter ? "Combat experiment" : name ?? "Choose an actor"}</b></div>
-      {!encounter && <label className="studio-art-select">Artwork<select aria-label="Artwork" value={slot} onChange={e => onSlot(e.target.value as SlotId)}>{(["model", "icon", "concept"] as const).map(id => <option key={id} value={id}>{id === "model" ? "In-game model" : slotNames[id]}{counts[id] ? ` · ${counts[id]} alternatives` : ""}</option>)}</select></label>}
+      {!encounter && <div className="lab-seg studio-art-switch" role="radiogroup" aria-label="Artwork">{(["model", "icon"] as const).map(id => <button key={id} type="button" role="radio" aria-checked={slot === id} onClick={() => onSlot(id)} title={id === "icon" ? "Build icon (I)" : "Unit and its asset chain"}>{id === "model" ? "Unit" : "Build icon"}{id === "icon" && counts.icon ? <small>{counts.icon}</small> : null}</button>)}</div>}
       <div className="lab-top-right">
-        {total > 0 && !encounter && <span className="lab-progress" title="Units with candidates that have a decision">
+        {!encounter && tally}
+        {total > 0 && !encounter && !tally && <span className="lab-progress" title="Units with candidates that have a decision">
           <i style={{ ["--done" as string]: total ? decided / total : 0 }} aria-hidden="true" />
           {decided} of {total} units decided
         </span>}

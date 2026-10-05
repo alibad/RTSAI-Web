@@ -59,7 +59,20 @@ export type CandidateMeta = {
   playerColor?: ImagePlayerColor;
   imageTo3d?: { service?: string; model?: string; costUsd?: number; license?: Record<string, string> };
   /** Voxel candidates: where the Forge placed the turret pivot (a Turreted.Offset for current rules). */
-  voxelize?: { turretOffsetWorld?: number[]; turretPlacement?: string };
+  voxelize?: { turretOffsetWorld?: number[]; turretPlacement?: string; log?: { paint?: Record<string, { classShares?: Record<string, number> } | undefined> } };
+  /** GLB route: the mesh candidate this native model was made from, and the pinned source bytes. */
+  fromMesh?: string;
+  sourceMeshSha256?: string;
+  route?: string;
+  createdBy?: string;
+  /** The voxel light/scale this candidate was authored for: "stock" (RA2 defaults) or explicit values. */
+  renderLight?: "stock" | { scale?: number; ambient?: number | number[]; diffuse?: number | number[] };
+  /** HVA frame count per voxel file base name. */
+  hvaFrames?: Record<string, number>;
+  qualityGate?: { passes?: boolean; checksPassed?: number; checksTotal?: number; ownerArtApproved?: boolean };
+  animation?: { evidence?: string; frames?: number; actions?: Record<string, unknown> };
+  /** Format and layout checks the art tool ran on its own output (frame ranges, clipping, remap, ...). */
+  verify?: { pass?: boolean; frames?: number; checks?: Record<string, boolean> };
   /** Sprite candidates: the SHP frame layout the Forge rendered. */
   sprite?: {
     shp?: string;
@@ -276,6 +289,9 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
   // The candidate's own turret placement wins over the current rules (e.g. a longer hull moves the ring).
   const declared: Vec3 = declaredTurretOffset(candidate) ?? turret?.turretOffset ?? [0, 0, 0];
   const hasDropin = candidate.files.vxl.some(f => f.replace(/\\/g, "/").toLowerCase() === `dropin/${actor}tur.vxl`);
+  // A candidate file plays the role of the current part with the same file name (a gunship's "tur" is its rotor).
+  const fileBase = (path: string) => path.split("?")[0].split("/").pop()!.replace(/\.vxl$/i, "").toLowerCase();
+  const currentPart = (base: string) => current.voxel!.parts.find(p => fileBase(p.vxl) === base) ?? null;
   const parts = candidate.files.vxl.flatMap(file => {
     const name = file.replace(/\\/g, "/");
     const hva = name.replace(/\.vxl$/i, ".hva");
@@ -284,8 +300,10 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
     if (!vxlUrl || !hvaUrl) return [];
     const base = name.split("/").pop()!.replace(/\.vxl$/i, "").toLowerCase();
     const dropin = name.toLowerCase().startsWith("dropin/");
-    let label = name, turretOffset: Vec3 | null = null, defaultVisible = true;
+    let label = name, turretOffset: Vec3 | null = null, defaultVisible = true, trait = "";
+    const match = dropin ? null : currentPart(base);
     if (base === actor) label = "body";
+    else if (match && match.turretOffset === null && match.trait !== "WithVoxelTurret") { label = match.label; trait = match.trait; }
     else if (base === `${actor}tur`) {
       label = dropin ? "turret (drop-in, for current rules)" : "turret";
       turretOffset = [...declared] as Vec3;
@@ -295,9 +313,11 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
       turretOffset = [...declared] as Vec3;
       defaultVisible = !hasDropin;
     } else defaultVisible = false;
+    // HVA frames come from the candidate; they only play when the matching rules part has a TickRate.
+    const frames = Math.max(1, Math.round(candidate.hvaFrames?.[base] ?? 1));
     return [{
-      id: `cand:${name}`, label, trait: label, vxl: vxlUrl, hva: hvaUrl, offset: body?.offset ?? [0, 0, 0] as Vec3, showShadow: true,
-      requiresCondition: null, turretOffset, turretInitialFacing: null, tickRate: null, frames: 1, defaultVisible,
+      id: `cand:${name}`, label, trait: trait || label, vxl: vxlUrl, hva: hvaUrl, offset: body?.offset ?? [0, 0, 0] as Vec3, showShadow: true,
+      requiresCondition: null, turretOffset, turretInitialFacing: null, tickRate: frames > 1 ? match?.tickRate ?? null : null, frames, defaultVisible,
     }];
   });
   if (!parts.length) return null;
@@ -307,8 +327,24 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
     id: `${current.id}:${candidate.id}`,
     name: `${current.name} · ${candidate.id}`,
     palette: pal && current.palette ? { ...current.palette, name: candidate.files.pal!, url: pal } : current.palette,
-    voxel: { ...current.voxel, parts },
+    voxel: { ...current.voxel, ...candidateLight(candidate), parts },
   };
+}
+
+/** RA2's own voxel defaults (RenderVoxels), which "stock" candidates were authored for. */
+export const STOCK_VOXEL_LIGHT = { scale: 11.7, ambient: [-0.5, -0.5, -0.5] as Vec3, diffuse: [1.4, 1.4, 1.4] as Vec3 };
+/** The light and scale a voxel candidate declares; absent means it is drawn with the actor's current rules. */
+export function candidateLight(candidate: Pick<Candidate, "renderLight">): Partial<{ scale: number; ambient: Vec3; diffuse: Vec3 }> {
+  const light = candidate.renderLight;
+  if (light === "stock") return { ...STOCK_VOXEL_LIGHT };
+  if (!light || typeof light !== "object") return {};
+  const v3 = (v: number | number[] | undefined): Vec3 | undefined => typeof v === "number" ? [v, v, v] : Array.isArray(v) && v.length === 3 && v.every(Number.isFinite) ? [v[0], v[1], v[2]] : undefined;
+  const out: Partial<{ scale: number; ambient: Vec3; diffuse: Vec3 }> = {};
+  if (typeof light.scale === "number" && light.scale > 0) out.scale = light.scale;
+  const ambient = v3(light.ambient), diffuse = v3(light.diffuse);
+  if (ambient) out.ambient = ambient;
+  if (diffuse) out.diffuse = diffuse;
+  return out;
 }
 
 /** A sprite candidate drawn with the current unit's sequences, but its own SHP and palette. */
@@ -414,6 +450,24 @@ export function declaredTurretOffset(candidate: Candidate): Vec3 | null {
 }
 
 /**
+ * The trait that plays a candidate sequence when the candidate does not say: the current actor's role for the
+ * same sequence name, else the OpenRA naming conventions (damaged-/critical- variants keep their base role).
+ */
+export function sequenceRole(name: string, category: string, traits: string[], currentSprite?: SpriteArt | null): string[] {
+  const known = currentSprite?.sequences.find(s => s.name === name)?.usedBy;
+  if (known?.length) return known;
+  const base = name.replace(/^(damaged|critical)-/, "");
+  const damaged = base !== name ? " (damaged)" : "";
+  const baseRole = currentSprite?.sequences.find(s => s.name === base)?.usedBy[0]?.replace(/ \(damaged\)$/, "");
+  if (base === "turret") return [`WithSpriteTurret${damaged}`];
+  if (base === "make") return ["WithMakeAnimation (build-up)"];
+  if (base === "fire" && traits.includes("WithTurretAttackAnimation")) return [`WithTurretAttackAnimation${damaged}`];
+  if (baseRole) return [`${baseRole}${damaged}`];
+  if (base === "idle" || base === "stand") return [`${category === "defense" || category === "structure" ? "WithSpriteBody" : "WithFacingSpriteBody"}${damaged}`];
+  return ["WithFacingSpriteBody"];
+}
+
+/**
  * A pre-rendered vehicle sprite candidate (body + turret, with shadow frames) for a unit that is a voxel model
  * today. The frame layout comes from the candidate's rules snippet, else from meta.sprite; it is never guessed.
  */
@@ -435,7 +489,7 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
     const file = shpUrl(r?.file ?? m?.file ?? null);
     if (!file) continue;
     const length = r?.length ?? m?.length ?? 1;
-    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy??"") ? ["WithSpriteTurret"] : m?.usedBy ? [m.usedBy] : currentSprite?.sequences.find(s=>s.name===name)?.usedBy ?? ["WithFacingSpriteBody"];
+    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy??"") ? ["WithSpriteTurret"] : m?.usedBy ? [m.usedBy] : sequenceRole(name, current.category, rules?.traits ?? [], currentSprite);
     sequences.push({
       name, file, external: null, start: r?.start ?? m?.start ?? 0, length, stride: r?.stride ?? m?.stride ?? (typeof length === "number" ? length : 0), facings: r?.facings ?? m?.facings ?? 1,
       reverseFacings: r?.reverseFacings ?? m?.reverseFacings ?? false, useClassicFacings: r?.useClassicFacings ?? m?.useClassicFacings ?? false,
@@ -454,11 +508,11 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
     transparent: rules?.palette?.transparent ?? metaPal?.transparent ?? [0],
     shadow: rules?.palette?.shadow ?? metaPal?.shadow ?? [],
   } : current.palette;
-  const turretOffset = rules?.turretOffset ?? vec3(candidate.sprite?.turret?.offset) ?? [0, 0, 0];
+  const turretOffset = rules?.turretOffset ?? vec3(candidate.sprite?.turret?.offset) ?? currentSprite?.turret?.offset ?? [0, 0, 0];
   const sprite: SpriteArt = {
     image: current.id, palette: palette?.name ?? "", shp: null, sequences, quantizedFacings: rules?.quantizedFacings ?? candidate.sprite?.quantizedFacings ?? currentSprite?.quantizedFacings ?? body.facings,
     classicFacingBodyOrientation: rules?.classicFacingBodyOrientation ?? candidate.sprite?.classicFacingBodyOrientation ?? currentSprite?.classicFacingBodyOrientation ?? false,
-    turret: turretSeq ? { sequence: turretSeq.name, name: candidate.sprite?.turret?.name ?? "primary", offset: turretOffset, initialFacing: rules?.turretInitialFacing ?? 0 } : null,
+    turret: turretSeq ? { sequence: turretSeq.name, name: candidate.sprite?.turret?.name ?? "primary", offset: turretOffset, initialFacing: rules?.turretInitialFacing ?? currentSprite?.turret?.initialFacing ?? 0 } : null,
   };
   return {
     spec: {

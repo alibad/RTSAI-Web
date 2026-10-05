@@ -121,7 +121,8 @@ for (const key of unbound) {
     const modelTwin = key.endsWith(".hva") ? Object.keys(record.files).find(k => k.endsWith(".vxl") && record.files[k].sha256 === sha256(reader.bytes(`${ART_DIR}/${key.replace(/\.hva$/, ".vxl")}`))) : null;
     const twin = twins.find(k => modelTwin && k === modelTwin.replace(/\.vxl$/, ".hva")) ?? twins[0];
     if (type && twin) {
-      const { sha256: _, runtime: __, ...inherited } = record.files[twin];
+      // Inherit the recorded entry except its own hash and its "referenced by rules" runtime note.
+      const inherited = Object.fromEntries(Object.entries(record.files[twin]).filter(([k]) => k !== "sha256" && k !== "runtime"));
       files[key] = { ...inherited, sha256: actual, evidence: "copy-of-recorded", copiedFrom: twin, copiedBy: "OpenRA-AI scripts/build-levant-factions.py (copies source-faction packages under the new actor name)", reproduced: false };
       continue;
     }

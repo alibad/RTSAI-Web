@@ -1,5 +1,7 @@
 "use client";
-import { Building2, Film, Swords, Palette, Library, Box } from "lucide-react";
+import { Building2, Film, Swords, Palette, Library, Check, X, Minus } from "lucide-react";
+import type { ActionCheck, Check as Measured } from "../../../../lib/art-lab/chain";
+import type { Candidate } from "../../../../lib/art-lab/review";
 import { ActorSourceDetails } from "./Sources";
 import type { BehaviorFacts } from "../../../../lib/art-lab/behavior";
 import { spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
@@ -8,8 +10,8 @@ import type { ReviewUnit,Version } from "./versions";
 import { AnimationReadiness } from "./AnimationReadiness";
 import { voxelAnimationParts } from "../../../../lib/art-lab/voxel-animation";
 
-export function StudioBar({ mode, onMode, surface, onSurface, onSources, onModels }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "arena"; onSurface: (s: "art" | "arena") => void; onSources: () => void; onModels: () => void }) {
-  return <header className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).map(({ id, label, Icon }) => <button key={id} aria-current={(surface === id || id === "art" && surface !== "arena") ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>)}</nav><button className="lab-ghost" onClick={onModels}><Box size={16}/>3D models</button><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><select className="studio-mode" aria-label="Game mode" value={mode} onChange={e => onMode(e.target.value as "ra2" | "classic")}><option value="ra2">Red Alert 2</option><option value="classic">Red Alert · Classic</option></select></header>;
+export function StudioBar({ mode, onMode, surface, onSurface, onSources }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "arena"; onSurface: (s: "art" | "arena") => void; onSources: () => void }) {
+  return <header className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).map(({ id, label, Icon }) => <button key={id} aria-current={(surface === id || id === "art" && surface !== "arena") ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>)}</nav><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><select className="studio-mode" aria-label="Game mode" value={mode} onChange={e => onMode(e.target.value as "ra2" | "classic")}><option value="ra2">Red Alert 2</option><option value="classic">Red Alert · Classic</option></select></header>;
 }
 
 /** Actions live beside the art they control; unsupported rotations are explained rather than faked. */
@@ -22,6 +24,31 @@ export function ActionShelf({ unit, version,mode,onEncounter }: { unit: ReviewUn
   const turns = Boolean(spec.voxel) || options.some(a => Math.abs(a.body?.facings ?? 1) > 1);
   const hasTurret = Boolean(sprite?.turret || spec.voxel?.parts.some(p => p.turretOffset !== null));
   return <section className="studio-action-shelf" aria-label="Artwork and behavior"><div className="studio-action-heading"><span>Preview behavior{version?.kind==="candidate"?" / candidate":""}</span><button className="lab-ghost" onClick={onEncounter}><Swords size={14} />Test against another actor</button></div><div className="studio-action-list">{options.map(a => <button key={a.id} aria-pressed={animation === a.id} onClick={() => setLab({ animation: a.id, playing: true, view3d: "off" })}><Film size={13} />{a.label}</button>)}{!options.length && <span className="lab-hint">Voxel model · movement and combat in Encounter</span>}</div><div className="studio-pose-controls">{turns ? <label>Body facing<input aria-label="Body facing" type="range" min={0} max={1023} value={facing} onChange={e => setLab({ facing: Number(e.target.value), spin: false })} /></label> : <span className="lab-hint">Fixed isometric artwork · this building has one authored view.</span>}{hasTurret && <label>Turret aim<input aria-label="Turret aim" type="range" min={-512} max={512} value={turret} onChange={e => setLab({ turret: Number(e.target.value), spin: false })} /></label>}</div><p className="lab-hint">Sequence preview from game artwork. Encounter measures movement, damage and destruction in OpenRA.</p>{options.find(a=>a.id===animation)?.note&&<p className="lab-hint">{options.find(a=>a.id===animation)?.note}</p>}{version?.candidate?.previewNote&&<p className="lab-hint">{version.candidate.previewNote}</p>}<AnimationReadiness actor={unit.id} mode={mode}/></section>;
+}
+
+/** The Animations step: one row of the version's own actions (click to play); drag the stage to turn it. */
+export function ActionRow({ unit, version, onEncounter }: { unit: ReviewUnit; version: Version | null | undefined; onEncounter: () => void }) {
+  const animation = useLab(s => s.animation), turret = useLab(s => s.turret);
+  const item = version?.item;
+  const sprite = item?.sprite ?? unit.sprite, spec = item?.spec ?? unit.spec;
+  const options = spec.voxel ? (voxelAnimationParts(spec).length ? [{ id: "body", label: "HVA cycle" }] : []) : spriteAnimations(sprite);
+  const hasTurret = Boolean(sprite?.turret || spec.voxel?.parts.some(p => p.turretOffset !== null));
+  return <section className="studio-action-row" aria-label="Actions">
+    <div className="studio-action-list" role="group" aria-label="Play an action">{options.map(a => <button key={a.id} aria-pressed={animation === a.id} onClick={() => setLab({ animation: a.id, playing: true, animationTime: 0, view3d: "off" })}><Film size={13} />{a.label}</button>)}
+      {!options.length && <span className="lab-hint">No authored animation in this model{spec.voxel ? " (turn and aim it on the stage)" : ""}.</span>}</div>
+    {hasTurret && <label className="studio-action-aim">Turret<input aria-label="Turret aim" type="range" min={-512} max={512} value={turret} onChange={e => setLab({ turret: Number(e.target.value), spin: false })} /></label>}
+    <button className="lab-ghost" onClick={onEncounter}><Swords size={14} />Test in an encounter</button>
+  </section>;
+}
+
+/** The Checks step: what was measured for this candidate, kept apart from the owner's decision. */
+export function ChecksPanel({ checks, actions, candidate, label }: { checks: Measured[]; actions: ActionCheck[]; candidate: Candidate | null; label: string | null }) {
+  const mark = (pass: boolean | null) => pass === true ? <Check size={14} strokeWidth={3} className="is-good" /> : pass === false ? <X size={14} strokeWidth={3} className="is-bad" /> : <Minus size={14} />;
+  return <aside className="lab-panel studio-facts studio-checks"><div className="studio-panel-head"><span className="lab-label">CHECKS</span><h2>{label ?? "No candidate"}</h2><p>{candidate ? "Measured by the art tools. A pass is not your approval." : "Nothing to check until a game model exists."}</p></div>
+    {checks.length > 0 ? <ul className="studio-check-list">{checks.map(c => <li key={c.label}>{mark(c.pass)}<span>{c.label}</span><b>{c.result}</b></li>)}</ul> : candidate && <p className="lab-hint">No measurements recorded for this candidate yet.</p>}
+    {actions.length > 0 && <section><h3>Actions in its own art</h3><ul className="studio-check-list">{actions.map(a => <li key={a.id}>{mark(a.present ? true : false)}<span>{a.label}</span><b>{a.present ? "Yes" : "Missing"}</b></li>)}</ul>{actions.find(a => a.note) && <p className="lab-hint">{actions.find(a => a.note)!.note}</p>}</section>}
+    {candidate?.critique && <p className="studio-evidence">{candidate.critique}</p>}
+  </aside>;
 }
 
 export function BehaviorPanel({ unit, facts }: { unit: ReviewUnit; facts: BehaviorFacts | null }) {

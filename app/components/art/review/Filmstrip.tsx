@@ -16,7 +16,7 @@ const THUMB_H = 88;
 const CARD_MAX = 146, CARD_MIN = 112, GAP = 8;
 
 /** A live thumbnail at the stage's facing, from the frame cache (it never renders on the spot). */
-const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, width, radius }: { item: StageItem; frames: FrameStore; tints: MapTint[]; zoom: number; width: number; radius: number | null }) {
+export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, width, radius, height = THUMB_H }: { item: StageItem; frames: FrameStore; tints: MapTint[]; zoom: number; width: number; radius: number | null; height?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let raf = 0;
@@ -30,13 +30,13 @@ const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, width, 
       // Keep the previous picture until the new facing is cached: no blank flashes while turning.
       if (!f) { frames.want(item, pose, true); return; }
       const dpr = Math.min(3, window.devicePixelRatio || 1);
-      const w = Math.round(width * dpr), h = Math.round(THUMB_H * dpr);
+      const w = Math.round(width * dpr), h = Math.round(height * dpr);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       const ctx = canvas.getContext("2d")!;
       ctx.clearRect(0, 0, w, h);
       ctx.imageSmoothingEnabled = false;
       const z = Math.max(1, Math.round(zoom * dpr));
-      const cx = Math.round((width / 2) * dpr), cy = Math.round(THUMB_H * 0.56 * dpr);
+      const cx = Math.round((width / 2) * dpr), cy = Math.round(height * 0.56 * dpr);
       const g = groundTile(s.ground, pose.tint, groundWidth(radius));
       ctx.drawImage(g.canvas, cx - g.anchorX * z, cy - g.anchorY * z, g.width * z, g.height * z);
       ctx.drawImage(f.canvas, cx - f.anchorX * z, cy - f.anchorY * z, f.width * z, f.height * z);
@@ -48,15 +48,15 @@ const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, width, 
     });
     const offFrames = frames.subscribe(schedule);
     return () => { offLab(); offFrames(); cancelAnimationFrame(raf); };
-  }, [item, frames, tints, zoom, width, radius]);
-  return <canvas ref={ref} className="lab-thumb-canvas" style={{ width, height: THUMB_H }} aria-hidden="true" />;
+  }, [item, frames, tints, zoom, width, radius, height]);
+  return <canvas ref={ref} className="lab-thumb-canvas" style={{ width, height }} aria-hidden="true" />;
 });
 
 /**
  * One equal-size card per version: Current first, then candidates by creation order. The chosen version carries
  * a green check; rejected ones are dimmed with a cross. Click or Left/Right to focus.
  */
-export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, frames, tints, thumbZoom, radius, imageFit, onFocus }: {
+export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, frames, tints, thumbZoom, radius, imageFit, onFocus, inPreview = null }: {
   versions: Version[];
   focus: number;
   decision: SlotDecision;
@@ -67,6 +67,8 @@ export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, fr
   /** Icons draw pixel-exact (2x when the card is wide enough); concept sheets are scaled to cover the card. */
   imageFit: "pixel" | "cover";
   onFocus: (index: number) => void;
+  /** The candidate installed in the local preview mod (matched by bytes), if any. */
+  inPreview?: string | null;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -101,6 +103,7 @@ export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, fr
                 : <span className="lab-card-empty">No preview</span>}
               {chosen && <span className="lab-badge is-chosen" aria-label="Chosen"><Check size={14} strokeWidth={3} /></span>}
               {rejected && <span className="lab-badge is-rejected" aria-label="Rejected"><X size={14} strokeWidth={3} /></span>}
+              {inPreview === v.key && <span className="lab-card-preview" title="Installed in the local preview mod, not in the game">Preview</span>}
             </span>
             <span className="lab-card-label"><b>{v.label}</b><small>{v.tag}</small></span>
           </button>

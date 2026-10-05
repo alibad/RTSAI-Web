@@ -1,5 +1,34 @@
 # Faction Studio — local only
 
+## The asset chain (one row per actor)
+
+Every new RA2 actor shows its whole art chain above the stage. Click a step or press its number:
+
+| Key | Step | Shows on the stage |
+|---|---|---|
+| 1 | In game now | What RTSAI-Mod `main` draws today (data/art-lab.json snapshot) |
+| 2 | Design | The concept the 3D model was generated from (its `fromConcept`) |
+| 3 | 3D model | The generated GLB, orbit/zoom, six player colours, wireframe; the former "3D model drafts" dialog |
+| 4 | Game model | The native VXL/HVA or SHP candidate, side by side with In game now, true 1× inset |
+| 5 | Animations | The candidate's own actions (stand, idle, run, fire, prone, die; build-up, damaged, turret fire; HVA cycles) with play/pause/scrub |
+| 6 | Checks | What the art tools recorded (`qualityGate`, `verify.checks`), never owner approval |
+| 7 | Your call | Use / keep current / reject (U, N, R) and notes |
+
+- Opening an actor focuses its newest native candidate (not rejected) when one exists; otherwise In game now.
+  `?unit=r2mantis&step=glb&v=voxel-v5-glb` deep-links any step; `models=1` still opens the 3D model step.
+- A candidate is never labelled as game art. "In local preview" appears only when the files installed in
+  `RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/` are byte-identical (SHA-256) to that candidate's files
+  (`lib/art-lab/preview-server.ts`, dev-only, read-only).
+- Voxel candidates that declare `renderLight` are drawn with it and the stage says so ("stock RA2 light");
+  sprite candidates read their own `rules`/`sequences` files, so buildings get their make, damaged and turret-fire frames.
+- The top-bar counts are per actor over the 122 new RA2 actors: 3D models (new-design GLB present), game models
+  (a native candidate made from that GLB), in preview (bytes matched), decided (model slot decided). Routes and
+  queued jobs never add up into coverage.
+- New candidates written by other tools appear without a reload: a 28-byte fingerprint is polled every 15 s while
+  the tab is visible (`/api/art-review/stamp`), and the full state is fetched only when it changes.
+- `?authored=1` hides original RA2 units and references, for screenshots that may be shared.
+- Other keys: J/K next/previous actor, ←/→ versions, I build icon, P next player colour, 0 true size, ? help.
+
 Start this worktree with `npm run preview:art`, then open `http://127.0.0.1:3461/art/review?view=rebuild`.
 It compiles the same standalone Studio client into ignored `.cache/art-lab-client` and serves it with the
 same local review API. Bindings are explicitly loopback-only. This avoids the development module transport.

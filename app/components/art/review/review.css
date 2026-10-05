@@ -631,31 +631,6 @@
 .source-file code { overflow-wrap:anywhere; font-size:10px; color:#bdc2b2; }
 .enc-source-label { color:#dcc681!important; font-size:10px!important; }
 @media(max-width:650px) { .source-mod-list { grid-template-columns:1fr; } .studio-source-dialog { padding:18px; } }
-.mesh-studio { color:var(--text); background:#141a14; border:1px solid var(--line-2); border-radius:10px; padding:0; width:min(1240px,calc(100vw - 24px)); height:min(850px,calc(100dvh - 30px)); max-width:none; max-height:none; overflow:hidden; }
-.mesh-studio::backdrop { background:#000b; }
-.mesh-studio[open] { display:flex; flex-direction:column; }
-.mesh-studio>header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line-2); }
-.mesh-studio h2 { color:#f4f1e5; margin:7px 0; font-size:21px; }
-.mesh-studio .lab-label { display:flex; align-items:center; gap:8px; }
-.mesh-job-summary { display:grid; grid-template-columns:1fr auto; gap:4px 12px; font-size:12px; text-align:right; }.mesh-job-summary span { color:#a6ad9a; grid-column:1; }.mesh-job-summary button { grid-column:2; grid-row:1/4; }
-.mesh-studio-body { display:grid; grid-template-columns:265px minmax(0,1fr); flex:1; min-height:0; }
-.mesh-studio-body>aside { display:flex; flex-direction:column; gap:12px; padding:16px; border-right:1px solid var(--line-2); min-height:0; }.mesh-studio-body>aside>small { color:#a6ad9a; }
-.mesh-actor-list { min-height:0; overflow:auto; display:flex; flex-direction:column; gap:7px; }
-.mesh-actor-list button { display:flex; align-items:center; gap:10px; text-align:left; padding:9px; border:1px solid transparent; border-radius:6px; background:#1c231b; color:#e5e5d7; cursor:pointer; }
-.mesh-actor-list button[aria-pressed=true] { border-color:#cdb56f; background:#293021; }.mesh-actor-list img { object-fit:cover; border-radius:3px; flex-shrink:0; }.mesh-actor-list svg { flex-shrink:0; color:#9ca88f; }
-.mesh-actor-list span { display:flex; flex-direction:column; gap:5px; }.mesh-actor-list b { font-size:12px; }.mesh-actor-list small { color:#b0b9a5; font-size:10px; }
-.mesh-studio-body>main { min-width:0; min-height:0; padding:18px 22px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
-.mesh-actor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }.mesh-actor-head span { color:#a6ad9a; font-size:12px; }
-.mesh-versions { display:flex; gap:8px; flex-wrap:wrap; }.mesh-versions button { padding:7px 10px; border:1px solid var(--line-2); border-radius:5px; color:#cdd1bf; background:#1b231a; cursor:pointer; font-size:12px; }.mesh-versions button[aria-pressed=true] { border-color:#e7c978; color:#f3d78b; }
-.mesh-viewport { position:relative; flex:1; min-height:260px; border:1px solid var(--line-2); border-radius:8px; background:#111811; overflow:hidden; }.mesh-viewport canvas { display:block; width:100%; height:100%; }.mesh-loading { position:absolute; inset:40% 10%; text-align:center; color:#e4d28d; }
-.mesh-empty { position:absolute; inset:20px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; color:#abb59f; }.mesh-empty h3 { color:#e4e5d8; font-size:17px; }.mesh-empty p { max-width:390px; font-size:13px; line-height:1.6; }
-.mesh-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; }.mesh-controls>span { margin-right:auto; color:#a6ad9a; }.mesh-controls label { display:flex; align-items:center; gap:8px; }.mesh-controls input { width:30px; height:24px; background:none; border:none; }
-.mesh-turret { display:flex; align-items:center; gap:12px; font-size:12px; color:#a6ad9a; }.mesh-turret input { flex:1; accent-color:#e6c978; }
-.mesh-evidence { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:12px; }.mesh-evidence b { color:#f3d78b; }.mesh-evidence>span { margin-left:auto; color:#bbc3ae; }.mesh-evidence p { width:100%; margin:0; color:#a6ad9a; line-height:1.5; }
-.mesh-work { font-size:11px; color:#b6bfab; }.mesh-work p { line-height:1.6; }
-@media(max-width:700px) { .mesh-studio-body { grid-template-columns:180px minmax(0,1fr); }.mesh-studio>header,.mesh-studio-body>main { padding:12px; }.mesh-studio>header h2 {font-size:17px}.mesh-job-summary {gap:6px}.mesh-job-summary span {display:none}.mesh-actor-list img {display:none} }
-.mesh-native-art { width: 144px; height: 112px; object-fit: contain; image-rendering: pixelated; border-radius: 5px; }
-.mesh-empty p { max-width: 480px; margin: 0 auto 14px; }
 .lab-animation-row { position:absolute;left:190px;right:24px;bottom:76px;z-index:4; }
 .lab-animation-transport { display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg);border:1px solid var(--line-2);border-radius:6px; }
 .lab-animation-transport input { flex:1;min-width:50px;accent-color:var(--gold); }
@@ -664,3 +639,81 @@
 
 .studio-animation-readiness { margin-top:16px;border-top:1px solid var(--line);padding-top:12px; }
 .studio-animation-readiness summary { cursor:pointer;color:var(--gold); }
+
+/* Asset chain: one row per actor above the stage (in game now -> design -> 3D model -> game model ->
+   animations -> checks -> your call). Each step is a button that opens on the stage. */
+.lab-main.has-chain { grid-template-rows: auto minmax(0, 1fr) auto; }
+.lab-main.has-chain:not(:has(.lab-film)) { grid-template-rows: auto minmax(0, 1fr); }
+.lab-main.has-chain.has-actions { grid-template-rows: auto minmax(200px, 1fr) auto auto; }
+.lab-main.has-chain.has-actions:not(:has(.lab-film)) { grid-template-rows: auto minmax(200px, 1fr) auto; }
+.chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; }
+.chain-step { position: relative; min-width: 0; }
+.chain-step + .chain-step::before { content: ""; position: absolute; left: -11px; top: 30px; width: 8px; height: 8px; border-top: 2px solid var(--line-2); border-right: 2px solid var(--line-2); transform: rotate(45deg); }
+.chain-step > button { position: relative; width: 100%; height: 100%; display: grid; grid-template-rows: 56px auto; gap: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: left; }
+.chain-step > button:hover { border-color: var(--line-2); background: var(--raised); }
+.chain-step.is-active > button { border-color: var(--gold); background: var(--raised); box-shadow: inset 0 -2px 0 var(--gold); }
+.chain-step.is-missing > button { border-style: dashed; background: transparent; }
+.chain-step.is-missing .chain-text b { color: var(--muted); }
+.chain-thumb { position: relative; display: grid; place-items: center; height: 56px; border-radius: 5px; overflow: hidden; background: #0b0e0b; }
+.chain-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.chain-thumb canvas { max-width: 100%; image-rendering: pixelated; }
+.chain-missing { width: 28px; height: 2px; border-radius: 2px; background: var(--line-2); }
+.chain-glyph { color: var(--muted); }
+.chain-text { display: grid; gap: 1px; min-width: 0; padding: 0 2px; }
+.chain-text b { font-size: var(--t-s); font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chain-text small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chain-step kbd { position: absolute; top: 9px; left: 9px; font-size: 10px; padding: 1px 4px; color: var(--faint); background: rgba(14, 17, 14, 0.8); }
+.chain-step.is-active kbd { color: var(--gold); }
+.chain-badge { position: absolute; right: 4px; bottom: 4px; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; color: #0e110e; background: var(--green); }
+.chain-actions { display: grid; grid-template-columns: repeat(3, 20px); gap: 4px; }
+.chain-actions i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; font: 700 10px/1 var(--font-mono), monospace; font-style: normal; color: var(--faint); border: 1px dashed var(--line-2); }
+.chain-actions i.is-on { color: #0e110e; background: var(--gold); border: 0; }
+.chain-figure { font: 700 22px/1 var(--font-mono), monospace; color: var(--text); }
+.chain-figure.is-good { color: var(--green); }
+.chain-figure.is-bad { color: #f5a291; }
+.chain-call { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: var(--raised-2); color: var(--muted); }
+.chain-call.is-use { background: var(--green-bg); color: var(--green); }
+.chain-call.is-rejected { background: rgba(239, 91, 63, 0.14); color: #f5a291; }
+.chain-call.is-open { background: rgba(241, 210, 139, 0.14); color: var(--gold); }
+.chain-dot { width: 10px; height: 10px; border-radius: 999px; border: 2px solid currentColor; }
+.chain-step.is-good .chain-text small { color: var(--green); }
+.chain-step.is-bad .chain-text small { color: #f5a291; }
+.chain-step.is-open .chain-text small { color: var(--gold); }
+.chain-tally { display: inline-flex; align-items: center; gap: 14px; margin-right: 8px; white-space: nowrap; font-size: var(--t-s); color: var(--muted); }
+.chain-tally span { display: inline-flex; align-items: baseline; gap: 3px; position: relative; padding-bottom: 6px; }
+.chain-tally b { color: var(--text); font: 700 var(--t-m)/1 var(--font-mono), monospace; }
+.chain-tally small { color: var(--faint); font: 500 var(--t-s)/1 var(--font-mono), monospace; }
+.chain-tally i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--green) calc(var(--done) * 100%), rgba(240, 238, 230, 0.1) 0); }
+.studio-art-switch > button small { margin-left: 4px; color: var(--faint); font: 500 11px/1 var(--font-mono), monospace; }
+.lab-card-preview { position: absolute; left: 4px; bottom: 4px; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; color: #0e110e; background: var(--green); }
+/* The 3D model step: the GLB on the main stage. */
+.glb-stage { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #111811; }
+.glb-viewport { position: absolute; inset: 0; }
+.glb-viewport canvas { display: block; touch-action: none; cursor: grab; }
+.glb-viewport canvas:active { cursor: grabbing; }
+.glb-empty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
+.glb-empty small { color: var(--faint); max-width: 320px; }
+.glb-note { position: absolute; inset: auto 0 50% 0; margin: 0; text-align: center; color: var(--muted); }
+.glb-tag { z-index: 2; }
+.glb-stage .lab-corner { z-index: 2; }
+.glb-stage .lab-corner.is-tl { top: 64px; left: 16px; }
+.glb-swatch { width: 22px !important; min-width: 22px !important; height: 22px !important; padding: 0 !important; border-radius: 999px !important; background: var(--swatch) !important; box-shadow: none !important; outline: 2px solid transparent; outline-offset: 1px; }
+.glb-swatch[aria-checked="true"] { outline-color: var(--gold); }
+.glb-turret { gap: 8px; padding: 0 8px; height: 38px; font-size: var(--t-s); color: var(--muted); }
+.glb-turret input { accent-color: var(--gold); width: 120px; }
+.glb-download { height: 32px; min-width: 32px; display: inline-grid; place-items: center; color: var(--muted); border-radius: 4px; }
+.glb-download:hover { color: var(--text); background: var(--raised); }
+.glb-evidence { position: absolute; left: 16px; bottom: 16px; max-width: 46%; margin: 0; font-size: 11px; color: var(--faint); z-index: 2; }
+.studio-check-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.studio-check-list li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: var(--t-s); }
+.studio-check-list li b { font: 600 var(--t-s)/1 var(--font-mono), monospace; }
+.studio-check-list .is-good { color: var(--green); }
+.studio-check-list .is-bad { color: #f5a291; }
+@media (max-width: 1200px) { .chain { gap: 10px; } .chain-text small { display: none; } .chain-tally small, .chain-tally span { font-size: 11px; } }
+@media (max-width: 760px) { .chain { grid-template-columns: repeat(7, 104px); overflow-x: auto; } }
+.chain-figure small { font-size: 13px; color: var(--faint); }
+.lab-colours { gap: 4px; padding: 4px 6px; }
+.studio-action-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.studio-action-row .studio-action-list { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; margin: 0; }
+.studio-action-aim { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-s); color: var(--muted); }
+.studio-action-aim input { width: 120px; accent-color: var(--gold); }

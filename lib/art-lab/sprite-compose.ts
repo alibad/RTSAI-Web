@@ -40,7 +40,7 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
   }));
   return {
     animation, body: animation.body,
-    turret: make ? null : damagedLayer(turretSequence(sprite)),
+    turret: make ? null : damagedLayer(animation.turret ?? turretSequence(sprite)),
     overlay: overlays[0]?.seq ?? null, overlays,
     initialFacing: sprite?.turret?.initialFacing ?? 0,
     turretOffset: sprite?.turret?.offset,

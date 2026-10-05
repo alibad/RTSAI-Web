@@ -7,13 +7,16 @@
  *     node scripts/art-review-perf.mjs [http://localhost:3461] [--json out.json]
  *
  * Measures, per unit (r2qilin in China, the largest roster: voxels + sprite candidates + its RA2 Reference;
- * r2sang: infantry sprite; mtnk: an original RA2 voxel unit; e1: an original RA2 infantry):
+ * r2mantis: the asset chain with its GLB 3D-model step and a GLB-made VXL candidate; r2cnrifle: a GLB-made SHP
+ * infantry candidate in the Animations step; r2bastion: a GLB-made SHP defence; r2sang: infantry sprite;
+ * mtnk: an original RA2 voxel unit; e1: an original RA2 infantry):
  *   - long tasks (PerformanceObserver "longtask") after load, during every interaction;
  *   - drag-rotate with the mouse: frames per second, worst frame gap, and that the facing really changed;
  *   - input-to-paint for clicks and key presses (Event Timing API) on slot, version, compare and 3D switches;
  *   - WebGL contexts created on the page (must be at most 1);
  *   - idle main-thread time (CDP Performance.getMetrics TaskDuration over 4 s with nothing playing);
- *   - the unit rail of the largest faction: picker switches by keyboard, filter chips, J x10, scrolling.
+ *   - the unit rail of the largest faction: picker switches by keyboard, roster filters, J x10, scrolling;
+ *   - the asset chain: every step by keyboard (1-7), the GLB load on the main stage, orbit drag, player colours.
  * Exits non-zero when a budget fails.
  */
 import { createRequire } from "node:module";
@@ -54,7 +57,7 @@ function stats(frames) {
   return { frames: frames.length, fps: total ? Math.round(((frames.length - 1) * 1000) / total) : 0, worstGapMs: Math.round(Math.max(0, ...gaps)) };
 }
 
-async function run(page, client, label, url, rail = false) {
+async function run(page, client, label, url, rail = false, chain = null) {
   const out = { unit: label, steps: [] };
   await page.goto(url, { waitUntil: "load" });
   await page.waitForSelector(".lab-stage canvas", { timeout: 20000 });
@@ -110,7 +113,7 @@ async function run(page, client, label, url, rail = false) {
     if (await button.isDisabled().catch(() => true)) continue;
     await step(`compare: ${mode}`, async () => { await button.click(); await page.waitForTimeout(400); });
   }
-  const threeD = page.getByRole("button", { name: "3D" });
+  const threeD = page.getByRole("button", { name: "3D", exact: true });
   if (await threeD.count()) {
     await step("3D orbit on", async () => { await threeD.click(); await page.waitForTimeout(500); return { webglCanvasOnStage: await page.locator(".lab-stage-gl canvas").count() }; });
     await step("orbit drag", async () => {
@@ -121,19 +124,23 @@ async function run(page, client, label, url, rail = false) {
       const shot1 = await page.locator(".lab-stage-gl canvas").screenshot();
       return { orbitChanged: !shot0.equals(shot1) };
     });
-    await step("explode", async () => { await page.getByRole("button", { name: "Explode" }).click(); await page.waitForTimeout(400); return { labels: await page.locator(".lab-part-label").count() }; });
-    await step("3D off", async () => { await page.getByRole("button", { name: "3D" }).click(); await page.waitForTimeout(300); });
+    await step("explode", async () => { await page.getByRole("button", { name: "Explode", exact: true }).click(); await page.waitForTimeout(400); return { labels: await page.locator(".lab-part-label").count() }; });
+    await step("3D off", async () => { await page.getByRole("button", { name: "3D", exact: true }).click(); await page.waitForTimeout(300); });
   }
   const anim = page.getByRole("combobox", { name: "Animation" });
   if (await anim.count()) {
-    await step("animation: Walk", async () => { await anim.selectOption({ label: "Walk" }); await page.waitForTimeout(800); });
+    // Infantry walk; otherwise the second action the version has (a defence's build-up or fire).
+    const labels = await anim.locator("option").allTextContents();
+    const play = labels.includes("Walk") ? "Walk" : labels[1] ?? labels[0];
+    const rest = labels[0];
+    await step(`animation: ${play}`, async () => { await anim.selectOption({ label: play }); await page.waitForTimeout(800); });
     await step("playing (2 s)", async () => {
       const m0 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
       await page.waitForTimeout(2000);
       const m1 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
       return { cpuPct: Math.round(((m1.TaskDuration - m0.TaskDuration) / 2) * 1000) / 10 };
     }, { record: false });
-    await step("animation: Stand", async () => { await anim.selectOption({ label: "Stand" }); await page.waitForTimeout(300); });
+    await step(`animation: ${rest}`, async () => { await anim.selectOption({ label: rest }); await page.waitForTimeout(300); });
   }
   if (rail) {
     await step("rail: picker → Türkiye → China", async () => {
@@ -151,12 +158,14 @@ async function run(page, client, label, url, rail = false) {
       }
       return { units: await page.locator(".lab-rail li").count() };
     });
-    await step("rail: filter chips", async () => {
+    await step("rail: roster filters", async () => {
       const seen = {};
-      for (const f of ["Original", "New", "Has candidates", "Needs decision", "All"]) {
-        await page.locator(".lab-filters button", { hasText: f }).click();
+      const select = page.getByRole("combobox", { name: "Roster filter" });
+      for (const value of ["original", "new", "candidates", "needs", "all"]) {
+        if (await select.locator(`option[value="${value}"]`).isDisabled()) continue;
+        await select.selectOption(value);
         await page.waitForTimeout(200);
-        seen[f] = await page.locator(".lab-rail li").count();
+        seen[value] = await page.locator(".lab-rail li").count();
       }
       return seen;
     });
@@ -168,7 +177,53 @@ async function run(page, client, label, url, rail = false) {
       for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, -240); await page.waitForTimeout(30); }
     });
   }
-  await step("slots 2 → 3 → 1", async () => { for (const k of ["2", "3", "1"]) { await page.keyboard.press(k); await page.waitForTimeout(400); } });
+  if (chain) {
+    await step("chain steps 2 4 5 6 7 1 4", async () => { for (const k of ["2", "4", "5", "6", "7", "1", "4"]) { await page.keyboard.press(k); await page.waitForTimeout(400); } return { steps: await page.locator(".chain-step").count() }; });
+    if (chain.anim) {
+      await step(`animations step: ${chain.anim}`, async () => {
+        await page.keyboard.press("5"); await page.waitForTimeout(400);
+        await page.locator(".studio-action-row button", { hasText: chain.anim }).first().click(); await page.waitForTimeout(800);
+      });
+      await step("animation playing (2 s)", async () => {
+        const m0 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
+        await page.waitForTimeout(2000);
+        const m1 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
+        return { cpuPct: Math.round(((m1.TaskDuration - m0.TaskDuration) / 2) * 1000) / 10 };
+      }, { record: false });
+      await step("player colours ×6 (P)", async () => { for (let i = 0; i < 6; i++) { await page.keyboard.press("p"); await page.waitForTimeout(150); } });
+      await step("back to game model (4)", async () => { await page.keyboard.press("4"); await page.waitForTimeout(400); });
+    }
+    if (chain.glb) {
+      await step("3D model step: GLB load (3)", async () => {
+        const t0 = Date.now();
+        await page.keyboard.press("3");
+        await page.locator(".glb-viewport canvas").waitFor({ timeout: 60000 });
+        await page.locator(".glb-note").waitFor({ state: "detached", timeout: 60000 }).catch(() => undefined);
+        return { loadMs: Date.now() - t0 };
+      });
+      const glb = await page.locator(".glb-viewport").boundingBox();
+      await step("GLB orbit drag", async () => {
+        const canvas = page.locator(".glb-viewport canvas");
+        const shot0 = await canvas.screenshot();
+        const x = glb.x + glb.width / 2, y = glb.y + glb.height / 2;
+        await page.mouse.move(x - 120, y); await page.mouse.down();
+        for (let i = 1; i <= 60; i++) { await page.mouse.move(x - 120 + i * 4, y + (i % 10)); await page.waitForTimeout(16); }
+        await page.mouse.up();
+        const shot1 = await canvas.screenshot();
+        return { orbitChanged: !shot0.equals(shot1) };
+      });
+      await step("GLB player colours", async () => { for (const name of ["Blue", "Green", "Gold", "Sky", "Purple", "Red"]) { await page.getByRole("radio", { name, exact: true }).first().click(); await page.waitForTimeout(120); } });
+      await step("GLB idle (3 s)", async () => {
+        const m0 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
+        await page.waitForTimeout(3000);
+        const m1 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
+        return { idleCpuPct: Math.round(((m1.TaskDuration - m0.TaskDuration) / 3) * 1000) / 10 };
+      }, { record: false });
+      await step("back to game model (4)", async () => { await page.keyboard.press("4"); await page.waitForTimeout(600); return { stageCanvas: await page.locator(".lab-stage canvas").count() }; });
+    }
+  } else {
+    await step("slots 2 → 3 → 1", async () => { for (const k of ["2", "3", "1"]) { await page.keyboard.press(k); await page.waitForTimeout(400); } });
+  }
   await step("spin (1.5 s)", async () => { await page.keyboard.press(" "); await page.waitForTimeout(1500); await page.keyboard.press(" "); });
   out.webglContexts = await page.evaluate(() => window.__perf.contexts);
   out.canvases = await page.evaluate(() => document.querySelectorAll("canvas").length);
@@ -183,9 +238,12 @@ const browser = await chromium.launch({
 console.log(`Renderer: ${gpu ? "real GPU (ANGLE D3D11)" : "SwiftShader (software)"}`);
 const results = [];
 try {
-  for (const [label, query, rail] of [
-    ["r2qilin", "faction=china&unit=r2qilin&slot=model", true],
-    ["r2sang", "faction=saudi&unit=r2sang&slot=model"],
+  for (const [label, query, rail, chain] of [
+    ["r2qilin", "faction=china&unit=r2qilin&slot=model", true, {}],
+    ["r2mantis", "faction=china&unit=r2mantis", false, { glb: true }],
+    ["r2cnrifle", "faction=china&unit=r2cnrifle", false, { anim: "Fire" }],
+    ["r2bastion", "faction=china&unit=r2bastion", false, { anim: "Fire" }],
+    ["r2sang", "faction=saudi&unit=r2sang&slot=model", false, {}],
     ["mtnk", "faction=china&unit=mtnk&slot=model"],
     ["e1", "faction=china&unit=e1&slot=model"],
   ]) {
@@ -194,7 +252,7 @@ try {
     const page = await context.newPage();
     const client = await context.newCDPSession(page);
     await client.send("Performance.enable");
-    results.push(await run(page, client, label, `${base}/art/review?${query}`, rail));
+    results.push(await run(page, client, label, `${base}/art/review?${query}`, rail, chain ?? null));
     await context.close();
   }
 } finally {
@@ -211,7 +269,8 @@ for (const r of results) {
     if (/drag/.test(s.name) && s.fps < BUDGET.minDragFps) failures.push(`${r.unit} ${s.name}: ${s.fps} fps`);
     if (s.idleCpuPct !== undefined && s.idleCpuPct > BUDGET.idleCpuPct) failures.push(`${r.unit} idle CPU ${s.idleCpuPct}%`);
     if (s.orbitChanged === false) failures.push(`${r.unit}: orbit drag did not change the 3D view`);
-    if (s.facing && s.facing.split(" → ")[0] === s.facing.split(" → ")[1] && s.name === "drag rotate") failures.push(`${r.unit}: drag did not rotate`);
+    // A building is one authored isometric view: it has no facing to turn (its readout is absent).
+    if (s.facing && s.facing !== "null → null" && s.facing.split(" → ")[0] === s.facing.split(" → ")[1] && s.name === "drag rotate") failures.push(`${r.unit}: drag did not rotate`);
     if (/rail:/.test(s.name) && s.worstGapMs > 100) failures.push(`${r.unit} ${s.name}: a ${s.worstGapMs} ms frame gap`);
   }
 }

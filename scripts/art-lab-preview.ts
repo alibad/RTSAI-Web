@@ -32,7 +32,8 @@ const entry = files.find(f => f.type === "chunk" && f.isEntry);
 if (!entry) throw new Error("Studio entry was not compiled");
 const styles = files.filter(f => f.type === "asset" && f.fileName.endsWith(".css")).map(f => `<link rel="stylesheet" href="/${f.fileName}">`).join("");
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title>${styles}</head><body style="--font-geist:Arial"><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
-const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root) });
+const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });
+const port = Number(process.env.RTSAI_STUDIO_PORT ?? 3461);
 const mime: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".vxl": "application/octet-stream", ".hva": "application/octet-stream", ".pal": "application/octet-stream", ".shp": "application/octet-stream", ".wasm": "application/wasm" };
 createServer((req, res) => {
   if (req.url?.startsWith("/api/art-review/")) { void api(req, res); return; }
@@ -47,4 +48,4 @@ createServer((req, res) => {
     try { res.writeHead(200, { "Content-Type": mime[extname(file)] ?? "application/octet-stream", "Cache-Control": "no-store" }).end(readFileSync(file)); return; } catch { /* directory or missing file */ }
   }
   res.writeHead(404).end();
-}).listen(3461, "127.0.0.1", () => console.log("Local Studio: http://127.0.0.1:3461/art/review"));
+}).listen(port, "127.0.0.1", () => console.log(`Local Studio: http://127.0.0.1:${port}/art/review`));

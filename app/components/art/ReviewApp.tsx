@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { candidatesForSlot, emptyEntry, needsDecision, slotIds, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type UnitWorkspace } from "../../../lib/art-lab/review";
-import { reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
+import { kindTags, reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
+import { actionCoverage, candidateChecks, chainSteps, decisionState, defaultModelFocus, designFor, fromModel, glbOptions, isChainStep, meshCandidate, nativeCandidates, rosterCounts, type ChainStep, type PreviewStatus } from "../../../lib/art-lab/chain";
+import type { ModelLibrary } from "../../../lib/art-lab/models";
+import { houseColors } from "../../../lib/art-lab/remap";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
 import { useFeedbackStore } from "../../../lib/stores/feedback-store";
 import type { RosterPayload } from "../../../lib/art-lab/originals";
 import { railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
-import { ActionShelf, BehaviorPanel, StudioBar } from "./review/Studio";
-import { MeshStudio } from "./review/MeshStudio";
+import { ActionRow, ActionShelf, BehaviorPanel, ChecksPanel, StudioBar } from "./review/Studio";
 import { SourceLibrary } from "./review/Sources";
 import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
@@ -18,12 +20,16 @@ import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
 import { rememberView, setLab, useLab } from "./review/lab-store";
 import { ModelStage, useUnitRadius } from "./review/Stage";
 import { slotVersions, stageItem, type ReviewUnit } from "./review/versions";
+import { AssetChain, RosterTally, type ChainData } from "./review/Chain";
+import { GlbStage } from "./review/GlbStage";
 import type { MapTint } from "./viewSettings";
 import "./review/review.css";
 
 export type { ReviewUnit } from "./review/versions";
 
 const API = "/api/art-review";
+/** Focus sentinel: the newest native candidate (or the design), resolved once the workspace is known. */
+const AUTO = "auto";
 
 type Row = { unit: ReviewUnit; ws: UnitWorkspace | undefined; entry: ReviewEntry | undefined; count: number; needs: boolean; origin: Origin };
 /** "main-battle-tank" -> "Main battle tank"; falls back to the category. */
@@ -41,28 +47,32 @@ async function post(action: ReviewAction, mode: "ra2" | "classic"): Promise<Revi
 }
 
 /**
- * Faction Art Lab · Review (local development only). A full-height review tool: slim top bar, unit rail, the
- * stage (the art, large and directly manipulable), a filmstrip of versions and a compact decision panel.
- * Choices go to RTSAI-Art/review.json through the dev-only API; nothing reaches the mod until export.
+ * Faction Studio (local development only). One asset chain per actor sits above the stage: in game now, design,
+ * 3D model, game model, animations, checks and your call. Each step opens on the stage. Choices go to
+ * RTSAI-Art/review.json through the dev-only API; nothing reaches the mod until a separate export.
  */
 export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
   const [mode, setMode] = useState<"ra2" | "classic">("ra2");
   const [surface, setSurface] = useState<"art" | "arena">("art");
   const [linkReady, setLinkReady] = useState(false);
   const [state, setState] = useState<ReviewState | null>(null);
+  const [library, setLibrary] = useState<ModelLibrary | null>(null);
+  const [preview, setPreview] = useState<PreviewStatus | null>(null);
   const [error, setError] = useState("");
   const [faction, setFaction] = useState<string | null>(null);
   const [filter, setFilter] = useState<RailFilter>("all");
   const [roster, setRoster] = useState<RosterPayload | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [slot, setSlot] = useState<SlotId>("model");
-  const [focusKey, setFocusKey] = useState("current");
+  const [step, setStep] = useState<ChainStep | typeof AUTO>(AUTO);
+  const [iconMode, setIconMode] = useState(false);
+  const [focusKey, setFocusKey] = useState(AUTO);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
   const [help, setHelp] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
-  const [modelsOpen, setModelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  /** Authored-only: hides original RA2 units and references (for screenshots that may be shared). */
+  const [authored, setAuthored] = useState(false);
   const [now, setNow] = useState(0);
   const [frames] = useState(() => new FrameStore());
   const noteRef = useRef<HTMLTextAreaElement>(null);
@@ -108,13 +118,41 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       setError(`Could not read the RTSAI-Art workspace: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
   }, [mode]);
+  // The model library (generated 3D models) and the local preview mod: small, read-only, refreshed with the state.
+  const loadSide = useCallback(async (signal?: AbortSignal) => {
+    const get = async <T,>(path: string): Promise<T | null> => {
+      try { const r = await fetch(`${API}/${path}`, { cache: "no-store", signal }); return r.ok ? await r.json() as T : null; } catch { return null; }
+    };
+    const [models, local] = await Promise.all([get<ModelLibrary>(`models?mode=${mode}`), get<PreviewStatus>(`preview?mode=${mode}`)]);
+    if (signal?.aborted) return;
+    setLibrary(models);
+    setPreview(local);
+  }, [mode]);
   useEffect(() => {
     const controller = new AbortController();
-    const first = setTimeout(() => void load(controller.signal), 0);
-    const onFocus = () => void load(controller.signal);
+    const first = setTimeout(() => { void load(controller.signal); void loadSide(controller.signal); }, 0);
+    const onFocus = () => { void load(controller.signal); void loadSide(controller.signal); };
     window.addEventListener("focus", onFocus);
     return () => { controller.abort(); clearTimeout(first); window.removeEventListener("focus", onFocus); };
-  }, [load]);
+  }, [load, loadSide]);
+  // New candidates land while the owner reviews (other agents write them): a tiny fingerprint every 15 s,
+  // only while the tab is visible; the full state is fetched again only when it changes.
+  useEffect(() => {
+    const controller = new AbortController();
+    let last: string | null = null;
+    const check = async () => {
+      if (document.hidden) return;
+      try {
+        const r = await fetch(`${API}/stamp?mode=${mode}`, { cache: "no-store", signal: controller.signal });
+        const { stamp } = await r.json() as { stamp: string };
+        if (last !== null && stamp !== last) { void load(controller.signal); void loadSide(controller.signal); }
+        last = stamp;
+      } catch { /* offline or closed */ }
+    };
+    void check();
+    const timer = setInterval(() => void check(), 15_000);
+    return () => { controller.abort(); clearInterval(timer); };
+  }, [mode, load, loadSide]);
   // Every faction's roster, with original RA2 units served from the local cache (dev only).
   useEffect(() => {
     let cancelled = false;
@@ -125,21 +163,25 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => { cancelled = true; };
   }, [mode]);
 
-  // Deep links: /art/review?unit=r2qilin&slot=model&v=sprite-v2 (kept in the address bar as you move).
+  // Deep links: /art/review?unit=r2mantis&step=game&v=voxel-v5-glb (kept in the address bar as you move).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const unit = params.get("unit");
-    const slotParam = params.get("slot") as SlotId | null;
+    const slotParam = params.get("slot");
+    const stepParam = params.get("step");
     const v = params.get("v");
     const factionParam = params.get("faction");
     const id = setTimeout(() => {
       if (params.get("mode") === "classic") setMode("classic");
       const surface = params.get("view");
       if (surface === "arena") setSurface(surface);
-      if (params.get("models") === "1") { setLab({spin:false,playing:false,view3d:"off"}); setModelsOpen(true); }
+      if (params.get("authored") === "1") { setAuthored(true); setFilter("new"); }
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
-      if (slotParam && slotIds.includes(slotParam)) setSlot(slotParam);
+      if (isChainStep(stepParam)) setStep(stepParam);
+      else if (params.get("models") === "1") setStep("glb");
+      else if (slotParam === "concept") setStep("design");
+      if (slotParam === "icon") setIconMode(true);
       if (v) setFocusKey(v);
       setLinkReady(true);
     }, 0);
@@ -195,8 +237,9 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const rostersById = useMemo(() => new Map(factionIds.map(id => {
     const f = roster?.factions.find(x => x.id === id);
     const ids = f ? f.units.map(u => u.id) : units.filter(u => u.factionId === id).map(u => u.id);
-    return [id, ids.flatMap(i => { const u = unitIndex.get(i); return u ? [rowFor(u)] : []; })] as const;
-  })), [factionIds, roster, units, unitIndex, rowFor]);
+    const list = ids.flatMap(i => { const u = unitIndex.get(i); return u ? [rowFor(u)] : []; });
+    return [id, authored ? list.filter(r => r.origin === "new") : list] as const;
+  })), [factionIds, roster, units, unitIndex, rowFor, authored]);
   const factionSummaries: FactionSummary[] = useMemo(() => factionIds.map(id => {
     const list = rostersById.get(id) ?? [];
     const withCandidates = list.filter(r => r.count > 0);
@@ -213,36 +256,70 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return railRows.filter(test);
   }, [railRows, filter]);
   const progress = reviewProgress(rows);
+  const counts = useMemo(() => (mode === "ra2" && state ? rosterCounts(units.map(u => u.id), workspace, library, preview, state.review) : null), [mode, state, units, workspace, library, preview]);
   const selectedUnit = selected ? unitIndex.get(selected) : undefined;
-  const current = selectedUnit ? rowFor(selectedUnit)
+  const current = selectedUnit && (!authored || selectedUnit.origin !== "original") ? rowFor(selectedUnit)
     : factionRows.find(r => r.needs) ?? factionRows.find(r => r.count > 0) ?? factionRows[0] ?? null;
   const currentUnit = current?.unit ?? null;
   // Original units are shared by several factions; show them in the faction being browsed.
   const unit = useMemo(() => (currentUnit ? { ...currentUnit, factionId: currentUnit.factionId || factionId, factionName: currentUnit.factionName || factionName } : null), [currentUnit, factionId, factionName]);
   const ws = current?.ws;
+  const entry = current?.entry ?? emptyEntry();
+  const isNew = unit?.origin !== "original";
+  const natives = useMemo(() => nativeCandidates(ws), [ws]);
+  // The chain step: the newest native candidate opens by default; an actor without one opens on what ships now.
+  const chainStep: ChainStep = step === AUTO ? (natives.length ? "game" : "now") : step;
+  const slot: SlotId = iconMode ? "icon" : chainStep === "design" ? "concept" : "model";
   const info = unit ? rosterInfo.get(`${factionId}:${unit.id}`) ?? [...rosterInfo.entries()].find(([k]) => k.endsWith(`:${unit.id}`))?.[1] : undefined;
-  const reference = info?.reference ? unitIndex.get(info.reference) ?? null : null;
+  const reference = !authored && info?.reference ? unitIndex.get(info.reference) ?? null : null;
   const referenceWhy = info?.referenceWhy;
   const paletteUnits = useMemo(() => factionRows.map(r => ({ ...r.unit, factionId })), [factionRows, factionId]);
   const unitKey = unit?.id ?? null;
   const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy) : []), [unit, ws, slot, reference, referenceWhy]);
-  const focus = Math.max(0, versions.findIndex(v => v.key === focusKey));
+  const nativeChoice = defaultModelFocus(ws, entry.slots.model);
+  const fallbackNative = natives.find(c => c.id === nativeChoice) ?? null;
+  const meshSource = useMemo(() => meshCandidate(ws, fallbackNative), [ws, fallbackNative]);
+  const design = useMemo(() => designFor(ws, meshSource, fallbackNative), [ws, meshSource, fallbackNative]);
+  const resolvedKey = focusKey !== AUTO ? focusKey
+    : slot === "model" ? (chainStep === "now" ? "current" : nativeChoice)
+    : slot === "concept" ? design?.candidate.id ?? "current" : "current";
+  const focus = Math.max(0, versions.findIndex(v => v.key === resolvedKey));
   const focused = versions[focus] ?? null;
-  const entry = current?.entry ?? emptyEntry();
   const decision = entry.slots[slot];
-  const counts = useMemo(() => Object.fromEntries(slotIds.map(s => [s, candidatesForSlot(ws, s).length])) as Record<SlotId, number>, [ws]);
+  const slotCounts = useMemo(() => Object.fromEntries(slotIds.map(s => [s, candidatesForSlot(ws, s).length])) as Record<SlotId, number>, [ws]);
   const labels = useMemo(() => versionLabels(ws?.candidates ?? []), [ws]);
   const conceptCurrent = useMemo(() => versions.slice(0, 1), [versions]);
   const currentItem = useMemo(() => unit ? stageItem(unit, null) : null, [unit]);
   const radius = useUnitRadius(frames, surface === "art" && slot !== "icon" ? currentItem : null, tints);
   // Thumbnails at the largest whole zoom that keeps the unit's turning circle inside the card.
   const thumbZoom = radius === null ? 1 : Math.max(1, Math.min(3, Math.floor(104 / (2 * radius))));
+  const chainZoom = radius === null ? 1 : Math.max(1, Math.min(2, Math.floor(56 / (2 * radius))));
   // The lineup already lists every version as a clickable row, so it takes the filmstrip's height.
   const compareMode = useLab(s => s.compare);
   const lineupOnly = compareMode === "lineup" && slot !== "concept" && versions.length > 1;
   const comments = useMemo(() => entry.comments.slice().reverse(), [entry]);
   const forgeRecommendation = (entry.forgeRecommendation ?? {}) as Record<string, string>;
   const forgePick = focused?.candidate ? forgeRecommendation[String(focused.candidate.kind)] ?? null : null;
+
+  // The chain: the game-model step follows the focused native candidate, else the newest one.
+  const gameCandidate = slot === "model" && focused?.candidate ? focused.candidate : fallbackNative;
+  const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate) : null), [unit, gameCandidate]);
+  const modelActor = library?.actors.find(a => a.actor === unit?.id);
+  const glb = useMemo(() => glbOptions(modelActor, meshSource), [modelActor, meshSource]);
+  const chain: ChainData | null = unit && isNew ? {
+    current: { item: currentItem, tag: unit.spec.voxel ? "VXL" : "SHP" },
+    design,
+    glb: { options: glb },
+    game: {
+      candidate: gameCandidate, item: gameItem, tag: gameCandidate ? kindTags[gameCandidate.kind] ?? String(gameCandidate.kind).toUpperCase() : "",
+      fromGlb: gameCandidate ? fromModel(gameCandidate, ws?.candidates) : false, count: natives.length,
+      preview: Boolean(gameCandidate && preview?.actors[unit.id]?.model === gameCandidate.id),
+      light: gameCandidate?.renderLight === "stock" ? "stock light" : gameCandidate?.renderLight ? "own light" : null,
+    },
+    actions: actionCoverage(unit.category, (gameItem ?? currentItem)?.spec, (gameItem ?? currentItem)?.sprite),
+    checks: candidateChecks(gameCandidate),
+    decision: decisionState(entry.slots.model, gameCandidate),
+  } : null;
 
   // Keep the address bar in step for deep links.
   useEffect(() => {
@@ -253,9 +330,21 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     url.searchParams.set("slot", slot);
     url.searchParams.set("mode", mode);
     url.searchParams.set("view", surface);
-    if (focusKey !== "current") url.searchParams.set("v", focusKey); else url.searchParams.delete("v");
+    url.searchParams.delete("models");
+    if (step !== AUTO) url.searchParams.set("step", step); else url.searchParams.delete("step");
+    if (focusKey !== AUTO && focusKey !== "current") url.searchParams.set("v", focusKey); else url.searchParams.delete("v");
     window.history.replaceState(null, "", url);
-  }, [linkReady, unitKey, factionId, slot, focusKey, mode, surface]);
+  }, [linkReady, unitKey, factionId, slot, focusKey, mode, surface, step]);
+
+  // Comparing a candidate opens side by side with what ships now; the in-game and animation steps show one.
+  const stepKey = `${unitKey}:${chainStep}:${gameCandidate?.id ?? ""}`;
+  useEffect(() => {
+    if (!unitKey || slot !== "model") return;
+    const [, s] = stepKey.split(":");
+    const pair = s === "game" || s === "checks" || s === "call";
+    setLab(v => ({ compare: pair && gameCandidate ? (v.compare === "single" || v.compare === "lineup" ? "side" : v.compare) : "single" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the unit, step or candidate changes
+  }, [stepKey]);
 
   // Preload the neighbours of the focused version (models warm in the stage's frame cache).
   useEffect(() => {
@@ -277,10 +366,20 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey("current"); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
-  const changeFaction = useCallback((id: string) => { setFaction(id); setSelected(null); setFocusKey("current"); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
-  const changeSlot = useCallback((s: SlotId) => { setSlot(s); setFocusKey("current"); setLab({ zoom: null }); }, []);
+  const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
+  const changeFaction = useCallback((id: string) => { setFaction(id); setSelected(null); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
+  const changeSlot = useCallback((s: SlotId) => { setIconMode(s === "icon"); if (s === "concept") setStep("design"); else if (s === "model" && step === "design") setStep(AUTO); setFocusKey(AUTO); setLab({ zoom: null }); }, [step]);
   const focusIndex = useCallback((i: number) => { const v = versions[i]; if (v) setFocusKey(v.key); }, [versions]);
+  const openStep = useCallback((s: ChainStep) => {
+    setIconMode(false);
+    setStep(s);
+    // The in-game step shows what ships; every other model step follows the chosen candidate (or the newest).
+    if (s === "now") setFocusKey("current");
+    else if (s === "design") setFocusKey(AUTO);
+    else if (focusKey === "current" || focusKey.startsWith("ref:") || step === "design") setFocusKey(AUTO);
+    if (s === "anim") setLab({ playing: true, view3d: "off" });
+    else setLab({ view3d: "off" });
+  }, [focusKey, step]);
 
   const view = () => {
     const s = useLab.getState();
@@ -306,7 +405,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const label = (id: string) => (id === "current" ? "Current" : labels.get(id) ?? id);
   const decide: Decide | null = unit ? {
     choose: c => void send({ type: "choose", actor: unit.id, slot, candidate: c, view: view() },
-      c === "current" ? "Keeping current" : slot === "concept" ? `${label(c)} is the reference` : `${label(c)} will be used in game`),
+      c === "current" ? "Keeping current" : slot === "concept" ? `${label(c)} is the reference` : `${label(c)} chosen for the game (applies at the next export)`),
     clear: () => void send({ type: "clear", actor: unit.id, slot }, "Decision undone"),
     reject: c => void send({ type: "reject", actor: unit.id, slot, candidate: c }, `${label(c)} rejected`),
     unreject: c => void send({ type: "unreject", actor: unit.id, slot, candidate: c }, "Reject undone"),
@@ -314,10 +413,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   } : null;
 
   // Keyboard: one listener reading the latest render through a ref.
-  // Original units and references are for comparison only: no Use, Keep or Reject.
-  const referenceOnly = (unit?.origin === "original" && !focused?.candidate) || focused?.kind === "reference";
-  const keys = useRef({ visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly });
-  useEffect(() => { keys.current = { visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly }; });
+  // Original units and references are for comparison only: no Use, Keep or Reject. The 3D model step decides nothing.
+  const referenceOnly = (unit?.origin === "original" && !focused?.candidate) || focused?.kind === "reference" || (!iconMode && chainStep === "glb");
+  const keys = useRef({ visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly, chainOn: Boolean(chain) });
+  useEffect(() => { keys.current = { visibleRows, unit, versions, focus, focused, decision, decide, slot, help, referenceOnly, chainOn: Boolean(chain) }; });
   useEffect(() => {
     if (surface !== "art") return;
     const onKey = (event: KeyboardEvent) => {
@@ -339,7 +438,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       else if (key === "k") { goUnit(-1); handled(); }
       else if (key === "ArrowRight") { const v = k.versions[Math.min(k.versions.length - 1, k.focus + 1)]; if (v) setFocusKey(v.key); handled(); }
       else if (key === "ArrowLeft") { const v = k.versions[Math.max(0, k.focus - 1)]; if (v) setFocusKey(v.key); handled(); }
-      else if (key === "1" || key === "2" || key === "3") { changeSlot(slotIds[Number(key) - 1]); handled(); }
+      else if (/^[1-7]$/.test(key)) { if (k.chainOn) openStep(chainSteps[Number(key) - 1].id); else if (Number(key) <= 3) changeSlot(slotIds[Number(key) - 1]); handled(); }
+      else if (key === "i") { changeSlot(k.slot === "icon" ? "model" : "icon"); handled(); }
+      else if (key === "0") { setLab({ zoom: 1 }); handled(); }
+      else if (key === "p") { setLab(s => { const i = houseColors.findIndex(c => c.hex === s.color); return { color: houseColors[(i + 1) % houseColors.length].hex }; }); handled(); }
       else if ((key === "u" || key === "n" || key === "r") && k.referenceOnly) handled();
       else if (key === "u" && k.decide) {
         if (candidate) k.decide.choose(candidate.id); else if (k.slot !== "concept") k.decide.choose("current");
@@ -353,40 +455,48 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectUnit, changeSlot, surface]);
+  }, [selectUnit, changeSlot, openStep, surface]);
 
   let stage: React.ReactNode = null;
-  if (unit && focused) {
+  if (unit && slot === "model" && chain && chainStep === "glb") stage = <GlbStage key={unit.id} options={glb} name={unit.name} frames={frames} />;
+  else if (unit && focused) {
     if (slot === "model") stage = <ModelStage key={mode} versions={versions} focus={focus} allowCompare frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
     else if (slot === "icon") stage = <IconStage versions={versions} focus={focus} unit={unit} units={paletteUnits} onFocus={focusIndex} />;
     else if (focused.key === "current") stage = <ModelStage key={mode} versions={conceptCurrent} focus={0} allowCompare={false} frames={frames} tints={tints} unitId={unit.id} radius={radius} onFocus={focusIndex} />;
     else stage = <ConceptStage version={focused} />;
   }
+  // The game-model and in-game steps choose between versions; the other steps work on the chosen one.
+  const showFilm = Boolean(unit && focused && surface !== "arena" && !lineupOnly && !(slot === "model" && chain && (versions.length <= 2 || !["now", "game"].includes(chainStep))));
+  const showShelf = Boolean(unit && surface !== "arena" && slot === "model" && (!chain || chainStep === "anim"));
+  const inspector = chain && !iconMode && chainStep === "checks" ? "checks" : "facts";
 
   return (
-    <div className={`lab${surface === "arena" ? " is-encounter" : ""}`}>
-      {modelsOpen && <MeshStudio mode={mode} actor={selected} frames={frames} onClose={() => setModelsOpen(false)} />}
+    <div className={`lab${surface === "arena" ? " is-encounter" : ""}${authored ? " is-authored" : ""}`}>
       {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} />}
-      <StudioBar onModels={() => { setLab({ spin: false, playing: false, view3d: "off" }); setModelsOpen(true); }} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setRoster(null); setSelected(null); setFaction(null); setFilter("all"); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") setSlot("model"); }} />
-      <TopBar slot={slot} counts={counts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} />
+      <StudioBar onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"}
+        tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface !== "arena" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
           filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />}
-        <main className={`lab-main${surface !== "arena" && slot === "model" ? " has-actions" : ""}`} id="main-content">
+        <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface !== "arena" ? " has-chain" : ""}`} id="main-content">
+          {chain && surface !== "arena" && state && <AssetChain data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
             : !unit ? <p className="lab-empty">No units.</p>
             : surface === "arena" ? <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} /> : stage}
-          {unit && focused && surface !== "arena" && !lineupOnly && (
+          {showFilm && focused && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
-              imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} />
+              imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} />
           )}
-          {unit && surface !== "arena" && slot === "model" && <ActionShelf unit={unit} version={focused} mode={mode} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />}
+          {showShelf && unit && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
+            : <ActionShelf unit={unit} version={focused} mode={mode} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
         {surface !== "arena" && <aside className="studio-inspector" aria-label="Actor details">
-        {unit && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
-        {unit && focused && decide && <details className="studio-review-notes"><summary>Art review & notes{counts[slot] ? ` · ${counts[slot]} alternatives` : ""}</summary>
+        {unit && inspector === "checks" && chain && <ChecksPanel checks={chain.checks} actions={chain.actions} candidate={chain.game.candidate} label={chain.game.candidate ? label(chain.game.candidate.id) : null} />}
+        {unit && inspector === "facts" && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
+        {unit && focused && decide && <details className="studio-review-notes" open={chain && !iconMode && chainStep === "call" ? true : undefined} key={`${unit.id}:${chainStep === "call"}`}><summary>Your call & notes{slotCounts[slot] ? ` · ${slotCounts[slot]} alternatives` : ""}</summary>
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         </details>}

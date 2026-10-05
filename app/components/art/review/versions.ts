@@ -1,7 +1,7 @@
 "use client";
 
 import type { RenderSpec } from "../../../../lib/art-lab/spec";
-import { candidateRenderSpec, candidateSprite, candidateVehicleSprite, candidatesForSlot, type Candidate, type SlotId, type UnitWorkspace } from "../../../../lib/art-lab/review";
+import { candidateLight, candidateRenderSpec, candidateSprite, candidateVehicleSprite, candidatesForSlot, STOCK_VOXEL_LIGHT, type Candidate, type SlotId, type UnitWorkspace } from "../../../../lib/art-lab/review";
 import { byCreation, kindTags, versionLabels } from "../../../../lib/art-lab/review-ui";
 import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { StageItem } from "./frames";
@@ -36,6 +36,8 @@ export type Version = {
   item: StageItem | null;
   /** Image file (icon and concept slots). */
   image: string | null;
+  /** Short qualifier shown with the label on the stage, e.g. "stock light". */
+  note?: string;
 };
 
 // Stable item objects per unit and candidate, so cached frames and models are reused across renders.
@@ -57,6 +59,15 @@ export function stageItem(unit: ReviewUnit, candidate: Candidate | null): StageI
   return itemCache.get(key)!;
 }
 
+/** How a voxel candidate is lit on the stage when it declares its own light (never the current rules silently). */
+function lightNote(c: Candidate) {
+  const light = candidateLight(c);
+  if (!Object.keys(light).length) return undefined;
+  const same = (a: number[] | undefined, b: number[]) => Boolean(a && a.every((v, i) => Math.abs(v - b[i]) < 1e-6));
+  const stock = light.scale === STOCK_VOXEL_LIGHT.scale && same(light.ambient, STOCK_VOXEL_LIGHT.ambient) && same(light.diffuse, STOCK_VOXEL_LIGHT.diffuse);
+  return stock ? "stock RA2 light" : "its own light";
+}
+
 const fileUrl = (c: Candidate, file: string | null | undefined) => (file ? c.urls[file.replace(/\\/g, "/")] ?? null : null);
 
 /**
@@ -68,7 +79,7 @@ export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, sl
   const labels = versionLabels(candidates);
   const original = unit.origin === "original";
   const current: Version = {
-    key: "current", kind: "current", candidate: null, label: original ? "Original" : "Current",
+    key: "current", kind: "current", candidate: null, label: original ? "Original" : "In game now",
     tag: slot === "icon" ? "PNG" : unit.spec.voxel ? "VXL" : "SHP",
     item: slot === "icon" ? null : stageItem(unit, null),
     image: slot === "icon" ? unit.spec.cameo : null,
@@ -81,6 +92,7 @@ export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, sl
   return [current, ...ref, ...candidates.map(c => ({
     key: c.id, kind: "candidate" as const, candidate: c, label: labels.get(c.id) ?? c.id, tag: kindTags[c.kind] ?? String(c.kind).toUpperCase(),
     item: slot === "model" ? stageItem(unit, c) : null,
+    note: slot === "model" && c.files.vxl?.length ? lightNote(c) : undefined,
     image: slot === "icon" ? fileUrl(c, c.files.cameo) : slot === "concept" ? fileUrl(c, c.files.concept) : null,
   }))];
 }

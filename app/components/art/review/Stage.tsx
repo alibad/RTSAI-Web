@@ -6,6 +6,7 @@ import { cellZoom, clampZoom, dragFacing, dragTurret, fitZoom, lineupFacings } f
 import { pickAnimation, spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { facingLabel } from "../../../../lib/art-lab/voxel-math";
 import { voxelAnimationParts,voxelAnimationFrames } from "../../../../lib/art-lab/voxel-animation";
+import { houseColors } from "../../../../lib/art-lab/remap";
 import { tintFor, type MapTint } from "../viewSettings";
 import type { StageLabel } from "../voxel-three";
 import { defaultVisibility, frameRadius, type Frame, type FrameStore, type Pose, type StageItem } from "./frames";
@@ -18,7 +19,7 @@ import { AnimationTransport } from "./AnimationTransport";
 export const DEFAULT_FACING = 896;
 
 /** "Reference · Grizzly Battle Tank" for the original unit compared against; else the version's label. */
-export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.label ?? "");
+export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.kind === "candidate" ? `${v.label} · candidate${v.note ? ` · ${v.note}` : ""}` : v?.label ?? "");
 
 export const poseFrom = (s: LabView, tints: MapTint[], facing = s.facing, tick = 0): Pose => ({
   facing, turret: s.turret, tick,timeMs:s.animationTime,loop:!/(^die|^make$|deploy|takeoff|^land$|^liedown$|^standup$)/.test(s.animation), animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints),
@@ -487,6 +488,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       {anim?.animates&&compare!=="lineup"&&<div className="lab-animation-row"><AnimationTransport info={anim}/></div>}
 
       <div className="lab-corner is-br">
+        <PlayerColours />
         {playable && (
           <div className="lab-seg">
             <select aria-label="Animation" value={animations.some(a => a.id === animation) ? animation : animations[0]?.id} onChange={e => setLab({ animation: e.target.value, playing: true })}>
@@ -514,6 +516,14 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       </div>
     </div>
   );
+}
+
+/** The six lobby colours, one click each (P cycles them). */
+function PlayerColours() {
+  const color = useLab(s => s.color);
+  return <div className="lab-seg lab-colours" role="radiogroup" aria-label="Player colour">
+    {houseColors.map(c => <button key={c.id} type="button" role="radio" className="glb-swatch" aria-checked={color === c.hex} aria-label={c.name} title={`${c.name} (P)`} style={{ ["--swatch" as string]: `#${c.hex}` }} onClick={() => setLab({ color: c.hex })} />)}
+  </div>;
 }
 
 function SpinButton({ disabled = false }: { disabled?: boolean }) {

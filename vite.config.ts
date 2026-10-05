@@ -44,7 +44,8 @@ function artReviewDevApi(): Plugin {
       const root = process.env.RTSAI_ART_DIR ?? fileURLToPath(new URL("../RTSAI-Art", import.meta.url));
       // Original RA2 units: extracted locally from the player's RA2 content into the gitignored .cache/.
       const originals = originalsConfig(fileURLToPath(new URL(".", import.meta.url)));
-      server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root, originals }));
+      const webRoot = fileURLToPath(new URL(".", import.meta.url));
+      server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root, originals, webRoot, previewMod: fileURLToPath(new URL(process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview", import.meta.url)) }));
     },
   };
 }
