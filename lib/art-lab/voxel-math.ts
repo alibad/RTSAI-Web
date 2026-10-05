@@ -157,6 +157,21 @@ export function screenVector(v: Vec3, tile: [number, number] = [60, 30], tileSca
   return [(tile[0] * v[0]) / tileScale, (tile[1] * (v[1] - v[2])) / tileScale, (tile[1] * v[2]) / tileScale, 1];
 }
 
+/**
+ * ModelRenderer.OffsetScreenVector (rtsai/engine 55ecbb07e2): a model part's world offset in camera space. Screen x/y
+ * are ScreenVector's; the depth is the camera's. ScreenVector's own depth (30 * Z / 1448) ignores Y, so a bow or stern
+ * turret was depth-tested at the hull origin. The ground part (X, Y) gets the depth that keeps it in the model ground
+ * plane, the height part (Z) the depth that keeps it on the model up axis: (52.88 * Y + 17.02 * Z) / 1448 at pitch 85.
+ */
+export function offsetScreenVector(v: Vec3, camera: Mat4): number[] {
+  const s = screenVector(v), g = screenVector([v[0], v[1], 0]), h = screenVector([0, 0, v[2]]);
+  const up = transformVector(camera, [0, 0, 1, 0]);
+  const onScreen = up[0] * up[0] + up[1] * up[1];
+  const groundDepth = Math.abs(up[2]) > 1e-6 ? -(up[0] * g[0] + up[1] * g[1]) / up[2] : g[2];
+  const heightDepth = onScreen > 1e-6 ? (h[1] * up[1] * up[2]) / onScreen : h[2];
+  return [s[0], s[1], groundDepth + heightDepth, 1];
+}
+
 /** WVec.Rotate(WRot.FromYaw(yaw)). */
 export function rotateYaw(v: Vec3, yaw: number): Vec3 {
   const m = wrotMatrix(0, 0, yaw);
@@ -187,7 +202,7 @@ export function partMatrices(opts: {
 }) {
   const camera = cameraMatrix(opts.cameraPitch);
   const invCamera = invert(camera);
-  const offset = transformVector(invCamera, screenVector(opts.pose.worldOffset));
+  const offset = transformVector(invCamera, offsetScreenVector(opts.pose.worldOffset, camera));
   const rotation = wrotMatrix(0, 0, opts.pose.yaw);
   let world = multiply(scaleMatrix(opts.scale, opts.scale, opts.scale), rotation);
   world = multiply(translationMatrix(offset[0], offset[1], offset[2]), world);

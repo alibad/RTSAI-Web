@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { child, childValue, mergeMiniYaml, parseMiniYaml, YamlError, type Yaml } from "../lib/art-lab/miniyaml";
-import { cameraMatrix, facingLabel, partMatrices, transformVector, wcos, wrotMatrix, wrotQuaternion } from "../lib/art-lab/voxel-math";
+import { cameraMatrix, facingLabel, invert, offsetScreenVector, partMatrices, screenVector, transformVector, wcos, wrotMatrix, wrotQuaternion } from "../lib/art-lab/voxel-math";
 import { indexFacing, quantizeFacing, sequenceFrame } from "../lib/art-lab/sprite-render";
 import { rigLayers, spriteRig } from "../lib/art-lab/sprite-compose";
 import { poseParts, quantizedNormal, rasterizeUnit } from "../lib/art-lab/raster";
@@ -117,6 +117,19 @@ test("Voxel projection: a unit facing north points up the screen, facing east po
   assert.ok(north[1] < -0.4 && Math.abs(north[0]) < 1e-3, "north: screen up, foreshortened");
   const east = forward(768);
   assert.ok(east[0] > 0.9 && Math.abs(east[1]) < 1e-3, "east: screen right");
+});
+
+test("Voxel offsets: ScreenVector's screen x/y with the camera's depth (engine 55ecbb07e2)", () => {
+  const camera = cameraMatrix(85);
+  for (const v of [[0, 1448, 0], [0, 0, 1448], [200, -300, 50]] as [number, number, number][]) {
+    const o = offsetScreenVector(v, camera), s = screenVector(v);
+    assert.deepEqual(o.slice(0, 2), s.slice(0, 2), "screen x/y unchanged");
+  }
+  assert.ok(Math.abs(offsetScreenVector([0, 1448, 0], camera)[2] - 52.88) < 0.01, "forward: 52.88 px depth per 1448");
+  assert.ok(Math.abs(offsetScreenVector([0, 0, 1448], camera)[2] - 17.02) < 0.01, "up: 17.02 px depth per 1448");
+  // A ground offset stays on the model's ground plane (model z = 0), so a bow turret is not depth-tested at the hull origin
+  const model = transformVector(invert(camera), offsetScreenVector([0, 529, 0], camera));
+  assert.ok(Math.abs(model[2]) < 1e-9, "ground offset stays in the ground plane");
 });
 
 test("CPU reference render: the Karrar at facing 896 points up-right with a shadow on the ground", () => {
