@@ -95,7 +95,9 @@ export type CandidateMeta = {
 };
 
 /** A candidate as the review UI receives it: file names resolved to dev-route URLs; `rulesText` is files.rules. */
-export type Candidate = CandidateMeta & { dir: string; urls: Record<string, string>; metaError?: string; rulesText?: string | null; measured?: MeasuredGroup[] };
+export type Candidate = CandidateMeta & { dir: string; urls: Record<string, string>; metaError?: string; rulesText?: string | null; measured?: MeasuredGroup[];
+  /** The state omits long prompts; their length is here and /api/art-review/prompt returns the text. */
+  promptChars?: number };
 
 export type UnitWorkspace = {
   actor: string;

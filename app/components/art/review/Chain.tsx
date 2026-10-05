@@ -64,8 +64,8 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
     },
     checks: {
       thumb: checks.state === "none" ? <Missing /> : <span className={`chain-figure${checks.state === "fail" ? " is-bad" : checks.state === "pass" ? " is-good" : ""}`}>{checks.total ? <>{checks.passed}<small>/{checks.total}</small></> : checks.state === "fail" ? "✕" : checks.state === "pass" ? "✓" : "–"}</span>,
-      state: checks.state === "none" ? (data.game.candidate ? "Not measured yet" : "Nothing to check") : checks.state === "fail" ? `${checks.failing} failing` : checks.state === "pass" ? "All passed" : "No stock comparison yet",
-      status: checks.state === "none" ? "missing" : checks.state === "fail" ? "bad" : checks.state === "pass" ? "good" : "open",
+      state: checks.state === "none" ? (data.game.candidate ? "Not measured yet" : "Nothing to check") : `${checks.advisory ? "Advisory · " : ""}${checks.state === "fail" ? `${checks.failing} failing` : checks.state === "pass" ? "all passed" : "no stock comparison yet"}`.replace(/^./, c => c.toUpperCase()),
+      status: checks.state === "none" ? "missing" : checks.advisory ? "open" : checks.state === "fail" ? "bad" : checks.state === "pass" ? "good" : "open",
     },
     call: {
       thumb: <span className={`chain-call is-${data.decision.kind}`}>{data.decision.kind === "use" ? <Check size={22} strokeWidth={3} /> : data.decision.kind === "keep" ? <Minus size={22} strokeWidth={3} /> : data.decision.kind === "rejected" ? <X size={22} strokeWidth={3} /> : <span className="chain-dot" />}</span>,

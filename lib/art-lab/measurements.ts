@@ -3,7 +3,7 @@
  * Client-safe and pure: review-server.ts reads the files; this only reshapes what the tools recorded.
  *
  *   metrics.json (rtsai.*-metrics) the route's full record: per-check rows, family leave-one-out calibration
- *   gate.json / meta.gate        tools/art_metrics.py via glb_route.py (vehicles, ships, aircraft)
+ *   gate.json / meta.gate        older summaries (gate.json is retired; meta.gate points to metrics.json)
  *   metrics-building.json        tools/metrics_building.py (defences and buildings)
  *   verify.json                  tools/infantry_route.py: structure + tools/metrics_infantry.py family gate
  *   meta.verify                  tools/building_sprites.py format checks
@@ -36,6 +36,8 @@ export type MeasuredGroup = {
   /** The tool's overall verdict; null when the tool records none. */
   pass: boolean | null;
   rows: MeasuredRow[];
+  /** The family gate is not calibrated (its own stock units do not all pass it): results are advisory. */
+  advisory?: boolean;
   /** Facts without a verdict, e.g. "pixels changed outside the player areas: 0". */
   notes: string[];
   problems: string[];
@@ -89,8 +91,22 @@ export function measuredGroups(files: Record<string, unknown>, meta: Record<stri
   const fullOk = typeof full?.schema === "string" && /^rtsai\.[a-z]+-metrics\//.test(full.schema) && Array.isArray(full.checks);
   if (full && fullOk) {
     const loo = Array.isArray(full.familyLeaveOneOut) ? (full.familyLeaveOneOut as { unit?: unknown; pass?: unknown }[]).filter(x => typeof x.pass === "boolean") : [];
-    group({ id: "family", title: "Against the stock family", tool: typeof full.tool === "string" ? full.tool : "art_metrics.py", file: "metrics.json", family: family(full.family), pass: bool(full.pass), rows: rows(full.checks),
-      notes: loo.length ? [`Calibration: ${loo.filter(x => x.pass).length} of ${loo.length} stock units pass the same gate against the rest of their family`] : [] });
+    const advisory = full.familyCalibrated === false;
+    const size = full.size as { areaPx?: unknown; targetPx?: unknown; inTarget?: unknown } | undefined;
+    const sizeRow: MeasuredRow[] = size && typeof size.inTarget === "boolean" ? [{
+      metric: "size_target", label: "Size for its role", why: "on-screen area against the role's size target",
+      value: num(size.areaPx), stock: null, range: num(size.targetPx) !== null ? `target ${fmt(num(size.targetPx)!)}` : null, pass: size.inTarget,
+    }] : [];
+    group({ id: "family", title: advisory ? "Against the stock family (advisory)" : "Against the stock family", tool: typeof full.tool === "string" ? full.tool : "art_metrics.py", file: "metrics.json", family: family(full.family), pass: bool(full.pass), rows: [...sizeRow, ...rows(full.checks)], advisory,
+      notes: [
+        ...(advisory ? ["Advisory: this family's own stock units do not all pass the gate, so it is not a firm verdict"] : []),
+        ...(loo.length ? [`Calibration: ${loo.filter(x => x.pass).length} of ${loo.length} stock units pass the same gate against the rest of their family`] : []),
+      ] });
+    const colour = full.playerColor as { sharePx?: unknown; chroma?: unknown; changedOutsideOwnership?: unknown; houses?: unknown } | undefined;
+    if (colour && typeof colour.changedOutsideOwnership === "number") group({ id: "colours", title: "Player colours", tool: "metrics.json", file: "metrics.json (playerColor)", family: [], pass: null, rows: [],
+      notes: [`${Array.isArray(colour.houses) ? colour.houses.length : "?"} colours tried; ${colour.changedOutsideOwnership} pixels changed outside the player-colour areas${num(colour.sharePx) !== null ? `; player colour covers ${(num(colour.sharePx)! * (num(colour.sharePx)! <= 1 ? 100 : 1)).toFixed(1)}${num(colour.sharePx)! <= 1 ? "%" : " px"}` : ""}`] });
+    const decode = full.decode as { pass?: unknown; problems?: unknown; tool?: unknown } | undefined;
+    if (decode && typeof decode.pass === "boolean") group({ id: "decode", title: "Decodes in the Studio", tool: typeof decode.tool === "string" ? decode.tool : "decode check", file: "metrics.json (decode)", family: [], pass: decode.pass, rows: [], problems: Array.isArray(decode.problems) ? decode.problems.map(String) : [] });
   }
   // Vehicles, ships, aircraft: art_metrics.py through glb_route.py (gate.json, mirrored into meta.gate).
   const gate = (files["gate.json"] ?? meta.gate) as Record<string, unknown> | undefined;
@@ -121,9 +137,9 @@ export function measuredGroups(files: Record<string, unknown>, meta: Record<stri
     rows: Object.entries(formatChecks).filter(([, v]) => typeof v === "boolean").map(([k, v]) => ({ metric: k, label: plainCheck(k), why: "", value: null, stock: null, range: null, pass: v as boolean })),
   });
   const decode = meta.decodeCheck as { pass?: unknown; problems?: unknown; tool?: unknown } | undefined;
-  if (decode && typeof decode.pass === "boolean") group({ id: "decode", title: "Decodes in the Studio", tool: typeof decode.tool === "string" ? decode.tool : "decode check", file: "meta.json (decodeCheck)", family: [], pass: decode.pass, rows: [], problems: Array.isArray(decode.problems) ? decode.problems.map(String) : [] });
+  if (!fullOk && decode && typeof decode.pass === "boolean") group({ id: "decode", title: "Decodes in the Studio", tool: typeof decode.tool === "string" ? decode.tool : "decode check", file: "meta.json (decodeCheck)", family: [], pass: decode.pass, rows: [], problems: Array.isArray(decode.problems) ? decode.problems.map(String) : [] });
   const colour = meta.playerColorCheck as { houses?: unknown; changedOutsideOwnership?: unknown } | undefined;
-  if (colour && typeof colour.changedOutsideOwnership === "number") group({ id: "colours", title: "Player colours", tool: "glb_route.py", file: "meta.json (playerColorCheck)", family: [], pass: null, rows: [],
+  if (!fullOk && colour && typeof colour.changedOutsideOwnership === "number") group({ id: "colours", title: "Player colours", tool: "glb_route.py", file: "meta.json (playerColorCheck)", family: [], pass: null, rows: [],
     notes: [`${Array.isArray(colour.houses) ? colour.houses.length : "?"} colours tried; ${colour.changedOutsideOwnership} pixels changed outside the player-colour areas`] });
   const quality = meta.qualityGate as { passes?: unknown; checksPassed?: unknown; checksTotal?: unknown; references?: unknown } | undefined;
   if (quality && typeof quality.checksPassed === "number" && typeof quality.checksTotal === "number") group({ id: "family", title: "Numerical gate (earlier Forge)", tool: "art_metrics.py", file: "meta.json (qualityGate)", family: family(quality.references), pass: bool(quality.passes), rows: [],

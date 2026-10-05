@@ -241,12 +241,26 @@ function CandidateDetails({ c, all }: { c: Candidate; all: Candidate[] }) {
           </div>
         </section>
       )}
-      {c.prompt && (
-        <details className="lab-prompt">
-          <summary className="lab-label">Prompt</summary>
-          <p className="lab-prose">{c.prompt}</p>
-        </details>
-      )}
+      {(c.prompt || c.promptChars) && <PromptDetails candidate={c} />}
     </>
+  );
+}
+
+/** The generation prompt, fetched when opened (the workspace state leaves long prompts out). */
+function PromptDetails({ candidate }: { candidate: Candidate }) {
+  const [text, setText] = useState<string | null>(candidate.prompt ?? null);
+  const [failed, setFailed] = useState(false);
+  const load = () => {
+    if (text !== null || failed) return;
+    fetch(`/api/art-review/prompt?actor=${encodeURIComponent(candidate.actor)}&id=${encodeURIComponent(candidate.id)}`)
+      .then(r => (r.ok ? r.json() as Promise<{ prompt: string | null }> : Promise.reject(new Error(String(r.status)))))
+      .then(r => setText(r.prompt ?? ""))
+      .catch(() => setFailed(true));
+  };
+  return (
+    <details className="lab-prompt" onToggle={e => { if ((e.currentTarget as HTMLDetailsElement).open) load(); }}>
+      <summary className="lab-label">Prompt</summary>
+      <p className="lab-prose">{failed ? "The prompt could not be read." : text ?? "Loading…"}</p>
+    </details>
   );
 }

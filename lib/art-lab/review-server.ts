@@ -98,7 +98,8 @@ export function readState(root: string, mode: "ra2" | "classic" = "ra2", fileRoo
       const measuredFiles: Record<string, unknown> = {};
       for (const name of MEASUREMENT_FILES) if (files.includes(name)) { const parsed = readJson(join(root, cdir, name)); if (parsed) measuredFiles[name] = parsed; }
       const measured = measuredGroups(measuredFiles, meta as unknown as Record<string, unknown>);
-      candidates.push({ ...meta, id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls, rulesText, measured });
+      const { prompt, ...rest } = meta;
+      candidates.push({ ...rest, ...(typeof prompt === "string" && prompt ? { promptChars: prompt.length } : {}), id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls, rulesText, measured });
     }
     candidates.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const comparisons = listFiles(join(root, "reference-local", "comparisons"), 0)
@@ -175,6 +176,7 @@ function isLocalRequest(req: IncomingMessage) {
 export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, originals = null, webRoot = process.cwd(), previewMod = null }: { root: string; env?: string; originals?: OriginalsConfig | null; webRoot?: string; previewMod?: string | null }) {
   const workspace = resolve(root);
   const web = resolve(webRoot);
+  const stateCache = new Map<string, { stamp: string; body: string }>();
   const preview = previewMod ? resolve(previewMod) : null;
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (!reviewEnabled(env)) return send(res, 404, { error: "Not found" });
@@ -194,7 +196,7 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         return send(res, 200, summary);
       }
       const reviewMode = url.searchParams.get("mode") ?? "ra2";
-      if (["/state", "/action", "/models", "/animations", "/stamp", "/preview"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
+      if (["/state", "/action", "/models", "/animations", "/stamp", "/preview", "/prompt"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
       if(req.method==="GET"&&path==="/animations"){
         const actor=url.searchParams.get("actor")??"";
         if(!SAFE_NAME.test(actor))return send(res,400,{error:"Unknown actor"});
@@ -217,7 +219,23 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         res.setHeader("Cache-Control", "private, max-age=3600");
         return send(res, 200, readFileSync(file), "image/png");
       }
-      if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace, reviewMode as "ra2" | "classic"));
+      if (req.method === "GET" && path === "/state") {
+        // One read per change: the same fingerprint the Studio polls decides when the workspace is read again.
+        const mode = reviewMode as "ra2" | "classic";
+        const stamp = workspaceStamp(mode === "classic" ? join(workspace, "modes", "classic") : workspace, preview);
+        const hit = stateCache.get(mode);
+        if (hit && hit.stamp === stamp) return send(res, 200, hit.body, "application/json; charset=utf-8");
+        const body = JSON.stringify(readState(workspace, mode));
+        stateCache.set(mode, { stamp, body });
+        return send(res, 200, body, "application/json; charset=utf-8");
+      }
+      if (req.method === "GET" && path === "/prompt") {
+        const actor = url.searchParams.get("actor") ?? "", id = url.searchParams.get("id") ?? "";
+        if (!SAFE_NAME.test(actor) || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id)) return send(res, 400, { error: "Bad candidate" });
+        const base = reviewMode === "classic" ? join(workspace, "modes", "classic") : workspace;
+        const meta = readJson<{ prompt?: string }>(join(base, "units", actor, "candidates", id, "meta.json"));
+        return meta ? send(res, 200, { prompt: typeof meta.prompt === "string" ? meta.prompt : null }) : send(res, 404, { error: "No such candidate" });
+      }
       if (req.method === "GET" && path === "/stamp") return send(res, 200, { stamp: workspaceStamp(reviewMode === "classic" ? join(workspace, "modes", "classic") : workspace, preview) });
       if (req.method === "GET" && path === "/preview") {
         // The preview overlay is an RA2 mod branch; Classic has none.

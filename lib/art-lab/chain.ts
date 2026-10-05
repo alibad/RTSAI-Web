@@ -130,17 +130,18 @@ export function candidateChecks(candidate: Candidate | null): MeasuredGroup[] {
   return candidate.measured ?? measuredGroups({}, candidate as unknown as Record<string, unknown>);
 }
 
-export type ChecksSummary = { state: "none" | "pass" | "fail" | "partial" | "info"; failing: number; passed: number; total: number; headline: MeasuredGroup | null };
+export type ChecksSummary = { state: "none" | "pass" | "fail" | "partial" | "info"; failing: number; passed: number; total: number; headline: MeasuredGroup | null; advisory: boolean };
 /** Counts what the tools recorded: failing rows plus failed groups without rows; the headline is the family gate. */
 export function checksSummary(groups: MeasuredGroup[]): ChecksSummary {
-  if (!groups.length) return { state: "none", failing: 0, passed: 0, total: 0, headline: null };
+  if (!groups.length) return { state: "none", failing: 0, passed: 0, total: 0, headline: null, advisory: false };
   const rows = groups.flatMap(g => g.rows);
   const failing = rows.filter(r => !r.pass).length + groups.filter(g => g.pass === false && !g.rows.some(r => !r.pass)).length;
   const headline = groups.find(g => g.id === "family" && g.rows.length) ?? groups.find(g => g.rows.length) ?? null;
   const recorded = groups.some(g => g.pass !== null) || rows.length > 0;
   // Format or decode checks alone never read as "all passed": the stock-family comparison is the art check.
   const family = groups.some(g => g.id === "family" && g.pass !== null);
-  return { state: failing ? "fail" : !family ? (recorded ? "partial" : "info") : "pass", failing, passed: rows.filter(r => r.pass).length, total: rows.length, headline };
+  const advisory = groups.some(g => g.id === "family" && g.advisory);
+  return { state: failing ? "fail" : !family ? (recorded ? "partial" : "info") : "pass", failing, passed: rows.filter(r => r.pass).length, total: rows.length, headline, advisory };
 }
 
 /** Failing checks first, across every group, then each group's passing rows. */

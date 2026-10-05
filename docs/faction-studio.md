@@ -24,10 +24,13 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
 - The top-bar counts are per actor over the 122 new RA2 actors: 3D models (new-design GLB present), game models
   (a native candidate made from that GLB), in preview (bytes matched), decided (model slot decided). Routes and
   queued jobs never add up into coverage.
-- New candidates written by other tools appear without a reload: a 28-byte fingerprint is polled every 15 s while
-  the tab is visible (`/api/art-review/stamp`), and the full state is fetched only when it changes.
+- New candidates written by other tools appear without a reload: a 28-byte fingerprint (candidate folders, meta and
+  metrics files, review.json, preview overlay) is polled every 15 s while the tab is visible (`/api/art-review/stamp`);
+  the state is fetched, and read on the server, only when it changes. Long generation prompts are left out of the
+  state and fetched when their details are opened (`/api/art-review/prompt`).
 - Checks show only what the art routes saved beside the candidate, failing checks first, in plain words against the
-  named stock family: `gate.json`/`meta.gate` (tools/art_metrics.py via glb_route.py: vehicles, ships, aircraft),
+  named stock family: `metrics.json` (schema `rtsai.voxel-metrics/1`, tools/glb_route.py with the art_metrics.py gate:
+  vehicles, ships, aircraft; `familyCalibrated: false` is shown as advisory), older `gate.json`/`meta.gate` summaries,
   `metrics-building.json` (tools/metrics_building.py), `verify.json` (infantry route: structure and
   tools/metrics_infantry.py), plus the recorded format/decode checks. No saved results: "Not measured yet".
   The Studio never derives a pass itself (`lib/art-lab/measurements.ts`).

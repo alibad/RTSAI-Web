@@ -9,6 +9,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { PreviewActor, PreviewStatus } from "./chain";
+import { MEASUREMENT_FILES } from "./measurements";
 
 const OVERLAY = "mods/rtsai/art-preview";
 const ROUTES = ["voxels", "infantry", "buildings", "icons"];
@@ -100,7 +101,14 @@ export function workspaceStamp(artRoot: string, previewMod: string | null) {
   for (const actor of dirs(join(artRoot, "units"))) {
     const base = join(artRoot, "units", actor, "candidates");
     for (const id of dirs(base)) {
-      try { const s = statSync(join(base, id, "meta.json")); hash.update(`${actor}/${id}:${s.size}:${s.mtimeMs};`); } catch { hash.update(`${actor}/${id};`); }
+      const dir = join(base, id);
+      let names: string[] = [];
+      try { names = readdirSync(dir); } catch { /* removed meanwhile */ }
+      hash.update(`${actor}/${id}#${names.length};`);
+      for (const name of ["meta.json", ...MEASUREMENT_FILES]) {
+        if (name !== "meta.json" && !names.includes(name)) continue;
+        try { const s = statSync(join(dir, name)); hash.update(`${name}:${s.size}:${s.mtimeMs};`); } catch { hash.update(`${name}-;`); }
+      }
     }
   }
   for (const file of ["review.json", "models/manifest.json"]) { try { const s = statSync(join(artRoot, file)); hash.update(`${file}:${s.size}:${s.mtimeMs};`); } catch { /* absent */ } }

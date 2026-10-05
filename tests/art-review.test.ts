@@ -5,7 +5,7 @@ import { Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { applyReviewAction, candidateCost, candidateRenderSpec, formatCost, migrateEntry, needsDecision, slotState, validateAction, type Candidate, type ReviewFile, type UnitWorkspace } from "../lib/art-lab/review";
+import { applyReviewAction, candidateCost, candidateRenderSpec, formatCost, migrateEntry, needsDecision, slotState, validateAction, type Candidate, type ReviewFile, type ReviewState, type UnitWorkspace } from "../lib/art-lab/review";
 import { reviewEnabled } from "../lib/art-lab/review-gate";
 import { createArtReviewMiddleware, safeResolve } from "../lib/art-lab/review-server";
 import { artLab, renderSpec } from "../lib/art-lab/manifest";
@@ -198,4 +198,27 @@ test("voxel candidates are drawn in the current unit's slot: same scale, light a
   assert.equal(byLabel["turret (drop-in, for current rules)"].defaultVisible, true);
   assert.equal(byLabel.turret.defaultVisible, false, "the split turret is an alternative to the drop-in one");
   assert.deepEqual(byLabel.turret.turretOffset, [0, 0, 0]);
+});
+
+test("state leaves long prompts out (fetched on request), is cached per fingerprint and refreshes when metrics land", async () => {
+  const root = workspace();
+  try {
+    const dir = join(root, "units/r2qilin/candidates/fixture-1");
+    writeFileSync(join(dir, "meta.json"), JSON.stringify({ id: "fixture-1", actor: "r2qilin", createdAt: "2026-10-03T00:00:00Z", kind: "cameo", prompt: "A long prompt", files: { cameo: "cameo.png" } }));
+    const handler = createArtReviewMiddleware({ root, env: "development" });
+    const first = JSON.parse((await call(handler, "GET", "/api/art-review/state?mode=ra2")).body) as ReviewState;
+    const c = first.units[0].candidates[0];
+    assert.equal(c.prompt, undefined, "no prompt text in the state");
+    assert.equal(c.promptChars, 13);
+    assert.deepEqual(JSON.parse((await call(handler, "GET", "/api/art-review/prompt?mode=ra2&actor=r2qilin&id=fixture-1")).body), { prompt: "A long prompt" });
+    assert.equal((await call(handler, "GET", "/api/art-review/prompt?mode=ra2&actor=r2qilin&id=../x")).status, 400);
+    assert.deepEqual(c.measured, []);
+    writeFileSync(join(dir, "metrics.json"), JSON.stringify({ schema: "rtsai.voxel-metrics/1", pass: true, family: ["mtnk"], familyCalibrated: false, checks: [{ metric: "area_px", value: 10, reference: 11, bounds: [5, 20], pass: true, why: "" }] }));
+    const second = JSON.parse((await call(handler, "GET", "/api/art-review/state?mode=ra2")).body) as ReviewState;
+    const group = second.units[0].candidates[0].measured?.[0];
+    assert.equal(group?.advisory, true, "an uncalibrated family is advisory");
+    assert.match(group?.title ?? "", /advisory/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
