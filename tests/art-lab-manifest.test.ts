@@ -20,9 +20,9 @@ const list = (dir: string): string[] => readdirSync(dir).flatMap(name => {
   return statSync(full).isDirectory() ? list(full) : [relative(publicDir, full).split(sep).join("/")];
 });
 
-test("manifest: five factions, 87 buildable units, every one with a cameo and drawable art", () => {
-  assert.deepEqual(data.factions.map(f => f.id), ["china", "iran", "turkey", "saudi", "yemen"]);
-  assert.equal(Object.keys(data.actors).length, 87);
+test("manifest: seven factions, 122 buildable units, every one with a cameo and drawable art", () => {
+  assert.deepEqual(data.factions.map(f => f.id), ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"]);
+  assert.equal(Object.keys(data.actors).length, 122);
   for (const faction of data.factions) for (const id of faction.actors) {
     const actor = data.actors[id];
     assert.equal(actor.factionId, faction.id);
@@ -62,6 +62,22 @@ test("published files: exactly the manifest's files, byte-identical to their pro
   }
   const referenced = new Set(Object.values(data.actors).flatMap(a => a.files));
   for (const key of referenced) assert.ok(data.files[key], `${key} referenced and published`);
+});
+
+test("Levant binding: every Israel/Hezbollah file outside ART-PROVENANCE.json carries checked evidence", () => {
+  const binding = JSON.parse(readFileSync(join(web, "data/levant-art-binding.json"), "utf8"));
+  assert.deepEqual(binding.summary.unbound, [], "nothing is published without evidence");
+  const levantFiles = Object.entries(data.files).filter(([key]) => /(^israel-art\/|^hezbollah-art\/|r2il|r2hz|r2merkava|r2namer)/.test(key));
+  assert.equal(levantFiles.length, 113);
+  for (const [key, file] of levantFiles) {
+    const bound = binding.files[key];
+    assert.ok(bound, `${key} is bound`);
+    assert.equal(bound.sha256, file.sha256, `${key} binding hash matches the published bytes`);
+    assert.ok(["generator-record", "reproduced", "copy-of-recorded"].includes(bound.evidence), `${key} evidence`);
+    assert.equal(bound.generator, "project-geometry", `${key} is project geometry`);
+    if (bound.evidence === "copy-of-recorded") assert.ok(bound.copiedFrom && !binding.files[bound.copiedFrom], `${key} copies a file the mod records`);
+  }
+  assert.equal(data.mod.levantBinding?.files, 113);
 });
 
 test("provenance guard: refuses unrecorded, altered, flagged or non-project files", () => {
@@ -121,5 +137,5 @@ test("resolver: art outside modern-factions is recorded as external, never publi
 
 test("sync:art --check: the committed copy matches the sibling RTSAI-Mod (skipped without the checkout)", { skip: !existsSync(join(web, "../RTSAI-Mod/mods/rtsai/mod.yaml")) }, () => {
   const output = execFileSync(process.execPath, ["--import", "tsx", "scripts/sync-mod-art.mjs", "--check"], { cwd: web, encoding: "utf8" });
-  assert.match(output, /87 actors in 5 factions/);
+  assert.match(output, /122 actors in 7 factions/);
 });

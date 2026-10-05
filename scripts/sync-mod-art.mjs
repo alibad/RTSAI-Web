@@ -8,6 +8,10 @@
 // copies ONLY files recorded in mods/rtsai/modern-factions/ART-PROVENANCE.json, after checking each file's
 // SHA-256 against that record. A referenced file outside the record fails the sync, so no RA2 data is
 // ever published. The generator lookup reads the OpenRA-AI builders at the pinned commits (optional).
+//
+// The Israel and Hezbollah packs are not in ART-PROVENANCE.json yet. data/levant-art-binding.json (written by
+// scripts/bind-levant-provenance.mjs) binds them; each binding is re-verified here against the mod's own
+// records before it joins the record, and the same publication guard then checks every file's bytes.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -43,7 +47,25 @@ const resolution = resolveArtLab(reader, data);
 const provenanceText = reader.text(`${ART_DIR}/ART-PROVENANCE.json`);
 const provenance = JSON.parse(provenanceText);
 const keys = [...resolution.files.keys()].sort();
-const entries = assertPublishable(keys, provenance, key => sha256(reader.bytes(`${ART_DIR}/${key}`)));
+
+// Levant binding: only entries whose evidence still holds against the mod's records join the record.
+const bindingPath = join(web, "data/levant-art-binding.json");
+const binding = existsSync(bindingPath) ? JSON.parse(readFileSync(bindingPath, "utf8")) : null;
+const bound = {};
+if (binding) {
+  const levantPath = `${ART_DIR}/levant-art-provenance.json`;
+  const levant = reader.exists(levantPath) ? JSON.parse(reader.text(levantPath)) : { actors: {} };
+  for (const [key, entry] of Object.entries(binding.files)) {
+    if (provenance.files[key]) continue; // the mod's own record wins once it covers the file
+    const name = key.split("/").pop().replace(/\.(shp|vxl)$/, "");
+    const holds = entry.evidence === "generator-record" ? levant.actors?.[name]?.sha256 === entry.sha256
+      : entry.evidence === "copy-of-recorded" ? provenance.files[entry.copiedFrom]?.sha256 === entry.sha256
+      : entry.evidence === "reproduced";
+    if (holds) bound[key] = entry;
+  }
+}
+const record = { ...provenance, files: { ...bound, ...provenance.files } };
+const entries = assertPublishable(keys, record, key => sha256(reader.bytes(`${ART_DIR}/${key}`)));
 
 // Generator functions, read at the commit each output's provenance pins.
 const sourceCache = new Map();
@@ -71,11 +93,15 @@ function generatorsFor(actor) {
       byFile.set(key, { repo: entry.source.repo, commit: entry.source.commit, script: "tools/mesh_to_vxl.py → tools/palette_pass.py", functions: [], scriptUrl: null, geometry: entry.source.path, note: "Committed local Forge candidate; this repository has no public remote." });
       continue;
     }
+    if (entry?.source?.repo === "OpenRA-AI (local)") {
+      byFile.set(key, { repo: entry.source.repo, commit: entry.source.commit, script: entry.source.path, functions: [], scriptUrl: null, geometry: null, note: "Local OpenRA-AI commit (not on its public remote yet); bound by data/levant-art-binding.json." });
+      continue;
+    }
     if (!entry?.source || !entry.script || byFile.has(key)) continue;
     const script = entry.script.replace(/\s*\(.*$/, "").trim();
     const { repo, commit } = entry.source;
     const read = sourceAt(repo, commit);
-    const output = key.split("/").pop().replace(/\.(vxl|shp)$/, "");
+    const output = (entry.copiedFrom ?? key).split("/").pop().replace(/\.(vxl|shp)$/, "");
     const functions = (actor.render === "voxel"
       ? voxelGenerators(script, output, read)
       : spriteGenerators(script, actor.id, actor.category === "defense" ? "defense" : "infantry", read)
@@ -141,6 +167,7 @@ const manifest = {
     repo: "alibad/RTSAI-Mod", commit: dirty ? `${modCommit}+dirty` : modCommit,
     provenanceGeneratedBy: provenance.generatedBy, provenanceSha256: sha256(provenanceText.replace(/\r\n/g, "\n")),
     commercialRa2Data: provenance.commercialRa2Data,
+    ...(binding ? { levantBinding: { generatedBy: binding.generatedBy, sha256: sha256(readFileSync(bindingPath, "utf8").replace(/\r\n/g, "\n")), files: Object.keys(bound).filter(k => entries.has(k)).length } } : {}),
   },
   render: { tileSize: [60, 30], tileScale: 1448, shadowColor: resolution.shadowColor, presetColors: resolution.presetColors, mapTints },
   palettes: resolution.palettes,

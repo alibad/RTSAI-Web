@@ -167,7 +167,7 @@ export type FactionArt = { id: string; catalogId: string | null; name: string; s
 export type ArtLabManifest = {
   schemaVersion: 1;
   generatedBy: string;
-  mod: { repo: string; commit: string; provenanceGeneratedBy: string; provenanceSha256: string; commercialRa2Data: string };
+  mod: { repo: string; commit: string; provenanceGeneratedBy: string; provenanceSha256: string; commercialRa2Data: string; levantBinding?: { generatedBy: string; sha256: string; files: number } };
   render: {
     tileSize: [number, number];
     tileScale: number;

@@ -1,0 +1,1624 @@
+{
+ "schemaVersion": 1,
+ "generatedBy": "scripts/bind-levant-provenance.mjs",
+ "scope": "Israel and Hezbollah art files referenced by RTSAI-Mod rules or sequences but absent from modern-factions/ART-PROVENANCE.json.",
+ "generator": {
+  "repo": "OpenRA-AI (local; commit not on origin when bound)",
+  "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562",
+  "script": "scripts/build-levant-art.py",
+  "kind": "project-geometry: CPU renders and exports of meshes defined in Python. Inputs: project code, project material colours, OpenRA's GPL-3.0 voxel normal table (format data) and the GPL-2.0 FreeSans font used only for Classic icons. No image, SHP, VXL, HVA, PAL or MIX input."
+ },
+ "mod": {
+  "repo": "alibad/RTSAI-Mod",
+  "commit": "fce87fdd10ee44f3baf7f5023324d5cac50721c1",
+  "levantRecordSha256": "6c7ae1dc2eeb0f16de90ffd2d181a630ded653523ebb856ad8ba64cc8db6a59c"
+ },
+ "method": {
+  "generator-record": "SHA-256 of the mod file equals the hash build-levant-art.py stored in levant-art-provenance.json when it wrote the file. Re-checked on every sync.",
+  "reproduced": "build-levant-art.py at 18eb108, re-run in a temporary sandbox (PIL 12.3.0 python 3.12.10), wrote a byte-identical file.",
+  "copy-of-recorded": "Bytes equal a same-type file already recorded in ART-PROVENANCE.json; the entry inherits that record. Re-checked on every sync."
+ },
+ "summary": {
+  "files": 113,
+  "generatorRecord": 45,
+  "reproducedOnly": 66,
+  "copyOfRecorded": 2,
+  "recordedButNotReproduced": [
+   "hezbollah-art/r2hzrelay.shp",
+   "hezbollah-art/r2hzworkshop.shp",
+   "israel-art/r2ilrelay.shp",
+   "israel-art/r2ilworkshop.shp"
+  ],
+  "unbound": []
+ },
+ "files": {
+  "hezbollah-art/hezbollah-voxels.pal": {
+   "sha256": "a80f079ad829ca3b53b7536e9a873f98dafb905237bddedc5e23523cdf1f41e8",
+   "type": "voxel palette",
+   "origin": "procedural",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "hezbollah-art/hezbollah.pal": {
+   "sha256": "a80f079ad829ca3b53b7536e9a873f98dafb905237bddedc5e23523cdf1f41e8",
+   "type": "palette",
+   "origin": "procedural",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzaanest.shp": {
+   "sha256": "1220fca076175df3491859164b96854f7bb4d9677ca92235bcf252a5e735bcde",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzat.shp": {
+   "sha256": "7c3830acf4e7cd98d515a3a8ff5b4a88b952eaf2e8d334757b0ecd9239bb700c",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzbunker.shp": {
+   "sha256": "0e9c5b56230ea895a134fb13beb5c8ce2cb5ab0dacecb0611312ca56747cad7e",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzcoastal.shp": {
+   "sha256": "aa175d466c1737932394f21c8ea305eee828d4d9ef29ee52ded3614fb9589175",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzrelay.shp": {
+   "sha256": "783499b80d0f3462e8f1453c2e875edaf27e7ae4c65ca600ba6b5e0fede59c63",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": false
+  },
+  "hezbollah-art/r2hzrifle.shp": {
+   "sha256": "6986e2594068c144d91ab4a63770b5036fbf5971ed49a8e425f94d49b6af7531",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzscout.shp": {
+   "sha256": "9b67f38de8cf81f27d91630816dcc70ab09d0a37471e445c61f803b5b222313f",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzspotter.shp": {
+   "sha256": "24ad2e2a8f9c07d5556dbdec2ae6d775636a01239b6c06a9ae5fdcd5d5c23863",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "hezbollah-art/r2hzworkshop.shp": {
+   "sha256": "e40ad1265c3a3f008ba90f538a550ce66c255faa1b6bc4f4932ffcc840eab840",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": false
+  },
+  "icons/r2hzaanest.png": {
+   "sha256": "37266790f6b3f66bc88e23028550ac9ae3f784bc12b25f3e47fb74494bca1089",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzat.png": {
+   "sha256": "579c6054d871656ff6f8248ed1408d8a40e2122959c8b3ca22c24cac71e151b9",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzbunker.png": {
+   "sha256": "d6df9d9b6d98b71820c4916344f45c270efe8897889f64249087b9e02ac6fea3",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzcoastal.png": {
+   "sha256": "64d981a909cd8bdea584c7695e937137e580ca41ea3c32c710134a73d5f75893",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzdrone.png": {
+   "sha256": "90cb3d9e8e5508788349fbd6c63b3d09e0a81190f17603fe1b81b9f4f0b6ad36",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzescort.png": {
+   "sha256": "cf86acedb03e4a49b82fa697f59fbf1891480157698022d66ce27977c53a9efa",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzmissileboat.png": {
+   "sha256": "cb3240bdb654f602a35e14869e5fb096ba4f87360be0c6a131ca1cdd68e1456d",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzrecoilless.png": {
+   "sha256": "82e5e40015beae070e94ca68ccf216a293bbc384d98f4e039c4b96eb447c1853",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzrelay.png": {
+   "sha256": "e2d4baa6c13eb395e41ac781da820cf43465b3868b96e37c40a25be2bcc66545",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzrifle.png": {
+   "sha256": "aca1345de5f4861955aa97e847beae835d9da8967c06c5e3c8d6509919f581db",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzrockets.png": {
+   "sha256": "75d3086bdba28bb3108d119cdb3e509b7fce8434aa470e49acb329c57e068577",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzscout.png": {
+   "sha256": "0b6c89ef59569267247ee131f9b7a233f37ed1cc0710a1ba4a24144dcd936bd5",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzskiff.png": {
+   "sha256": "97cd093455c68c62cd4326582ed270f9bab23c8a583177497f0cbb501ec3535e",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzspotter.png": {
+   "sha256": "21736718a411ec19401bb5da7fc1d9dd37cb249d9adc4b56ee28aa111bc667bc",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzsurvey.png": {
+   "sha256": "07181b9e2cae2610249e4e730b240389ef4902595e78fca0f1ae9e103ecacb24",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hztechnical.png": {
+   "sha256": "0989ae2052a0f272f58f72a823fc969b7212cfd0630060a41b482ebb9383ec02",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2hzworkshop.png": {
+   "sha256": "3cde77103ddfb698ebe2f542d4b382c1003206e65dc87e344ca5c0219dc75e3f",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilat.png": {
+   "sha256": "cff2c65c7730f508a1f4bd379fd762f168913266f6817068ce7a59c17701ac72",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilatpost.png": {
+   "sha256": "acb61d210895d782f6e424cad35efd9aa953967cb99a1844fc4948a911730137",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilbattery.png": {
+   "sha256": "fda77a746b8574cec8f3644dcdbef0ed0d963f32702651ede0b77090914bedd3",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilfalcon.png": {
+   "sha256": "38dcbe85a29a17b3bd2d39e5a27428557b516aa484e708aa8a4d9a7c5d470460",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilfrigate.png": {
+   "sha256": "5e7b83c0854d34de6228814157b90689242cc30f889c3e7f8b679688ffb8f9e2",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilgunship.png": {
+   "sha256": "667290a408ea03cb352e4d8fe2e8784151a5c2408d2879872d457d293a12ca2d",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilhowitzer.png": {
+   "sha256": "5a2110527ebf0f90e23d49540c8f4dfddc97bff735367ec21f74d52b9a428ce9",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilobserver.png": {
+   "sha256": "d4a2c87a91631ba270d7798300409386ded7e426388ee3dabb0f6f538c72b85e",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilpatrol.png": {
+   "sha256": "bcc8594fe16bb76e94b96fd290a20d65a3d9a7dcf4dcc928bb1f84b073ac98dc",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilrecon.png": {
+   "sha256": "04e7bef7050e987e3e14a076e02369d44813c338312ab6d8e31dcba7e0e270a9",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilrelay.png": {
+   "sha256": "982f7ff07b86e3a7beb0872a1142c160970925fd948bf88f7eefece7a95ac30a",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilrifle.png": {
+   "sha256": "7b297b077983c8e1023de52b4a6408b5238d9a99e8b7c9dbe927b44a6c3b9c0f",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilsentry.png": {
+   "sha256": "b3a3cc8b8051543fac6a709182e384479b53c53b9a68011950807341b329379c",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilshield.png": {
+   "sha256": "6a60c7db7be44a7e762214f6121bb6e46ce2b05a47440e883120424965e8d9c8",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2iltender.png": {
+   "sha256": "60d74bed35ff5a9c1909740fc5547f0e8db4ea00763911444d252ba557e88e2c",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2ilworkshop.png": {
+   "sha256": "14fd0d2104f193e84741915c8e45050943ac523eaea81331490feb5406f14d04",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2merkava.png": {
+   "sha256": "01a23fa22f8183b5db2f7285b2e6fb8699f2e3b7f91ceb2da3ffd117ef310e98",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "icons/r2namer.png": {
+   "sha256": "39883061b7abdf8cdfdcc8aa0516d1c23fdf9d113067a05096723ea548fd0d31",
+   "type": "build-palette cameo, 60x48 RGB PNG rendered from the authored geometry",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "israel-art/israel-voxels.pal": {
+   "sha256": "f5ead5e7acce999baa6d459523592ddf0fe69aae1cba4cc556b31777f1ecf356",
+   "type": "voxel palette",
+   "origin": "procedural",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "israel-art/israel.pal": {
+   "sha256": "f5ead5e7acce999baa6d459523592ddf0fe69aae1cba4cc556b31777f1ecf356",
+   "type": "palette",
+   "origin": "procedural",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "israel-art/r2ilat.shp": {
+   "sha256": "150a31e9bc06c182a04384026a5c3716847c92095594ba14b96b79cc988fc487",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilatpost.shp": {
+   "sha256": "f97b1f6bfc1964b90957ded16f4313cd091bbf1b6b1a3083b49136ea19e35c7d",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilbattery.shp": {
+   "sha256": "7920e48327c2e825e6096d7989abbfb5adeee7e06807c164bbc28d945e0e7fa3",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilobserver.shp": {
+   "sha256": "810f2f4b84e6b75d92700c013c2e21de8ec0cd6b2eb024c6a07f3508ca9294f0",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilrecon.shp": {
+   "sha256": "4bed17ddf3cce8e5c45cce427eacb6973fffcc08fbcaaa894ced913e604bfdc4",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilrelay.shp": {
+   "sha256": "36298736d9dcb0cb070c256b79fe1a0d9cd0fc683694a441a2d68a74f6c83003",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": false
+  },
+  "israel-art/r2ilrifle.shp": {
+   "sha256": "990453f8cfe206b8290952896099de6655050e38c6ab5a65f2b2716559cb8fd9",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilsentry.shp": {
+   "sha256": "ab3e292abd2488de127c9f8f1ee73eff8162802413fe5b7c7bf2ab662b8ef37f",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "israel-art/r2ilworkshop.shp": {
+   "sha256": "eb18ab8eddecd4fade1f5ac84e248d134abad25ee8bbd92b2f4469fd9f295f92",
+   "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": false
+  },
+  "voxels/r2hzdrone.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzdrone.vxl": {
+   "sha256": "08bad03f3d5464aebc3b392441475a62d75986a4ee2d29e8d6649ea1c52d364f",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzescort.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzescort.vxl": {
+   "sha256": "e0d5369dff1a66ee68f3c3bd240e1d39a37dee4b25b4bd720263a25154a51a47",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzescorttur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzescorttur.vxl": {
+   "sha256": "3018ead19214353f63e73c737bcb914059a154d9f9f8be9c788382dd22278121",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzmissileboat.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzmissileboat.vxl": {
+   "sha256": "162c235a978cfaf1837bc49378556da6b6671f7ab2d55af8079d9b4f5a721b77",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzrecoilless.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzrecoilless.vxl": {
+   "sha256": "e0d5369dff1a66ee68f3c3bd240e1d39a37dee4b25b4bd720263a25154a51a47",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzrecoillesstur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzrecoillesstur.vxl": {
+   "sha256": "016e612325955273cd44655c7103f731d4e1592c30dde26ae5af71e90eb07bbc",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzrockets.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzrockets.vxl": {
+   "sha256": "24c12dc2329a62bee2460f86e516c17438eda2ac6f7271a267834e81bea515bc",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzrocketsempty.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzrocketsempty.vxl": {
+   "sha256": "42538a8176638a664e1d670a206b938883130f441d590a13ae8a8a521cf25925",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzskiff.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzskiff.vxl": {
+   "sha256": "89a65da7b3ef0d5c11e22f0ead547d7bf1a83b39d9d653b01cff00ff4ceba746",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzsurvey.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hzsurvey.vxl": {
+   "sha256": "1fb8b449312465564814823c6bf533113cc2972b709c2e1d40fa0791636ad9c9",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hzsurveytur.hva": {
+   "source": {
+    "repo": "OpenRA-AI codex/ra2-red-sea",
+    "path": "apps/installer/ra2/modern-factions/voxels/r2mokhatur.hva",
+    "commit": "d96247ae08ed6f22103cb9b47a119ec8be46c7d0",
+    "date": "2026-09-28"
+   },
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "script": "scripts/ra2_red_sea_assets.py",
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "evidence": "copy-of-recorded",
+   "copiedFrom": "voxels/r2mokhatur.hva",
+   "copiedBy": "OpenRA-AI scripts/build-levant-factions.py (copies source-faction packages under the new actor name)",
+   "reproduced": false
+  },
+  "voxels/r2hzsurveytur.vxl": {
+   "source": {
+    "repo": "OpenRA-AI codex/ra2-red-sea",
+    "path": "apps/installer/ra2/modern-factions/voxels/r2mokhatur.vxl",
+    "commit": "d96247ae08ed6f22103cb9b47a119ec8be46c7d0",
+    "date": "2026-09-28"
+   },
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "script": "scripts/ra2_red_sea_assets.py",
+   "sha256": "ce2be85fc6136bb839a04ec02679c112ffdb75311b6e203a1da127f61b607fa3",
+   "evidence": "copy-of-recorded",
+   "copiedFrom": "voxels/r2mokhatur.vxl",
+   "copiedBy": "OpenRA-AI scripts/build-levant-factions.py (copies source-faction packages under the new actor name)",
+   "reproduced": false
+  },
+  "voxels/r2hztechnical.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hztechnical.vxl": {
+   "sha256": "e0d5369dff1a66ee68f3c3bd240e1d39a37dee4b25b4bd720263a25154a51a47",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2hztechnicaltur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2hztechnicaltur.vxl": {
+   "sha256": "d73137c02ebf67758b426368d2410cac2a5bdc1a8c09f4cf6f16279529d40072",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilfalcon.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilfalcon.vxl": {
+   "sha256": "bd1392e480cb6f7fa1add78ea204bdbc0bc5553ee21d13ab218e73034dab373c",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilfrigate.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilfrigate.vxl": {
+   "sha256": "3b5973039338dc0b2430465421a0ab265d0cfbc582396cea51d519f1500f1d41",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilfrigatetur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilfrigatetur.vxl": {
+   "sha256": "db9ecc07eae0ff0650408dfc66b3447216e09d54cfe823c440762b5bcf4c1f92",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilgunship.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilgunship.vxl": {
+   "sha256": "14402592beb619c6150c9881cc42b0ebf33692b43dc839986b653c877d67e2e2",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilgunshiptur.hva": {
+   "sha256": "c8023b2f47fa9b92a57769db76ef2d09ce5029bd438ba318c266301cf2d34014",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilgunshiptur.vxl": {
+   "sha256": "70255f2b261fc0cde3d4e5d14f3ec7bd7d2e861b2c0e2598268ab125a3beca94",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilhowitzer.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilhowitzer.vxl": {
+   "sha256": "deafbd5c997b9efc53605059f4ff1cd293e68c016ed02b8e2fc68f41cdd04a11",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilpatrol.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilpatrol.vxl": {
+   "sha256": "a0629d8f6900870b3e3d89d8d2464f87715c807376c0d21cf79b05b313d56efb",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilpatroltur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilpatroltur.vxl": {
+   "sha256": "db9ecc07eae0ff0650408dfc66b3447216e09d54cfe823c440762b5bcf4c1f92",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilshield.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilshield.vxl": {
+   "sha256": "bd87af4f2c780aa419ade0c465369c16e51df31d272b2d295ff8ae00960d3c39",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2ilshieldtur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2ilshieldtur.vxl": {
+   "sha256": "0b012ba03f9489b083a60127a6210f2f6a82fb317e26ca67d8244faf80ac3596",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2iltender.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2iltender.vxl": {
+   "sha256": "97b55c96d51bf982b68d5812d705ae49492a1651003f3c71a7d470c3ce486a5c",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2merkava.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2merkava.vxl": {
+   "sha256": "5953c950689039c93ea95eb4704f835ad087d7efddbfb3b52f70db6d67fbcc3a",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2merkavatur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2merkavatur.vxl": {
+   "sha256": "e4907d1ef8abc7ec9dcf35840a7b674b0d25ce90250968eddd2e3eb92920dcef",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2namer.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2namer.vxl": {
+   "sha256": "da1b9259bd33516859051aec0e4b74318ae9e74a8da5c83caf4873e57f876655",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  },
+  "voxels/r2namertur.hva": {
+   "sha256": "9d68e19ea344f064301ea5afb71b14a11715467954506a78672974d016a853be",
+   "type": "RA2 voxel animation/transform (HVA)",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "reproduced",
+   "reproduced": true
+  },
+  "voxels/r2namertur.vxl": {
+   "sha256": "db9ecc07eae0ff0650408dfc66b3447216e09d54cfe823c440762b5bcf4c1f92",
+   "type": "RA2 voxel model",
+   "origin": "rendered-from-project-geometry",
+   "generator": "project-geometry",
+   "source": {
+    "repo": "OpenRA-AI (local)",
+    "path": "scripts/build-levant-art.py",
+    "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562"
+   },
+   "script": "scripts/build-levant-art.py (build)",
+   "evidence": "generator-record",
+   "reproduced": true
+  }
+ }
+}
