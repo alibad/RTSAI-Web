@@ -20,6 +20,8 @@ export type RenderSpec = {
     useClassicPerspectiveFudge: boolean; normals: "RedAlert2" | "TiberianSun"; altitude: number | null;
     parts: { id: string; label: string; trait: string; vxl: string; hva: string; offset: Vec3; showShadow: boolean;
       requiresCondition: string | null; turretOffset: Vec3 | null; turretInitialFacing: number | null; tickRate: number | null; frames: number;
+      /** The model sequence the trait draws (e.g. a helicopter body's "rotor"). */
+      sequence?: string;
       /** Overrides the condition-based default (review candidates with alternative parts). */
       defaultVisible?: boolean }[];
   };

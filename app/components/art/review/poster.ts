@@ -24,7 +24,9 @@ async function framesFor(items: (StageItem | null)[], frames: FrameStore, limitM
   return out;
 }
 
-const CELL_W = 236, CELL_H = 150, PIC_W = 112, COLS = 5, HEAD = 92;
+const CELL_W = 236, CELL_H = 190, PIC_W = 112, COLS = 5, HEAD = 92;
+/** Labels sit in their own row; pictures are clipped to the box below it, with room above the ground for tall art. */
+const LABEL_Y = 17, BOX_Y = 24, BOX_H = 124, GROUND_Y = 118;
 
 /** Draws the poster and returns it as a PNG blob (encoding happens off the main thread). */
 export async function composePoster(title: string, subtitle: string, rows: PosterRow[], frames: FrameStore): Promise<Blob> {
@@ -44,19 +46,20 @@ export async function composePoster(title: string, subtitle: string, rows: Poste
     const x = 24 + (i % cols) * CELL_W, y = HEAD + Math.floor(i / cols) * CELL_H;
     ctx.fillStyle = "#141814"; ctx.fillRect(x + 2, y + 2, CELL_W - 4, CELL_H - 4);
     for (const [k, item] of [[0, row.current], [1, row.next]] as const) {
-      const cx = x + 8 + k * PIC_W + PIC_W / 2, cy = y + 66;
-      // Each picture stays inside its half of the cell (a large ship at 1x would run into its neighbour).
-      ctx.save(); ctx.beginPath(); ctx.rect(x + 6 + k * PIC_W, y + 6, PIC_W - 2, 108); ctx.clip();
+      const cx = x + 8 + k * PIC_W + PIC_W / 2, cy = y + GROUND_Y;
+      ctx.fillStyle = "#101410"; ctx.fillRect(x + 6 + k * PIC_W, y + BOX_Y, PIC_W - 2, BOX_H);
+      // Each picture stays inside its own box (a large ship at 1x would run into its neighbour or the labels).
+      ctx.save(); ctx.beginPath(); ctx.rect(x + 6 + k * PIC_W, y + BOX_Y, PIC_W - 2, BOX_H); ctx.clip();
       const ground = groundTile(groundFor(row.category, "sand"), [1, 1, 1], 90);
       ctx.drawImage(ground.canvas, Math.round(cx - ground.anchorX), Math.round(cy - ground.anchorY));
       const f = item ? pictures.get(item) : undefined;
       if (f) ctx.drawImage(f.canvas, Math.round(cx - f.anchorX), Math.round(cy - f.anchorY));
       else { ctx.fillStyle = "#73776d"; ctx.font = "500 11px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText(item ? "not rendered" : "no new model yet", cx, cy + 4); ctx.textAlign = "left"; }
       ctx.restore();
-      ctx.fillStyle = "#73776d"; ctx.font = "600 10px Arial, sans-serif"; ctx.fillText(k ? "NEW" : "IN GAME NOW", x + 12 + k * PIC_W, y + 18);
+      ctx.fillStyle = k ? "#f1d28b" : "#73776d"; ctx.font = "600 10px Arial, sans-serif"; ctx.fillText(k ? "NEW" : "IN GAME NOW", x + 8 + k * PIC_W, y + LABEL_Y);
     }
-    ctx.fillStyle = "#f0eee6"; ctx.font = "700 13px Arial, sans-serif"; ctx.fillText(row.name, x + 12, y + 128, CELL_W - 24);
-    ctx.fillStyle = "#a3a397"; ctx.font = "500 11px Arial, sans-serif"; ctx.fillText(row.note, x + 12, y + 143, CELL_W - 24);
+    ctx.fillStyle = "#f0eee6"; ctx.font = "700 13px Arial, sans-serif"; ctx.fillText(row.name, x + 8, y + BOX_Y + BOX_H + 18, CELL_W - 16);
+    ctx.fillStyle = "#a3a397"; ctx.font = "500 11px Arial, sans-serif"; ctx.fillText(row.note, x + 8, y + BOX_Y + BOX_H + 33, CELL_W - 16);
   });
   ctx.fillStyle = "#73776d"; ctx.font = "500 11px Arial, sans-serif";
   ctx.fillText("Project art and project-generated candidates only; no original game pixels. Candidates are not approved game art.", 24, canvas.height - 12);

@@ -41,6 +41,14 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
   read `-sequence` removals, idle overlays (e.g. a radar dish), damaged/critical states and turret fire; a
   candidate's own `WithIdleOverlay` (with its Offset) and `WithAttackAnimation` traits decide those sequences' roles,
   so an extra sequence never replaces the idle body.
+- Spins the local preview copy's rules play count as present and play in the Animations step: drone propellers
+  and gunship rotors modelled as HVA sections (`WithVoxelHelicopterBody`, also when the overlay only remaps the
+  actor's own rotor sequence) and radars (`WithAnimatedVoxelModel`, riding the turret when it names one). They are
+  read from `RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/*.yaml` and marked "local preview" in Checks.
+  Slit-firing bunkers (no turret, `WithAttackAnimation` fire frames) are complete by design.
+- `node scripts/check-actor-animations.mjs --software` (`RTSAI_STUDIO_URL` picks the Studio, default :3461) checks
+  the Animations step against current candidates: the action buttons equal the candidate's own actions, play,
+  pause and scrub, house recolour, Fire and Die (held last frame), the preview spins, and no page errors.
 - A faction switch holds frame rendering for 150 ms so its repaint presents first (software GPUs otherwise spend
   that time on voxel frames); flags are rasterised once in idle time so the faction picker opens quickly.
 - `?authored=1` hides original RA2 units and references, for screenshots that may be shared.

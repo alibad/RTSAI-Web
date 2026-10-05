@@ -8,8 +8,9 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { PreviewActor, PreviewStatus } from "./chain";
+import type { PreviewActor, PreviewAnimation, PreviewStatus } from "./chain";
 import { MEASUREMENT_FILES } from "./measurements";
+import { childValue, parseMiniYaml, type YamlNode } from "./miniyaml";
 
 const OVERLAY = "mods/rtsai/art-preview";
 const ROUTES = ["voxels", "infantry", "buildings", "icons"];
@@ -77,6 +78,9 @@ export function readPreviewStatus(artRoot: string, previewMod: string | null): P
       if (actorIds.includes(id)) (actors[id] ??= { model: null, icon: null, files: [], rules: false }).rules = true;
     }
   }
+  for (const [actor, list] of Object.entries(overlayAnimations(overlay, files(overlay, "", 0).filter(f => f.endsWith(".yaml")), actorIds))) {
+    if (actors[actor]) actors[actor].animations = list;
+  }
   for (const [actor, entry] of Object.entries(actors)) {
     const installed = (ext: RegExp) => entry.files.filter(f => ext.test(f)).map(f => sha(join(overlay, f)));
     const models = installed(/\.(vxl|shp)$/i), icons = installed(/^icons\/.*\.png$/i);
@@ -93,6 +97,61 @@ export function readPreviewStatus(artRoot: string, previewMod: string | null): P
   const status: PreviewStatus = { available: true, branch, head, actors, unmatched };
   cache.set(overlay, { key, status });
   return status;
+}
+
+/**
+ * The voxel animations the overlay's rules play, per actor: WithVoxelHelicopterBody (a body that cycles its HVA
+ * frames while airborne: rotors and propellers modelled as sections) and WithAnimatedVoxelModel (a model that
+ * spins on the body or a turret: radars). Sequence names resolve to voxel files through the overlay's sequence
+ * files. Values the overlay leaves out stay null (the actor's own rules or the engine default apply).
+ */
+export function overlayAnimations(overlay: string, yamlFiles: string[], actorIds: string[]): Record<string, PreviewAnimation[]> {
+  const ids = new Set(actorIds.map(a => a.toLowerCase()));
+  const sequences: Record<string, Record<string, string>> = {};
+  const heli: Record<string, { sequence: string | null; tickRate: number | null }> = {};
+  const spins: Record<string, Map<string, Omit<PreviewAnimation, "file">>> = {};
+  const num = (v: string | null) => (v !== null && Number.isFinite(Number(v)) ? Number(v) : null);
+  for (const yaml of yamlFiles) {
+    let nodes: YamlNode[];
+    try { nodes = parseMiniYaml(readFileSync(join(overlay, yaml), "utf8"), yaml); } catch { continue; }
+    for (const node of nodes) {
+      const actor = node.key.toLowerCase();
+      if (!ids.has(actor)) continue;
+      for (const c of node.value.nodes) {
+        const value = c.value.value;
+        if (!c.value.nodes.length && value && /voxels\//i.test(value)) { (sequences[actor] ??= {})[c.key] = value.split("/").pop()!.toLowerCase(); continue; }
+        const kind = c.key.split("@")[0];
+        if (kind === "WithVoxelHelicopterBody") {
+          const h = (heli[actor] ??= { sequence: null, tickRate: null });
+          h.sequence = childValue(c.value, "Sequence") ?? h.sequence;
+          h.tickRate = num(childValue(c.value, "TickRate")) ?? h.tickRate;
+        } else if (kind === "WithAnimatedVoxelModel") {
+          const list = (spins[actor] ??= new Map());
+          const was = list.get(c.key);
+          list.set(c.key, {
+            trait: c.key, sequence: childValue(c.value, "Sequence") ?? was?.sequence ?? "radar", tickRate: num(childValue(c.value, "TickRate")) ?? was?.tickRate ?? 2,
+            turret: childValue(c.value, "Turret") || was?.turret || null, condition: childValue(c.value, "RequiresCondition") ?? was?.condition ?? null, airborne: false,
+          });
+        }
+      }
+    }
+  }
+  const out: Record<string, PreviewAnimation[]> = {};
+  for (const actor of new Set([...Object.keys(heli), ...Object.keys(spins)])) {
+    const file = (sequence: string) => sequences[actor]?.[sequence] ?? null;
+    const h = heli[actor];
+    out[actor] = [
+      ...(h ? [{ trait: "WithVoxelHelicopterBody", sequence: h.sequence ?? "idle", file: file(h.sequence ?? "idle"), tickRate: h.tickRate, turret: null, condition: null, airborne: true }] : []),
+      ...[...(spins[actor]?.values() ?? [])].map(a => ({ ...a, file: file(a.sequence) })),
+    ];
+  }
+  // Remapped sequences the overlay plays through the actor's own traits (an Apache's "rotor" -> its new voxel).
+  for (const [actor, map] of Object.entries(sequences)) {
+    const used = new Set((out[actor] ?? []).map(a => a.sequence));
+    const rest = Object.entries(map).filter(([sequence]) => !used.has(sequence)).map(([sequence, file]) => ({ trait: "sequence", sequence, file, tickRate: null, turret: null, condition: null, airborne: false }));
+    if (rest.length) out[actor] = [...(out[actor] ?? []), ...rest];
+  }
+  return out;
 }
 
 /** Changes when candidates, review decisions or preview files change (polled cheaply by the Studio). */

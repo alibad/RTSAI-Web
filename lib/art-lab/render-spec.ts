@@ -26,7 +26,7 @@ export function buildRenderSpec(actor: Resolved, urlOf: UrlOf, paletteOf: (name:
       parts: v.parts.filter(p => p.model.vxl && p.model.hva).map(p => ({
         id: p.id, label: p.label, trait: p.trait, vxl: urlOf(p.model.vxl)!, hva: urlOf(p.model.hva)!, offset: p.offset, showShadow: p.showShadow,
         requiresCondition: p.requiresCondition, turretOffset: p.turret?.offset ?? null, turretInitialFacing: p.turret?.initialFacing ?? null,
-        tickRate: p.tickRate, frames: p.model.frames,
+        tickRate: p.tickRate, frames: p.model.frames, sequence: p.model.sequence,
       })),
     } : null,
     sprite: s ? {

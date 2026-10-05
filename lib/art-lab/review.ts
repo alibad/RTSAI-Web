@@ -19,6 +19,7 @@ import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { parseWDist } from "./resolve";
 import type { ImagePlayerColor } from "./image-remap";
 import type { MeasuredGroup } from "./measurements";
+import type { PreviewAnimation } from "./chain";
 
 export type SlotId = "model" | "icon" | "concept";
 export const slotIds: SlotId[] = ["model", "icon", "concept"];
@@ -284,7 +285,15 @@ export const formatCost = (cost: { total: number }) => (cost.total > 0 ? `$${cos
  * Maps a voxel candidate's files onto the actor's parts, reusing the current render settings (scale,
  * lighting, turret offset) so candidates are drawn exactly as the game would draw them in that slot.
  */
-export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): RenderSpec | null {
+/** Suffix of a voxel part's trait when the preview copy's rules, not RTSAI-Mod main, make it play. */
+export const PREVIEW_RULES = " (local preview)";
+
+/**
+ * A voxel candidate drawn in the current actor's frame. `play`: the animations the local preview copy's rules
+ * give this actor (a drone's helicopter body, a spinning radar), so frames the candidate authored for them play
+ * here too, at those rules' TickRate.
+ */
+export function candidateRenderSpec(current: RenderSpec, candidate: Candidate, play: PreviewAnimation[] | null = null): RenderSpec | null {
   if (!current.voxel || !candidate.files.vxl?.length) return null;
   const actor = current.id;
   const turret = current.voxel.parts.find(p => p.turretOffset);
@@ -296,6 +305,19 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
   // The dev roster serves mod files under a content-hash prefix ("92827ae1d573-r2crane.vxl").
   const fileBase = (path: string) => path.split("?")[0].split("/").pop()!.replace(/\.vxl$/i, "").replace(/^[0-9a-f]{8,}-/i, "").toLowerCase();
   const currentPart = (base: string) => current.voxel!.parts.find(p => fileBase(p.vxl) === base) ?? null;
+  // The preview rules' sequence files ("idle" is the actor's own voxel unless the overlay maps it elsewhere).
+  const heliTick = current.voxel.parts.find(p => p.trait === "WithVoxelHelicopterBody")?.tickRate ?? 5;
+  const played = (base: string): PreviewAnimation | null => {
+    const named = play?.filter(a => (a.file ?? (a.sequence === "idle" ? actor : null)) === base) ?? [];
+    const own = named.find(a => a.trait !== "sequence");
+    if (own) return own;
+    // A remapped sequence plays through the actor's own trait for it (e.g. WithVoxelHelicopterBody "rotor").
+    for (const a of named) {
+      const part = current.voxel!.parts.find(p => p.sequence === a.sequence && p.tickRate !== null && p.tickRate > 0);
+      if (part) return { ...a, trait: part.trait, tickRate: part.tickRate, airborne: part.trait === "WithVoxelHelicopterBody" };
+    }
+    return null;
+  };
   const parts = candidate.files.vxl.flatMap(file => {
     const name = file.replace(/\\/g, "/");
     const hva = name.replace(/\.vxl$/i, ".hva");
@@ -306,7 +328,9 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
     const dropin = name.toLowerCase().startsWith("dropin/");
     let label = name, turretOffset: Vec3 | null = null, defaultVisible = true, trait = "";
     const match = dropin ? null : currentPart(base);
-    if (base === actor) label = "body";
+    const anim = dropin ? null : played(base);
+    // Marked as the preview's doing only when the actor's own rules would not play these frames.
+    if (base === actor) { label = "body"; if (anim && !match?.tickRate) trait = `${anim.trait}${PREVIEW_RULES}`; }
     else if (match && match.turretOffset === null && match.trait !== "WithVoxelTurret") { label = match.label; trait = match.trait; }
     else if (base === `${actor}tur`) {
       label = dropin ? "turret (drop-in, for current rules)" : "turret";
@@ -316,12 +340,17 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
       label = "barrel (needs WithVoxelBarrel)";
       turretOffset = [...declared] as Vec3;
       defaultVisible = !hasDropin;
+    } else if (anim) {
+      // A spinning model (WithAnimatedVoxelModel): on the body, or riding a turret exactly like the turret model.
+      label = anim.sequence; trait = `${anim.trait}${anim.condition ? ` while ${anim.condition}` : ""}${PREVIEW_RULES}`;
+      turretOffset = anim.turret ? [...declared] as Vec3 : null;
     } else defaultVisible = false;
     // HVA frames come from the candidate; they only play when the matching rules part has a TickRate.
     const frames = Math.max(1, Math.round(candidate.hvaFrames?.[base] ?? 1));
     return [{
       id: `cand:${name}`, label, trait: trait || label, vxl: vxlUrl, hva: hvaUrl, offset: body?.offset ?? [0, 0, 0] as Vec3, showShadow: true,
-      requiresCondition: null, turretOffset, turretInitialFacing: null, tickRate: frames > 1 ? match?.tickRate ?? null : null, frames, defaultVisible,
+      requiresCondition: null, turretOffset, turretInitialFacing: null, frames, defaultVisible,
+      tickRate: frames > 1 ? match?.tickRate ?? (anim ? anim.tickRate ?? (anim.trait.startsWith("WithVoxelHelicopterBody") ? heliTick : 2) : null) : null,
     }];
   });
   if (!parts.length) return null;

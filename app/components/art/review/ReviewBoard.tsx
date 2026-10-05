@@ -129,7 +129,7 @@ export function ReviewBoard({ factions, factionId, onFaction, unitsFor, allUnits
   const tiles: TileView[] = useMemo(() => units.map(unit => {
     const ws = workspace.get(unit.id);
     const tile = boardTile(unit.id, ws, review?.[unit.id], preview);
-    const nextItem = tile.candidate ? stageItem(unit, tile.candidate) : null;
+    const nextItem = tile.candidate ? stageItem(unit, tile.candidate, preview?.actors[unit.id]?.animations ?? null) : null;
     const labels = versionLabels(ws?.candidates ?? []);
     return {
       ...tile, unit,

@@ -8,7 +8,7 @@
  *    the local preview mod (matched by file bytes, see preview-server.ts);
  *  - counts are per actor over one denominator (the new RA2 roster), never a sum of routes or queued jobs.
  */
-import { candidatesForSlot, hasViewableFiles, slotOfKind, type Candidate, type ReviewFile, type SlotDecision, type UnitWorkspace } from "./review";
+import { candidatesForSlot, hasViewableFiles, PREVIEW_RULES, slotOfKind, type Candidate, type ReviewFile, type SlotDecision, type UnitWorkspace } from "./review";
 import type { ModelActor, ModelLibrary, ModelOption } from "./models";
 import type { SpriteArt } from "./types";
 import type { RenderSpec } from "./spec";
@@ -28,7 +28,15 @@ export const chainSteps: { id: ChainStep; label: string }[] = [
 export const isChainStep = (value: string | null): value is ChainStep => chainSteps.some(s => s.id === value);
 
 /** Local preview mod (RTSAI-Mod rtsai/art-preview): which candidate each actor's installed files came from. */
-export type PreviewActor = { model: string | null; icon: string | null; files: string[]; rules: boolean };
+/**
+ * A voxel animation the preview copy's rules play for an actor: a helicopter body cycling its HVA frames while
+ * airborne (WithVoxelHelicopterBody, e.g. a drone's propeller section) or a model that spins on the body or a
+ * turret (WithAnimatedVoxelModel, e.g. a radar). `file` is the voxel the sequence names; a null `tickRate` is
+ * inherited from the actor's own rules.
+ */
+export type PreviewAnimation = { trait: string; sequence: string; file: string | null; tickRate: number | null; turret: string | null; condition: string | null; airborne: boolean };
+/* trait "sequence": a voxel sequence the overlay remaps to another file; the actor's own trait for it plays it. */
+export type PreviewActor = { model: string | null; icon: string | null; files: string[]; rules: boolean; animations?: PreviewAnimation[] };
 /** How to play the preview copy: measured facts about the folders, and the command that launches it. */
 export type PreviewLaunch = { worktree: string; supportDir: string; engineBuilt: boolean; ra2Content: boolean; companionFiles: boolean; command: string };
 export type PreviewStatus = { available: boolean; branch: string | null; head: string | null; actors: Record<string, PreviewActor>; unmatched: string[]; launch?: PreviewLaunch };
@@ -109,10 +117,14 @@ export function actionCoverage(category: string, spec: RenderSpec | null | undef
     const needsTurret = now ? now.some(p => p.turretOffset !== null) : ["vehicle", "ship", "defense"].includes(category);
     if (needsTurret || parts.some(p => p.turretOffset)) out.push({ id: "turret", label: "Turret", present: parts.some(p => p.turretOffset !== null) });
     const cycling = parts.filter(p => p.frames > 1);
+    const playing = cycling.filter(p => p.tickRate !== null && p.tickRate > 0);
     const needsCycle = now ? now.some(p => p.tickRate !== null && p.tickRate > 0) : category === "aircraft";
+    // Rotor and propeller sections cycle through WithVoxelHelicopterBody; radars through WithAnimatedVoxelModel.
+    const preview = playing.filter(p => p.trait.endsWith(PREVIEW_RULES));
     if (needsCycle || cycling.length) out.push({
-      id: "hva", label: category === "aircraft" ? "Rotor / HVA" : "HVA cycle", present: cycling.some(p => p.tickRate !== null && p.tickRate > 0),
-      note: cycling.some(p => !p.tickRate) ? "HVA frames exist, but no TickRate plays them in game." : undefined,
+      id: "hva", label: category === "aircraft" ? "Rotor / HVA" : cycling.some(p => /radar/i.test(p.label)) ? "Radar spin" : "HVA cycle", present: playing.length > 0,
+      note: cycling.some(p => !p.tickRate) ? "HVA frames exist, but no TickRate plays them in game."
+        : preview.length ? `Played by the local preview copy's rules: ${[...new Set(preview.map(p => p.trait.slice(0, -PREVIEW_RULES.length)))].join(", ")}.` : undefined,
     });
     return out;
   }
@@ -124,7 +136,10 @@ export function actionCoverage(category: string, spec: RenderSpec | null | undef
   if (category === "defense" || category === "structure") {
     out.push({ id: "make", label: "Build-up", present: has("make") });
     out.push({ id: "damaged", label: "Damaged", present: seqs.some(s => s.name.startsWith("damaged")) });
-    if (current ? Boolean(current.sprite?.turret) || Boolean(sprite?.turret) : category === "defense") out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
+    // A bunker may drop the turret by design and fire from its slit by swapping body frames (WithAttackAnimation).
+    const slit = !sprite?.turret && seqs.some(s => s.usedBy.some(u => u.split("@")[0] === "WithAttackAnimation"));
+    if (slit) out.push({ id: "fire", label: "Fires from its slit", present: true, note: "No turret by design: it fires by swapping its body frames (WithAttackAnimation)." });
+    else if (current ? Boolean(current.sprite?.turret) || Boolean(sprite?.turret) : category === "defense") out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
   } else if (current ? Boolean(current.sprite?.turret) || Boolean(current.spec?.voxel?.parts.some(p => p.turretOffset !== null)) || Boolean(sprite?.turret) : true) {
     out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
   }

@@ -7,7 +7,7 @@ import { actionCoverage, candidateChecks, checksSummary, decisionState, defaultM
 import { measuredGroups, plainCheck } from "../lib/art-lab/measurements";
 import { candidateLight, candidateRenderSpec, candidateVehicleSprite, parseCandidateRules, sequenceRole, STOCK_VOXEL_LIGHT, type Candidate, type ReviewFile, type UnitWorkspace } from "../lib/art-lab/review";
 import { groundFor } from "../app/components/art/review/ground";
-import { readPreviewStatus, workspaceStamp } from "../lib/art-lab/preview-server";
+import { overlayAnimations, readPreviewStatus, workspaceStamp } from "../lib/art-lab/preview-server";
 import { spriteAnimations } from "../lib/art-lab/sprite-anim";
 import { spriteRig } from "../lib/art-lab/sprite-compose";
 import { artLab, renderSpec, spriteWithUrls } from "../lib/art-lab/manifest";
@@ -230,4 +230,69 @@ test("checks: the route's full metrics record, and format checks alone are not '
   const summaryOnly = measuredGroups({}, { gate: { family: ["v3"], pass: true, metrics: "metrics.json" } });
   assert.deepEqual([summaryOnly[0].pass, summaryOnly[0].rows.length], [true, 0], "a recorded verdict without detail stays a verdict");
   assert.equal(checksSummary(measuredGroups({}, { decodeCheck: { pass: true, problems: [] } })).state, "partial", "decoding is not an art check");
+});
+
+test("preview rules: drone propellers and radars spin where the preview copy's rules play them", () => {
+  const root = mkdtempSync(join(tmpdir(), "rtsai-spin-"));
+  try {
+    const overlay = join(root, "overlay");
+    mkdirSync(overlay, { recursive: true });
+    writeFileSync(join(overlay, "voxels.yaml"), "r2mohajer:\n\tidle: ra2|art-preview/voxels/r2mohajer\nr2mantis:\n\tidle: ra2|art-preview/voxels/r2mantis\n\tradar: ra2|art-preview/voxels/r2mantisradar\n");
+    writeFileSync(join(overlay, "vehicles.yaml"), "r2mantis:\n\tWithAnimatedVoxelModel@radar:\n\t\tSequence: radar\n\t\tTickRate: 3\n\t\tTurret: primary\nr2toufan:\n\t-WithVoxelBody:\n\tWithVoxelHelicopterBody:\n\t\tSequence: idle\n");
+    writeFileSync(join(overlay, "vehicles-fx.yaml"), "r2mohajer:\n\t-WithVoxelBody:\n\tWithVoxelHelicopterBody:\n\t\tTickRate: 1\n");
+    const anims = overlayAnimations(overlay, ["voxels.yaml", "vehicles.yaml", "vehicles-fx.yaml"], ["r2mohajer", "r2mantis", "r2toufan"]);
+    assert.deepEqual(anims.r2mohajer, [{ trait: "WithVoxelHelicopterBody", sequence: "idle", file: "r2mohajer", tickRate: 1, turret: null, condition: null, airborne: true }]);
+    assert.deepEqual(anims.r2mantis.map(a => [a.trait, a.file, a.tickRate, a.turret]), [["WithAnimatedVoxelModel@radar", "r2mantisradar", 3, "primary"], ["sequence", "r2mantis", null, null]],
+      "a remapped sequence no animation trait names is listed for the actor's own traits to play");
+    assert.equal(anims.r2toufan[0].tickRate, null, "an omitted TickRate is inherited from the actor's rules");
+
+    // Drone: a propeller section in the body's HVA frames, played by the preview's helicopter body.
+    const mohajer = renderSpec(artLab.actors.r2mohajer);
+    const drone = cand({ id: "voxel-v5-glb", kind: "voxel", createdAt: "x", actor: "r2mohajer", files: { vxl: ["r2mohajer.vxl"], hva: ["r2mohajer.hva"] }, urls: urls(["r2mohajer.vxl", "r2mohajer.hva"]), hvaFrames: { r2mohajer: 4 } });
+    const before = actionCoverage("aircraft", candidateRenderSpec(mohajer, drone), null, { spec: mohajer }).find(a => a.id === "hva")!;
+    assert.equal(before.present, false, "without rules that play them, HVA frames do not count");
+    const spun = candidateRenderSpec(mohajer, drone, anims.r2mohajer)!;
+    assert.equal(spun.voxel!.parts[0].tickRate, 1);
+    const after = actionCoverage("aircraft", spun, null, { spec: mohajer }).find(a => a.id === "hva")!;
+    assert.equal(after.present, true);
+    assert.match(after.note ?? "", /local preview copy's rules: WithVoxelHelicopterBody/);
+
+    // Gunship: the preview's helicopter body inherits the actor's own TickRate.
+    const toufan = renderSpec(artLab.actors.r2toufan);
+    const heli = cand({ id: "voxel-v5-glb", kind: "voxel", createdAt: "x", actor: "r2toufan", files: { vxl: ["r2toufan.vxl"], hva: ["r2toufan.hva"] }, urls: urls(["r2toufan.vxl", "r2toufan.hva"]), hvaFrames: { r2toufan: 4 } });
+    assert.equal(candidateRenderSpec(toufan, heli, anims.r2toufan)!.voxel!.parts[0].tickRate, 1);
+
+    // Radar: its own model rides the turret and cycles at the trait's TickRate.
+    const mantis = renderSpec(artLab.actors.r2mantis);
+    const files = ["r2mantis.vxl", "r2mantistur.vxl", "r2mantisradar.vxl"];
+    const radar = cand({ id: "voxel-v5-glb", kind: "voxel", createdAt: "x", actor: "r2mantis", files: { vxl: files, hva: files.map(f => f.replace(".vxl", ".hva")) }, urls: urls([...files, ...files.map(f => f.replace(".vxl", ".hva"))]), hvaFrames: { r2mantis: 1, r2mantistur: 1, r2mantisradar: 8 }, voxelize: { turretOffsetWorld: [-36, 0, 0] } });
+    const dish = candidateRenderSpec(mantis, radar, anims.r2mantis)!.voxel!.parts.find(p => p.label === "radar")!;
+    assert.deepEqual([dish.defaultVisible, dish.tickRate, dish.turretOffset], [true, 3, [-36, 0, 0]]);
+    assert.equal(candidateRenderSpec(mantis, radar)!.voxel!.parts.find(p => p.vxl.includes("radar"))!.defaultVisible, false, "without the rules it stays hidden");
+    const spin = actionCoverage("vehicle", candidateRenderSpec(mantis, radar, anims.r2mantis), null, { spec: mantis }).find(a => a.id === "hva")!;
+    assert.deepEqual([spin.label, spin.present], ["Radar spin", true]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a slit-firing bunker is complete without a turret", () => {
+  const bunker = artLab.actors.r2hzbunker;
+  const pal = "^Palettes:\n\tPaletteFromFile@b:\n\t\tName: b\n\t\tFilename: b.pal\n\t\tShadowIndex: 1\n";
+  const rules = `r2hzbunker:\n\t-WithSpriteTurret:\n\tWithAttackAnimation:\n\t\tSequence: fire\n${pal}\nr2hzbunker:\n\tDefaults:\n\t\tFilename: ra2|art-preview/buildings/r2hzbunker.shp\n\t-turret:\n\tidle:\n\t\tStart: 0\n\tdamaged-idle:\n\t\tStart: 1\n\tfire:\n\t\tStart: 6\n\t\tLength: 2\n\tmake:\n\t\tStart: 18\n\t\tLength: 12\n`;
+  const made = candidateVehicleSprite(renderSpec(bunker), cand({ id: "sprite-v3-glb", kind: "sprite", createdAt: "x", actor: "r2hzbunker", files: { shp: ["r2hzbunker.shp"], pal: "r2hzbunker.pal" }, urls: urls(["r2hzbunker.shp", "r2hzbunker.pal"]), rulesText: rules }), spriteWithUrls(bunker))!;
+  const actions = actionCoverage("defense", made.spec, made.sprite, { spec: renderSpec(bunker), sprite: { ...spriteWithUrls(bunker)!, turret: { sequence: "turret", name: "primary", offset: [0, 0, 0], initialFacing: 0 } } });
+  assert.equal(actions.find(a => a.id === "turret"), undefined, "no missing turret");
+  assert.deepEqual(actions.filter(a => !a.present), []);
+  assert.equal(actions.find(a => a.id === "fire")?.label, "Fires from its slit");
+});
+
+test("checks: the metrics file written with the art wins over a stale meta summary", () => {
+  const stale = { metrics: { file: "metrics-building.json", family: "support", members: ["tesla", "gap"], pass: false, fails: ["area_px", "dark_share"] } };
+  const file = { "metrics-building.json": { family: "support", members: ["tesla", "gap"], pass: true, rows: [{ metric: "area_px", candidate: 1382, familyMin: 1738, familyMax: 2743, bounds: [1304, 3703], pass: true, why: "size" }] } };
+  const groups = measuredGroups(file, stale);
+  assert.deepEqual(groups.map(g => [g.file, g.pass]), [["metrics-building.json", true]]);
+  assert.equal(checksSummary(groups).state, "pass");
+  const summaryOnly = measuredGroups({}, stale);
+  assert.deepEqual(summaryOnly.map(g => [g.file, g.pass, g.problems]), [["meta.json (metrics)", false, ["Size on screen", "Deep recesses"]]]);
 });

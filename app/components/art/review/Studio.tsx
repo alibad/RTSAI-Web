@@ -38,7 +38,9 @@ export function ActionRow({ unit, version, onEncounter }: { unit: ReviewUnit; ve
   const animation = useLab(s => s.animation), turret = useLab(s => s.turret);
   const item = version?.item;
   const sprite = item?.sprite ?? unit.sprite, spec = item?.spec ?? unit.spec;
-  const options = spec.voxel ? (voxelAnimationParts(spec).length ? [{ id: "body", label: "HVA cycle" }] : []) : spriteAnimations(sprite);
+  const cycles = spec.voxel ? voxelAnimationParts(spec) : [];
+  const cycleLabel = cycles.some(p => /radar/i.test(p.label)) ? "Radar spin" : unit.category === "aircraft" ? "Rotor spin" : "HVA cycle";
+  const options = spec.voxel ? (cycles.length ? [{ id: "body", label: cycleLabel }] : []) : spriteAnimations(sprite);
   const hasTurret = Boolean(sprite?.turret || spec.voxel?.parts.some(p => p.turretOffset !== null));
   return <section className="studio-action-row" aria-label="Actions">
     <div className="studio-action-list" role="group" aria-label="Play an action">{options.map(a => <button key={a.id} aria-pressed={animation === a.id} onClick={() => setLab({ animation: a.id, playing: true, animationTime: 0, view3d: "off" })}><Film size={13} />{a.label}</button>)}

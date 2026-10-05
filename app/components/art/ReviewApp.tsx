@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { candidatesForSlot, emptyEntry, needsDecision, slotIds, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type UnitWorkspace } from "../../../lib/art-lab/review";
 import { kindTags, reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
-import { actionCoverage, candidateChecks, chainSteps, decisionState, defaultModelFocus, designFor, fromModel, glbOptions, isChainStep, meshCandidate, nativeCandidates, rosterCounts, type ChainStep, type PreviewStatus } from "../../../lib/art-lab/chain";
+import { actionCoverage, candidateChecks, chainSteps, decisionState, defaultModelFocus, designFor, fromModel, glbOptions, isChainStep, meshCandidate, nativeCandidates, rosterCounts, type ChainStep, type PreviewAnimation, type PreviewStatus } from "../../../lib/art-lab/chain";
 import type { ModelLibrary } from "../../../lib/art-lab/models";
 import { houseColors } from "../../../lib/art-lab/remap";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
@@ -284,7 +284,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const referenceWhy = info?.referenceWhy;
   const paletteUnits = useMemo(() => factionRows.map(r => ({ ...r.unit, factionId })), [factionRows, factionId]);
   const unitKey = unit?.id ?? null;
-  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy) : []), [unit, ws, slot, reference, referenceWhy]);
+  // What the local preview copy's rules animate for this actor (drone propellers, radars), keyed by content.
+  const playJson = JSON.stringify(unit ? preview?.actors[unit.id]?.animations ?? null : null);
+  const play = useMemo(() => JSON.parse(playJson) as PreviewAnimation[] | null, [playJson]);
+  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy, play) : []), [unit, ws, slot, reference, referenceWhy, play]);
   const nativeChoice = defaultModelFocus(ws, entry.slots.model);
   const fallbackNative = natives.find(c => c.id === nativeChoice) ?? null;
   const meshSource = useMemo(() => meshCandidate(ws, fallbackNative), [ws, fallbackNative]);
@@ -312,7 +315,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   // The chain: the game-model step follows the focused native candidate, else the newest one.
   const gameCandidate = slot === "model" && focused?.candidate ? focused.candidate : fallbackNative;
-  const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate) : null), [unit, gameCandidate]);
+  const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate, play) : null), [unit, gameCandidate, play]);
   const modelActor = library?.actors.find(a => a.actor === unit?.id);
   const glb = useMemo(() => glbOptions(modelActor, meshSource), [modelActor, meshSource]);
   const chain: ChainData | null = unit && isNew ? {

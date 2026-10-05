@@ -116,6 +116,13 @@ export function measuredGroups(files: Record<string, unknown>, meta: Record<stri
   // Defences and buildings: metrics_building.py.
   const building = files["metrics-building.json"] as Record<string, unknown> | undefined;
   if (building && Array.isArray(building.rows)) group({ id: "family", title: "Against the stock family", tool: "metrics_building.py", file: "metrics-building.json", family: [...family(building.family), ...family(building.members).map(m => `${m}`)].filter((v, i, a) => a.indexOf(v) === i), pass: bool(building.pass), rows: rows(building.rows) });
+  // meta.metrics is the route's summary of that file and can lag behind a re-render (Signal Post kept an old
+  // "fail" beside a passing file). The file written with the art is the record; the summary counts only without it.
+  const summary = meta.metrics as Record<string, unknown> | undefined;
+  if (!(building && Array.isArray(building.rows)) && summary && typeof summary.pass === "boolean" && summary.file === "metrics-building.json") group({
+    id: "family", title: "Against the stock family", tool: "metrics_building.py", file: "meta.json (metrics)", family: [...family(summary.family), ...family(summary.members)], pass: summary.pass, rows: [],
+    notes: ["Summary only: metrics-building.json is not readable here"], problems: Array.isArray(summary.fails) ? summary.fails.map(f => plainMetric(String(f))) : [],
+  });
   // Infantry: infantry_route.py writes the structure checks and metrics_infantry.py's family gate.
   const verify = files["verify.json"] as Record<string, unknown> | undefined;
   const fam = verify?.family as Record<string, unknown> | undefined;

@@ -1,86 +1,190 @@
-/** Local browser checks. Screenshots contain only project-authored motion artwork. */
+#!/usr/bin/env node
+/**
+ * Browser check of the Studio's Animations step (chain step 5, the ActionRow) against the current candidates.
+ * Local only; screenshots contain only project-authored art (the page runs with ?authored=1 and original RA2
+ * routes are blocked). It never presses a decision key (U, R, C, Z) and never sends a review action.
+ *
+ *   node scripts/check-actor-animations.mjs [--software] [--actor r2cnportable] [--spin r2mohajer,r2mantis]
+ *   RTSAI_STUDIO_URL=http://127.0.0.1:3450 node scripts/check-actor-animations.mjs --software
+ *
+ * For one infantry candidate (the actor's newest native candidate made from its 3D model) it checks:
+ *   - the action buttons are exactly the candidate's own actions (labels and count from its sequences);
+ *   - play, pause and scrubbing (the idle articulates across its cycle; play advances the clock);
+ *   - house recolour (another player colour changes the picture, red restores it);
+ *   - Fire changes between frames, Die plays once and holds its last frame;
+ * and, for each --spin actor, that the voxel spin the preview copy's rules play (drone propellers, radars) moves
+ * when scrubbed. Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
+ * which another session may hold (C:/Users/Admin/Code/AI/logs/gpu-claim.txt); without it the GPU is claimed.
+ */
 import assert from "node:assert/strict";
-import {createRequire} from "node:module";
-import {mkdirSync,readFileSync,writeFileSync} from "node:fs";
-import {resolve} from "node:path";
-const base="http://127.0.0.1:3461",claim="C:/Users/Admin/Code/AI/logs/gpu-claim.txt",token=`RTSAI animation check pid=${process.pid}`;
-const software=process.argv.includes("--software"),existingClaim=readFileSync(claim,"utf8").trim();
-if(existingClaim&&!software)throw Error("GPU claimed; defer browser check");
-if(!software)writeFileSync(claim,token+"\n");
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE??"C:/Users/Admin/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright-core");
-const output=resolve(".cache/animation-check");mkdirSync(output,{recursive:true});
-let browser;
-const fingerprint=async canvas=>canvas.evaluate(c=>{
-  const bytes=c.getContext("2d").getImageData(0,0,c.width,c.height).data;
-  let hash=2166136261;for(const b of bytes)hash=Math.imul(hash^b,16777619);
-  return hash>>>0;
+import { createRequire } from "node:module";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { register } from "tsx/esm/api";
+
+register();
+const { candidateVehicleSprite, candidateSprite, candidatesForSlot } = await import("../lib/art-lab/review.ts");
+const { fromModel } = await import("../lib/art-lab/chain.ts");
+const { spriteAnimations } = await import("../lib/art-lab/sprite-anim.ts");
+const { artLab, renderSpec, spriteWithUrls } = await import("../lib/art-lab/manifest.ts");
+
+const args = process.argv.slice(2);
+const flag = name => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
+const base = (process.env.RTSAI_STUDIO_URL ?? "http://127.0.0.1:3461").replace(/\/$/, "");
+const actor = flag("--actor") ?? "r2cnportable";
+const spinActors = (flag("--spin") ?? "r2mohajer,r2mantis").split(",").filter(Boolean);
+const software = args.includes("--software");
+const claim = "C:/Users/Admin/Code/AI/logs/gpu-claim.txt", token = `RTSAI animation check pid=${process.pid}`;
+const existingClaim = existsSync(claim) ? readFileSync(claim, "utf8").trim() : "";
+if (existingClaim && !software) throw Error("GPU claimed by another session; rerun with --software");
+if (!software && existsSync(claim)) writeFileSync(claim, token + "\n");
+const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE ?? "C:/Users/Admin/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright-core");
+const output = resolve(".cache/animation-check");
+mkdirSync(output, { recursive: true });
+
+// The candidate the Studio opens by default: the newest native one made from the 3D model, else the newest native.
+const state = await (await fetch(`${base}/api/art-review/state?mode=ra2`)).json();
+const pick = id => {
+  const ws = state.units.find(u => u.actor === id);
+  const natives = [...candidatesForSlot(ws, "model")].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return natives.find(c => fromModel(c, ws?.candidates)) ?? natives[0] ?? null;
+};
+const lab = artLab.actors[actor];
+assert.ok(lab, `${actor} is not a new RA2 actor`);
+const candidate = pick(actor);
+assert.ok(candidate && candidate.kind === "sprite", `${actor} has no native sprite candidate`);
+// The Studio draws new units with the dev roster's live rules when it has them (as ReviewApp's unit index does).
+const roster = await (await fetch(`${base}/api/art-review/roster?mode=ra2`)).json();
+const live = roster.stock?.[actor];
+const spec = live?.spec ?? renderSpec(lab), sprite = live ? live.sprite : spriteWithUrls(lab);
+const made = candidateVehicleSprite(spec, candidate, sprite) ?? candidateSprite(spec, sprite, candidate);
+assert.ok(made, `${actor}:${candidate.id} is not drawable from its own sequences`);
+const expected = spriteAnimations(made.sprite).map(a => a.label);
+
+const fingerprint = canvas => canvas.evaluate(c => {
+  const bytes = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+  let hash = 2166136261;
+  for (const b of bytes) hash = Math.imul(hash ^ b, 16777619);
+  return hash >>> 0;
 });
-try{
-  browser=await chromium.launch({executablePath:process.env.CHROME_PATH??"C:/Program Files/Google/Chrome/Application/chrome.exe",headless:true,args:software?["--disable-gpu","--use-gl=angle","--use-angle=swiftshader","--enable-unsafe-swiftshader"]:[]});
-  const page=await browser.newPage({viewport:{width:1430,height:1100}}),errors=[];
-  const renderer=await page.evaluate(()=>{const gl=document.createElement("canvas").getContext("webgl2"),info=gl?.getExtension("WEBGL_debug_renderer_info");return gl&&info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):"unavailable";});
-  if(software)assert.match(renderer,/SwiftShader/i,"software mode must never use the claimed GPU");
-  page.on("pageerror",e=>errors.push(e.message));
-  await page.addInitScript(()=>localStorage.setItem("rtsai-art-review-coach-v3","1"));
-  // No external requests, even for flags or fonts.
-  await page.route("**/*",r=>new URL(r.request().url()).hostname==="127.0.0.1"?r.continue():r.abort());
-  const data=await(await fetch(base+"/api/art-review/roster?mode=ra2")).json();
-  for(const s of Object.values(data.stock)){s.sprite=null;s.spec={...s.spec,voxel:null,sprite:null,cameo:null};}
-  await page.route("**/api/art-review/roster?*",r=>r.fulfill({json:data}));
-  for(const type of ["ra2","classic","mod"])await page.route(`**/api/art-review/${type}/**`,r=>r.abort());
-  await page.goto(base+"/art/review?faction=china&unit=r2cnportable&slot=model&mode=ra2&view=art&v=sprite-v2-motion-study");
-  await page.locator('.lab-card[title="sprite-v2-motion-study"]').waitFor();
-  await page.locator('.lab-card[title="sprite-v2-motion-study"]').click();
-  const shelf=page.locator('.studio-action-shelf[aria-label="Artwork and behavior"]');
-  await shelf.getByRole("button",{name:"Idle 2",exact:true}).click();
-  const timeline=page.getByRole("slider",{name:"Animation time"});await timeline.waitFor();
-  await page.getByRole("button",{name:"Pause animation",exact:true}).click();
-  const canvas=page.locator(".lab-stage canvas").first();
-  const idleHashes=[];
-  for(let i=0;i<12;i++){await timeline.fill(String(i*120));await page.waitForTimeout(150);idleHashes.push(await fingerprint(canvas));}
-  if(new Set(idleHashes).size<2){await page.locator(".lab-stage").screenshot({path:resolve(output,"authored-debug.png")});console.log(JSON.stringify({time:await timeline.inputValue(),stage:await page.locator(".lab-stage").innerText(),errors}));}
-  assert.ok(new Set(idleHashes).size>1,"idle must articulate across the cycle");
-  await timeline.fill("480");
-  await page.getByRole("button",{name:"Play animation",exact:true}).click();await page.waitForTimeout(500);
-  if(Number(await timeline.inputValue())===480)console.log(JSON.stringify({time:await timeline.inputValue(),hidden:await page.evaluate(()=>document.hidden),stage:await page.locator(".lab-stage").innerText()}));
-  assert.ok(Number(await timeline.inputValue())!==480,"timer advances");
-  await page.getByRole("button",{name:"Pause animation",exact:true}).click();
-  await page.locator(".lab-stage").screenshot({path:resolve(output,"portable-idle-stage.png")});
-  const red=await fingerprint(canvas);
-  await page.getByRole("button",{name:"View",exact:true}).click();
-  await page.getByRole("button",{name:"Blue",exact:true}).click();await page.waitForTimeout(250);
-  assert.notEqual(await fingerprint(canvas),red,"player color changes ownership panels");
-  await page.getByRole("button",{name:"Red",exact:true}).click();
-  await page.getByRole("button",{name:"View",exact:true}).click();
-  await shelf.getByRole("button",{name:"Fire",exact:true}).click();
-  await page.getByRole("button",{name:"Pause animation",exact:true}).click();
-  await timeline.fill("0");await page.waitForTimeout(200);const fire0=await fingerprint(canvas);
-  await timeline.fill("80");await page.waitForTimeout(200);assert.notEqual(fire0,await fingerprint(canvas));
-  await shelf.getByRole("button",{name:"Die",exact:true}).click();
-  await page.waitForTimeout(800);await page.getByRole("button",{name:"Play animation",exact:true}).waitFor();
-  const death=await fingerprint(canvas);await page.waitForTimeout(200);assert.equal(await fingerprint(canvas),death,"death holds last frame");
-  assert.equal(await shelf.getByRole("button").count(),13,"12 native actions plus encounter");
-  await shelf.getByRole("button",{name:"Idle",exact:true}).click();await page.getByRole("button",{name:"Pause animation",exact:true}).click();
-  await shelf.getByText(/Animation checks/).click();
-  await shelf.screenshot({path:resolve(output,"portable-action-controls.png")});
-  // Native game artwork is verified locally using hashes only. No native screenshots.
-  await page.unroute("**/api/art-review/roster?*");
-  for(const type of ["ra2","classic","mod"])await page.unroute(`**/api/art-review/${type}/**`);
-  const native=[];
-  for(const [mode,actor,faction,action] of [["ra2","gapowr","america","make"],["classic","weap","england","build-top"],["ra2","r2toufan","iran","body"]]){
-    await page.goto(`${base}/art/review?faction=${faction}&unit=${actor}&slot=model&mode=${mode}&view=art`);
-    const animation=page.getByRole("combobox",{name:"Animation",exact:true});await animation.waitFor();
-    await animation.selectOption(action);
-    const time=page.getByRole("slider",{name:"Animation time"});await time.waitFor();
-    await page.getByRole("button",{name:"Pause animation",exact:true}).click();
-    await time.fill("0");await page.waitForTimeout(250);const before=await fingerprint(canvas);
-    await time.fill(mode==="ra2"&&actor==="r2toufan"?"40":"240");await page.waitForTimeout(500);const after=await fingerprint(canvas);
-    assert.notEqual(before,after,`${mode}:${actor} ${action} must animate`);
-    native.push({mode,actor,action,frameChanges:true});
+
+let browser;
+try {
+  browser = await chromium.launch({
+    executablePath: process.env.CHROME_PATH ?? "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true,
+    args: software ? ["--disable-gpu", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] : [],
+  });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } }), errors = [];
+  const renderer = await page.evaluate(() => { const gl = document.createElement("canvas").getContext("webgl2"), info = gl?.getExtension("WEBGL_debug_renderer_info"); return gl && info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : "unavailable"; });
+  if (software) assert.match(renderer, /SwiftShader/i, "software mode must never use the claimed GPU");
+  page.on("pageerror", e => errors.push(e.message));
+  await page.addInitScript(() => { try { localStorage.setItem("rtsai-art-review-coach-v3", "1"); } catch { /* storage off */ } });
+  // Loopback only (no fonts or flags from elsewhere); original RA2 and Classic art is never requested.
+  const origin = new URL(base).hostname;
+  await page.route("**/*", r => (new URL(r.request().url()).hostname === origin ? r.continue() : r.abort()));
+  for (const type of ["ra2", "classic"]) await page.route(`**/api/art-review/${type}/**`, r => r.abort());
+  // Fail loudly if anything would write a review decision.
+  await page.route("**/api/art-review/action", r => { errors.push("a review action was sent"); return r.abort(); });
+
+  const open = async (id, version) => {
+    await page.goto(`${base}/art/review?mode=ra2&authored=1&faction=${artLab.actors[id].factionId}&unit=${id}&step=anim&v=${version}`);
+    await page.locator('section[aria-label="Actions"]').waitFor({ timeout: 30000 });
+    // One version on the stage, so the picture is the candidate's alone.
+    const single = page.getByRole("radio", { name: "Single" });
+    if (await single.count() && !(await single.isDisabled())) await single.click();
+    await page.waitForTimeout(400);
+  };
+  const actions = page.locator('section[aria-label="Actions"] [role="group"][aria-label="Play an action"] button');
+  const play = name => actions.filter({ hasText: new RegExp(`^${name}$`) }).first().click();
+  const timeline = page.getByRole("slider", { name: "Animation time" });
+  const pause = async () => { const b = page.getByRole("button", { name: "Pause animation", exact: true }); if (await b.count()) await b.click(); };
+  const canvas = page.locator(".lab-stage canvas").first();
+  // A range input only takes values on its step.
+  const snap = async ms => { const step = Number(await timeline.getAttribute("step")) || 1; return String(Math.round(ms / step) * step); };
+  const at = async ms => { await timeline.fill(await snap(ms)); await page.waitForTimeout(180); return fingerprint(canvas); };
+
+  // 1. The candidate's own actions, exactly.
+  await open(actor, candidate.id);
+  // The Studio redraws the unit with the dev roster's live rules once that arrives; wait for it to settle.
+  let labels = [];
+  for (const end = Date.now() + 30000; Date.now() < end; await page.waitForTimeout(250)) {
+    labels = (await actions.allTextContents()).map(t => t.trim());
+    if (JSON.stringify(labels) === JSON.stringify(expected)) break;
   }
-  assert.deepEqual(errors,[]);
-  const report={renderer,authoredCandidate:{actions:12,idleChanges:true,fireChanges:true,playerRemap:true,scrubbing:true,playPause:true,terminalDeathHeld:true},native,originalScreenshots:0,pageErrors:errors};
-  writeFileSync(resolve(output,"browser.json"),JSON.stringify(report,null,2)+"\n");console.log(JSON.stringify(report));
-}finally{
-  try{await browser?.close();}finally{if(readFileSync(claim,"utf8").trim()===token)writeFileSync(claim,"");}
+  assert.deepEqual(labels, expected, "the action buttons are the candidate's own actions");
+
+  // 2. Idle: scrub across the cycle, then play and pause.
+  const idle = labels.find(l => /^Idle/.test(l)) ?? labels[0];
+  await play(idle);
+  await timeline.waitFor();
+  await pause();
+  const max = Number(await timeline.getAttribute("max"));
+  const idleHashes = [];
+  for (let i = 0; i < 10; i++) idleHashes.push(await at(Math.round((max * i) / 10)));
+  assert.ok(new Set(idleHashes).size > 1, `${idle} articulates across its cycle`);
+  await timeline.fill(await snap(max / 2));
+  const before = Number(await timeline.inputValue());
+  await page.getByRole("button", { name: "Play animation", exact: true }).click();
+  await page.waitForTimeout(600);
+  assert.notEqual(Number(await timeline.inputValue()), before, "playing advances the clock");
+  await pause();
+  const paused = Number(await timeline.inputValue());
+  await page.waitForTimeout(400);
+  assert.equal(Number(await timeline.inputValue()), paused, "pause holds the clock");
+  await page.locator(".lab-stage").screenshot({ path: resolve(output, `${actor}-idle.png`) });
+
+  // 3. House recolour: the player-colour panels change, red restores the picture.
+  const red = await fingerprint(canvas);
+  const colours = page.getByRole("radiogroup", { name: "Player colour" }).first();
+  await colours.getByRole("radio", { name: "Blue", exact: true }).click();
+  await page.waitForTimeout(300);
+  const blue = await fingerprint(canvas);
+  assert.notEqual(blue, red, "another house colour changes the picture");
+  await colours.getByRole("radio", { name: "Red", exact: true }).click();
+  await page.waitForTimeout(300);
+  assert.equal(await fingerprint(canvas), red, "red restores it");
+
+  // 4. Fire articulates; Die plays once and holds its last frame.
+  const fire = labels.find(l => l === "Fire");
+  assert.ok(fire, "the candidate has a Fire action");
+  await play(fire);
+  await pause();
+  const fireMax = Number(await timeline.getAttribute("max"));
+  const fireHashes = [];
+  for (let i = 0; i < 6; i++) fireHashes.push(await at(Math.round((fireMax * i) / 6)));
+  assert.ok(new Set(fireHashes).size > 1, "Fire changes between frames");
+  const die = labels.find(l => /^Die/.test(l));
+  assert.ok(die, "the candidate has a Die action");
+  await play(die);
+  await page.getByRole("button", { name: "Play animation", exact: true }).waitFor({ timeout: 15000 });
+  const dead = await fingerprint(canvas);
+  await page.waitForTimeout(400);
+  assert.equal(await fingerprint(canvas), dead, "Die holds its last frame");
+  await page.locator('section[aria-label="Actions"]').screenshot({ path: resolve(output, `${actor}-actions.png`) });
+
+  // 5. Spins the preview copy's rules play: drone propellers (WithVoxelHelicopterBody), radars (WithAnimatedVoxelModel).
+  const spins = [];
+  for (const id of spinActors) {
+    const c = pick(id);
+    if (!c || c.kind !== "voxel") { spins.push({ actor: id, skipped: "no voxel candidate" }); continue; }
+    await open(id, c.id);
+    // The preview copy's rules arrive with the preview status, a moment after the page.
+    await actions.filter({ hasText: /spin|HVA cycle/i }).first().waitFor({ timeout: 20000 }).catch(() => undefined);
+    const spin = (await actions.allTextContents()).map(t => t.trim()).find(l => /spin|HVA cycle/i.test(l));
+    assert.ok(spin, `${id}: the candidate's spin is offered`);
+    await play(spin);
+    await pause();
+    const spinMax = Number(await timeline.getAttribute("max"));
+    const hashes = [];
+    for (let i = 0; i < 4; i++) hashes.push(await at(Math.round((spinMax * i) / 4)));
+    assert.ok(new Set(hashes).size > 1, `${id}: ${spin} moves when scrubbed`);
+    spins.push({ actor: id, candidate: c.id, action: spin, frames: new Set(hashes).size });
+  }
+
+  assert.deepEqual(errors, [], "no page errors");
+  const report = { studio: base, renderer, candidate: { actor, id: candidate.id, actions: labels }, idleFrames: new Set(idleHashes).size, playPause: true, recolour: true, fireFrames: new Set(fireHashes).size, dieHeld: true, spins, pageErrors: errors, originalScreenshots: 0 };
+  writeFileSync(resolve(output, "browser.json"), JSON.stringify(report, null, 2) + "\n");
+  console.log(JSON.stringify(report));
+} finally {
+  try { await browser?.close(); } finally { if (existsSync(claim) && readFileSync(claim, "utf8").trim() === token) writeFileSync(claim, ""); }
 }
