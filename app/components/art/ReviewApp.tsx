@@ -348,6 +348,9 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the unit, step or candidate changes
   }, [stepKey]);
 
+  // Aircraft fly at cruise altitude in the Animations step; the other steps compare them landed, at a readable size.
+  useEffect(() => { setLab({ flying: chainStep === "anim" && !iconMode }); }, [chainStep, iconMode]);
+
   // Preload the neighbours of the focused version (models warm in the stage's frame cache).
   useEffect(() => {
     if (slot === "model") return;

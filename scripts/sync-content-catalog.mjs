@@ -15,7 +15,13 @@ const rosterPath = resolve("../RTSAI-Art/rebuild/catalog.json");
 const rosterSource = JSON.parse(await readFile(rosterPath, "utf8"));
 for (const [mode, repo, rules] of [["ra2", resolve("../RTSAI-Mod"), ["mods/rtsai"]], ["classic", engine, ["mods/ra", "mods/common"]]]) {
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf8" }).trim();
-  if (head !== rosterSource.modes[mode].sourceCommit) throw new Error(`${mode} roster is stale; refresh the Art Lab rule export first`);
+  // The roster export is still current when no rule, sequence or text file changed since its commit (an art-only
+  // commit, e.g. a padded flag sheet, does not change who builds what).
+  if (head !== rosterSource.modes[mode].sourceCommit) {
+    const changed = execFileSync("git", ["diff", "--name-only", rosterSource.modes[mode].sourceCommit, head, "--", ...rules], { cwd: repo, encoding: "utf8" })
+      .split(/\r?\n/).filter(f => /\.(yaml|ftl|lua|json)$/i.test(f));
+    if (changed.length) throw new Error(`${mode} roster is stale (${changed.length} rule files changed); refresh the Art Lab rule export first`);
+  }
   if (execFileSync("git", ["status", "--porcelain", "--", ...rules], { cwd: repo, encoding: "utf8" }).trim()) throw new Error(`${mode} rules have uncommitted changes; refresh and commit the rule export before syncing`);
   if (rosterSource.modes[mode].unresolved.length) throw new Error(`${mode} roster has unresolved actors`);
 }

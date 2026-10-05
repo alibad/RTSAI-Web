@@ -17,6 +17,8 @@ import { comparePair, type Version } from "./versions";
 import { AnimationTransport } from "./AnimationTransport";
 
 export const DEFAULT_FACING = 896;
+/** Screen pixels (1x) a flying aircraft is drawn above its ground point: OpenRA's 1448 world units per 30 px cell height. */
+const liftOf = (item: StageItem | null | undefined, flying: boolean) => (flying && item?.spec.voxel?.altitude ? (30 * item.spec.voxel.altitude) / 1448 : 0);
 
 /** "Reference · Grizzly Battle Tank" for the original unit compared against; else the version's label. */
 export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.kind === "candidate" ? `${v.label} · candidate` : v?.label ?? "");
@@ -24,12 +26,14 @@ export const tagText = (v: Version | null | undefined) => (v?.reference ? `Refer
 const TagNote = ({ v, right = false }: { v: Version | null | undefined; right?: boolean }) => (v?.note ? <span className={`lab-tag-note${right ? " is-right-half" : ""}`}>{v.note}</span> : null);
 
 export const poseFrom = (s: LabView, tints: MapTint[], facing = s.facing, tick = 0): Pose => ({
-  facing, turret: s.turret, tick,timeMs:s.animationTime,loop:!/(^die|^make$|deploy|takeoff|^land$|^liedown$|^standup$)/.test(s.animation), animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints),
+  facing, turret: s.turret, tick,timeMs:s.animationTime,loop:!/(^die|^make$|deploy|takeoff|^land$|^liedown$|^standup$)/.test(s.animation), animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints), airborne: s.flying,
 });
 
 /** The unit's turning circle at 1x (from what is in game now at the default facing); null while loading. */
 export function useUnitRadius(frames: FrameStore, item: StageItem | null, tints: MapTint[]) {
   const [found, setFound] = useState<{ id: string; radius: number } | null>(null);
+  // A flying aircraft's picture spans its altitude and ground shadow: the fit follows it.
+  const flying = useLab(s => s.flying);
   useEffect(() => {
     if (!item) return;
     let off = () => {};
@@ -37,14 +41,14 @@ export function useUnitRadius(frames: FrameStore, item: StageItem | null, tints:
       const f = frames.get(item, poseFrom({ ...useLab.getState(), turret: 0 }, tints, DEFAULT_FACING));
       if (!f) return;
       const radius = Math.max(8, Math.ceil(frameRadius(f)));
-      setFound(prev => (prev?.id === item.spec.id && prev.radius === radius ? prev : { id: item.spec.id, radius }));
+      setFound(prev => (prev?.id === `${item.spec.id}${flying ? ":air" : ""}` && prev.radius === radius ? prev : { id: `${item.spec.id}${flying ? ":air" : ""}`, radius }));
       off();
     };
     off = frames.subscribe(check);
     queueMicrotask(check);
     return () => off();
-  }, [frames, item, tints]);
-  return item && found?.id === item.spec.id ? found.radius : null;
+  }, [frames, item, tints, flying]);
+  return item && found?.id === `${item.spec.id}${flying ? ":air" : ""}` ? found.radius : null;
 }
 
 /** Calls `draw` at most once per animation frame, only when asked (never on a loop). */
@@ -109,13 +113,14 @@ function Inset({ item, frames, tints, radius }: { item: StageItem | null; frames
     const f = frames.get(item, pose);
     if (!f) return;
     const { ctx, dpr } = prepareCanvas(canvas, 152, 104);
-    put(ctx, dpr, groundTile(groundFor(item.spec.category, s.ground), pose.tint, groundWidth(radius)), 76, 60, 1);
-    put(ctx, dpr, f, 76, 60, 1);
+    const y = Math.round(60 + liftOf(item, s.flying) / 2);
+    put(ctx, dpr, groundTile(groundFor(item.spec.category, s.ground), pose.tint, groundWidth(radius)), 76, y, 1);
+    put(ctx, dpr, f, 76, y, 1);
   };
   const schedule = useDrawScheduler(draw);
   useEffect(() => {
     schedule();
-    const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap || s.ground !== p.ground || s.animation !== p.animation||s.animationTime!==p.animationTime) schedule(); });
+    const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap || s.ground !== p.ground || s.flying !== p.flying || s.animation !== p.animation||s.animationTime!==p.animationTime) schedule(); });
     const offFrames = frames.subscribe(schedule);
     return () => { offLab(); offFrames(); };
   }, [schedule, frames, item, radius]);
@@ -185,7 +190,9 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     const s = useLab.getState();
     const base = poseFrom(s, tints, s.facing, tick.current);
     const ground = groundTile(groundFor(focused.item?.spec.category, s.ground), base.tint, groundWidth(radius));
-    const r = radius ?? 40;
+    // A flying aircraft (Animations step) is centred between its body and its ground shadow.
+    const lift = liftOf(focused.item, s.flying);
+    const r = Math.max(8, (radius ?? 40) - lift / 2);
     // The focused pictures render on demand (1-2 ms each); lineup cells come from the warmed cache.
     const unit = (v: Version | undefined, cx: number, cy: number, zoom: number, facing = s.facing, t = tick.current, now = true) => {
       if (!v?.item) return;
@@ -283,7 +290,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       const zoom = clampZoom(s.zoom ?? fit, max);
       setZoom(zoom, max);
       pair.forEach((index, k) => {
-        const cx = Math.round(paneW * k + paneW / 2), cy = Math.round(H * 0.54);
+        const cx = Math.round(paneW * k + paneW / 2), cy = Math.round(H * 0.54 + (lift * zoom) / 2);
         ctx.save();
         ctx.beginPath(); ctx.rect(Math.round(paneW * k * dpr), 0, Math.round(paneW * dpr), Math.round(H * dpr)); ctx.clip();
         put(ctx, dpr, ground, cx, cy, zoom);
@@ -299,7 +306,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     const max = Math.max(fit, fitZoom(r, W, H, 6, 0.98));
     const zoom = clampZoom(s.zoom ?? fit, max);
     setZoom(zoom, max);
-    const cx = Math.round(W / 2), cy = Math.round(H * 0.54);
+    const cx = Math.round(W / 2), cy = Math.round(H * 0.54 + (lift * zoom) / 2);
     put(ctx, dpr, ground, cx, cy, zoom);
     if (compare === "swipe" && pair) {
       const x = Math.round(s.swipe * W * dpr);
@@ -318,7 +325,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   useEffect(() => {
     const offLab = useLab.subscribe((s, p) => {
       if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap
-        || s.ground !== p.ground || s.swipe !== p.swipe || s.lineupFacings !== p.lineupFacings || s.animation !== p.animation || s.animationTime!==p.animationTime||s.zoom !== p.zoom) schedule();
+        || s.ground !== p.ground || s.flying !== p.flying || s.swipe !== p.swipe || s.lineupFacings !== p.lineupFacings || s.animation !== p.animation || s.animationTime!==p.animationTime||s.zoom !== p.zoom) schedule();
     });
     const offFrames = frames.subscribe(schedule);
     return () => { offLab(); offFrames(); };

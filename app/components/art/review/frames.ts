@@ -32,6 +32,8 @@ export type Pose = {
   color: string | null;
   shadow: boolean;
   tint: readonly number[];
+  /** Aircraft at their cruise altitude over the ground shadow (the Animations step); otherwise landed. */
+  airborne?: boolean;
 };
 
 export type Frame = {
@@ -176,7 +178,7 @@ export class FrameStore {
 
   private key(item: StageItem, pose: Pose, rig?: SpriteRig | null, shps?: RigShps | null) {
     const tint = pose.tint.join(",");
-    if (item.spec.voxel) return `${this.identity(item.spec)}|v|${Object.values(voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40)).join(",")}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
+    if (item.spec.voxel) return `${this.identity(item.spec)}|v|${Object.values(voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40)).join(",")}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}|${pose.airborne && item.spec.voxel.altitude != null ? "air" : ""}`;
     if (!rig || !shps) return `${this.identity(item.spec)}|s|${pose.animation}|${pose.tick}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
     // Facings that pick the same SHP frames share one cached picture (an 8-facing soldier has 8, not 32).
     const layers=rigPoseLayers(rig,shps,{facing:pose.facing,turretFacing:pose.turret,tick:pose.tick,shadow:pose.shadow,timeMs:pose.timeMs,loop:pose.loop});
@@ -373,7 +375,8 @@ export class FrameStore {
       if (!urgent && this.inflight.size >= MAX_INFLIGHT) return null;
       this.inflight.add(key);
       engine.renderInGameAsync(model, {
-        facing: pose.facing, turretFacing: pose.turret, frame: 0,partFrames:voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40), visible: defaultVisibility(item.spec), shadow: pose.shadow, airborne: false,
+        facing: pose.facing, turretFacing: pose.turret, frame: 0,partFrames:voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40), visible: defaultVisibility(item.spec), shadow: pose.shadow,
+        airborne: Boolean(pose.airborne) && item.spec.voxel?.altitude !== null && item.spec.voxel?.altitude !== undefined,
       }, palette, pose.tint).then(image => {
         this.inflight.delete(key);
         if (!this.alive) return;

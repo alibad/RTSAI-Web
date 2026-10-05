@@ -29,11 +29,13 @@ export type LabView = {
   ground: Backdrop;
   tintMap: string;
   shadow: boolean;
+  /** Aircraft fly at cruise altitude (the Animations step) instead of standing landed. */
+  flying: boolean;
 };
 
 export const defaultView: LabView = {
   facing: 896, turret: 0, spin: false, playing: false, animation: "stand",animationTime:0, zoom: null, compare: "single", view3d: "off",
-  swipe: 0.5, lineupFacings: 4, color: "F21818", ground: "sand", tintMap: "", shadow: true,
+  swipe: 0.5, lineupFacings: 4, color: "F21818", ground: "sand", tintMap: "", shadow: true, flying: false,
 };
 
 export const useLab = create<LabView>(() => ({ ...defaultView }));

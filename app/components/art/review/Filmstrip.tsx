@@ -25,7 +25,8 @@ export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, 
       const canvas = ref.current;
       if (!canvas) return;
       const s = useLab.getState();
-      const pose = poseFrom(s, tints, s.facing, 0);
+      // Thumbnails always show the unit landed, at a readable size.
+      const pose = { ...poseFrom(s, tints, s.facing, 0), airborne: false };
       const f = frames.peek(item, pose);
       // Keep the previous picture until the new facing is cached: no blank flashes while turning.
       if (!f) { frames.want(item, pose, true); return; }
