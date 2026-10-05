@@ -1765,12 +1765,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "fce87fdd10ee44f3baf7f5023324d5cac50721c1",
-        "snapshotSha256": "39ae68d2093511e708c96e6871f254727dec2f69cb56f82a82b0cf935b3d486e"
+        "commit": "1a08285d6b1128eff80678b62ea8919b95a8e651",
+        "snapshotSha256": "6626d3b0e82fd3632dbd8bfc952c7f1bbd618b70dd0806212b9c445aa6f2ce83"
       },
       "ra": {
         "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "5325e4519999b6ba70cb7ad116973108792e4a5c716c53e55579d31394031a99"
+        "snapshotSha256": "921b0e875fec6fdaf7857bd52b973abf3b56d3a32bbfe8b4e02d875cc8cd5d9f"
       }
     },
     "factions": [
