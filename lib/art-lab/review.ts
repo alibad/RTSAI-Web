@@ -386,7 +386,13 @@ export type CandidateRules = {
   palette: { transparent: number[]; shadow: number[]; remap: number[] } | null;
   traits: string[];
   removed: string[];
+  /** Sequences the snippet's own traits name (sequence -> trait key), e.g. active -> WithIdleOverlay@dish. */
+  traitSequences: Record<string, string>;
+  /** WithIdleOverlay traits the snippet declares, with their Offset (a dish, a flag, a radar). */
+  idleOverlays: { sequence: string; trait: string; offset: Vec3; requiresCondition: string | null }[];
 };
+
+const SEQUENCE_TRAITS = new Set(["WithIdleOverlay", "WithAttackAnimation", "WithTurretAttackAnimation", "WithSpriteBody", "WithMakeAnimation"]);
 
 /**
  * Reads the OpenRA MiniYaml a candidate proposes (files.rules): the actor's sequences (blocks whose children
@@ -394,7 +400,7 @@ export type CandidateRules = {
  */
 export function parseCandidateRules(text: string, actor: string): CandidateRules {
   const nodes = parseMiniYaml(text, "openra-snippet.yaml");
-  const out: CandidateRules = { sequences: {}, classicFacingBodyOrientation: null, quantizedFacings: null, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [] };
+  const out: CandidateRules = { sequences: {}, classicFacingBodyOrientation: null, quantizedFacings: null, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [], traitSequences: {}, idleOverlays: [] };
   const isSequence = (n: Yaml) => n.nodes.some(c => ["Filename", "Start", "Facings", "Length", "ShadowStart", "Stride", "Frames", "UseClassicFacings", "Transpose"].includes(c.key));
   let playerPalette: string | null = null;
   for (const node of nodes.filter(n => n.key.toLowerCase() === actor.toLowerCase())) {
@@ -421,6 +427,15 @@ export function parseCandidateRules(text: string, actor: string): CandidateRules
       }
     } else {
       for (const trait of children) (trait.key.startsWith("-") ? out.removed : out.traits).push(trait.key.replace(/^-/, ""));
+      // Which sequence each art trait plays. Only an explicit Sequence counts, except WithIdleOverlay's default.
+      for (const trait of children) {
+        const kind = trait.key.split("@")[0];
+        if (trait.key.startsWith("-") || !SEQUENCE_TRAITS.has(kind)) continue;
+        const sequence = childValue(trait.value, "Sequence") ?? (kind === "WithIdleOverlay" ? "idle-overlay" : null);
+        if (!sequence) continue;
+        out.traitSequences[sequence] = trait.key;
+        if (kind === "WithIdleOverlay") out.idleOverlays.push({ sequence, trait: trait.key, offset: parseVec(childValue(trait.value, "Offset")) ?? [0, 0, 0], requiresCondition: childValue(trait.value, "RequiresCondition") });
+      }
       const turreted = child(node.value, "Turreted")?.value;
       out.turretOffset = parseVec(childValue(turreted, "Offset")) ?? out.turretOffset;
       const initial = childValue(turreted, "InitialFacing");
@@ -459,17 +474,22 @@ export function declaredTurretOffset(candidate: Candidate): Vec3 | null {
  * The trait that plays a candidate sequence when the candidate does not say: the current actor's role for the
  * same sequence name, else the OpenRA naming conventions (damaged-/critical- variants keep their base role).
  */
-export function sequenceRole(name: string, category: string, traits: string[], currentSprite?: SpriteArt | null): string[] {
-  const known = currentSprite?.sequences.find(s => s.name === name)?.usedBy;
-  if (known?.length) return known;
+export function sequenceRole(name: string, category: string, traits: string[], currentSprite?: SpriteArt | null, declared?: Record<string, string>): string[] {
   const base = name.replace(/^(damaged|critical)-/, "");
   const damaged = base !== name ? " (damaged)" : "";
+  // The candidate's own rules first: a new dish overlay or attack animation is what the candidate says it is.
+  if (declared?.[name]) return [declared[name]];
+  if (declared?.[base]) return [`${declared[base]}${damaged}`];
+  const known = currentSprite?.sequences.find(s => s.name === name)?.usedBy;
+  if (known?.length) return known;
   const baseRole = currentSprite?.sequences.find(s => s.name === base)?.usedBy[0]?.replace(/ \(damaged\)$/, "");
   if (base === "turret") return [`WithSpriteTurret${damaged}`];
   if (base === "make") return ["WithMakeAnimation (build-up)"];
   if (base === "fire" && traits.includes("WithTurretAttackAnimation")) return [`WithTurretAttackAnimation${damaged}`];
   if (baseRole) return [`${baseRole}${damaged}`];
   if (base === "idle" || base === "stand") return [`${category === "defense" || category === "structure" ? "WithSpriteBody" : "WithFacingSpriteBody"}${damaged}`];
+  // A building's body is its idle sequence; an undeclared extra sequence never replaces it.
+  if (category === "defense" || category === "structure") return [];
   return ["WithFacingSpriteBody"];
 }
 
@@ -495,7 +515,7 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
     const file = shpUrl(r?.file ?? m?.file ?? null);
     if (!file) continue;
     const length = r?.length ?? m?.length ?? 1;
-    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy??"") ? ["WithSpriteTurret"] : m?.usedBy ? [m.usedBy] : sequenceRole(name, current.category, rules?.traits ?? [], currentSprite);
+    const usedBy = name === "turret" || /WithSpriteTurret/.test(m?.usedBy??"") ? ["WithSpriteTurret"] : m?.usedBy ? [m.usedBy] : sequenceRole(name, current.category, rules?.traits ?? [], currentSprite, rules?.traitSequences);
     sequences.push({
       name, file, external: null, start: r?.start ?? m?.start ?? 0, length, stride: r?.stride ?? m?.stride ?? (typeof length === "number" ? length : 0), facings: r?.facings ?? m?.facings ?? 1,
       reverseFacings: r?.reverseFacings ?? m?.reverseFacings ?? false, useClassicFacings: r?.useClassicFacings ?? m?.useClassicFacings ?? false,
@@ -520,6 +540,13 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
     classicFacingBodyOrientation: rules?.classicFacingBodyOrientation ?? candidate.sprite?.classicFacingBodyOrientation ?? currentSprite?.classicFacingBodyOrientation ?? false,
     turret: turretSeq ? { sequence: turretSeq.name, name: candidate.sprite?.turret?.name ?? "primary", offset: turretOffset, initialFacing: rules?.turretInitialFacing ?? currentSprite?.turret?.initialFacing ?? 0 } : null,
   };
+  // Overlays the candidate's rules declare keep their own Offset; overlays known only by role keep the old layout.
+  const declaredOverlays = (rules?.idleOverlays ?? []).filter(o => sequences.some(s => s.name === o.sequence));
+  if (declaredOverlays.length) sprite.overlays = [
+    ...declaredOverlays.map(o => ({ ...o, mode: "loop" as const })),
+    ...sequences.filter(s => s.usedBy.some(u => u.startsWith("WithIdleOverlay")) && !s.name.startsWith("damaged-") && !declaredOverlays.some(o => o.sequence === s.name))
+      .map(s => ({ sequence: s.name, trait: "WithIdleOverlay", offset: [0, 0, 0] as Vec3, requiresCondition: null, mode: "loop" as const })),
+  ];
   return {
     spec: {
       ...current, id: `${current.id}:${candidate.id}`, name: `${current.name} · ${candidate.id}`, palette, voxel: null,

@@ -36,6 +36,9 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     // A defence fires by swapping its turret sequence (WithTurretAttackAnimation); the body stays as it is.
     const fire = seqs.find(s => s.usedBy.some(u => u === "WithTurretAttackAnimation"));
     if (fire && out[0]?.body) out.push({ id: fire.name, label: "Fire", body: out[0].body, turret: fire, note: "Turret fire: the game plays it each time the defence attacks." });
+    // A turretless defence fires by swapping its body (WithAttackAnimation), e.g. a bunker's firing slit.
+    const attack = seqs.find(s => s.usedBy.some(u => u.split("@")[0] === "WithAttackAnimation"));
+    if (attack && !fire) out.push({ id: attack.name, label: "Fire", body: attack, note: "Attack: the game plays it each time the defence fires." });
   }
   const used = new Set([...out.map(a => a.body?.name), ...out.map(a => a.turret?.name)]);
   for (const s of seqs) {

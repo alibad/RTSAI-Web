@@ -38,7 +38,9 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
 - 3D-model thumbnails are pre-rendered on the CPU: `npm run thumbs:glb` (Blender Cycles CPU, `.cache/glb-thumbs/`,
   about 0.3 s per model). A thumbnail is served only while the GLB's size and modification time still match.
 - Ships are drawn on water; helicopters play their candidate's HVA rotor frames at the rules' TickRate; buildings
-  read `-sequence` removals, idle overlays (e.g. a radar dish), damaged/critical states and turret fire.
+  read `-sequence` removals, idle overlays (e.g. a radar dish), damaged/critical states and turret fire; a
+  candidate's own `WithIdleOverlay` (with its Offset) and `WithAttackAnimation` traits decide those sequences' roles,
+  so an extra sequence never replaces the idle body.
 - A faction switch holds frame rendering for 150 ms so its repaint presents first (software GPUs otherwise spend
   that time on voxel frames); flags are rasterised once in idle time so the faction picker opens quickly.
 - `?authored=1` hides original RA2 units and references, for screenshots that may be shared.

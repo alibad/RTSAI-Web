@@ -151,6 +151,26 @@ test("sprite candidates: a defence's sequences file, roles and turret fire", () 
   assert.equal(rig.turret?.name, "fire", "the turret sequence is swapped for the fire frames");
 });
 
+test("sprite candidates: a building's own overlay and attack traits never replace its idle body", () => {
+  const pal = "^Palettes:\n\tPaletteFromFile@b:\n\t\tName: b\n\t\tFilename: b.pal\n\t\tShadowIndex: 1\n";
+  const seqs = (actor: string, extra: string) => `${actor}:\n\tDefaults:\n\t\tFilename: ra2|art-preview/buildings/${actor}.shp\n\t\tOffset: 4, -20, 20\n\tidle:\n\t\tStart: 0\n\t\tShadowStart: 3\n${extra}\tmake:\n\t\tStart: 102\n\t\tLength: 12\n`;
+  // Signal Post: a new dish overlay the current actor does not have.
+  const relay = artLab.actors.r2hzrelay;
+  const relayRules = `r2hzrelay:\n\tWithIdleOverlay@dish:\n\t\tSequence: active\n\t\tRequiresCondition: !build-incomplete\n\t\tOffset: 193,-24,0\n${pal}\n${seqs("r2hzrelay", "\tactive:\n\t\tStart: 6\n\t\tLength: 32\n\t\tShadowStart: 70\n")}`;
+  const r = candidateVehicleSprite(renderSpec(relay), cand({ id: "sprite-v3-glb", kind: "sprite", createdAt: "x", actor: "r2hzrelay", files: { shp: ["r2hzrelay.shp"], pal: "r2hzrelay.pal" }, urls: urls(["r2hzrelay.shp", "r2hzrelay.pal"]), rulesText: relayRules }), spriteWithUrls(relay))!;
+  const relayRig = spriteRig(r.sprite, "stand")!;
+  assert.equal(relayRig.body.name, "idle", "the dish is not the body");
+  assert.deepEqual(relayRig.overlays.map(o => [o.seq.name, o.offset]), [["active", [193, -24, 0]]], "the dish sits where its trait's Offset puts it");
+  // Bunker: fires by swapping its body (WithAttackAnimation); it stands on its idle frame.
+  const bunker = artLab.actors.r2hzbunker;
+  const bunkerRules = `r2hzbunker:\n\t-WithSpriteTurret:\n\tWithAttackAnimation:\n\t\tSequence: fire\n${pal}\n${seqs("r2hzbunker", "\t-turret:\n\tfire:\n\t\tStart: 6\n\t\tLength: 2\n\t\tShadowStart: 8\n")}`;
+  const b = candidateVehicleSprite(renderSpec(bunker), cand({ id: "sprite-v3-glb", kind: "sprite", createdAt: "x", actor: "r2hzbunker", files: { shp: ["r2hzbunker.shp"], pal: "r2hzbunker.pal" }, urls: urls(["r2hzbunker.shp", "r2hzbunker.pal"]), rulesText: bunkerRules }), spriteWithUrls(bunker))!;
+  assert.equal(spriteRig(b.sprite, "stand")!.body.name, "idle");
+  const fire = spriteAnimations(b.sprite).find(a => a.label === "Fire");
+  assert.equal(fire?.body?.name, "fire", "its attack frames are an animation of their own");
+  assert.deepEqual(sequenceRole("active", "defense", [], null), [], "an undeclared extra sequence is never a building body");
+});
+
 test("preview mod: an actor is in local preview only by installed bytes", () => {
   const root = mkdtempSync(join(tmpdir(), "rtsai-chain-"));
   try {
