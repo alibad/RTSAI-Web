@@ -364,12 +364,14 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   }, [playing, anim, is3d, schedule,compare,focused,versions,frames,animation,assets]);
   useEffect(() => { tick.current = 0;setLab({animationTime:0}); }, [focused, animation]);
 
-  // 3D orbit / exploded view through the page's single WebGL context.
+  // 3D orbit / exploded view through the page's single WebGL context. It follows the focused item, not the
+  // version list: new candidates arriving from other tools rebuild the list, and must not reset the orbit.
+  const focusedItem = focused?.item ?? null;
   useEffect(() => {
-    if (!is3d || !focused?.item) return;
+    if (!is3d || !focusedItem) return;
     const host = glHostRef.current;
     const labelHost = labelsRef.current;
-    const item = focused.item;
+    const item = focusedItem;
     let attached = false;
     const labels = (list: StageLabel[]) => {
       const el = labelHost;
@@ -404,7 +406,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       if (attached) frames.engine?.detach();
       labelHost?.replaceChildren();
     };
-  }, [is3d, focused, frames]);
+  }, [is3d, focusedItem, frames]);
 
   // Wheel: whole zoom steps (the canvas redraws at the new scale; nothing scrolls). In 3D the orbit camera zooms.
   useEffect(() => {
