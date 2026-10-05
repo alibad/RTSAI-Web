@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { findTrailer } from "./lib/trailer";
 
@@ -31,7 +31,62 @@ const publicDirectory = fileURLToPath(new URL("./public", import.meta.url));
 const trailer = findTrailer((publicPath) => existsSync(`${publicDirectory}${publicPath}`));
 const define = { "process.env.RTSAI_TRAILER": JSON.stringify(trailer ? JSON.stringify(trailer) : "") };
 
-export default defineConfig(async () => {
+// Faction Art Lab Review mode: a dev-server-only API over the local RTSAI-Art workspace. `apply: "serve"`
+// keeps it out of every build; the handler also refuses to answer when NODE_ENV is "production".
+function artReviewDevApi(): Plugin {
+  return {
+    name: "rtsai-art-review-dev-api",
+    apply: "serve",
+    async configureServer(server) {
+      if (process.env.NODE_ENV === "production") return;
+      const { createArtReviewMiddleware } = await import("./lib/art-lab/review-server");
+      const { originalsConfig } = await import("./lib/art-lab/originals");
+      const root = process.env.RTSAI_ART_DIR ?? fileURLToPath(new URL("../RTSAI-Art", import.meta.url));
+      // Original RA2 units: extracted locally from the player's RA2 content into the gitignored .cache/.
+      const originals = originalsConfig(fileURLToPath(new URL(".", import.meta.url)));
+      server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root, originals }));
+    },
+  };
+}
+
+// Production builds swap the Review UI for an empty stub before any bundling or client-reference analysis,
+// so the review code is absent from every production artifact (the page itself answers 404 there).
+function artReviewProductionStub(): Plugin {
+  const stubId = "\0rtsai-art-review-stub";
+  return {
+    name: "rtsai-art-review-production-stub",
+    apply: "build",
+    enforce: "pre",
+    resolveId(source) {
+      return /(^|[\\/])components[\\/]art[\\/]ReviewApp(\.tsx)?$/.test(source) ? stubId : null;
+    },
+    load(id) {
+      return id === stubId ? "export function ReviewApp() { return null; }\n" : null;
+    },
+  };
+}
+
+// The standalone Studio is a client app. A local Node preview can mount that
+// same component directly, avoiding worker/RSC transport startup on Windows.
+function artReviewClientPreview(): Plugin {
+  return {
+    name: "rtsai-art-review-client-preview",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (process.env.NODE_ENV === "production" || req.method !== "GET" || req.url?.split("?")[0] !== "/art/review") return next();
+        try {
+          const html = await server.transformIndexHtml(req.url, '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title></head><body><div id="art-lab-root"></div><script type="module" src="/app/art/review/local-entry.tsx"></script></body></html>');
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(html);
+        } catch (error) { next(error); }
+      });
+    },
+  };
+}
+
+export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -42,6 +97,20 @@ export default defineConfig(async () => {
     ? { watch: { useFsEvents: false, usePolling: true } }
     : undefined;
 
+  // Art Lab can use Vite's native Node dev server without a worker transport.
+  // This opt-in is serve-only; production always retains its configured host.
+  if (command === "serve" && process.env.RTSAI_ARTLAB_NODE_DEV === "1") {
+    const { default: react } = await import("@vitejs/plugin-react");
+    return {
+      server,
+      define,
+      cacheDir: "node_modules/.vite-art-lab",
+      optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
+      resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
+      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), tailwindcss(), react()],
+    };
+  }
+
   // Vercel is the canonical production host. Nitro packages the Vinext
   // application as a Vercel-compatible server and static asset bundle.
   if (isVercelBuild) {
@@ -49,7 +118,7 @@ export default defineConfig(async () => {
     return {
       server,
       define,
-      plugins: [tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
+      plugins: [artReviewDevApi(), artReviewProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
@@ -60,6 +129,8 @@ export default defineConfig(async () => {
     server,
     define,
     plugins: [
+      artReviewDevApi(),
+      artReviewProductionStub(),
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

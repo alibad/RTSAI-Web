@@ -129,6 +129,15 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
     store.open();
   }, [user, store]);
 
+  // A page asked for the panel (e.g. "Give feedback on this unit"): same sign-in gate as the launcher.
+  const launchRequest = store.launchRequest;
+  const handledLaunch = useRef(launchRequest);
+  useEffect(() => {
+    if (launchRequest === handledLaunch.current) return;
+    handledLaunch.current = launchRequest;
+    launch();
+  });
+
   function launch() {
     if (!user) {
       awaitingAuth.current = true;

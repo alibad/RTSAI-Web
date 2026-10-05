@@ -5,6 +5,7 @@ import { SiteHeader, SiteFooter } from "../../components/SiteChrome";
 import { CatalogImage, ModeNav, ReleaseCallout } from "../../components/ContentGuide";
 import { CompleteRoster } from "../../components/CompleteRoster";
 import { categoryLabels, factionById, resolveMode, rosterActors, rosterFactionById, rosters, unitLabel, unitsForFaction, mediaById } from "../../../lib/game-content";
+import { FactionInGameRoster } from "../../components/InGameArt";
 type Props = { params: Promise<{ factionId: string }>; searchParams: Promise<{ mode?: string | string[] }> };
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const id = (await params).factionId;
@@ -35,6 +36,7 @@ export default async function FactionPage({ params, searchParams }: Props) {
       <section className="doctrine-grid" aria-label="How this faction plays"><article><span className="section-number">APPROACH</span><h2>How to play</h2><p>{faction.playstyle}</p></article><article><span className="section-number">ADVANTAGE</span><h2>Strengths</h2><p>{faction.strengths}</p></article><article><span className="section-number">COUNTERPLAY</span><h2>Know the limits</h2><p>{faction.counterplay}</p></article></section>
       <section className="roster-section"><div className="roster-heading"><div><span className="section-number">START HERE</span><h2>Signature units</h2></div><p>A few highlights before the full roster.</p></div><div className="unit-grid">{signatures.map(unit => <Link className="unit-card" href={`/units/${unit.id}?mode=${mode}`} key={unit.id}><CatalogImage id={unit.assetIds[0]} portrait /><div><span className="section-number">{unitLabel(unit, mode).role}</span><h3>{unitLabel(unit, mode).name}</h3><p>{unitLabel(unit, mode).description}</p><b>Explore unit →</b></div></Link>)}</div></section></>}
       <CompleteRoster faction={roster} mode={mode} />
+      {mode === "ra2" && faction && <FactionInGameRoster catalogFactionId={faction.id} />}
       {faction ? <ReleaseCallout faction={faction} mode={mode} /> : <aside className="catalog-release"><div><span className="section-number">Development roster</span><h2>Check the release before you play.</h2><p>This guide describes the current rules. Public download coverage is listed separately.</p></div><Link className="primary-action" href={`/download?faction=${id}&mode=${mode}`}>Release details →</Link></aside>}
       <details className="catalog-provenance"><summary>About this guide</summary><p>Names, categories and costs are measured from the game rules. Modern faction strategies are editorial guidance, and balance is still being refined.</p><p>{mode === "ra2" ? "Red Alert 2" : "Classic"} rule revision: <code>{rosters.sources[mode].commit.slice(0, 12)}</code>. Artwork is labeled by its source and game mode.</p></details>
     </> : <section className="catalog-unavailable"><h2>No roster in this mode.</h2><p>{name} is available in the {other!.mode === "ra" ? "Classic" : "Red Alert 2"} development roster.</p><Link href={`/factions/${id}?mode=${other!.mode}`}>View that roster →</Link></section>}

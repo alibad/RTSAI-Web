@@ -163,7 +163,8 @@ test("renders companion and download routes; parked routes stay reachable but un
   assert.match(capabilityAtlas, /Research track/);
   assert.match(capabilityAtlas, /THE BUILD ARCHIVE/);
   assert.match(capabilityAtlas, /See the factions/);
-  assert.match(capabilityAtlas, /288<\/b> optimized visual artifacts/);
+  const media = JSON.parse(await readFile(new URL("../public/game-media/manifest.json", import.meta.url), "utf8"));
+  assert.match(capabilityAtlas, new RegExp(`${media.length}</b> optimized visual artifacts`));
   assert.match(capabilityAtlas, /Red Sea 2026 key art/);
   assert.match(capabilityAtlas, /Türkiye/);
   assert.match(capabilityAtlas, /China/);
