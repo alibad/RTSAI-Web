@@ -13,7 +13,8 @@ import type { ModelActor, ModelLibrary, ModelOption } from "./models";
 import type { SpriteArt } from "./types";
 import type { RenderSpec } from "./spec";
 import { measuredGroups, type MeasuredGroup } from "./measurements";
-import { spriteAnimations } from "./sprite-anim";
+import { barrelSequence, spriteAnimations, spriteSpins } from "./sprite-anim";
+import { spinKind, spinLabel, type SpinKind } from "./action-labels";
 
 export type ChainStep = "now" | "design" | "glb" | "game" | "anim" | "checks" | "call";
 export const chainSteps: { id: ChainStep; label: string }[] = [
@@ -56,12 +57,21 @@ export function fromModel(candidate: Candidate, all: Candidate[] = []): boolean 
 }
 
 /**
- * The version the Studio opens: the newest native candidate that is not rejected (else the newest one), never
- * the placeholder when a candidate exists. "current" when the actor has no native candidate.
+ * The version the Studio opens: the candidate under review (see reviewCandidate) that is not rejected, else the
+ * newest native one; never the placeholder when a candidate exists. "current" when the actor has none.
  */
-export function defaultModelFocus(ws: UnitWorkspace | undefined, decision?: SlotDecision | null): string {
-  const list = nativeCandidates(ws);
-  return (list.find(c => !decision?.rejected.includes(c.id)) ?? list[0])?.id ?? "current";
+export function defaultModelFocus(ws: UnitWorkspace | undefined, decision?: SlotDecision | null, installed?: string | null): string {
+  return (reviewCandidate(ws, installed, decision?.rejected ?? []) ?? nativeCandidates(ws)[0])?.id ?? "current";
+}
+
+/**
+ * The candidate under review for an actor: the one the local preview copy plays (its installed bytes; the art route
+ * picked it, e.g. a prerendered sprite over a bold-voxel fallback), else the newest made from the 3D model, else the
+ * newest native one. `skip`: candidates the owner rejected.
+ */
+export function reviewCandidate(ws: UnitWorkspace | undefined, installed?: string | null, skip: string[] = []): Candidate | null {
+  const natives = nativeCandidates(ws).filter(c => !skip.includes(c.id));
+  return natives.find(c => c.id === installed) ?? natives.find(c => fromModel(c, ws?.candidates)) ?? natives[0] ?? null;
 }
 
 const fileUrl = (c: Candidate, file: string | null | undefined) => (file ? c.urls[file.replace(/\\/g, "/")] ?? null : null);
@@ -101,7 +111,7 @@ export function glbOptions(actor: ModelActor | undefined, mesh: Candidate | null
 }
 
 export type ActionCheck = { id: string; label: string; present: boolean; note?: string };
-const infantryActions: [string, string][] = [["stand", "Stand"], ["idle", "Idle"], ["move", "Run"], ["attack", "Fire"], ["prone", "Prone"], ["die", "Die"]];
+const infantryActions: [string, string][] = [["stand", "Stand"], ["idle", "Idle"], ["move", "Walk"], ["attack", "Fire"], ["prone", "Prone"], ["die", "Die"]];
 
 /** The actions this kind of actor needs, and whether the version's own art provides each one. */
 /**
@@ -122,7 +132,7 @@ export function actionCoverage(category: string, spec: RenderSpec | null | undef
     // Rotor and propeller sections cycle through WithVoxelHelicopterBody; radars through WithAnimatedVoxelModel.
     const preview = playing.filter(p => p.trait.endsWith(PREVIEW_RULES));
     if (needsCycle || cycling.length) out.push({
-      id: "hva", label: category === "aircraft" ? "Rotor / HVA" : cycling.some(p => /radar/i.test(p.label)) ? "Radar spin" : "HVA cycle", present: playing.length > 0,
+      id: "hva", label: spinLabel(cycling.map(p => (p.spin as SpinKind | undefined) ?? spinKind(p.label) ?? (p.trait.startsWith("WithVoxelHelicopterBody") ? "rotor" : null)), category === "aircraft" ? "Rotor spin" : "Moving parts"), present: playing.length > 0,
       note: cycling.some(p => !p.tickRate) ? "HVA frames exist, but no TickRate plays them in game."
         : preview.length ? `Played by the local preview copy's rules: ${[...new Set(preview.map(p => p.trait.slice(0, -PREVIEW_RULES.length)))].join(", ")}.` : undefined,
     });
@@ -140,8 +150,15 @@ export function actionCoverage(category: string, spec: RenderSpec | null | undef
     const slit = !sprite?.turret && seqs.some(s => s.usedBy.some(u => u.split("@")[0] === "WithAttackAnimation"));
     if (slit) out.push({ id: "fire", label: "Fires from its slit", present: true, note: "No turret by design: it fires by swapping its body frames (WithAttackAnimation)." });
     else if (current ? Boolean(current.sprite?.turret) || Boolean(sprite?.turret) : category === "defense") out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
-  } else if (current ? Boolean(current.sprite?.turret) || Boolean(current.spec?.voxel?.parts.some(p => p.turretOffset !== null)) || Boolean(sprite?.turret) : true) {
-    out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
+  } else {
+    if (current ? Boolean(current.sprite?.turret) || Boolean(current.spec?.voxel?.parts.some(p => p.turretOffset !== null)) || Boolean(sprite?.turret) : true) {
+      out.push({ id: "turret", label: "Turret", present: Boolean(sprite?.turret) });
+    }
+    // A sprite vehicle's moving parts are rendered overlays: rotors, propellers, radars (idle or turret-riding).
+    const spinning = spriteSpins(sprite ?? null);
+    const needsSpin = current?.spec?.voxel?.parts.some(p => p.defaultVisible !== false && p.tickRate !== null && p.tickRate > 0) ?? false;
+    if (needsSpin || spinning.length) out.push({ id: "spin", label: spinLabel(spinning.map(spinKind), category === "aircraft" ? "Rotor spin" : "Moving parts"), present: spinning.length > 0 });
+    if (sprite?.barrel) out.push({ id: "barrel", label: "Barrel", present: Boolean(barrelSequence(sprite)) });
   }
   return out;
 }
@@ -204,7 +221,7 @@ export function rosterCounts(actors: string[], workspaces: Map<string, UnitWorks
     // The same rules as the review board: the candidate under review is the newest GLB-made native one (else the
     // newest native one); "in preview" means that candidate's exact bytes are installed (an icon alone is not a
     // model in the preview), and "decided" means it is used, rejected, or "keep current" came after it.
-    const candidate = fromGlb[0] ?? natives[0] ?? null;
+    const candidate = reviewCandidate(ws, preview?.actors[actor]?.model);
     if (candidate && preview?.actors[actor]?.model === candidate.id) inPreview++;
     const state = decisionState(review?.[actor]?.slots.model, candidate);
     if (state.kind === "use" || state.kind === "rejected" || state.kind === "keep") decided++;

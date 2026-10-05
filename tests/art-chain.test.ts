@@ -56,7 +56,7 @@ test("chain: design and 3D model follow the candidate's own lineage", () => {
 test("chain: actions are checked against the version's own art", () => {
   const rifle = artLab.actors.r2cnrifle;
   const infantry = actionCoverage("infantry", renderSpec(rifle), spriteWithUrls(rifle));
-  assert.deepEqual(infantry.map(a => a.label), ["Stand", "Idle", "Run", "Fire", "Prone", "Die"]);
+  assert.deepEqual(infantry.map(a => a.label), ["Stand", "Idle", "Walk", "Fire", "Prone", "Die"]);
   assert.equal(infantry.find(a => a.id === "prone")?.present, false, "the current rifleman has no prone art");
   const mantis = actionCoverage("vehicle", renderSpec(artLab.actors.r2mantis), null);
   assert.deepEqual(mantis.map(a => [a.label, a.present]), [["Body", true], ["Turret", true]]);

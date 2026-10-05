@@ -13,7 +13,6 @@ import { MEASUREMENT_FILES } from "./measurements";
 import { childValue, parseMiniYaml, type YamlNode } from "./miniyaml";
 
 const OVERLAY = "mods/rtsai/art-preview";
-const ROUTES = ["voxels", "infantry", "buildings", "icons"];
 const ART = /\.(vxl|hva|shp|pal|png)$/i;
 
 const sha = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
@@ -63,7 +62,9 @@ export function readPreviewStatus(artRoot: string, previewMod: string | null): P
   };
   const actors: Record<string, PreviewActor> = {};
   const unmatched: string[] = [];
-  const art = files(overlay).filter(f => ROUTES.includes(f.split("/")[0]) && ART.test(f));
+  // Art lives in the overlay's route folders (voxels, infantry, buildings, icons, and any new one such as the
+  // prerendered vehicle sprites); rule and sequence files sit at its top level.
+  const art = files(overlay).filter(f => f.includes("/") && ART.test(f));
   for (const file of art) {
     const actor = ownerOf(file);
     if (!actor) { unmatched.push(file); continue; }

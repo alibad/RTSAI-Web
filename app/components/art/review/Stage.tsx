@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalS
 import { cellZoom, clampZoom, dragFacing, dragTurret, fitZoom, lineupFacings } from "../../../../lib/art-lab/review-ui";
 import { pickAnimation, spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { facingLabel } from "../../../../lib/art-lab/voxel-math";
-import { voxelAnimationParts,voxelAnimationFrames } from "../../../../lib/art-lab/voxel-animation";
+import { voxelAnimationParts,voxelAnimationFrames,voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
 import { houseColors } from "../../../../lib/art-lab/remap";
 import { tintFor, type MapTint } from "../viewSettings";
 import type { StageLabel } from "../voxel-three";
@@ -18,7 +18,21 @@ import { AnimationTransport } from "./AnimationTransport";
 
 export const DEFAULT_FACING = 896;
 /** Screen pixels (1x) a flying aircraft is drawn above its ground point: OpenRA's 1448 world units per 30 px cell height. */
-const liftOf = (item: StageItem | null | undefined, flying: boolean) => (flying && item?.spec.voxel?.altitude ? (30 * item.spec.voxel.altitude) / 1448 : 0);
+const altitudeOf = (item: StageItem | null | undefined) => item?.spec.voxel?.altitude ?? item?.spec.airAltitude ?? null;
+const liftOf = (item: StageItem | null | undefined, flying: boolean) => { const a = altitudeOf(item); return flying && a ? (30 * a) / 1448 : 0; };
+
+/** A sprite's ground shadow while it flies (WithShadow): its silhouette in the shadow colour, cached per frame. */
+const silhouettes = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
+function silhouette(canvas: HTMLCanvasElement) {
+  let s = silhouettes.get(canvas);
+  if (!s) {
+    s = document.createElement("canvas"); s.width = canvas.width; s.height = canvas.height;
+    const c = s.getContext("2d", { willReadFrequently: true })!;
+    c.drawImage(canvas, 0, 0); c.globalCompositeOperation = "source-in"; c.fillStyle = "rgba(0, 0, 0, 0.55)"; c.fillRect(0, 0, s.width, s.height);
+    silhouettes.set(canvas, s);
+  }
+  return s;
+}
 
 /** "Reference · Grizzly Battle Tank" for the original unit compared against; else the version's label. */
 export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.kind === "candidate" ? `${v.label} · candidate` : v?.label ?? "");
@@ -102,6 +116,16 @@ function put(ctx: CanvasRenderingContext2D, dpr: number, p: Picture, cx: number,
   ctx.drawImage(p.canvas, Math.round(cx * dpr) - p.anchorX * z, Math.round(cy * dpr) - p.anchorY * z, p.width * z, p.height * z);
 }
 
+/**
+ * A unit picture at its ground point. A voxel aircraft's frame already holds its body at altitude over its shadow;
+ * a sprite aircraft is drawn `lift` pixels up, over its silhouette on the ground (WithShadow).
+ */
+function putUnit(ctx: CanvasRenderingContext2D, dpr: number, item: StageItem, f: Picture, cx: number, cy: number, zoom: number, lift: number) {
+  if (!lift || item.spec.voxel) { put(ctx, dpr, f, cx, cy, zoom); return; }
+  put(ctx, dpr, { ...f, canvas: silhouette(f.canvas) }, cx, cy, zoom);
+  put(ctx, dpr, f, cx, cy - lift * zoom, zoom);
+}
+
 /** The 1x inset: the focused version at true player size. */
 function Inset({ item, frames, tints, radius }: { item: StageItem | null; frames: FrameStore; tints: MapTint[]; radius: number | null }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -115,7 +139,7 @@ function Inset({ item, frames, tints, radius }: { item: StageItem | null; frames
     const { ctx, dpr } = prepareCanvas(canvas, 152, 104);
     const y = Math.round(60 + liftOf(item, s.flying) / 2);
     put(ctx, dpr, groundTile(groundFor(item.spec.category, s.ground), pose.tint, groundWidth(radius)), 76, y, 1);
-    put(ctx, dpr, f, 76, y, 1);
+    putUnit(ctx, dpr, item, f, 76, y, 1, liftOf(item, s.flying));
   };
   const schedule = useDrawScheduler(draw);
   useEffect(() => {
@@ -163,6 +187,11 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const lineupZoom = useRef(new Map<string, { fit: number; up: number; down: number; cols: { left: number; right: number }[] }>());
   /** The last picture drawn per item: shown while the next facing or turret angle is on its way from the GPU. */
   const lastFrame = useRef(new Map<string, Frame>());
+  /** True while the last drawn picture lacked a frame (so an arriving frame must repaint it). */
+  const stale = useRef(true);
+  const heldTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const redraw = useRef<() => void>(() => {});
+  useEffect(() => () => clearTimeout(heldTimer.current), []);
   const compareRaw = useLab(s => s.compare);
   const view3d = useLab(s => s.view3d);
   const playing = useLab(s => s.playing);
@@ -176,7 +205,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const canTurn = isVoxel || Math.abs(pickAnimation(focused?.item?.sprite ?? null, animation)?.body?.facings ?? 1) > 1;
   const canAim = isVoxel ? Boolean(focused?.item?.spec.voxel?.parts.some(p => p.turretOffset !== null)) : Boolean(focused?.item?.sprite?.turret);
   const is3d = compare === "single" && view3d !== "off" && isVoxel;
-  const animations = useMemo(() => (focused?.item ? focused.item.spec.voxel ? voxelAnimationParts(focused.item.spec).length?[{id:"body",label:"HVA cycle"}]:[] : spriteAnimations(focused.item.sprite) : []), [focused]);
+  const animations = useMemo(() => (focused?.item ? focused.item.spec.voxel ? voxelAnimationParts(focused.item.spec).length?[{id:"body",label:voxelCycleLabel(focused.item.spec)}]:[] : spriteAnimations(focused.item.sprite) : []), [focused]);
   const anim = useMemo(() => (focused?.item ? frames.animationInfo(focused.item, animation) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `assets` re-reads the cache after loads
     [frames, focused, animation, assets]);
@@ -187,6 +216,11 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     const W = size.width, H = size.height;
     if (!canvas || !W || !H || !focused) return;
     const { ctx, dpr } = prepareCanvas(canvas, W, H);
+    stale.current = false;
+    // Right after a faction switch the new page paints first, with an empty stage; the unit follows when the hold
+    // ends (150 ms). Drawing it into that first frame costs a software renderer 30-50 ms of the switch.
+    const held = frames.holding();
+    if (held > 0) { stale.current = true; clearTimeout(heldTimer.current); heldTimer.current = setTimeout(() => redraw.current(), held); return; }
     const s = useLab.getState();
     const base = poseFrom(s, tints, s.facing, tick.current);
     const ground = groundTile(groundFor(focused.item?.spec.category, s.ground), base.tint, groundWidth(radius));
@@ -197,8 +231,10 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     const unit = (v: Version | undefined, cx: number, cy: number, zoom: number, facing = s.facing, t = tick.current, now = true) => {
       if (!v?.item) return;
       const pose = { ...base, facing, tick: t };
-      const f = now ? frames.get(v.item, pose) ?? lastFrame.current.get(v.item.spec.id) : frames.peek(v.item, pose);
-      if (f) { put(ctx, dpr, f, cx, cy, zoom); if (now) lastFrame.current.set(v.item.spec.id, f); }
+      const exact = now ? frames.get(v.item, pose) : frames.peek(v.item, pose);
+      if (!exact) stale.current = true;
+      const f = exact ?? (now ? lastFrame.current.get(v.item.spec.id) : null);
+      if (f) { putUnit(ctx, dpr, v.item, f, cx, cy, zoom, liftOf(v.item, s.flying)); if (now) lastFrame.current.set(v.item.spec.id, f); }
       else if (!now) frames.want(v.item, pose, true);
     };
     const setZoom = (zoom: number, max: number) => {
@@ -225,7 +261,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
         for (const v of rows) base4.forEach((facing, ci) => {
           const pose = { ...base, facing, tick: 0 };
           const f = frames.peek(v.item!, pose);
-          if (!f) { all = false; frames.want(v.item!, pose, true); return; }
+          if (!f) { all = false; stale.current = true; frames.want(v.item!, pose, true); return; }
           cols[ci].left = Math.max(cols[ci].left, -f.left); cols[ci].right = Math.max(cols[ci].right, f.right);
           up = Math.max(up, -f.top); down = Math.max(down, f.bottom);
         });
@@ -321,13 +357,15 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const schedule = useDrawScheduler(draw);
 
   // Redraw on any change that affects the picture; never on a timer.
-  useLayoutEffect(() => { schedule(); });
+  useLayoutEffect(() => { redraw.current = schedule; schedule(); });
   useEffect(() => {
     const offLab = useLab.subscribe((s, p) => {
       if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap
         || s.ground !== p.ground || s.flying !== p.flying || s.swipe !== p.swipe || s.lineupFacings !== p.lineupFacings || s.animation !== p.animation || s.animationTime!==p.animationTime||s.zoom !== p.zoom) schedule();
     });
-    const offFrames = frames.subscribe(schedule);
+    // New frames redraw the stage only while it still waits for one: background warm-up for other facings and
+    // versions would otherwise repaint an unchanged picture many times a second.
+    const offFrames = frames.subscribe(kind => { if (kind === "assets" || stale.current) schedule(); });
     return () => { offLab(); offFrames(); };
   }, [frames, schedule]);
 
@@ -396,12 +434,16 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
         pose: { mode: s.view3d === "exploded" ? "exploded" : "orbit", facing: s.facing, turretFacing: s.turret, frame: 0,partFrames:voxelAnimationFrames(item.spec,s.animationTime), visible: defaultVisibility(item.spec), shadow: false, airborne: false },
       });
     };
-    show();
+    // The 3D button's own frame paints first; the WebGL canvas joins the page on the next one (bringing a GL canvas
+    // on screen costs a software renderer 60-90 ms, which would otherwise delay the button's response).
+    let first: ReturnType<typeof setTimeout> | undefined;
+    const raf = requestAnimationFrame(() => { first = setTimeout(show, 0); });
     const offLab = useLab.subscribe((s, p) => { if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.view3d !== p.view3d||s.animationTime!==p.animationTime) show(); });
     const offFrames = frames.subscribe(kind => { if (kind === "assets") show(); });
     const observer = new ResizeObserver(() => frames.engine?.resize());
     if (host) observer.observe(host);
     return () => {
+      cancelAnimationFrame(raf); clearTimeout(first);
       offLab(); offFrames(); observer.disconnect();
       if (attached) frames.engine?.detach();
       labelHost?.replaceChildren();

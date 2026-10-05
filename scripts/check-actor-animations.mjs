@@ -12,8 +12,8 @@
  *   - play, pause and scrubbing (the idle articulates across its cycle; play advances the clock);
  *   - house recolour (another player colour changes the picture, red restores it);
  *   - Fire changes between frames, Die plays once and holds its last frame;
- * and, for each --spin actor, that the voxel spin the preview copy's rules play (drone propellers, radars) moves
- * when scrubbed. Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
+ * and, for each --spin actor, that its spin (a drone's propeller, a radar) moves when scrubbed: the candidate the
+ * local preview copy plays, voxel (HVA frames under the preview's rules) or prerendered sprite (looping frames). Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
  * which another session may hold (C:/Users/Admin/Code/AI/logs/gpu-claim.txt); without it the GPU is claimed.
  */
 import assert from "node:assert/strict";
@@ -164,13 +164,16 @@ try {
 
   // 5. Spins the preview copy's rules play: drone propellers (WithVoxelHelicopterBody), radars (WithAnimatedVoxelModel).
   const spins = [];
+  // The candidate the local preview copy plays (installed bytes), else the default one.
+  const preview = await (await fetch(`${base}/api/art-review/preview?mode=ra2`)).json();
   for (const id of spinActors) {
-    const c = pick(id);
-    if (!c || c.kind !== "voxel") { spins.push({ actor: id, skipped: "no voxel candidate" }); continue; }
+    const installed = preview.actors?.[id]?.model;
+    const c = state.units.find(u => u.actor === id)?.candidates.find(x => x.id === installed) ?? pick(id);
+    if (!c || !["voxel", "sprite"].includes(c.kind)) { spins.push({ actor: id, skipped: "no game-model candidate" }); continue; }
     await open(id, c.id);
     // The preview copy's rules arrive with the preview status, a moment after the page.
-    await actions.filter({ hasText: /spin|HVA cycle/i }).first().waitFor({ timeout: 20000 }).catch(() => undefined);
-    const spin = (await actions.allTextContents()).map(t => t.trim()).find(l => /spin|HVA cycle/i.test(l));
+    await actions.filter({ hasText: /spin|Propeller|Moving parts/i }).first().waitFor({ timeout: 20000 }).catch(() => undefined);
+    const spin = (await actions.allTextContents()).map(t => t.trim()).find(l => /spin|Propeller|Moving parts/i.test(l));
     assert.ok(spin, `${id}: the candidate's spin is offered`);
     await play(spin);
     await pause();
@@ -178,7 +181,7 @@ try {
     const hashes = [];
     for (let i = 0; i < 4; i++) hashes.push(await at(Math.round((spinMax * i) / 4)));
     assert.ok(new Set(hashes).size > 1, `${id}: ${spin} moves when scrubbed`);
-    spins.push({ actor: id, candidate: c.id, action: spin, frames: new Set(hashes).size });
+    spins.push({ actor: id, candidate: c.id, kind: c.kind, inPreview: c.id === installed, action: spin, frames: new Set(hashes).size });
   }
 
   assert.deepEqual(errors, [], "no page errors");

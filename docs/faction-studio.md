@@ -46,6 +46,16 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
   actor's own rotor sequence) and radars (`WithAnimatedVoxelModel`, riding the turret when it names one). They are
   read from `RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/*.yaml` and marked "local preview" in Checks.
   Slit-firing bunkers (no turret, `WithAttackAnimation` fire frames) are complete by design.
+- Prerendered vehicle sprites (RTSAI-Art glb_prerender.py, `sprite-v6-prerender`) draw from their own
+  `openra-snippet.yaml`: 32-facing body (`WithFacingSpriteBody`), turret (`WithSpriteTurret`, Turreted.Offset, aimable
+  on the stage), barrel (`WithSpriteBarrel`, placed as the engine does), sprites riding the turret
+  (`WithSpriteTurret@x`) and rotor overlays (`WithIdleOverlay` with Offset). A body or turret that loops its frames is
+  a spin, named from `meta.sprite.sequences.<seq>.spins` (e.g. `["pusher"]` is a propeller) or the model it replaces.
+  Conditional variants (`idle-landed`, `idle-still`, `turret-still`) are their own actions and never drawn over the main
+  one; overlays from another image (damage smoke) are ignored. Art installed under any overlay folder
+  (e.g. `art-preview/vehicles/`) counts for "In local preview".
+- Every action has a plain-word label from one map (`lib/art-lab/action-labels.ts`): Crawl, Prone fire, Die (alt),
+  Lie down, Rotor spin, Propeller, Radar spin, and so on.
 - `node scripts/check-actor-animations.mjs --software` (`RTSAI_STUDIO_URL` picks the Studio, default :3461) checks
   the Animations step against current candidates: the action buttons equal the candidate's own actions, play,
   pause and scrub, house recolour, Fire and Die (held last frame), the preview spins, and no page errors.

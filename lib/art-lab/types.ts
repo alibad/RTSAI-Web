@@ -128,6 +128,14 @@ export type SpriteArt = {
   turret: { sequence: string; name: string; offset: Vec3; initialFacing: number } | null;
   /** Decorative layers and doors, in trait order. Activity layers appear only in their preview. */
   overlays?: { sequence: string; trait: string; offset: Vec3; requiresCondition: string | null; mode: "loop" | "door" | "activity" }[];
+  /** WithSpriteBarrel: its sequence and LocalOffset (turned with the turret, from the turret's offset). */
+  barrel?: { sequence: string; localOffset: Vec3 } | null;
+  /** Further WithSpriteTurret@x sequences on the main turret (e.g. a radar dish), looping their frames. */
+  turretSprites?: string[];
+  /** Conditional turret sequences that replace the main one (a radar's "turret-still" until deployed). */
+  turretVariants?: string[];
+  /** What a looping body or turret turns ("rotor", "propeller", "radar"), when known. */
+  spin?: string;
 };
 
 export type GeneratorRef = {

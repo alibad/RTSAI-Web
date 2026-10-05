@@ -6,7 +6,7 @@
 import type { Palette } from "./pal";
 import type { RasterImage } from "./raster";
 import type { Shp } from "./shp";
-import { pickAnimation, spriteOverlays, turretSequence, type SpriteAnimation } from "./sprite-anim";
+import { barrelSequence, pickAnimation, spriteOverlays, turretSequence, turretSprites, type SpriteAnimation } from "./sprite-anim";
 import { blit, drawShpFrame, framePosition, quantizeFacing, sequenceFrame, sequenceLength } from "./sprite-render";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { localToWorld, rotateYaw, screenVector } from "./voxel-math";
@@ -20,15 +20,30 @@ export type SpriteRig = {
   turret: SpriteSequence | null;
   overlay: SpriteSequence | null;
   overlays: { seq: SpriteSequence; offset: Vec3; animated: boolean }[];
+  /** WithSpriteBarrel: drawn at the turret, its LocalOffset turned with the turret. */
+  barrel: { seq: SpriteSequence; localOffset: Vec3 } | null;
+  /** WithSpriteTurret@x sprites that ride the main turret and loop (a radar dish). */
+  turretSprites: SpriteSequence[];
   initialFacing: number;
   turretOffset: Vec3 | undefined;
   quantizedFacings: number;
   classicFacingBodyOrientation: boolean;
 };
 
-export type RigShps = { body: Shp; turret: Shp | null; overlay: Shp | null; overlays?: (Shp | null)[] };
+export type RigShps = { body: Shp; turret: Shp | null; overlay: Shp | null; overlays?: (Shp | null)[]; barrel?: Shp | null; turretSprites?: (Shp | null)[] };
+
+// Rigs per sprite object and animation: thumbnails ask for the same rig on every draw.
+const rigCache = new WeakMap<SpriteArt, Map<string, SpriteRig | null>>();
 
 export function spriteRig(sprite: SpriteArt | null, animationId: string): SpriteRig | null {
+  if (!sprite) return null;
+  let byAnimation = rigCache.get(sprite);
+  if (!byAnimation) rigCache.set(sprite, (byAnimation = new Map()));
+  if (!byAnimation.has(animationId)) byAnimation.set(animationId, buildRig(sprite, animationId));
+  return byAnimation.get(animationId)!;
+}
+
+function buildRig(sprite: SpriteArt, animationId: string): SpriteRig | null {
   const animation = pickAnimation(sprite, animationId);
   if (!animation?.body) return null;
   const make = animation.id === "make";
@@ -42,6 +57,8 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
     animation, body: animation.body,
     turret: make ? null : damagedLayer(animation.turret ?? turretSequence(sprite)),
     overlay: overlays[0]?.seq ?? null, overlays,
+    barrel: make ? null : (() => { const seq = barrelSequence(sprite); return seq ? { seq: damagedLayer(seq)!, localOffset: sprite!.barrel!.localOffset } : null; })(),
+    turretSprites: make ? [] : turretSprites(sprite).map(s => damagedLayer(s)!),
     initialFacing: sprite?.turret?.initialFacing ?? 0,
     turretOffset: sprite?.turret?.offset,
     quantizedFacings: sprite?.quantizedFacings ?? animation.body.facings,
@@ -50,7 +67,7 @@ export function spriteRig(sprite: SpriteArt | null, animationId: string): Sprite
 }
 
 /** SHP files a rig reads (deduplicated). */
-export const rigFiles = (rig: SpriteRig) => [...new Set([rig.body.file, rig.turret?.file, ...rig.overlays.map(o => o.seq.file)].filter((f): f is string => Boolean(f)))];
+export const rigFiles = (rig: SpriteRig) => [...new Set([rig.body.file, rig.turret?.file, ...rig.overlays.map(o => o.seq.file), rig.barrel?.seq.file, ...(rig.turretSprites ?? []).map(s => s.file)].filter((f): f is string => Boolean(f)))];
 
 export const rigLength = (rig: SpriteRig, shps: RigShps) => sequenceLength(rig.body, shps.body);
 
@@ -65,12 +82,13 @@ export function sequenceDurationMs(seq:SpriteSequence,shp:Shp){
   const length=Math.max(1,sequenceLength(seq,shp));
   return (seq.reverses&&length>1?2*length-2:length)*Math.max(1,seq.tick);
 }
-export const rigTickMs=(rig:SpriteRig,shps:RigShps)=>Math.max(1,Math.min(rig.body.tick,...rig.overlays.filter((o,i)=>o.animated&&sequenceLength(o.seq,shps.overlays?.[i]??shps.overlay)>1).map(o=>o.seq.tick),...(rig.turret&&shps.turret&&sequenceLength(rig.turret,shps.turret)>1?[rig.turret.tick]:[])));
+export const rigTickMs=(rig:SpriteRig,shps:RigShps)=>Math.max(1,Math.min(rig.body.tick,...rig.overlays.filter((o,i)=>o.animated&&sequenceLength(o.seq,shps.overlays?.[i]??shps.overlay)>1).map(o=>o.seq.tick),...(rig.turret&&shps.turret&&sequenceLength(rig.turret,shps.turret)>1?[rig.turret.tick]:[]),...(rig.turretSprites??[]).filter((s,i)=>shps.turretSprites?.[i]&&sequenceLength(s,shps.turretSprites[i]!)>1).map(s=>s.tick)));
 
 /** True when the picture changes over time (a multi-frame body or an animated overlay). */
 export function rigAnimates(rig: SpriteRig, shps: RigShps) {
   if (rigLength(rig, shps) > 1) return true;
   if (rig.turret&&shps.turret&&sequenceLength(rig.turret,shps.turret)>1)return true;
+  if ((rig.turretSprites??[]).some((s,i)=>shps.turretSprites?.[i]&&sequenceLength(s,shps.turretSprites[i]!)>1))return true;
   return rig.overlays.some((o, i) => o.animated && (shps.overlays?.[i] ?? (i === 0 ? shps.overlay : null)) && sequenceLength(o.seq, (shps.overlays?.[i] ?? shps.overlay)!) > 1);
 }
 
@@ -91,8 +109,19 @@ export function turretScreenOffset(offset: Vec3 | undefined, bodyFacing: number)
 }
 
 /**
+ * WithSpriteBarrel's position, as the engine computes it: the turret's offset (not turned by the body) plus the
+ * barrel's LocalOffset turned by the turret's world facing.
+ */
+export function barrelScreenOffset(turretOffset: Vec3 | undefined, localOffset: Vec3, turretWorldFacing: number) {
+  const t = turretOffset ?? [0, 0, 0];
+  const l = rotateYaw(localOffset, turretWorldFacing);
+  const v = screenVector(localToWorld([t[0] + l[0], t[1] + l[1], t[2] + l[2]], false, 85));
+  return { dx: Math.round(v[0]), dy: Math.round(v[1]) };
+}
+
+/**
  * Layers for one picture. A vehicle's turret turns with its body (Turreted: world = body + local); a defence's
- * body never turns, so its turret angle is absolute from InitialFacing.
+ * body never turns, so its turret angle is absolute from InitialFacing. Idle overlays turn with the body.
  */
 export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bodyFrame: number, turretFacing: number, tick: number, timeMs?:number,loop=true): SpriteLayer[] {
   const facings = rig.body.facings;
@@ -101,11 +130,17 @@ export function rigLayers(rig: SpriteRig, shps: RigShps, bodyFacing: number, bod
   const layers: SpriteLayer[] = [{ shp: shps.body, seq: rig.body, facing: bodyFacing, frame: bodyFrame }];
   if (rig.turret && shps.turret) {
     const angle = vehicle ? (quantize(bodyFacing) + turretFacing) & 1023 : (rig.initialFacing + turretFacing) & 1023;
-    layers.push({ shp: shps.turret, seq: rig.turret, facing: angle, frame: timeMs===undefined?tick:sequenceTimeFrame(rig.turret,shps.turret,timeMs,loop), ...turretScreenOffset(rig.turretOffset, vehicle ? quantize(bodyFacing) : 0) });
+    const at = turretScreenOffset(rig.turretOffset, vehicle ? quantize(bodyFacing) : 0);
+    layers.push({ shp: shps.turret, seq: rig.turret, facing: angle, frame: timeMs===undefined?tick:sequenceTimeFrame(rig.turret,shps.turret,timeMs,loop), ...at });
+    for (const [i, seq] of (rig.turretSprites ?? []).entries()) {
+      const shp = shps.turretSprites?.[i];
+      if (shp) layers.push({ shp, seq, facing: angle, frame: timeMs===undefined?tick:sequenceTimeFrame(seq,shp,timeMs,loop), ...at });
+    }
+    if (rig.barrel && shps.barrel) layers.push({ shp: shps.barrel, seq: rig.barrel.seq, facing: angle, frame: 0, ...barrelScreenOffset(rig.turretOffset, rig.barrel.localOffset, angle) });
   }
   for (const [i, o] of rig.overlays.entries()) {
     const shp = shps.overlays?.[i] ?? (i === 0 ? shps.overlay : null);
-    if (shp) layers.push({ shp, seq: o.seq, facing: bodyFacing, frame: o.animated ? timeMs===undefined?tick:sequenceTimeFrame(o.seq,shp,timeMs,loop) : 0, ...turretScreenOffset(o.offset, vehicle ? quantize(bodyFacing) : 0) });
+    if (shp) layers.push({ shp, seq: o.seq, facing: bodyFacing, frame: o.animated ? timeMs===undefined?tick:sequenceTimeFrame(o.seq,shp,timeMs,loop) : 0, ...turretScreenOffset(o.offset, facings > 1 ? quantize(bodyFacing) : 0) });
   }
   return layers.sort((a, b) => (a.seq.zOffset + a.seq.offset[2]) - (b.seq.zOffset + b.seq.offset[2]));
 }

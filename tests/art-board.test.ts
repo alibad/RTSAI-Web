@@ -38,7 +38,18 @@ test("board: counts per unit, the next open tile, preview by bytes, notes on the
 test("board: required actions follow the unit's current rules (no rotor for a jet, no turret for a turretless unit)", () => {
   const coverage = (id: string, category: string) => { const a = artLab.actors[id]; const s = renderSpec(a); return actionCoverage(category, s, spriteWithUrls(a), { spec: s, sprite: spriteWithUrls(a) }).map(x => x.label); };
   assert.deepEqual(coverage("r2skyspear", "aircraft"), ["Body"]);
-  assert.deepEqual(coverage("r2crane", "aircraft"), ["Body", "Rotor / HVA"]);
+  assert.deepEqual(coverage("r2crane", "aircraft"), ["Body", "Rotor spin"]);
   assert.deepEqual(coverage("r2mantis", "vehicle"), ["Body", "Turret"]);
   assert.deepEqual(missingAnimations([{ name: "Rifle", actions: [{ id: "prone", label: "Prone", present: false }, { id: "stand", label: "Stand", present: true }] }, { name: "Tank", actions: [{ id: "body", label: "Body", present: true }] }]), [{ name: "Rifle", missing: ["Prone"] }]);
+});
+
+test("board: the candidate the preview copy plays is the one under review, not merely the newest", () => {
+  const mesh = cand("mesh-v1", "mesh", "2026-10-05T00:00:00Z", { files: { mesh: "m.glb" } as Candidate["files"] });
+  const sprite = cand("sprite-v6-prerender", "sprite", "2026-10-05T19:45:38Z", { fromMesh: "mesh-v1" });
+  const bold = cand("voxel-v6-bold", "voxel", "2026-10-05T19:45:45Z", { fromMesh: "mesh-v1" });
+  const w = ws("r2a", [mesh, sprite, bold]);
+  assert.equal(boardCandidate(w)?.id, "voxel-v6-bold", "nothing installed: the newest made from the 3D model");
+  assert.equal(boardCandidate(w, "sprite-v6-prerender")?.id, "sprite-v6-prerender", "the route installed the sprite");
+  const tile = boardTile("r2a", w, undefined, { available: true, branch: null, head: null, actors: { r2a: { model: "sprite-v6-prerender", icon: null, files: ["vehicles/r2a.shp"], rules: true } }, unmatched: [] });
+  assert.deepEqual([tile.candidate?.id, tile.inPreview, tile.previewOther], ["sprite-v6-prerender", true, false]);
 });

@@ -24,7 +24,7 @@ function paint(kind: GroundKind, tint: readonly number[], width: number, height:
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   const img = ctx.createImageData(width, height);
   const [r, g, b] = base[kind];
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {

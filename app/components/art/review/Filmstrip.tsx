@@ -19,11 +19,16 @@ const CARD_MAX = 146, CARD_MIN = 112, GAP = 8;
 export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, width, radius, height = THUMB_H }: { item: StageItem; frames: FrameStore; tints: MapTint[]; zoom: number; width: number; radius: number | null; height?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    let raf = 0;
+    let raf = 0, wait: ReturnType<typeof setTimeout> | null = null;
+    const shown: { frame: unknown; look: string } = { frame: null, look: "" };
     const draw = () => {
       raf = 0;
       const canvas = ref.current;
       if (!canvas) return;
+      // Right after a faction switch the page paints first; a few dozen thumbnails arriving in that same frame
+      // cost a software renderer 50-80 ms. They fill in when the hold ends (150 ms).
+      const held = frames.holding();
+      if (held > 0) { if (!wait) wait = setTimeout(() => { wait = null; schedule(); }, held); return; }
       const s = useLab.getState();
       // Thumbnails always show the unit landed, at a readable size.
       const pose = { ...poseFrom(s, tints, s.facing, 0), airborne: false };
@@ -32,6 +37,10 @@ export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, 
       if (!f) { frames.want(item, pose, true); return; }
       const dpr = Math.min(3, window.devicePixelRatio || 1);
       const w = Math.round(width * dpr), h = Math.round(height * dpr);
+      // Frames arriving for other thumbnails must not repaint (and re-upload) this one when its picture is the same.
+      const look = `${zoom}|${radius}|${s.ground}|${pose.tint.join(",")}|${w}x${h}`;
+      if (shown.frame === f && shown.look === look) return;
+      shown.frame = f; shown.look = look;
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       const ctx = canvas.getContext("2d")!;
       ctx.clearRect(0, 0, w, h);
@@ -48,7 +57,7 @@ export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, 
       if (s.facing !== p.facing || s.turret !== p.turret || s.color !== p.color || s.shadow !== p.shadow || s.tintMap !== p.tintMap || s.ground !== p.ground || s.animation !== p.animation) schedule();
     });
     const offFrames = frames.subscribe(schedule);
-    return () => { offLab(); offFrames(); cancelAnimationFrame(raf); };
+    return () => { offLab(); offFrames(); cancelAnimationFrame(raf); if (wait) clearTimeout(wait); };
   }, [item, frames, tints, zoom, width, radius, height]);
   return <canvas ref={ref} className="lab-thumb-canvas" style={{ width, height }} aria-hidden="true" />;
 });

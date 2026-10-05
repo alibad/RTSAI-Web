@@ -2,23 +2,23 @@
  * The faction review board: every new unit of a faction as one tile (what is in game now beside the new game
  * model), and the rules for deciding quickly. Client-safe and pure.
  *
- * A tile's candidate is the newest native model made from the 3D route (else the newest native candidate). A
+ * A tile's candidate is the one the local preview copy plays, else the newest native model made from the 3D route
+ * (else the newest native candidate); see chain.ts reviewCandidate. A
  * decision always concerns exactly that candidate and is written only when the owner presses a key or a button.
  */
-import { decisionState, fromModel, nativeCandidates, type ActionCheck, type DecisionState, type PreviewStatus } from "./chain";
+import { decisionState, reviewCandidate, type ActionCheck, type DecisionState, type PreviewStatus } from "./chain";
 import type { Candidate, ReviewEntry, ReviewFile, UnitWorkspace } from "./review";
 
 /** The candidate a board tile shows and decides. Rejected ones stay on the tile, marked rejected. */
-export function boardCandidate(ws: UnitWorkspace | undefined): Candidate | null {
-  const natives = nativeCandidates(ws);
-  return natives.find(c => fromModel(c, ws?.candidates)) ?? natives[0] ?? null;
+export function boardCandidate(ws: UnitWorkspace | undefined, installed?: string | null): Candidate | null {
+  return reviewCandidate(ws, installed);
 }
 
 export type BoardTile = { actor: string; candidate: Candidate | null; decision: DecisionState; notes: number; inPreview: boolean; previewOther: boolean };
 
 export function boardTile(actor: string, ws: UnitWorkspace | undefined, entry: ReviewEntry | undefined, preview: PreviewStatus | null): BoardTile {
-  const candidate = boardCandidate(ws);
   const p = preview?.actors[actor];
+  const candidate = boardCandidate(ws, p?.model);
   return {
     actor, candidate,
     decision: decisionState(entry?.slots.model, candidate),

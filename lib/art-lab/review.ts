@@ -14,12 +14,13 @@
  * Version 1 entries ({ status, approved, comments }) are migrated when read.
  */
 import { child, childValue, parseMiniYaml, type Yaml } from "./miniyaml";
-import type { RenderSpec } from "./spec";
+import { drawnByDefault, type RenderSpec } from "./spec";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { parseWDist } from "./resolve";
 import type { ImagePlayerColor } from "./image-remap";
 import type { MeasuredGroup } from "./measurements";
 import type { PreviewAnimation } from "./chain";
+import { spinKind } from "./action-labels";
 
 export type SlotId = "model" | "icon" | "concept";
 export const slotIds: SlotId[] = ["model", "icon", "concept"];
@@ -54,6 +55,8 @@ export type CandidateMeta = {
   critique?: string;
   fixture?: boolean;
   previewNote?: string;
+  /** How an install agent put the candidate into the local preview copy; `rules` is the actor block as installed. */
+  previewInstall?: { route?: string; candidate?: string; palette?: string; rules?: Record<string, unknown> };
   fromConcept?: string;
   variantOf?: string;
   variantNote?: string;
@@ -61,7 +64,7 @@ export type CandidateMeta = {
   playerColor?: ImagePlayerColor;
   imageTo3d?: { service?: string; model?: string; costUsd?: number; license?: Record<string, string> };
   /** Voxel candidates: where the Forge placed the turret pivot (a Turreted.Offset for current rules). */
-  voxelize?: { turretOffsetWorld?: number[]; turretPlacement?: string; log?: { paint?: Record<string, { classShares?: Record<string, number> } | undefined> } };
+  voxelize?: { turretOffsetWorld?: number[]; turretPlacement?: string; sections?: Record<string, unknown>; log?: { paint?: Record<string, { classShares?: Record<string, number> } | undefined>; rotors?: { name?: string }[] } };
   /** GLB route: the mesh candidate this native model was made from, and the pinned source bytes. */
   fromMesh?: string;
   sourceMeshSha256?: string;
@@ -81,8 +84,10 @@ export type CandidateMeta = {
     facings?: number;
     classicFacingBodyOrientation?: boolean;
     quantizedFacings?: number;
-    sequences?: Record<string, Partial<Pick<SpriteSequence, "start" | "facings" | "shadowStart" | "length" | "stride" | "reverseFacings" | "useClassicFacings" | "transpose" | "tick" | "offset" | "frames" | "reverses">> & { file?: string; usedBy?: string }>;
+    sequences?: Record<string, Partial<Pick<SpriteSequence, "start" | "facings" | "shadowStart" | "length" | "stride" | "reverseFacings" | "useClassicFacings" | "transpose" | "tick" | "offset" | "frames" | "reverses">> & { file?: string; usedBy?: string; spin?: string; spins?: string[] }>;
     turret?: { sequence?: string; name?: string; offset?: number[] };
+    /** What a looping body or turret turns: "rotor", "propeller" or "radar". */
+    spin?: string;
     palette?: { file?: string; transparent?: number[]; shadow?: number[]; remap?: number[] };
   };
   calls?: { route?: string; costUsd?: number }[];
@@ -307,6 +312,9 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate, p
   const currentPart = (base: string) => current.voxel!.parts.find(p => fileBase(p.vxl) === base) ?? null;
   // The preview rules' sequence files ("idle" is the actor's own voxel unless the overlay maps it elsewhere).
   const heliTick = current.voxel.parts.find(p => p.trait === "WithVoxelHelicopterBody")?.tickRate ?? 5;
+  // What the body's HVA frames turn: the route's rotor sections ("pusher" is a propeller, "main rotor" a rotor).
+  const sectionNames = [...(candidate.voxelize?.log?.rotors ?? []).map(r => r.name ?? ""), ...Object.keys(candidate.voxelize?.sections ?? {})];
+  const sectionSpin = sectionNames.map(spinKind).find(k => k === "rotor") ?? sectionNames.map(spinKind).find(Boolean) ?? null;
   const played = (base: string): PreviewAnimation | null => {
     const named = play?.filter(a => (a.file ?? (a.sequence === "idle" ? actor : null)) === base) ?? [];
     const own = named.find(a => a.trait !== "sequence");
@@ -351,6 +359,7 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate, p
       id: `cand:${name}`, label, trait: trait || label, vxl: vxlUrl, hva: hvaUrl, offset: body?.offset ?? [0, 0, 0] as Vec3, showShadow: true,
       requiresCondition: null, turretOffset, turretInitialFacing: null, frames, defaultVisible,
       tickRate: frames > 1 ? match?.tickRate ?? (anim ? anim.tickRate ?? (anim.trait.startsWith("WithVoxelHelicopterBody") ? heliTick : 2) : null) : null,
+      spin: frames > 1 ? (anim && anim.trait.startsWith("WithAnimatedVoxelModel") ? spinKind(anim.sequence) ?? "radar" : base === actor ? sectionSpin ?? undefined : spinKind(label) ?? undefined) : undefined,
     }];
   });
   if (!parts.length) return null;
@@ -419,9 +428,15 @@ export type CandidateRules = {
   traitSequences: Record<string, string>;
   /** WithIdleOverlay traits the snippet declares, with their Offset (a dish, a flag, a radar). */
   idleOverlays: { sequence: string; trait: string; offset: Vec3; requiresCondition: string | null }[];
+  /** WithSpriteBarrel: its sequence and LocalOffset. */
+  barrel: { sequence: string; localOffset: Vec3 } | null;
+  /** RequiresCondition of the trait that plays each sequence (alternative bodies and turrets: landed, radar off). */
+  traitConditions: Record<string, string>;
 };
 
-const SEQUENCE_TRAITS = new Set(["WithIdleOverlay", "WithAttackAnimation", "WithTurretAttackAnimation", "WithSpriteBody", "WithMakeAnimation"]);
+const SEQUENCE_TRAITS = new Set(["WithIdleOverlay", "WithAttackAnimation", "WithTurretAttackAnimation", "WithSpriteBody", "WithFacingSpriteBody", "WithMakeAnimation", "WithSpriteTurret", "WithSpriteBarrel"]);
+/** Sequence a trait plays when the snippet does not name one (OpenRA defaults). */
+const DEFAULT_SEQUENCE: Record<string, string> = { WithIdleOverlay: "idle-overlay", WithSpriteBarrel: "barrel" };
 
 /**
  * Reads the OpenRA MiniYaml a candidate proposes (files.rules): the actor's sequences (blocks whose children
@@ -429,7 +444,7 @@ const SEQUENCE_TRAITS = new Set(["WithIdleOverlay", "WithAttackAnimation", "With
  */
 export function parseCandidateRules(text: string, actor: string): CandidateRules {
   const nodes = parseMiniYaml(text, "openra-snippet.yaml");
-  const out: CandidateRules = { sequences: {}, classicFacingBodyOrientation: null, quantizedFacings: null, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [], traitSequences: {}, idleOverlays: [] };
+  const out: CandidateRules = { sequences: {}, classicFacingBodyOrientation: null, quantizedFacings: null, turretOffset: null, turretInitialFacing: null, palette: null, traits: [], removed: [], traitSequences: {}, idleOverlays: [], barrel: null, traitConditions: {} };
   const isSequence = (n: Yaml) => n.nodes.some(c => ["Filename", "Start", "Facings", "Length", "ShadowStart", "Stride", "Frames", "UseClassicFacings", "Transpose"].includes(c.key));
   let playerPalette: string | null = null;
   for (const node of nodes.filter(n => n.key.toLowerCase() === actor.toLowerCase())) {
@@ -456,13 +471,19 @@ export function parseCandidateRules(text: string, actor: string): CandidateRules
       }
     } else {
       for (const trait of children) (trait.key.startsWith("-") ? out.removed : out.traits).push(trait.key.replace(/^-/, ""));
-      // Which sequence each art trait plays. Only an explicit Sequence counts, except WithIdleOverlay's default.
+      // Which sequence each art trait plays. Only an explicit Sequence counts, except the defaults above.
       for (const trait of children) {
         const kind = trait.key.split("@")[0];
-        if (trait.key.startsWith("-") || !SEQUENCE_TRAITS.has(kind)) continue;
-        const sequence = childValue(trait.value, "Sequence") ?? (kind === "WithIdleOverlay" ? "idle-overlay" : null);
+        // A layer drawn from another image (damage smoke, fire) is not this actor's art.
+        if (trait.key.startsWith("-") || !SEQUENCE_TRAITS.has(kind) || childValue(trait.value, "Image")) continue;
+        const sequence = childValue(trait.value, "Sequence") ?? DEFAULT_SEQUENCE[kind] ?? null;
         if (!sequence) continue;
+        const condition = childValue(trait.value, "RequiresCondition");
+        // An overlay that is off until a condition (damage states) is not part of the idle picture.
+        if (kind === "WithIdleOverlay" && condition && !drawnByDefault(condition)) continue;
         out.traitSequences[sequence] = trait.key;
+        if (condition) out.traitConditions[sequence] = condition;
+        if (kind === "WithSpriteBarrel") out.barrel = { sequence, localOffset: parseVec(childValue(trait.value, "LocalOffset")) ?? [0, 0, 0] };
         if (kind === "WithIdleOverlay") out.idleOverlays.push({ sequence, trait: trait.key, offset: parseVec(childValue(trait.value, "Offset")) ?? [0, 0, 0], requiresCondition: childValue(trait.value, "RequiresCondition") });
       }
       const turreted = child(node.value, "Turreted")?.value;
@@ -523,12 +544,56 @@ export function sequenceRole(name: string, category: string, traits: string[], c
 }
 
 /**
+ * What a sprite candidate's looping body or turret turns, for naming its action: the candidate's own hint
+ * (meta.sprite.spin or a sequence's spin), else what turns on the voxel model it replaces (its rotor or radar).
+ */
+function spinOf(candidate: Candidate, current: RenderSpec): string | null {
+  // The route names the spinning sections per sequence ("spins": ["pusher"]), or the whole sprite ("spin").
+  const named = [candidate.sprite?.spin, ...Object.values(candidate.sprite?.sequences ?? {}).flatMap(s => [s.spin, ...(s.spins ?? [])])].filter((n): n is string => Boolean(n));
+  const own = named.map(spinKind).find(k => k === "radar") ?? named.map(spinKind).find(k => k === "rotor") ?? named.map(spinKind).find(Boolean);
+  if (own) return own;
+  const parts = current.voxel?.parts.filter(p => p.tickRate !== null && p.tickRate > 0) ?? [];
+  return parts.map(p => p.spin ?? spinKind(p.label) ?? (p.trait === "WithVoxelHelicopterBody" ? "rotor" : null)).find(Boolean) ?? null;
+}
+
+/**
  * A pre-rendered vehicle sprite candidate (body + turret, with shadow frames) for a unit that is a voxel model
  * today. The frame layout comes from the candidate's rules snippet, else from meta.sprite; it is never guessed.
  */
+/** MiniYaml for a rules block given as JSON (meta.previewInstall.rules): trait -> fields, null for a bare key. */
+function rulesYaml(actor: string, block: Record<string, unknown>): string {
+  const lines = [`${actor}:`];
+  const walk = (node: Record<string, unknown>, depth: number) => {
+    for (const [key, value] of Object.entries(node)) {
+      const pad = "\t".repeat(depth);
+      if (value && typeof value === "object" && !Array.isArray(value)) { lines.push(`${pad}${key}:`); walk(value as Record<string, unknown>, depth + 1); }
+      else lines.push(`${pad}${key}:${value === null || value === undefined ? "" : ` ${Array.isArray(value) ? value.join(", ") : String(value)}`}`);
+    }
+  };
+  walk(block, 1);
+  return lines.join("\n");
+}
+
+/**
+ * The candidate's rules: its proposed snippet (sequences, palettes, traits), with the actor block replaced by the one
+ * an install agent actually put into the local preview copy when there is one (meta.previewInstall.rules).
+ */
+export function candidateRules(candidate: Candidate): CandidateRules | null {
+  const proposed = candidate.rulesText ? parseCandidateRules(candidate.rulesText, candidate.actor) : null;
+  const block = candidate.previewInstall?.rules;
+  if (!block || typeof block !== "object") return proposed;
+  const installed = parseCandidateRules(rulesYaml(candidate.actor, block), candidate.actor);
+  return {
+    ...(proposed ?? installed), turretOffset: installed.turretOffset, turretInitialFacing: installed.turretInitialFacing ?? proposed?.turretInitialFacing ?? null,
+    quantizedFacings: installed.quantizedFacings ?? proposed?.quantizedFacings ?? null, classicFacingBodyOrientation: installed.classicFacingBodyOrientation ?? proposed?.classicFacingBodyOrientation ?? null,
+    traits: installed.traits, removed: [...installed.removed, ...(proposed?.removed.filter(r => !installed.traits.includes(r) && !installed.removed.includes(r)) ?? [])],
+    traitSequences: installed.traitSequences, idleOverlays: installed.idleOverlays, barrel: installed.barrel, traitConditions: installed.traitConditions,
+  };
+}
+
 export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate, currentSprite?: SpriteArt | null): { spec: RenderSpec; sprite: SpriteArt; layoutSource: string } | null {
   if (candidate.kind !== "sprite" || !candidate.files.shp?.length) return null;
-  const rules = candidate.rulesText ? parseCandidateRules(candidate.rulesText, candidate.actor) : null;
+  const rules = candidateRules(candidate);
   const metaSeqs = candidate.sprite?.sequences ?? {};
   const fromRules = Boolean(rules && Object.keys(rules.sequences).length > 0);
   const names = fromRules ? Object.keys(rules!.sequences) : Object.keys(metaSeqs);
@@ -554,7 +619,14 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
   }
   const body = sequences.find(s => s.name === "idle" || s.name === "stand") ?? sequences.find(s => s.usedBy.includes("WithFacingSpriteBody"));
   if (!body) return null;
-  const turretSeq = sequences.find(s => s.usedBy.includes("WithSpriteTurret")) ?? null;
+  // The main turret sprite; other WithSpriteTurret@x sprites (a radar dish) ride it and loop.
+  const turretSeq = sequences.find(s => s.usedBy.includes("WithSpriteTurret")) ?? sequences.find(s => s.name === "turret" && s.usedBy.some(u => u.startsWith("WithSpriteTurret"))) ?? null;
+  // Riders are drawn with the turret; a conditional one (a radar's "turret-still" while not deployed) swaps with
+  // the main turret instead, so it is offered as its own action and never drawn over it.
+  const turretSprites = sequences.filter(s => s !== turretSeq && !s.name.startsWith("damaged-") && s.usedBy.some(u => u.startsWith("WithSpriteTurret")));
+  const conditional = (s: SpriteSequence) => Boolean(rules?.traitConditions[s.name]);
+  const riders = turretSprites.filter(s => !conditional(s)), variants = turretSprites.filter(conditional);
+  const barrel = rules?.barrel && sequences.some(s => s.name === rules.barrel!.sequence) ? rules.barrel : null;
   const pal = candidate.files.pal ? candidate.urls[candidate.files.pal] : null;
   const metaPal = candidate.sprite?.palette;
   const palette = pal ? {
@@ -568,6 +640,10 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
     image: current.id, palette: palette?.name ?? "", shp: null, sequences, quantizedFacings: rules?.quantizedFacings ?? candidate.sprite?.quantizedFacings ?? currentSprite?.quantizedFacings ?? body.facings,
     classicFacingBodyOrientation: rules?.classicFacingBodyOrientation ?? candidate.sprite?.classicFacingBodyOrientation ?? currentSprite?.classicFacingBodyOrientation ?? false,
     turret: turretSeq ? { sequence: turretSeq.name, name: candidate.sprite?.turret?.name ?? "primary", offset: turretOffset, initialFacing: rules?.turretInitialFacing ?? currentSprite?.turret?.initialFacing ?? 0 } : null,
+    ...(turretSeq && riders.length ? { turretSprites: riders.map(s => s.name) } : {}),
+    ...(turretSeq && variants.length ? { turretVariants: variants.map(s => s.name) } : {}),
+    ...(spinOf(candidate, current) ? { spin: spinOf(candidate, current)! } : {}),
+    ...(turretSeq && barrel ? { barrel } : {}),
   };
   // Overlays the candidate's rules declare keep their own Offset; overlays known only by role keep the old layout.
   const declaredOverlays = (rules?.idleOverlays ?? []).filter(o => sequences.some(s => s.name === o.sequence));
@@ -578,7 +654,8 @@ export function candidateVehicleSprite(current: RenderSpec, candidate: Candidate
   ];
   return {
     spec: {
-      ...current, id: `${current.id}:${candidate.id}`, name: `${current.name} · ${candidate.id}`, palette, voxel: null,
+      ...current, id: `${current.id}:${candidate.id}`, name: `${current.name} · ${candidate.id}`, render: "sprite", palette, voxel: null,
+      airAltitude: current.voxel?.altitude ?? current.airAltitude ?? null,
       sprite: { stand: body, turret: turretSeq, turretInitialFacing: sprite.turret?.initialFacing ?? null, overlay: null },
     },
     sprite,

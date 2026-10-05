@@ -4,6 +4,7 @@
  * defences idle / build-up, with the turret and idle overlays on top.
  */
 import type { SpriteArt, SpriteSequence } from "./types";
+import { distinctLabels, sequenceLabel, spinKind, spinLabel } from "./action-labels";
 
 export type SpriteAnimation = { id: string; label: string; body: SpriteSequence | null; note: string | null; /** Replaces the turret sequence while it plays (WithTurretAttackAnimation). */ turret?: SpriteSequence | null };
 
@@ -26,11 +27,16 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     out.push({ id: "move", label: "Walk", body: by("WithInfantryBody move"), note: null });
     out.push({ id: "attack", label: "Fire", body: by("WithInfantryBody attack"), note: null });
     out.push({ id: "idle", label: "Idle", body: by("WithInfantryBody idle"), note: null });
-    const prone = seqs.find(s => s.name.startsWith("prone-")) ?? null;
+    // Prone is lying still (prone-stand); crawling (prone-run) is its own action.
+    const prone = seqs.find(s => s.name === "prone-stand") ?? seqs.find(s => s.name.startsWith("prone-")) ?? null;
     out.push({ id: "prone", label: "Prone", body: prone ?? stand, note: prone ? null : "No prone art: while prone the game shows the normal sequences." });
     out.push({ id: "die", label: "Die", body: by("WithDeathAnimation"), note: null });
   } else {
-    out.push({ id: "body", label: "Idle", body: by("WithFacingSpriteBody") ?? by("WithSpriteBody") ?? seqs.find(s => !s.usedBy.some(u => u.startsWith("WithSpriteTurret"))) ?? null, note: null });
+    // A sprite vehicle's idle is named by what spins on it: a rotor, propeller or radar overlay, or a body or turret
+    // that loops its frames (prerendered spins, named by the candidate or the model it replaces).
+    const body = by("WithFacingSpriteBody") ?? by("WithSpriteBody") ?? seqs.find(s => !s.usedBy.some(u => u.startsWith("WithSpriteTurret") || u.startsWith("WithSpriteBarrel"))) ?? null;
+    const spins = spriteSpins(sprite, body);
+    out.push({ id: "body", label: spins.length ? spinLabel(spins.map(spinKind)) : "Idle", body, note: null });
     const make = by("WithMakeAnimation");
     if (make) out.push({ id: "make", label: "Build-up", body: make, note: "Build-up: the turret and overlays appear once construction completes." });
     // A defence fires by swapping its turret sequence (WithTurretAttackAnimation); the body stays as it is.
@@ -39,21 +45,26 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     // A turretless defence fires by swapping its body (WithAttackAnimation), e.g. a bunker's firing slit.
     const attack = seqs.find(s => s.usedBy.some(u => u.split("@")[0] === "WithAttackAnimation"));
     if (attack && !fire) out.push({ id: attack.name, label: "Fire", body: attack, note: "Attack: the game plays it each time the defence fires." });
+    // Conditional turrets (a deploy-gated radar's still dish) are alternatives to the main turret.
+    for (const name of sprite.turretVariants ?? []) {
+      const seq = seqs.find(s => s.name === name);
+      if (seq && out[0]?.body) out.push({ id: seq.name, label: sequenceLabel(seq.name), body: out[0].body, turret: seq, note: "Shown while its condition holds in game (e.g. before a radar deploys)." });
+    }
   }
   const used = new Set([...out.map(a => a.body?.name), ...out.map(a => a.turret?.name)]);
   for (const s of seqs) {
-    if (used.has(s.name) || s.name === "icon" || s.name === sprite.turret?.sequence || s.usedBy.some(u => u.startsWith("WithIdleOverlay") || u.startsWith("WithTurretAttackAnimation"))) continue;
+    if (used.has(s.name) || s.name === "icon" || s.name === sprite.turret?.sequence || s.usedBy.some(u => u.startsWith("WithIdleOverlay") || u.startsWith("WithTurretAttackAnimation") || u.startsWith("WithSpriteTurret") || u.startsWith("WithSpriteBarrel"))) continue;
     const layer = sprite.overlays?.find(o => s.name === o.sequence || s.name === `damaged-${o.sequence}`);
     if (layer && layer.mode !== "loop") {
       const damaged = s.name.startsWith("damaged-");
       const body = damaged ? seqs.find(q => q.name === `damaged-${out[0]?.body?.name}`) ?? out[0]?.body : out[0]?.body;
-      out.push({ id: s.name, label: `${damaged ? "Damaged · " : ""}${layer.mode === "door" ? "Production door" : s.name.replace(/-/g, " ")}`, body: body ?? null, note: "Layered sequence preview; production timing is controlled by the game." });
+      out.push({ id: s.name, label: layer.mode === "door" ? `${damaged ? "Damaged · " : ""}Production door` : sequenceLabel(s.name), body: body ?? null, note: "Layered sequence preview; production timing is controlled by the game." });
     } else if (s.usedBy.some(u => u.startsWith("WithInfantryBody")) || /idle|stand|run|walk|damaged|deploy|shoot|attack|die|prone|make|build|land|takeoff|liedown|standup|parachute/.test(s.name)) {
-      const label=s.usedBy.some(u=>u.startsWith("WithInfantryBody idle"))?`Idle ${seqs.filter(q=>q.usedBy.some(u=>u.startsWith("WithInfantryBody idle"))).indexOf(s)+1}`:s.name.replace(/-/g," ");
+      const label=s.usedBy.some(u=>u.startsWith("WithInfantryBody idle"))?`Idle ${seqs.filter(q=>q.usedBy.some(u=>u.startsWith("WithInfantryBody idle"))).indexOf(s)+1}`:sequenceLabel(s.name);
       out.push({ id: s.name, label, body: s, note: "Sequence art preview; activity timing is controlled by the game." });
     }
   }
-  return out.filter(a => a.body);
+  return distinctLabels(out.filter(a => a.body));
 }
 
 /** The animation to show for a requested id, falling back to the first (stand / idle). */
@@ -70,6 +81,27 @@ export function pickAnimation(sprite: SpriteArt | null, id: string) {
 export function turretSequence(sprite: SpriteArt | null) {
   if (!sprite?.turret) return null;
   return sprite.sequences.find(s => s.name === sprite.turret!.sequence && own(s)) ?? null;
+}
+
+/**
+ * What turns on a sprite vehicle, by name: looping idle overlays (rotors), sprites riding the turret (a dish),
+ * and a body or turret sequence that loops its frames (a prerendered spin; named by `sprite.spin` when known).
+ */
+export function spriteSpins(sprite: SpriteArt | null, body: SpriteSequence | null = null): string[] {
+  if (!sprite) return [];
+  const main = body ?? sprite.sequences.filter(own).find(s => s.usedBy.some(u => u.startsWith("WithFacingSpriteBody") || u.startsWith("WithSpriteBody"))) ?? null;
+  const loops = [main, turretSequence(sprite)].some(s => s && typeof s.length === "number" && s.length > 1);
+  return [...spriteOverlays(sprite).filter(o => o.mode === "loop").map(o => o.seq.name), ...turretSprites(sprite).map(s => s.name), ...(loops ? [sprite.spin ?? "moving parts"] : [])];
+}
+
+/** Extra sprites riding a turret (WithSpriteTurret@radar: a dish that turns with the turret and loops its frames). */
+export function turretSprites(sprite: SpriteArt | null) {
+  return (sprite?.turretSprites ?? []).flatMap(name => sprite!.sequences.filter(s => s.name === name && own(s)));
+}
+
+/** The barrel sprite (WithSpriteBarrel), drawn at the turret with its LocalOffset turned by the turret's facing. */
+export function barrelSequence(sprite: SpriteArt | null) {
+  return sprite?.barrel ? sprite.sequences.find(s => s.name === sprite.barrel!.sequence && own(s)) ?? null : null;
 }
 
 export function overlaySequence(sprite: SpriteArt | null) {

@@ -288,7 +288,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const playJson = JSON.stringify(unit ? preview?.actors[unit.id]?.animations ?? null : null);
   const play = useMemo(() => JSON.parse(playJson) as PreviewAnimation[] | null, [playJson]);
   const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy, play) : []), [unit, ws, slot, reference, referenceWhy, play]);
-  const nativeChoice = defaultModelFocus(ws, entry.slots.model);
+  const nativeChoice = defaultModelFocus(ws, entry.slots.model, unit ? preview?.actors[unit.id]?.model : null);
   const fallbackNative = natives.find(c => c.id === nativeChoice) ?? null;
   const meshSource = useMemo(() => meshCandidate(ws, fallbackNative), [ws, fallbackNative]);
   const design = useMemo(() => designFor(ws, meshSource, fallbackNative), [ws, meshSource, fallbackNative]);

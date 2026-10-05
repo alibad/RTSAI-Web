@@ -13,6 +13,8 @@ export type RenderSpec = {
   name: string;
   category: ArtCategory;
   render: "voxel" | "sprite";
+  /** Aircraft.CruiseAltitude (WDist) for a sprite aircraft (a voxel one keeps it in `voxel.altitude`). */
+  airAltitude?: number | null;
   cameo: string | null;
   palette: PaletteSpec | null;
   voxel: null | {
@@ -22,6 +24,8 @@ export type RenderSpec = {
       requiresCondition: string | null; turretOffset: Vec3 | null; turretInitialFacing: number | null; tickRate: number | null; frames: number;
       /** The model sequence the trait draws (e.g. a helicopter body's "rotor"). */
       sequence?: string;
+      /** What its HVA frames turn, when known: "rotor", "propeller" or "radar" (see action-labels.ts). */
+      spin?: string;
       /** Overrides the condition-based default (review candidates with alternative parts). */
       defaultVisible?: boolean }[];
   };

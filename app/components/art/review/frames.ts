@@ -14,7 +14,7 @@ import type { Shp } from "../../../../lib/art-lab/shp";
 import { partVisibleByDefault, type RenderSpec } from "../../../../lib/art-lab/spec";
 import { composeRig, rigAnimates, rigFiles, rigPoseLayers, sequenceDurationMs, rigTickMs, spriteRig, type RigShps, type SpriteRig } from "../../../../lib/art-lab/sprite-compose";
 import { sequenceFrame,sequenceLength } from "../../../../lib/art-lab/sprite-render";
-import { voxelAnimationFrames,voxelAnimationParts } from "../../../../lib/art-lab/voxel-animation";
+import { voxelAnimationFrames,voxelAnimationParts,voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
 import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { VoxelEngine } from "../voxel-engine";
 import type { VoxelModel } from "../voxel-three";
@@ -78,7 +78,8 @@ export function toFrame(image: RasterImage, tint: readonly number[] | null): Fra
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, width);
   canvas.height = Math.max(1, height);
-  canvas.getContext("2d")?.putImageData(new ImageData(new Uint8ClampedArray(data), Math.max(1, width), Math.max(1, height)), 0, 0);
+  // CPU-backed like every canvas the Studio blits from: a GPU-backed source drawn into a CPU canvas needs a readback.
+  canvas.getContext("2d", { willReadFrequently: true })?.putImageData(new ImageData(new Uint8ClampedArray(data), Math.max(1, width), Math.max(1, height)), 0, 0);
   return {
     canvas, width, height, anchorX: image.anchorX, anchorY: image.anchorY,
     left: x0 - image.anchorX, top: y0 - image.anchorY, right: x1 + 1 - image.anchorX, bottom: y1 + 1 - image.anchorY,
@@ -169,6 +170,8 @@ export class FrameStore {
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
     this.schedule();
   }
+  /** Milliseconds left in a hold: thumbnails wait this long so a switch paints its page first (see ModelThumb). */
+  holding() { return Math.max(0, this.holdUntil - performance.now()); }
   resumeRendering() { this.paused=false; this.emit("assets"); }
   async sharedEngine() {
     const three=await this.loadThree();
@@ -194,9 +197,11 @@ export class FrameStore {
     const turret = rig.turret?.file ? this.shps.get(rig.turret.file) : null;
     const overlay = rig.overlay?.file ? this.shps.get(rig.overlay.file) : null;
     const overlays = rig.overlays.map(o => o.seq.file ? this.shps.get(o.seq.file) : null);
+    const barrel = rig.barrel?.seq.file ? this.shps.get(rig.barrel.seq.file) : null;
+    const turretSprites = rig.turretSprites.map(s => s.file ? this.shps.get(s.file) : null);
     const ok = (s: Slot<Shp> | null | undefined): s is Shp | null => s === null || (typeof s === "object" && s !== null);
-    if (!body || typeof body !== "object" || !ok(turret) || !ok(overlay) || !overlays.every(ok)) return { rig, shps: null };
-    return { rig, shps: { body, turret, overlay, overlays } as RigShps };
+    if (!body || typeof body !== "object" || !ok(turret) || !ok(overlay) || !overlays.every(ok) || !ok(barrel) || !turretSprites.every(ok)) return { rig, shps: null };
+    return { rig, shps: { body, turret, overlay, overlays, barrel, turretSprites } as RigShps };
   }
 
   /** A cached frame, or null. Never renders. */
@@ -248,11 +253,11 @@ export class FrameStore {
   animationInfo(item: StageItem, animation: string): AnimationInfo | null {
     if (item.spec.voxel){
       const parts=voxelAnimationParts(item.spec);if(!parts.length)return null;
-      return {length:Math.max(...parts.map(p=>p.frames)),tickMs:Math.min(...parts.map(p=>p.tickRate!*40)),durationMs:Math.max(...parts.map(p=>p.frames*p.tickRate!*40)),animates:true,labels:[{id:"body",label:"HVA cycle"}]};
+      return {length:Math.max(...parts.map(p=>p.frames)),tickMs:Math.min(...parts.map(p=>p.tickRate!*40)),durationMs:Math.max(...parts.map(p=>p.frames*p.tickRate!*40)),animates:true,labels:[{id:"body",label:voxelCycleLabel(item.spec)}]};
     }
     const { rig, shps } = this.spriteParts(item, animation);
     if (!rig || !shps) return null;
-    const sequences=[{seq:rig.body,shp:shps.body},...(rig.turret&&shps.turret?[{seq:rig.turret,shp:shps.turret}]:[]),...rig.overlays.flatMap((o,i)=>{const shp=shps.overlays?.[i]??shps.overlay;return o.animated&&shp?[{seq:o.seq,shp}]:[];})];
+    const sequences=[{seq:rig.body,shp:shps.body},...(rig.turret&&shps.turret?[{seq:rig.turret,shp:shps.turret}]:[]),...rig.overlays.flatMap((o,i)=>{const shp=shps.overlays?.[i]??shps.overlay;return o.animated&&shp?[{seq:o.seq,shp}]:[];}),...rig.turretSprites.flatMap((s,i)=>{const shp=shps.turretSprites?.[i];return shp?[{seq:s,shp}]:[];})];
     return { length: Math.max(...sequences.map(({seq,shp})=>sequenceLength(seq,shp))), tickMs:rigTickMs(rig,shps),durationMs:Math.max(...sequences.map(({seq,shp})=>sequenceDurationMs(seq,shp))), animates: rigAnimates(rig, shps), labels: [] };
   }
 
