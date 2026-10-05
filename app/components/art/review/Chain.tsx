@@ -43,7 +43,7 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
       state: `${data.current.tag} · in game`, status: "ok",
     },
     design: {
-      thumb: data.design ? <img src={data.design.thumb} alt="" loading="lazy" decoding="async" draggable={false} /> : <Missing />,
+      thumb: data.design ? <img className="is-contain" src={data.design.thumb} alt="" loading="lazy" decoding="async" draggable={false} /> : <Missing />,
       state: data.design ? "Concept" : "None yet", status: data.design ? "ok" : "missing",
     },
     glb: {

@@ -655,7 +655,7 @@
 .chain-step.is-missing > button { border-style: dashed; background: transparent; }
 .chain-step.is-missing .chain-text b { color: var(--muted); }
 .chain-thumb { position: relative; display: grid; place-items: center; height: 56px; border-radius: 5px; overflow: hidden; background: #0b0e0b; }
-.chain-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.chain-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .chain-thumb canvas { max-width: 100%; image-rendering: pixelated; }
 .chain-missing { width: 28px; height: 2px; border-radius: 2px; background: var(--line-2); }
 .chain-glyph { color: var(--muted); }
@@ -717,3 +717,6 @@
 .studio-action-row .studio-action-list { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; margin: 0; }
 .studio-action-aim { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-s); color: var(--muted); }
 .studio-action-aim input { width: 120px; accent-color: var(--gold); }
+.chain-thumb img.is-contain { object-fit: contain; }
+.lab-tag-note { position: absolute; top: 54px; left: 16px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--muted); background: rgba(14, 17, 14, 0.82); border: 1px solid var(--line); pointer-events: none; }
+.lab-tag-note.is-right-half { left: calc(50% + 16px); }

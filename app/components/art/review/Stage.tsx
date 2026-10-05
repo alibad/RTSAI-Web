@@ -19,7 +19,9 @@ import { AnimationTransport } from "./AnimationTransport";
 export const DEFAULT_FACING = 896;
 
 /** "Reference · Grizzly Battle Tank" for the original unit compared against; else the version's label. */
-export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.kind === "candidate" ? `${v.label} · candidate${v.note ? ` · ${v.note}` : ""}` : v?.label ?? "");
+export const tagText = (v: Version | null | undefined) => (v?.reference ? `Reference · ${v.reference.name}` : v?.kind === "candidate" ? `${v.label} · candidate` : v?.label ?? "");
+/** The light note sits under the pane tag, so it never runs into the compare switch. */
+const TagNote = ({ v, right = false }: { v: Version | null | undefined; right?: boolean }) => (v?.note ? <span className={`lab-tag-note${right ? " is-right-half" : ""}`}>{v.note}</span> : null);
 
 export const poseFrom = (s: LabView, tints: MapTint[], facing = s.facing, tick = 0): Pose => ({
   facing, turret: s.turret, tick,timeMs:s.animationTime,loop:!/(^die|^make$|deploy|takeoff|^land$|^liedown$|^standup$)/.test(s.animation), animation: s.animation, color: s.color, shadow: s.shadow, tint: tintFor(s.tintMap, tints),
@@ -464,6 +466,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
         <>
           <span className="lab-tag lab-pane-tag">{versions[pair[0]].label}</span>
           <span className="lab-tag lab-pane-tag is-right-half">{tagText(partner)}</span>
+          <TagNote v={partner} right />
         </>
       ) : compare === "swipe" && pair ? (
         <>
@@ -471,7 +474,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
           <span className="lab-tag lab-pane-tag is-right">{tagText(partner)}</span>
           <button ref={handleRef} type="button" className="lab-swipe-handle" aria-label="Drag to compare" />
         </>
-      ) : compare === "single" ? <span className="lab-tag lab-pane-tag">{tagText(focused)}</span> : null}
+      ) : compare === "single" ? <><span className="lab-tag lab-pane-tag">{tagText(focused)}</span><TagNote v={focused} /></> : null}
 
       {allowCompare && (
         <div className="lab-corner is-tr">
