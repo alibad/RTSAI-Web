@@ -20,6 +20,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { applyReviewAction, migrateEntry, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
 import { cachedFile, classicConfig, rosterPayload, visualPayload, SAFE_NAME, type OriginalsConfig } from "./originals";
+import { fireRules } from "./fire-server";
 import { reviewEnabled } from "./review-gate";
 import { duelJob, startDuel } from "./duel-server";
 import { baselineCounts, rebuildSummary, type RebuildCampaign } from "./rebuild";
@@ -284,11 +285,22 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         res.setHeader("Content-Type", name.endsWith(".png") ? "image/png" : "application/octet-stream");
         return res.end(readFileSync(file));
       }
+      if (req.method === "GET" && path === "/fire") {
+        // An actor's firing rules: RTSAI-Mod main (in game now) or the local preview copy (candidates).
+        const actor = url.searchParams.get("actor") ?? "", source = url.searchParams.get("source") === "preview" ? "preview" : "main";
+        const root = source === "preview" ? preview : originals?.modRoot ?? resolve(web, "../RTSAI-Mod");
+        if (reviewMode !== "ra2" || !root || !SAFE_NAME.test(actor)) return send(res, 404, { error: "No firing rules" });
+        try { const rules = fireRules(root, actor, source); return rules ? send(res, 200, rules) : send(res, 404, { error: "No such actor" }); }
+        catch (error) { return send(res, 404, { error: error instanceof Error ? error.message : "Rules unavailable" }); }
+      }
       if (req.method === "GET" && path === "/visual") {
         if (!originals) return send(res, 404, { error: "Local art is not configured" });
         const mode = url.searchParams.get("mode") ?? "ra2";
         if (!["ra2", "classic"].includes(mode)) return send(res, 400, { error: "Unknown game mode" });
-        try { return send(res, 200, await visualPayload(mode === "classic" ? classicConfig(originals) : originals, url.searchParams.get("image") ?? "", url.searchParams.get("sequence") ?? "", url.searchParams.get("palette") ?? "effect")); }
+        // Effects named by the local preview copy's rules (its muzzle sequences) resolve against that checkout; the
+        // art itself still comes from the same private originals cache.
+        const cfg = mode === "classic" ? classicConfig(originals) : url.searchParams.get("source") === "preview" && preview ? { ...originals, modRoot: preview } : originals;
+        try { return send(res, 200, await visualPayload(cfg, url.searchParams.get("image") ?? "", url.searchParams.get("sequence") ?? "", url.searchParams.get("palette") ?? "effect")); }
         catch (error) { return send(res, 404, { error: error instanceof Error ? error.message : "Unavailable effect" }); }
       }
       if (req.method === "GET" && path.startsWith("/mod/")) {

@@ -25,6 +25,8 @@ export type StagePart = {
   offset: Vec3;
   turretOffset: Vec3 | null;
   showShadow: boolean;
+  /** A barrel model (WithVoxelBarrel): it slides back by the armament's recoil along the turret's facing. */
+  barrel?: boolean;
 };
 
 export type StageSpec = {
@@ -42,6 +44,8 @@ export type ModelPose = {
   visible: Record<string, boolean>;
   shadow: boolean;
   airborne: boolean;
+  /** Current recoil (WDist) of the armament driving the barrel model, if any. */
+  recoil?: number;
 };
 
 export type StageState = ModelPose & {
@@ -289,8 +293,13 @@ export class VoxelModel {
     const { facing, turretFacing } = pose;
     return this.parts.map(part => {
       if (part.turretOffset) {
-        const world = localToWorld(rotateYaw(part.turretOffset, facing), this.spec.useClassicPerspectiveFudge, this.spec.cameraPitch);
-        return { part, yaw: (facing + turretFacing) & 1023, worldOffset: world };
+        const yaw = (facing + turretFacing) & 1023;
+        let world = localToWorld(rotateYaw(part.turretOffset, facing), this.spec.useClassicPerspectiveFudge, this.spec.cameraPitch);
+        if (part.barrel && pose.recoil) {
+          const back = localToWorld(rotateYaw([-pose.recoil, 0, 0], yaw), this.spec.useClassicPerspectiveFudge, this.spec.cameraPitch);
+          world = [world[0] + back[0], world[1] + back[1], world[2] + back[2]];
+        }
+        return { part, yaw, worldOffset: world };
       }
       return { part, yaw: facing & 1023, worldOffset: part.offset };
     });

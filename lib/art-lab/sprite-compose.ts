@@ -11,7 +11,8 @@ import { blit, drawShpFrame, framePosition, quantizeFacing, sequenceFrame, seque
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { localToWorld, rotateYaw, screenVector } from "./voxel-math";
 
-export type SpriteLayer = { shp: Shp; seq: SpriteSequence; facing: number; frame: number; dx?: number; dy?: number };
+/** One drawn sequence frame; `palette` overrides the unit's (a muzzle flash uses the effect palette). */
+export type SpriteLayer = { shp: Shp; seq: SpriteSequence; facing: number; frame: number; dx?: number; dy?: number; palette?: Palette };
 
 /** The sequences one animation draws: its body, and (except while building up) the turret and idle overlay. */
 export type SpriteRig = {
@@ -119,6 +120,28 @@ export function barrelScreenOffset(turretOffset: Vec3 | undefined, localOffset: 
   return { dx: Math.round(v[0]), dy: Math.round(v[1]) };
 }
 
+/** The turret's world facing in a picture: a vehicle's turret turns with its (quantised) body; a defence's does not. */
+export function turretWorldFacing(rig: SpriteRig, bodyFacing: number, turretFacing: number) {
+  const vehicle = rig.body.facings > 1 && Boolean(rig.turret);
+  return vehicle ? (quantizeFacing(bodyFacing, rig.quantizedFacings, rig.classicFacingBodyOrientation) + turretFacing) & 1023 : (rig.initialFacing + turretFacing) & 1023;
+}
+
+/**
+ * Draws sprite layers (each with its own palette) over a finished picture, growing it as needed: a voxel unit's
+ * muzzle flash. Layer offsets are relative to the picture's anchor.
+ */
+export function stampLayers(image: RasterImage, layers: (SpriteLayer & { palette: Palette })[]): RasterImage {
+  if (!layers.length) return image;
+  const at = layers.map(l => framePosition(l.shp, l.seq, image.anchorX + (l.dx ?? 0), image.anchorY + (l.dy ?? 0)));
+  const left = Math.min(0, ...at.map(p => p.x)), top = Math.min(0, ...at.map(p => p.y));
+  const right = Math.max(image.width, ...at.map((p, i) => p.x + layers[i].shp.width)), bottom = Math.max(image.height, ...at.map((p, i) => p.y + layers[i].shp.height));
+  const width = right - left, height = bottom - top;
+  const data = new Uint8ClampedArray(4 * width * height);
+  for (let y = 0; y < image.height; y++) data.set(image.data.subarray(4 * y * image.width, 4 * (y + 1) * image.width), 4 * ((y - top) * width - left));
+  layers.forEach((l, i) => blit(data, width, height, drawShpFrame(l.shp, sequenceFrame(l.seq, l.frame, l.facing, false, l.shp), l.palette), l.shp.width, l.shp.height, at[i].x - left, at[i].y - top));
+  return { width, height, data, anchorX: image.anchorX - left, anchorY: image.anchorY - top };
+}
+
 /**
  * Layers for one picture. A vehicle's turret turns with its body (Turreted: world = body + local); a defence's
  * body never turns, so its turret angle is absolute from InitialFacing. Idle overlays turn with the body.
@@ -162,7 +185,7 @@ export function composeLayers(layers: SpriteLayer[], palette: Palette, base: Shp
   const draw = (layer: SpriteLayer, index: number) => {
     if (index < 0 || index >= layer.shp.frames.length) return;
     const at = framePosition(layer.shp, layer.seq, anchorX + (layer.dx ?? 0), anchorY + (layer.dy ?? 0));
-    blit(data, width, height, drawShpFrame(layer.shp, index, palette), layer.shp.width, layer.shp.height, at.x, at.y);
+    blit(data, width, height, drawShpFrame(layer.shp, index, layer.palette ?? palette), layer.shp.width, layer.shp.height, at.x, at.y);
   };
   if (shadows) for (const layer of layers) if (layer.seq.shadowStart >= 0) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing, true,layer.shp));
   for (const layer of layers) draw(layer, sequenceFrame(layer.seq, layer.frame, layer.facing,false,layer.shp));

@@ -6,6 +6,7 @@ import { cellZoom, clampZoom, dragFacing, dragTurret, fitZoom, lineupFacings } f
 import { pickAnimation, spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { facingLabel } from "../../../../lib/art-lab/voxel-math";
 import { voxelAnimationParts,voxelAnimationFrames,voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
+import { FIRE_ACTION, fireActions } from "../../../../lib/art-lab/fire";
 import { houseColors } from "../../../../lib/art-lab/remap";
 import { tintFor, type MapTint } from "../viewSettings";
 import type { StageLabel } from "../voxel-three";
@@ -205,7 +206,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const canTurn = isVoxel || Math.abs(pickAnimation(focused?.item?.sprite ?? null, animation)?.body?.facings ?? 1) > 1;
   const canAim = isVoxel ? Boolean(focused?.item?.spec.voxel?.parts.some(p => p.turretOffset !== null)) : Boolean(focused?.item?.sprite?.turret);
   const is3d = compare === "single" && view3d !== "off" && isVoxel;
-  const animations = useMemo(() => (focused?.item ? focused.item.spec.voxel ? voxelAnimationParts(focused.item.spec).length?[{id:"body",label:voxelCycleLabel(focused.item.spec)}]:[] : spriteAnimations(focused.item.sprite) : []), [focused]);
+  const animations = useMemo(() => (focused?.item ? [...(focused.item.spec.voxel ? voxelAnimationParts(focused.item.spec).length?[{id:"body",label:voxelCycleLabel(focused.item.spec)}]:[] : spriteAnimations(focused.item.sprite)), ...fireActions(focused.item.fire)] : []), [focused]);
   const anim = useMemo(() => (focused?.item ? frames.animationInfo(focused.item, animation) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `assets` re-reads the cache after loads
     [frames, focused, animation, assets]);
@@ -539,7 +540,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       )}
 
       {compare !== "lineup" && <div className="lab-corner is-bl"><Inset item={focused?.item ?? null} frames={frames} tints={tints} radius={radius} /></div>}
-      {anim?.animates&&compare!=="lineup"&&<div className="lab-animation-row"><AnimationTransport info={anim}/></div>}
+      {anim?.animates&&compare!=="lineup"&&<div className="lab-animation-row"><AnimationTransport info={anim}/>{animation===FIRE_ACTION&&focused?.item&&assets>=0&&frames.firePlaceholder(focused.item)&&<span className="lab-fire-note" title="Muzzle flashes are original game art: shown only from your local originals cache, never in the authored-only view.">Placeholder flash</span>}</div>}
 
       <div className="lab-corner is-br">
         <PlayerColours />

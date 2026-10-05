@@ -4,7 +4,7 @@
  * Local only; screenshots contain only project-authored art (the page runs with ?authored=1 and original RA2
  * routes are blocked). It never presses a decision key (U, R, C, Z) and never sends a review action.
  *
- *   node scripts/check-actor-animations.mjs [--software] [--actor r2cnportable] [--spin r2mohajer,r2mantis]
+ *   node scripts/check-actor-animations.mjs [--software] [--actor r2cnportable] [--spin r2mohajer,r2mantis] [--fire r2qilin,r2karrar]
  *   RTSAI_STUDIO_URL=http://127.0.0.1:3450 node scripts/check-actor-animations.mjs --software
  *
  * For one infantry candidate (the actor's newest native candidate made from its 3D model) it checks:
@@ -13,7 +13,10 @@
  *   - house recolour (another player colour changes the picture, red restores it);
  *   - Fire changes between frames, Die plays once and holds its last frame;
  * and, for each --spin actor, that its spin (a drone's propeller, a radar) moves when scrubbed: the candidate the
- * local preview copy plays, voxel (HVA frames under the preview's rules) or prerendered sprite (looping frames). Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
+ * local preview copy plays, voxel (HVA frames under the preview's rules) or prerendered sprite (looping frames); and,
+ * for each --fire vehicle (the candidate under review and what is in game now), that its Fire action recoils and
+ * flashes: the picture changes as the shot plays and settles back. Muzzle flashes are original game art, so this
+ * authored-only page must draw the marked placeholder and say so. Any page error fails the run. --software renders with SwiftShader and never touches the GPU,
  * which another session may hold (C:/Users/Admin/Code/AI/logs/gpu-claim.txt); without it the GPU is claimed.
  */
 import assert from "node:assert/strict";
@@ -23,8 +26,8 @@ import { resolve } from "node:path";
 import { register } from "tsx/esm/api";
 
 register();
-const { candidateVehicleSprite, candidateSprite, candidatesForSlot } = await import("../lib/art-lab/review.ts");
-const { fromModel } = await import("../lib/art-lab/chain.ts");
+const { candidateVehicleSprite, candidateSprite } = await import("../lib/art-lab/review.ts");
+const { reviewCandidate } = await import("../lib/art-lab/chain.ts");
 const { spriteAnimations } = await import("../lib/art-lab/sprite-anim.ts");
 const { artLab, renderSpec, spriteWithUrls } = await import("../lib/art-lab/manifest.ts");
 
@@ -33,6 +36,7 @@ const flag = name => (args.includes(name) ? args[args.indexOf(name) + 1] : null)
 const base = (process.env.RTSAI_STUDIO_URL ?? "http://127.0.0.1:3461").replace(/\/$/, "");
 const actor = flag("--actor") ?? "r2cnportable";
 const spinActors = (flag("--spin") ?? "r2mohajer,r2mantis").split(",").filter(Boolean);
+const fireActors = (flag("--fire") ?? "r2qilin,r2karrar").split(",").filter(Boolean);
 const software = args.includes("--software");
 const claim = "C:/Users/Admin/Code/AI/logs/gpu-claim.txt", token = `RTSAI animation check pid=${process.pid}`;
 const existingClaim = existsSync(claim) ? readFileSync(claim, "utf8").trim() : "";
@@ -42,13 +46,11 @@ const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE 
 const output = resolve(".cache/animation-check");
 mkdirSync(output, { recursive: true });
 
-// The candidate the Studio opens by default: the newest native one made from the 3D model, else the newest native.
 const state = await (await fetch(`${base}/api/art-review/state?mode=ra2`)).json();
-const pick = id => {
-  const ws = state.units.find(u => u.actor === id);
-  const natives = [...candidatesForSlot(ws, "model")].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  return natives.find(c => fromModel(c, ws?.candidates)) ?? natives[0] ?? null;
-};
+// The candidate under review, as the Studio picks it: the one the local preview copy plays, else the newest made
+// from the 3D model, else the newest native one (lib/art-lab/chain.ts reviewCandidate).
+const preview = await (await fetch(`${base}/api/art-review/preview?mode=ra2`)).json();
+const pick = id => reviewCandidate(state.units.find(u => u.actor === id), preview.actors?.[id]?.model ?? null);
 const lab = artLab.actors[actor];
 assert.ok(lab, `${actor} is not a new RA2 actor`);
 const candidate = pick(actor);
@@ -164,11 +166,9 @@ try {
 
   // 5. Spins the preview copy's rules play: drone propellers (WithVoxelHelicopterBody), radars (WithAnimatedVoxelModel).
   const spins = [];
-  // The candidate the local preview copy plays (installed bytes), else the default one.
-  const preview = await (await fetch(`${base}/api/art-review/preview?mode=ra2`)).json();
   for (const id of spinActors) {
     const installed = preview.actors?.[id]?.model;
-    const c = state.units.find(u => u.actor === id)?.candidates.find(x => x.id === installed) ?? pick(id);
+    const c = pick(id);
     if (!c || !["voxel", "sprite"].includes(c.kind)) { spins.push({ actor: id, skipped: "no game-model candidate" }); continue; }
     await open(id, c.id);
     // The preview copy's rules arrive with the preview status, a moment after the page.
@@ -184,8 +184,29 @@ try {
     spins.push({ actor: id, candidate: c.id, kind: c.kind, inPreview: c.id === installed, action: spin, frames: new Set(hashes).size });
   }
 
+  // 6. Fire: recoil and muzzle flash, for the candidate under review and for what is in game now.
+  const fires = [];
+  for (const id of fireActors) for (const version of ["", "current"]) {
+    const c = version ? null : pick(id);
+    await open(id, version || c?.id || "current");
+    const fire = actions.filter({ hasText: /^Fire$/ });
+    await fire.first().waitFor({ timeout: 20000 }).catch(() => undefined);
+    assert.ok(await fire.count(), `${id} ${version || c?.id}: a Fire action is offered`);
+    await fire.first().click();
+    await page.waitForTimeout(600);
+    await pause();
+    const shotMax = Number(await timeline.getAttribute("max"));
+    const shot = await at(0), mid = await at(80), settled = await at(shotMax - 40);
+    assert.notEqual(shot, mid, `${id}: the shot plays (recoil and flash change the picture)`);
+    assert.notEqual(shot, settled, `${id}: the turret and flash settle after the shot`);
+    const placeholder = await page.locator(".lab-fire-note").count() > 0;
+    assert.ok(placeholder, `${id}: the authored-only page marks its placeholder flash`);
+    fires.push({ actor: id, version: version || c?.id, frames: new Set([shot, mid, settled]).size, placeholderMarked: placeholder });
+    if (!version) await page.locator(".lab-stage").screenshot({ path: resolve(output, `${id}-fire.png`) });
+  }
+
   assert.deepEqual(errors, [], "no page errors");
-  const report = { studio: base, renderer, candidate: { actor, id: candidate.id, actions: labels }, idleFrames: new Set(idleHashes).size, playPause: true, recolour: true, fireFrames: new Set(fireHashes).size, dieHeld: true, spins, pageErrors: errors, originalScreenshots: 0 };
+  const report = { studio: base, renderer, candidate: { actor, id: candidate.id, actions: labels }, idleFrames: new Set(idleHashes).size, playPause: true, recolour: true, fireFrames: new Set(fireHashes).size, dieHeld: true, spins, fires, pageErrors: errors, originalScreenshots: 0 };
   writeFileSync(resolve(output, "browser.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report));
 } finally {

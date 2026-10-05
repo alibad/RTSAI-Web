@@ -54,6 +54,14 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
   Conditional variants (`idle-landed`, `idle-still`, `turret-still`) are their own actions and never drawn over the main
   one; overlays from another image (damage smoke) are ignored. Art installed under any overlay folder
   (e.g. `art-preview/vehicles/`) counts for "In local preview".
+- Vehicles, ships and aircraft get a **Fire** action, as the engine plays a shot: the armament's Recoil falls by
+  RecoilRecovery each 40 ms tick, a sprite turret (WithSpriteTurret Recoils) or voxel barrel (WithVoxelBarrel) slides
+  back along the turret's facing, and the muzzle sequence plays once at the barrel's LocalOffset (barrels take turns).
+  Rules come from RTSAI-Mod main for what is in game now and from the local preview copy for candidates, with the
+  install agent's `meta.previewInstall.rules` first (`/api/art-review/fire`). Muzzle flashes are original RA2 effect
+  art, read only through the private originals cache (`/api/art-review/visual`, extracted on demand, never committed
+  or bundled); the authored-only view, or an original that is not cached, draws a magenta-ringed placeholder and says
+  "Placeholder flash".
 - Every action has a plain-word label from one map (`lib/art-lab/action-labels.ts`): Crawl, Prone fire, Die (alt),
   Lie down, Rotor spin, Propeller, Radar spin, and so on.
 - `node scripts/check-actor-animations.mjs --software` (`RTSAI_STUDIO_URL` picks the Studio, default :3461) checks

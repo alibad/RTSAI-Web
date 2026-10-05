@@ -794,3 +794,5 @@
 .board-facts li::before { content: "·"; margin-right: 6px; color: var(--faint); }
 .board-facts li.is-ok::before { content: "✓"; color: var(--green); }
 .board-facts li.is-bad::before { content: "✕"; color: #f5a291; }
+/* The Fire action shows a magenta-ringed stand-in where an original muzzle flash cannot be shown. */
+.lab-fire-note { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #f0a6ec; background: rgba(232, 40, 220, 0.14); }

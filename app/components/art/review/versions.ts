@@ -7,6 +7,7 @@ import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { StageItem } from "./frames";
 import type { ActorSources } from "../../../../lib/art-lab/asset-source";
 import type { PreviewAnimation } from "../../../../lib/art-lab/chain";
+import { withInstalledArmaments, type FireRules } from "../../../../lib/art-lab/fire";
 
 export type ReviewUnit = {
   id: string; factionId: string; factionName: string; name: string; category: string; role: string;
@@ -44,19 +45,21 @@ export type Version = {
 // Stable item objects per unit and candidate, so cached frames and models are reused across renders.
 const itemCache = new Map<string, StageItem | null>();
 /** `play`: the animations the local preview copy's rules give this actor (see candidateRenderSpec). */
-export function stageItem(unit: ReviewUnit, candidate: Candidate | null, play: PreviewAnimation[] | null = null): StageItem | null {
+export function stageItem(unit: ReviewUnit, candidate: Candidate | null, play: PreviewAnimation[] | null = null, fire: FireRules | null = null): StageItem | null {
+  const fireKey = fire ? JSON.stringify(fire) : "";
   if (!candidate) {
-    const key = `${unit.id}:current:${JSON.stringify(unit.spec)}`;
-    if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite });
+    const key = `${unit.id}:current:${JSON.stringify(unit.spec)}:${fireKey}`;
+    if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite, ...(fire ? { fire } : {}) });
     return itemCache.get(key)!;
   }
-  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${JSON.stringify(unit.spec)}:${JSON.stringify(candidate.urls)}:${JSON.stringify(candidate.sprite)}:${JSON.stringify(candidate.voxelize)}:${candidate.rulesText ?? ""}:${play?.length ? JSON.stringify(play) : ""}`;
+  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${JSON.stringify(unit.spec)}:${JSON.stringify(candidate.urls)}:${JSON.stringify(candidate.sprite)}:${JSON.stringify(candidate.voxelize)}:${candidate.rulesText ?? ""}:${play?.length ? JSON.stringify(play) : ""}:${fireKey}`;
   if (!itemCache.has(key)) {
     // Voxel candidates draw in the voxel slot; sprite candidates use their own frame layout (rules snippet or
     // meta.sprite) when the unit is a voxel today, else the unit's current sprite sequences.
     const voxel = candidateRenderSpec(unit.spec, candidate, play);
     const sprite = voxel ? null : candidateVehicleSprite(unit.spec, candidate, unit.sprite) ?? candidateSprite(unit.spec, unit.sprite, candidate);
-    itemCache.set(key, voxel ? { key: candidate.id, spec: voxel, sprite: null } : sprite ? { key: candidate.id, spec: sprite.spec, sprite: sprite.sprite } : null);
+    const fired = fire ? { fire } : {};
+    itemCache.set(key, voxel ? { key: candidate.id, spec: voxel, sprite: null, ...fired } : sprite ? { key: candidate.id, spec: sprite.spec, sprite: sprite.sprite, ...fired } : null);
   }
   return itemCache.get(key)!;
 }
@@ -76,14 +79,21 @@ const fileUrl = (c: Candidate, file: string | null | undefined) => (file ? c.url
  * Current first (labelled "Original" for untouched RA2 units), then for new units the original RA2 unit they
  * replace as "Reference", then the slot's candidates oldest first, labelled by kind and creation order.
  */
-export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, slot: SlotId, reference: ReviewUnit | null = null, referenceWhy?: string, play: PreviewAnimation[] | null = null): Version[] {
+/**
+ * Firing rules for the Fire action: what is in game now plays RTSAI-Mod main's rules; a candidate plays the local
+ * preview copy's, with the Armament and Turreted blocks its install agent recorded (meta.previewInstall.rules) first.
+ */
+export type FireSources = { main: FireRules | null; preview: FireRules | null };
+export const candidateFire = (fire: FireSources | null | undefined, c: Candidate) => (fire?.preview ? withInstalledArmaments(fire.preview, c.previewInstall?.rules) : null);
+
+export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, slot: SlotId, reference: ReviewUnit | null = null, referenceWhy?: string, play: PreviewAnimation[] | null = null, fire: FireSources | null = null): Version[] {
   const candidates = [...candidatesForSlot(ws, slot)].sort(byCreation);
   const labels = versionLabels(candidates);
   const original = unit.origin === "original";
   const current: Version = {
     key: "current", kind: "current", candidate: null, label: original ? "Original" : "In game now",
     tag: slot === "icon" ? "PNG" : unit.spec.voxel ? "VXL" : "SHP",
-    item: slot === "icon" ? null : stageItem(unit, null),
+    item: slot === "icon" ? null : stageItem(unit, null, null, fire?.main ?? null),
     image: slot === "icon" ? unit.spec.cameo : null,
   };
   const ref: Version[] = reference && slot !== "concept" ? [{
@@ -93,7 +103,7 @@ export function slotVersions(unit: ReviewUnit, ws: UnitWorkspace | undefined, sl
   }] : [];
   return [current, ...ref, ...candidates.map(c => ({
     key: c.id, kind: "candidate" as const, candidate: c, label: labels.get(c.id) ?? c.id, tag: kindTags[c.kind] ?? String(c.kind).toUpperCase(),
-    item: slot === "model" ? stageItem(unit, c, play) : null,
+    item: slot === "model" ? stageItem(unit, c, play, candidateFire(fire, c)) : null,
     note: slot === "model" && c.files.vxl?.length ? lightNote(c) : undefined,
     image: slot === "icon" ? fileUrl(c, c.files.cameo) : slot === "concept" ? fileUrl(c, c.files.concept) : null,
   }))];

@@ -19,7 +19,8 @@ import { FrameStore } from "./review/frames";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
 import { rememberView, setLab, useLab } from "./review/lab-store";
 import { ModelStage, useUnitRadius } from "./review/Stage";
-import { slotVersions, stageItem, type ReviewUnit } from "./review/versions";
+import { candidateFire, slotVersions, stageItem, type FireSources, type ReviewUnit } from "./review/versions";
+import type { FireRules } from "../../../lib/art-lab/fire";
 import { AssetChain, RosterTally, type ChainData } from "./review/Chain";
 import { GlbStage } from "./review/GlbStage";
 import { ReviewBoard } from "./review/ReviewBoard";
@@ -287,7 +288,27 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   // What the local preview copy's rules animate for this actor (drone propellers, radars), keyed by content.
   const playJson = JSON.stringify(unit ? preview?.actors[unit.id]?.animations ?? null : null);
   const play = useMemo(() => JSON.parse(playJson) as PreviewAnimation[] | null, [playJson]);
-  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy, play) : []), [unit, ws, slot, reference, referenceWhy, play]);
+  // Firing rules for the Fire action of vehicles, ships and aircraft (RA2): main for in game now, the preview copy for
+  // candidates. Muzzle flashes are original effect art, so the authored-only view draws the marked placeholder.
+  const [fireRules, setFireRules] = useState<Record<string, FireSources>>({});
+  // New units only, fetched the first time their Animations step opens (the rules then stay for the session), so
+  // browsing never pays for parsing the mods or swapping every version's stage item.
+  const fireActor = unit && mode === "ra2" && isNew && ["vehicle", "ship", "aircraft"].includes(unit.category) ? unit.id : null;
+  const fireWanted = Boolean(fireActor && chainStep === "anim");
+  useEffect(() => {
+    if (!fireActor || !fireWanted || fireRules[fireActor]) return;
+    const get = (source: "main" | "preview") => fetch(`${API}/fire?mode=ra2&actor=${encodeURIComponent(fireActor)}&source=${source}`).then(r => (r.ok ? r.json() as Promise<FireRules> : null)).catch(() => null);
+    let cancelled = false;
+    void Promise.all([get("main"), get("preview")]).then(([main, previewRules]) => { if (!cancelled) setFireRules(f => ({ ...f, [fireActor]: { main, preview: previewRules } })); });
+    return () => { cancelled = true; };
+  }, [fireActor, fireWanted, fireRules]);
+  const fire = useMemo<FireSources | null>(() => {
+    const f = fireActor ? fireRules[fireActor] : null;
+    if (!f) return null;
+    const mark = (r: FireRules | null) => (r ? { ...r, originals: !authored } : null);
+    return { main: mark(f.main), preview: mark(f.preview) };
+  }, [fireActor, fireRules, authored]);
+  const versions = useMemo(() => (unit ? slotVersions(unit, ws, slot, reference, referenceWhy, play, fire) : []), [unit, ws, slot, reference, referenceWhy, play, fire]);
   const nativeChoice = defaultModelFocus(ws, entry.slots.model, unit ? preview?.actors[unit.id]?.model : null);
   const fallbackNative = natives.find(c => c.id === nativeChoice) ?? null;
   const meshSource = useMemo(() => meshCandidate(ws, fallbackNative), [ws, fallbackNative]);
@@ -315,7 +336,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
 
   // The chain: the game-model step follows the focused native candidate, else the newest one.
   const gameCandidate = slot === "model" && focused?.candidate ? focused.candidate : fallbackNative;
-  const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate, play) : null), [unit, gameCandidate, play]);
+  const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate, play, candidateFire(fire, gameCandidate)) : null), [unit, gameCandidate, play, fire]);
   const modelActor = library?.actors.find(a => a.actor === unit?.id);
   const glb = useMemo(() => glbOptions(modelActor, meshSource), [modelActor, meshSource]);
   const chain: ChainData | null = unit && isNew ? {

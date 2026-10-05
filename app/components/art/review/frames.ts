@@ -12,14 +12,17 @@ import type { Palette } from "../../../../lib/art-lab/pal";
 import type { RasterImage } from "../../../../lib/art-lab/raster";
 import type { Shp } from "../../../../lib/art-lab/shp";
 import { partVisibleByDefault, type RenderSpec } from "../../../../lib/art-lab/spec";
-import { composeRig, rigAnimates, rigFiles, rigPoseLayers, sequenceDurationMs, rigTickMs, spriteRig, type RigShps, type SpriteRig } from "../../../../lib/art-lab/sprite-compose";
+import { composeLayers, composeRig, rigAnimates, rigFiles, rigPoseLayers, sequenceDurationMs, rigTickMs, spriteRig, stampLayers, type RigShps, type SpriteRig } from "../../../../lib/art-lab/sprite-compose";
 import { sequenceFrame,sequenceLength } from "../../../../lib/art-lab/sprite-render";
 import { voxelAnimationFrames,voxelAnimationParts,voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
-import type { SpriteArt } from "../../../../lib/art-lab/types";
+import type { SpriteArt, SpriteSequence } from "../../../../lib/art-lab/types";
+import type { PaletteSpec } from "../../../../lib/art-lab/spec";
+import { FIRE_ACTION, fireKey, fireLayers, firePeriod, fireState, placeholderMuzzle, voxelMuzzleLayers, type FireRules, type MuzzleArt } from "../../../../lib/art-lab/fire";
 import type { VoxelEngine } from "../voxel-engine";
 import type { VoxelModel } from "../voxel-three";
 
-export type StageItem = { key: string; spec: RenderSpec; sprite: SpriteArt | null };
+/** `fire`: the firing rules its Fire action plays (recoil and muzzle flashes; see lib/art-lab/fire.ts). */
+export type StageItem = { key: string; spec: RenderSpec; sprite: SpriteArt | null; fire?: FireRules | null };
 
 export type Pose = {
   facing: number;
@@ -52,6 +55,11 @@ type Three = typeof import("../voxel-three") & typeof import("../voxel-engine");
 /** `visible`: the user can see this frame now (filmstrip, lineup). Otherwise it is warm-up for later. */
 type Job = { item: StageItem; pose: Pose; key: string; visible: boolean };
 type Slot<T> = T | "loading" | "failed";
+
+/** The Fire action of a vehicle (recoil and muzzle flashes, lib/art-lab/fire.ts); not a sprite sequence. */
+export const GUNFIRE = FIRE_ACTION;
+type Muzzle = MuzzleArt & { palette: Palette };
+const PLACEHOLDER_MUZZLE: Muzzle = placeholderMuzzle();
 
 const MAX_FRAMES = 1600;
 /** Enough to keep one faction's board (in game now and new, about 22 voxel models) resident. */
@@ -92,6 +100,8 @@ export const frameRadius = (f: Frame) => Math.max(...[[f.left, f.top], [f.right,
 export class FrameStore {
   private frames = new Map<string, Frame>();
   private palettes = new Map<string, Slot<Palette>>();
+  /** Muzzle flashes by rules source, image and sequence: original effect art from the private originals cache. */
+  private muzzles = new Map<string, Slot<Muzzle>>();
   private shps = new Map<string, Slot<Shp>>();
   private models = new Map<string, Slot<VoxelModel>>();
   private three: Three | null = null;
@@ -181,6 +191,13 @@ export class FrameStore {
   private ensureEngine(three:Three){this.engineInstance ??= new three.VoxelEngine();return this.engineInstance;}
 
   private key(item: StageItem, pose: Pose, rig?: SpriteRig | null, shps?: RigShps | null) {
+    const k = this.pictureKey(item, pose, rig, shps);
+    if (pose.animation !== GUNFIRE || !item.fire) return k;
+    const art = this.fireArt(item, false) ?? {};
+    return `${k}|fire:${item.fire.source}:${item.fire.originals === false ? "a" : "o"}:${fireKey(fireState(item.fire, pose.timeMs ?? pose.tick * 40, art))}`;
+  }
+
+  private pictureKey(item: StageItem, pose: Pose, rig?: SpriteRig | null, shps?: RigShps | null) {
     const tint = pose.tint.join(",");
     if (item.spec.voxel) return `${this.identity(item.spec)}|v|${Object.values(voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40)).join(",")}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}|${pose.airborne && item.spec.voxel.altitude != null ? "air" : ""}`;
     if (!rig || !shps) return `${this.identity(item.spec)}|s|${pose.animation}|${pose.tick}|${pose.facing}|${pose.turret}|${pose.color}|${pose.shadow}|${tint}`;
@@ -250,7 +267,49 @@ export class FrameStore {
     this.queued.clear();
   }
 
+  /**
+   * The muzzle art an item's Fire action draws: original effect art from the private originals cache (fetched on
+   * first use when `load`), or the marked placeholder in the authored-only view or when the original is missing.
+   * Null while any is still loading.
+   */
+  fireArt(item: StageItem, load = true): Record<string, Muzzle> | null {
+    const fire = item.fire;
+    const out: Record<string, Muzzle> = {};
+    if (!fire?.muzzleOverlay) return out;
+    let ready = true;
+    for (const a of fire.armaments) {
+      if (!a.muzzle || out[a.muzzle]) continue;
+      if (fire.originals === false) { out[a.muzzle] = PLACEHOLDER_MUZZLE; continue; }
+      const key = `${fire.source}|${fire.image}|${a.muzzle}|${a.muzzlePalette}`;
+      const slot = this.muzzles.get(key);
+      if (slot === undefined) { ready = false; if (load) this.loadMuzzle(key, fire, a.muzzle, a.muzzlePalette); }
+      else if (slot === "loading") ready = false;
+      else out[a.muzzle] = slot === "failed" ? PLACEHOLDER_MUZZLE : slot;
+    }
+    return ready ? out : null;
+  }
+
+  /** Whether the item's Fire action shows a placeholder flash (authored-only view, or an original not cached). */
+  firePlaceholder(item: StageItem) {
+    const art = this.fireArt(item, false);
+    return Boolean(art && Object.values(art).some(m => m.placeholder));
+  }
+
+  private loadMuzzle(key: string, fire: FireRules, sequence: string, palette: string) {
+    this.muzzles.set(key, "loading");
+    const query = new URLSearchParams({ mode: "ra2", source: fire.source, image: fire.image, sequence, palette });
+    fetch(`/api/art-review/visual?${query}`)
+      .then(r => (r.ok ? r.json() as Promise<{ sequence: SpriteSequence; palette: PaletteSpec }> : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(async art => { const [shp, pal] = await Promise.all([loadShp(art.sequence.file!), loadPlayerPalette(art.palette, null)]); this.muzzles.set(key, { shp, seq: art.sequence, palette: pal, placeholder: false }); })
+      .catch(() => { this.muzzles.set(key, "failed"); })
+      .finally(() => this.loaded());
+  }
+
   animationInfo(item: StageItem, animation: string): AnimationInfo | null {
+    if (animation === GUNFIRE && item.fire) {
+      const period = firePeriod(item.fire, this.fireArt(item, false) ?? {});
+      return { length: Math.round(period / 40), tickMs: 40, durationMs: period, animates: true, labels: [] };
+    }
     if (item.spec.voxel){
       const parts=voxelAnimationParts(item.spec);if(!parts.length)return null;
       return {length:Math.max(...parts.map(p=>p.frames)),tickMs:Math.min(...parts.map(p=>p.tickRate!*40)),durationMs:Math.max(...parts.map(p=>p.frames*p.tickRate!*40)),animates:true,labels:[{id:"body",label:voxelCycleLabel(item.spec)}]};
@@ -289,6 +348,7 @@ export class FrameStore {
       if (m === undefined) { this.loadModel(spec); ready = false; }
       else if (m === "failed") return false;
       else if (m === "loading") ready = false;
+      if (pose.animation === GUNFIRE && item.fire && !this.fireArt(item)) ready = false;
       return ready;
     }
     const rig = spriteRig(item.sprite, pose.animation);
@@ -299,6 +359,7 @@ export class FrameStore {
       else if (s === "failed") return false;
       else if (s === "loading") ready = false;
     }
+    if (pose.animation === GUNFIRE && item.fire && !this.fireArt(item)) ready = false;
     return ready;
   }
 
@@ -335,7 +396,7 @@ export class FrameStore {
     (async () => {
       const [three, parts] = await Promise.all([
         this.loadThree(),
-        Promise.all(v.parts.map(async p => ({ id: p.id, label: p.label, vxl: await loadVxl(p.vxl), hva: await loadHva(p.hva), offset: p.offset, turretOffset: p.turretOffset, showShadow: p.showShadow }))),
+        Promise.all(v.parts.map(async p => ({ id: p.id, label: p.label, vxl: await loadVxl(p.vxl), hva: await loadHva(p.hva), offset: p.offset, turretOffset: p.turretOffset, showShadow: p.showShadow, barrel: /^barrel/i.test(p.label) || p.trait.startsWith("WithVoxelBarrel") }))),
       ]);
       if (!this.alive) { this.models.delete(this.identity(spec)); return; }
       this.ensureEngine(three);
@@ -380,13 +441,21 @@ export class FrameStore {
       if (typeof model !== "object" || !engine || this.inflight.has(key)) return null;
       if (!urgent && this.inflight.size >= MAX_INFLIGHT) return null;
       this.inflight.add(key);
+      // Fire: the barrel model slides back by its armament's recoil; muzzle flashes are stamped over the picture.
+      const fire = pose.animation === GUNFIRE && item.fire ? item.fire : null;
+      const art = fire ? this.fireArt(item, false) ?? {} : {};
+      const states = fire ? fireState(fire, pose.timeMs ?? pose.tick * 40, art) : [];
+      const barrel = fire?.voxelBarrel ? states.find(s => s.name === fire.voxelBarrel!.armament)?.recoil ?? 0 : 0;
+      const airborne = Boolean(pose.airborne) && item.spec.voxel?.altitude !== null && item.spec.voxel?.altitude !== undefined;
       engine.renderInGameAsync(model, {
         facing: pose.facing, turretFacing: pose.turret, frame: 0,partFrames:voxelAnimationFrames(item.spec,pose.timeMs??pose.tick*40), visible: defaultVisibility(item.spec), shadow: pose.shadow,
-        airborne: Boolean(pose.airborne) && item.spec.voxel?.altitude !== null && item.spec.voxel?.altitude !== undefined,
+        airborne, recoil: barrel,
       }, palette, pose.tint).then(image => {
         this.inflight.delete(key);
         if (!this.alive) return;
-        this.store(key, toFrame(image, null));
+        const lift = airborne ? (30 * (item.spec.voxel!.altitude ?? 0)) / 1448 : 0;
+        const shot = fire ? stampLayers(image, voxelMuzzleLayers(fire, states, art, pose.facing, pose.turret, item.spec.voxel!.useClassicPerspectiveFudge, lift)) : image;
+        this.store(key, toFrame(shot, null));
         this.emit("frames");
         this.schedule();
       }, e => {
@@ -397,7 +466,12 @@ export class FrameStore {
     }
     if (!rig || !shps) return null;
     try {
-      const frame = toFrame(composeRig(rig, shps, palette, { facing: pose.facing, turretFacing: pose.turret, tick: pose.tick, shadow: pose.shadow,timeMs:pose.timeMs,loop:pose.loop }), pose.tint);
+      const sprite = { facing: pose.facing, turretFacing: pose.turret, tick: pose.tick, shadow: pose.shadow, timeMs: pose.timeMs, loop: pose.loop };
+      const fire = pose.animation === GUNFIRE && item.fire ? item.fire : null;
+      const image = fire
+        ? (() => { const art = this.fireArt(item, false) ?? {}; return composeLayers(fireLayers(rigPoseLayers(rig, shps, sprite), rig, fire, fireState(fire, pose.timeMs ?? pose.tick * 40, art), art, pose.facing, pose.turret), palette, shps.body, rig.body, pose.shadow); })()
+        : composeRig(rig, shps, palette, sprite);
+      const frame = toFrame(image, pose.tint);
       this.store(key, frame);
       return frame;
     } catch (e) {
