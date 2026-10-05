@@ -9,7 +9,7 @@ import { houseColors } from "../../../../lib/art-lab/remap";
 import type { SlotId } from "../../../../lib/art-lab/review";
 import { backdrops } from "../PixelCanvas";
 import type { MapTint } from "../viewSettings";
-import { flagSrc } from "./flags";
+import { flagImage, prewarmFlags, useFlagBitmaps } from "./flag-bitmaps";
 import { setLab, useLab } from "./lab-store";
 import type { ReviewUnit } from "./versions";
 
@@ -145,7 +145,8 @@ const groupOrder = ["infantry", "vehicle", "aircraft", "ship", "defense", "struc
 const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: base game art", modified: "Modified: modified game art" };
 
 function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
-  const src = flagSrc(id);
+  useFlagBitmaps();
+  const src = flagImage(id);
   return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size} is-code`} aria-hidden="true">{({america:"US",england:"GB",france:"FR",germany:"DE",korea:"KR",russia:"RU",ukraine:"UA",cuba:"CU",libya:"LY",iraq:"IQ"} as Record<string,string>)[id] ?? id.slice(0,2).toUpperCase()}</span>;
 }
 
@@ -161,6 +162,9 @@ function Progress({ done, total }: { done: number; total: number }) {
 /** The faction switch: flag, name, roster size and decided progress. A keyboard listbox (arrows, Enter, Esc). */
 function FactionPicker({ factions, faction, onFaction, compact }: { factions: FactionSummary[]; faction: string; onFaction: (id: string) => void; compact: boolean }) {
   const [open, setOpen] = useState<{ top: number; left: number } | null>(null);
+  // Rasterise every faction flag once in idle time, so the picker's first opening has nothing heavy to paint.
+  const ids = factions.map(f => f.id).join(",");
+  useEffect(() => { if (ids) prewarmFlags(ids.split(",")); }, [ids]);
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const options = useRef<(HTMLButtonElement | null)[]>([]);

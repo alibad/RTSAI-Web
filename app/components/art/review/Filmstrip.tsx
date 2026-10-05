@@ -7,7 +7,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import type { SlotDecision } from "../../../../lib/art-lab/review";
 import type { MapTint } from "../viewSettings";
 import type { FrameStore, StageItem } from "./frames";
-import { groundTile, groundWidth } from "./ground";
+import { groundFor, groundTile, groundWidth } from "./ground";
 import { useLab } from "./lab-store";
 import { poseFrom } from "./Stage";
 import type { Version } from "./versions";
@@ -37,7 +37,7 @@ export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, 
       ctx.imageSmoothingEnabled = false;
       const z = Math.max(1, Math.round(zoom * dpr));
       const cx = Math.round((width / 2) * dpr), cy = Math.round(height * 0.56 * dpr);
-      const g = groundTile(s.ground, pose.tint, groundWidth(radius));
+      const g = groundTile(groundFor(item.spec.category, s.ground), pose.tint, groundWidth(radius));
       ctx.drawImage(g.canvas, cx - g.anchorX * z, cy - g.anchorY * z, g.width * z, g.height * z);
       ctx.drawImage(f.canvas, cx - f.anchorX * z, cy - f.anchorY * z, f.width * z, f.height * z);
     };

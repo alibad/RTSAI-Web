@@ -5,9 +5,13 @@ import type { Backdrop } from "../PixelCanvas";
 /** A 1x ground picture whose actor centre is (anchorX, anchorY). */
 export type Ground = { canvas: HTMLCanvasElement; width: number; height: number; anchorX: number; anchorY: number };
 
-const base: Record<Backdrop, [number, number, number]> = {
-  sand: [196, 160, 96], grass: [104, 116, 58], dark: [34, 38, 33], checker: [70, 75, 67], none: [60, 64, 58],
+/** Ground kinds: the viewer's backdrops, plus water, which ships always sit on (they never appear on land). */
+export type GroundKind = Backdrop | "water";
+const base: Record<GroundKind, [number, number, number]> = {
+  sand: [196, 160, 96], grass: [104, 116, 58], dark: [34, 38, 33], checker: [70, 75, 67], none: [60, 64, 58], water: [46, 86, 110],
 };
+/** The ground an actor is shown on: naval units on water, everything else on the chosen backdrop. */
+export const groundFor = (category: string | undefined, chosen: Backdrop): GroundKind => (category === "ship" ? "water" : chosen);
 
 /** Deterministic per-pixel grain, so the ground reads as terrain and never flickers. */
 const grain = (x: number, y: number) => {
@@ -16,7 +20,7 @@ const grain = (x: number, y: number) => {
   return ((h ^ (h >>> 16)) & 255) / 255 - 0.5;
 };
 
-function paint(kind: Backdrop, tint: readonly number[], width: number, height: number, cx: number, cy: number, alphaAt: (x: number, y: number) => number) {
+function paint(kind: GroundKind, tint: readonly number[], width: number, height: number, cx: number, cy: number, alphaAt: (x: number, y: number) => number) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -48,7 +52,7 @@ export const groundWidth = (radius: number | null) => Math.max(72, Math.min(180,
 
 const tiles = new Map<string, Ground>();
 /** A soft-edged diamond of terrain `width` 1x pixels wide, centred on the actor: the ground only under the unit. */
-export function groundTile(kind: Backdrop, tint: readonly number[], width = 180): Ground {
+export function groundTile(kind: GroundKind, tint: readonly number[], width = 180): Ground {
   const key = `${kind}|${tint.join(",")}|${width}`;
   let t = tiles.get(key);
   if (!t) {
@@ -65,7 +69,7 @@ export function groundTile(kind: Backdrop, tint: readonly number[], width = 180)
 
 const strips = new Map<string, Ground>();
 /** A rectangular strip of terrain (the lineup's shared ground), 1x size w x h. */
-export function groundStrip(kind: Backdrop, tint: readonly number[], width: number, height: number): Ground {
+export function groundStrip(kind: GroundKind, tint: readonly number[], width: number, height: number): Ground {
   const key = `${kind}|${tint.join(",")}|${width}x${height}`;
   let s = strips.get(key);
   if (!s) {

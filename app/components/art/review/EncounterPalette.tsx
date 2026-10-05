@@ -6,7 +6,7 @@ import { Search, Plus, GripVertical } from "lucide-react";
 import type { RosterPayload } from "../../../../lib/art-lab/originals";
 import { sourceLabel } from "../../../../lib/art-lab/asset-source";
 import { ENCOUNTER_DRAG } from "../../../../lib/art-lab/encounter";
-import { flagSrc } from "./flags";
+import { flagImage as flagSrc } from "./flag-bitmaps";
 import type { ReviewUnit } from "./versions";
 
 export function EncounterFaction({roster,value,onChange,label,disabled}:{roster:RosterPayload|null;value:string;onChange:(id:string)=>void;label:string;disabled:boolean}){

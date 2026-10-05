@@ -18,6 +18,7 @@ import type { RenderSpec } from "./spec";
 import type { SpriteArt, SpriteSequence, Vec3 } from "./types";
 import { parseWDist } from "./resolve";
 import type { ImagePlayerColor } from "./image-remap";
+import type { MeasuredGroup } from "./measurements";
 
 export type SlotId = "model" | "icon" | "concept";
 export const slotIds: SlotId[] = ["model", "icon", "concept"];
@@ -94,7 +95,7 @@ export type CandidateMeta = {
 };
 
 /** A candidate as the review UI receives it: file names resolved to dev-route URLs; `rulesText` is files.rules. */
-export type Candidate = CandidateMeta & { dir: string; urls: Record<string, string>; metaError?: string; rulesText?: string | null };
+export type Candidate = CandidateMeta & { dir: string; urls: Record<string, string>; metaError?: string; rulesText?: string | null; measured?: MeasuredGroup[] };
 
 export type UnitWorkspace = {
   actor: string;
@@ -290,7 +291,8 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate): 
   const declared: Vec3 = declaredTurretOffset(candidate) ?? turret?.turretOffset ?? [0, 0, 0];
   const hasDropin = candidate.files.vxl.some(f => f.replace(/\\/g, "/").toLowerCase() === `dropin/${actor}tur.vxl`);
   // A candidate file plays the role of the current part with the same file name (a gunship's "tur" is its rotor).
-  const fileBase = (path: string) => path.split("?")[0].split("/").pop()!.replace(/\.vxl$/i, "").toLowerCase();
+  // The dev roster serves mod files under a content-hash prefix ("92827ae1d573-r2crane.vxl").
+  const fileBase = (path: string) => path.split("?")[0].split("/").pop()!.replace(/\.vxl$/i, "").replace(/^[0-9a-f]{8,}-/i, "").toLowerCase();
   const currentPart = (base: string) => current.voxel!.parts.find(p => fileBase(p.vxl) === base) ?? null;
   const parts = candidate.files.vxl.flatMap(file => {
     const name = file.replace(/\\/g, "/");
@@ -399,6 +401,8 @@ export function parseCandidateRules(text: string, actor: string): CandidateRules
       const defaults = child(node.value, "Defaults")?.value;
       for (const seq of children) {
         if (seq.key === "Defaults" || seq.key.startsWith("Inherits")) continue;
+        // "-turret:" removes an inherited sequence; it is not a sequence to draw.
+        if (seq.key.startsWith("-")) { out.removed.push(seq.key.slice(1)); continue; }
         const v = seq.value;
         const field = (key: string) => childValue(v, key) ?? childValue(defaults, key);
         const filename = field("Filename");

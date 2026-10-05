@@ -3,7 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { memo } from "react";
 import { Box, Check, Minus, X } from "lucide-react";
-import { chainSteps, type ActionCheck, type ChainStep, type Check as Measured, type DecisionState, type Design, type RosterCounts } from "../../../../lib/art-lab/chain";
+import { chainSteps, checksSummary, type ActionCheck, type ChainStep, type DecisionState, type Design, type RosterCounts } from "../../../../lib/art-lab/chain";
+import type { MeasuredGroup } from "../../../../lib/art-lab/measurements";
 import type { ModelOption } from "../../../../lib/art-lab/models";
 import type { Candidate } from "../../../../lib/art-lab/review";
 import type { MapTint } from "../viewSettings";
@@ -17,7 +18,7 @@ export type ChainData = {
   glb: { options: ModelOption[] };
   game: { candidate: Candidate | null; item: StageItem | null; tag: string; fromGlb: boolean; count: number; preview: boolean; light: string | null };
   actions: ActionCheck[];
-  checks: Measured[];
+  checks: MeasuredGroup[];
   decision: DecisionState;
 };
 
@@ -34,9 +35,10 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
 }) {
   useGlbSnapshots();
   const glb = data.glb.options[0] ?? null;
-  const snapshot = glbSnapshot(glb?.url);
+  // The pre-rendered picture (npm run thumbs:glb) when it matches the model; else the one taken on first view.
+  const snapshot = glb?.thumbnail ?? glbSnapshot(glb?.url);
   const present = data.actions.filter(a => a.present).length;
-  const gate = data.checks.find(c => c.pass !== null && /gate|format checks/i.test(c.label));
+  const checks = checksSummary(data.checks);
   const cells: Record<ChainStep, { thumb: React.ReactNode; state: string; status: "ok" | "missing" | "open" | "good" | "bad"; badge?: string }> = {
     now: {
       thumb: data.current.item ? <ModelThumb item={data.current.item} frames={frames} tints={tints} zoom={zoom} width={THUMB_W} height={THUMB_H} radius={radius} /> : <Missing />,
@@ -61,9 +63,9 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
       status: !data.actions.length ? "missing" : present === data.actions.length ? "ok" : "open",
     },
     checks: {
-      thumb: gate ? <span className={`chain-figure ${gate.pass ? "is-good" : "is-bad"}`}>{gate.result}</span> : <Missing />,
-      state: gate ? (gate.pass ? "All passed" : `${gate.label}: failed`) : data.game.candidate ? "Not measured yet" : "Nothing to check",
-      status: gate ? (gate.pass ? "good" : "bad") : "missing",
+      thumb: checks.state === "none" ? <Missing /> : <span className={`chain-figure${checks.state === "fail" ? " is-bad" : checks.state === "pass" ? " is-good" : ""}`}>{checks.total ? <>{checks.passed}<small>/{checks.total}</small></> : checks.state === "fail" ? "✕" : "✓"}</span>,
+      state: checks.state === "none" ? (data.game.candidate ? "Not measured yet" : "Nothing to check") : checks.state === "fail" ? `${checks.failing} failing` : checks.state === "pass" ? "All passed" : "Measured",
+      status: checks.state === "none" ? "missing" : checks.state === "fail" ? "bad" : checks.state === "pass" ? "good" : "ok",
     },
     call: {
       thumb: <span className={`chain-call is-${data.decision.kind}`}>{data.decision.kind === "use" ? <Check size={22} strokeWidth={3} /> : data.decision.kind === "keep" ? <Minus size={22} strokeWidth={3} /> : data.decision.kind === "rejected" ? <X size={22} strokeWidth={3} /> : <span className="chain-dot" />}</span>,

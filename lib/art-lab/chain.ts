@@ -12,6 +12,7 @@ import { candidatesForSlot, hasViewableFiles, slotOfKind, type Candidate, type R
 import type { ModelActor, ModelLibrary, ModelOption } from "./models";
 import type { SpriteArt } from "./types";
 import type { RenderSpec } from "./spec";
+import { measuredGroups, type MeasuredGroup } from "./measurements";
 import { spriteAnimations } from "./sprite-anim";
 
 export type ChainStep = "now" | "design" | "glb" | "game" | "anim" | "checks" | "call";
@@ -120,37 +121,32 @@ export function actionCoverage(category: string, spec: RenderSpec | null | undef
   return out;
 }
 
-export type Check = { label: string; result: string; pass: boolean | null };
-/** Measured checks the candidate records. Absent measurements stay absent; a pass is never owner approval. */
-export function candidateChecks(candidate: Candidate | null): Check[] {
+/**
+ * The Checks step: the measured results the art routes saved for this candidate (see measurements.ts). An empty
+ * list means "not measured yet"; nothing is computed here.
+ */
+export function candidateChecks(candidate: Candidate | null): MeasuredGroup[] {
   if (!candidate) return [];
-  const out: Check[] = [];
-  const gate = candidate.qualityGate;
-  if (gate && typeof gate.checksPassed === "number" && typeof gate.checksTotal === "number") {
-    out.push({ label: "Numerical gate", result: `${gate.checksPassed}/${gate.checksTotal}`, pass: gate.passes === true });
-  }
-  const verify = candidate.verify?.checks;
-  if (verify && Object.keys(verify).length) {
-    const entries = Object.entries(verify);
-    out.push({ label: "Format checks", result: `${entries.filter(([, ok]) => ok === true).length}/${entries.length}`, pass: entries.every(([, ok]) => ok === true) });
-    for (const [name, ok] of entries) out.push({ label: checkName(name), result: ok === true ? "pass" : "fail", pass: ok === true });
-  }
-  const animation = candidate.animation;
-  if (animation && typeof animation.frames === "number") out.push({ label: "Frames decoded", result: `${animation.frames}`, pass: true });
-  const paint = candidate.voxelize?.log?.paint;
-  if (paint) {
-    const shares = Object.values(paint).map(p => p?.classShares?.team).filter((n): n is number => typeof n === "number");
-    if (shares.length) out.push({ label: "Player colour", result: `${(Math.max(...shares) * 100).toFixed(1)}% of surface`, pass: null });
-  }
-  if (candidate.sourceMeshSha256) out.push({ label: "Source GLB pinned", result: candidate.sourceMeshSha256.slice(0, 8), pass: true });
-  return out;
+  return candidate.measured ?? measuredGroups({}, candidate as unknown as Record<string, unknown>);
 }
 
-/** "noClipping" -> "No clipping"; "sixColoursOnlyRemapChanges" -> "Six colours only remap changes". */
-export const checkName = (name: string) => {
-  const words = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[-_]/g, " ").toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
-};
+export type ChecksSummary = { state: "none" | "pass" | "fail" | "info"; failing: number; passed: number; total: number; headline: MeasuredGroup | null };
+/** Counts what the tools recorded: failing rows plus failed groups without rows; the headline is the family gate. */
+export function checksSummary(groups: MeasuredGroup[]): ChecksSummary {
+  if (!groups.length) return { state: "none", failing: 0, passed: 0, total: 0, headline: null };
+  const rows = groups.flatMap(g => g.rows);
+  const failing = rows.filter(r => !r.pass).length + groups.filter(g => g.pass === false && !g.rows.some(r => !r.pass)).length;
+  const headline = groups.find(g => g.id === "family" && g.rows.length) ?? groups.find(g => g.rows.length) ?? null;
+  const recorded = groups.some(g => g.pass !== null) || rows.length > 0;
+  return { state: failing ? "fail" : recorded ? "pass" : "info", failing, passed: rows.filter(r => r.pass).length, total: rows.length, headline };
+}
+
+/** Failing checks first, across every group, then each group's passing rows. */
+export function failingFirst(groups: MeasuredGroup[]) {
+  const failing = groups.flatMap(g => g.rows.filter(r => !r.pass).map(r => ({ group: g, row: r })));
+  const failedGroups = groups.filter(g => g.pass === false && !g.rows.some(r => !r.pass));
+  return { failing, failedGroups, passing: groups.map(g => ({ group: g, rows: g.rows.filter(r => r.pass) })) };
+}
 
 export type DecisionState = { kind: "use" | "keep" | "rejected" | "open" | "none"; label: string };
 export function decisionState(decision: SlotDecision | undefined, candidate: Candidate | null): DecisionState {

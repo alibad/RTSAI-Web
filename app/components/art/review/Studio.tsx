@@ -1,6 +1,7 @@
 "use client";
 import { Building2, Film, Swords, Palette, Library, Check, X, Minus } from "lucide-react";
-import type { ActionCheck, Check as Measured } from "../../../../lib/art-lab/chain";
+import { failingFirst, type ActionCheck } from "../../../../lib/art-lab/chain";
+import type { MeasuredGroup, MeasuredRow } from "../../../../lib/art-lab/measurements";
 import type { Candidate } from "../../../../lib/art-lab/review";
 import { ActorSourceDetails } from "./Sources";
 import type { BehaviorFacts } from "../../../../lib/art-lab/behavior";
@@ -41,13 +42,21 @@ export function ActionRow({ unit, version, onEncounter }: { unit: ReviewUnit; ve
   </section>;
 }
 
-/** The Checks step: what was measured for this candidate, kept apart from the owner's decision. */
-export function ChecksPanel({ checks, actions, candidate, label }: { checks: Measured[]; actions: ActionCheck[]; candidate: Candidate | null; label: string | null }) {
+/** The Checks step: what the art tools measured for this candidate, failing checks first. Never the owner's decision. */
+export function ChecksPanel({ checks, actions, candidate, label }: { checks: MeasuredGroup[]; actions: ActionCheck[]; candidate: Candidate | null; label: string | null }) {
   const mark = (pass: boolean | null) => pass === true ? <Check size={14} strokeWidth={3} className="is-good" /> : pass === false ? <X size={14} strokeWidth={3} className="is-bad" /> : <Minus size={14} />;
-  return <aside className="lab-panel studio-facts studio-checks"><div className="studio-panel-head"><span className="lab-label">CHECKS</span><h2>{label ?? "No candidate"}</h2><p>{candidate ? "Measured by the art tools. A pass is not your approval." : "Nothing to check until a game model exists."}</p></div>
-    {checks.length > 0 ? <ul className="studio-check-list">{checks.map(c => <li key={c.label}>{mark(c.pass)}<span>{c.label}</span><b>{c.result}</b></li>)}</ul> : candidate && <p className="lab-hint">No measurements recorded for this candidate yet.</p>}
-    {actions.length > 0 && <section><h3>Actions in its own art</h3><ul className="studio-check-list">{actions.map(a => <li key={a.id}>{mark(a.present ? true : false)}<span>{a.label}</span><b>{a.present ? "Yes" : "Missing"}</b></li>)}</ul>{actions.find(a => a.note) && <p className="lab-hint">{actions.find(a => a.note)!.note}</p>}</section>}
-    {candidate?.critique && <p className="studio-evidence">{candidate.critique}</p>}
+  const { failing, failedGroups, passing } = failingFirst(checks);
+  const families = [...new Set(checks.flatMap(g => g.family))];
+  const row = (r: MeasuredRow, key: string) => <li key={key} title={r.why}>{mark(r.pass)}<span>{r.label}<small>{[r.value !== null ? `${Math.abs(r.value) >= 100 ? Math.round(r.value) : +r.value.toFixed(3)}` : null, r.stock, r.range ? `needs ${r.range}` : null].filter(Boolean).join(" · ")}</small></span><b>{r.pass ? "pass" : "fail"}</b></li>;
+  return <aside className="lab-panel studio-facts studio-checks"><div className="studio-panel-head"><span className="lab-label">CHECKS</span><h2>{label ?? "No candidate"}</h2>
+    <p>{!candidate ? "Nothing to check until a game model exists." : !checks.length ? "Not measured yet. The art route has saved no results for this candidate." : `Measured by the art tools${families.length ? ` against stock ${families.join(", ")}` : ""}. A pass is not your approval.`}</p></div>
+    {(failing.length > 0 || failedGroups.length > 0) && <section><h3 className="is-bad">Failing</h3><ul className="studio-check-list">
+      {failing.map(({ group, row: r }) => row(r, `${group.file}:${r.metric}`))}
+      {failedGroups.map(g => <li key={`${g.file}:${g.title}`}>{mark(false)}<span>{g.title}<small>{g.problems.join("; ") || g.tool}</small></span><b>fail</b></li>)}
+    </ul></section>}
+    {checks.map(g => { const ok = passing.find(p => p.group === g)?.rows ?? []; if (!ok.length && !g.notes.length && !(g.pass === true && !g.rows.length)) return null; return <section key={`${g.file}:${g.title}`}><h3>{g.title}<small>{g.tool}</small></h3>
+      <ul className="studio-check-list">{g.pass === true && !g.rows.length && <li>{mark(true)}<span>{g.title}<small>{g.file}</small></span><b>pass</b></li>}{ok.map(r => row(r, `${g.file}:${r.metric}`))}{g.notes.map(n => <li key={n}>{mark(null)}<span>{n}</span><b /></li>)}</ul></section>; })}
+    {actions.length > 0 && <section><h3>Actions in its own art</h3><ul className="studio-check-list">{actions.map(a => <li key={a.id}>{mark(a.present ? true : false)}<span>{a.label}</span><b>{a.present ? "yes" : "missing"}</b></li>)}</ul>{actions.find(a => a.note) && <p className="lab-hint">{actions.find(a => a.note)!.note}</p>}</section>}
   </aside>;
 }
 

@@ -10,7 +10,7 @@ import { houseColors } from "../../../../lib/art-lab/remap";
 import { tintFor, type MapTint } from "../viewSettings";
 import type { StageLabel } from "../voxel-three";
 import { defaultVisibility, frameRadius, type Frame, type FrameStore, type Pose, type StageItem } from "./frames";
-import { groundStrip, groundTile, groundWidth } from "./ground";
+import { groundFor, groundStrip, groundTile, groundWidth } from "./ground";
 import { CompareToggle } from "./ImageStages";
 import { setLab, useLab, type Compare, type LabView } from "./lab-store";
 import { comparePair, type Version } from "./versions";
@@ -109,7 +109,7 @@ function Inset({ item, frames, tints, radius }: { item: StageItem | null; frames
     const f = frames.get(item, pose);
     if (!f) return;
     const { ctx, dpr } = prepareCanvas(canvas, 152, 104);
-    put(ctx, dpr, groundTile(s.ground, pose.tint, groundWidth(radius)), 76, 60, 1);
+    put(ctx, dpr, groundTile(groundFor(item.spec.category, s.ground), pose.tint, groundWidth(radius)), 76, 60, 1);
     put(ctx, dpr, f, 76, 60, 1);
   };
   const schedule = useDrawScheduler(draw);
@@ -184,7 +184,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
     const { ctx, dpr } = prepareCanvas(canvas, W, H);
     const s = useLab.getState();
     const base = poseFrom(s, tints, s.facing, tick.current);
-    const ground = groundTile(s.ground, base.tint, groundWidth(radius));
+    const ground = groundTile(groundFor(focused.item?.spec.category, s.ground), base.tint, groundWidth(radius));
     const r = radius ?? 40;
     // The focused pictures render on demand (1-2 ms each); lineup cells come from the warmed cache.
     const unit = (v: Version | undefined, cx: number, cy: number, zoom: number, facing = s.facing, t = tick.current, now = true) => {
@@ -234,7 +234,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
       // The centre sits so the tallest picture's top and the lowest shadow both fit the row.
       const baseline = Math.max(3 + lock.up * zoom, (cellH - (lock.up + lock.down) * zoom) / 2 + lock.up * zoom);
       const x0 = gutter + pad, gridBottom = top + cellH * rows.length;
-      const strip = groundStrip(s.ground, base.tint, Math.ceil(gridW / zoom) + 1, Math.ceil((gridBottom - top) / zoom) + 1);
+      const strip = groundStrip(groundFor(focused.item?.spec.category, s.ground), base.tint, Math.ceil(gridW / zoom) + 1, Math.ceil((gridBottom - top) / zoom) + 1);
       ctx.save();
       ctx.beginPath(); ctx.rect(Math.round(x0 * dpr), Math.round(top * dpr), Math.round(gridW * dpr), Math.round((gridBottom - top) * dpr)); ctx.clip();
       put(ctx, dpr, strip, x0, top, zoom);

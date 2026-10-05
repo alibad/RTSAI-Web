@@ -720,3 +720,8 @@
 .chain-thumb img.is-contain { object-fit: contain; }
 .lab-tag-note { position: absolute; top: 54px; left: 16px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--muted); background: rgba(14, 17, 14, 0.82); border: 1px solid var(--line); pointer-events: none; }
 .lab-tag-note.is-right-half { left: calc(50% + 16px); }
+.studio-check-list li > span { display: grid; gap: 2px; min-width: 0; }
+.studio-check-list li small { color: var(--faint); font: 500 11px/1.3 var(--font-mono), monospace; overflow-wrap: anywhere; }
+.studio-checks h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.studio-checks h3 small { color: var(--faint); font: 500 11px/1 var(--font-mono), monospace; }
+.studio-checks h3.is-bad { color: #f5a291; }

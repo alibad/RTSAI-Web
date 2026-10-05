@@ -30,6 +30,8 @@ export type { ReviewUnit } from "./review/versions";
 const API = "/api/art-review";
 /** Focus sentinel: the newest native candidate (or the design), resolved once the workspace is known. */
 const AUTO = "auto";
+/** How long a faction switch defers frame rendering (measured: the switch paint presents within this on SwiftShader). */
+const SWITCH_HOLD_MS = 150;
 
 type Row = { unit: ReviewUnit; ws: UnitWorkspace | undefined; entry: ReviewEntry | undefined; count: number; needs: boolean; origin: Origin };
 /** "main-battle-tank" -> "Main battle tank"; falls back to the category. */
@@ -367,7 +369,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }, [toast]);
 
   const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
-  const changeFaction = useCallback((id: string) => { setFaction(id); setSelected(null); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
+  // A faction switch repaints everything: let that paint present before the new unit's frames render.
+  const changeFaction = useCallback((id: string) => { frames.hold(SWITCH_HOLD_MS); frames.clearQueue(); setFaction(id); setSelected(null); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, [frames]);
   const changeSlot = useCallback((s: SlotId) => { setIconMode(s === "icon"); if (s === "concept") setStep("design"); else if (s === "model" && step === "design") setStep(AUTO); setFocusKey(AUTO); setLab({ zoom: null }); }, [step]);
   const focusIndex = useCallback((i: number) => { const v = versions[i]; if (v) setFocusKey(v.key); }, [versions]);
   const openStep = useCallback((s: ChainStep) => {

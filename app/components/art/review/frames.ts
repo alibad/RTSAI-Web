@@ -109,6 +109,8 @@ export class FrameStore {
   private inflight = new Set<string>();
   private alive = true;
   private paused = false;
+  /** Until this time no frame renders, not even on demand (see hold). */
+  private holdUntil = 0;
   /** Bumped whenever an asset finishes loading (for useSyncExternalStore). */
   assetsVersion = 0;
   readonly errors = new Map<string, string>();
@@ -154,6 +156,16 @@ export class FrameStore {
   /** The one shared WebGL engine (created when the first voxel loads). */
   get engine() { return this.engineInstance; }
   pauseRendering() { this.paused=true; this.clearQueue(); }
+  /**
+   * Lets the next paint present before any GPU work starts (a faction switch repaints the whole screen; on a
+   * software GPU, rendering frames at the same time delays that paint by hundreds of milliseconds). Requests made
+   * meanwhile are queued as visible jobs and render as soon as the hold ends.
+   */
+  hold(ms: number) {
+    this.holdUntil = performance.now() + ms;
+    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    this.schedule();
+  }
   resumeRendering() { this.paused=false; this.emit("assets"); }
   async sharedEngine() {
     const three=await this.loadThree();
@@ -196,6 +208,7 @@ export class FrameStore {
    */
   get(item: StageItem, pose: Pose): Frame | null {
     if(this.paused)return this.peek(item,pose);
+    if (performance.now() < this.holdUntil) { this.want(item, pose, true); return this.peek(item, pose); }
     if (!this.ensure(item, pose)) return null;
     const { rig, shps } = item.spec.voxel ? { rig: null, shps: null } : this.spriteParts(item, pose.animation);
     const key = this.key(item, pose, rig, shps);
@@ -386,7 +399,7 @@ export class FrameStore {
 
   private schedule() {
     if (this.timer || !this.alive) return;
-    this.timer = setTimeout(() => this.process(), 0);
+    this.timer = setTimeout(() => this.process(), Math.max(0, this.holdUntil - performance.now()));
   }
 
   /**
@@ -396,6 +409,7 @@ export class FrameStore {
   private process() {
     this.timer = null;
     if (!this.alive || this.paused) return;
+    if (performance.now() < this.holdUntil) { this.schedule(); return; }
     const start = performance.now();
     const quiet = start >= this.quietUntil;
     let produced = false;

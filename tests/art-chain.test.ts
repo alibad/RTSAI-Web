@@ -3,8 +3,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { actionCoverage, candidateChecks, checkName, decisionState, defaultModelFocus, designFor, fromModel, glbOptions, meshCandidate, nativeCandidates, rosterCounts } from "../lib/art-lab/chain";
-import { candidateLight, candidateRenderSpec, candidateVehicleSprite, sequenceRole, STOCK_VOXEL_LIGHT, type Candidate, type ReviewFile, type UnitWorkspace } from "../lib/art-lab/review";
+import { actionCoverage, candidateChecks, checksSummary, decisionState, defaultModelFocus, designFor, failingFirst, fromModel, glbOptions, meshCandidate, nativeCandidates, rosterCounts } from "../lib/art-lab/chain";
+import { measuredGroups, plainCheck } from "../lib/art-lab/measurements";
+import { candidateLight, candidateRenderSpec, candidateVehicleSprite, parseCandidateRules, sequenceRole, STOCK_VOXEL_LIGHT, type Candidate, type ReviewFile, type UnitWorkspace } from "../lib/art-lab/review";
+import { groundFor } from "../app/components/art/review/ground";
 import { readPreviewStatus, workspaceStamp } from "../lib/art-lab/preview-server";
 import { spriteAnimations } from "../lib/art-lab/sprite-anim";
 import { spriteRig } from "../lib/art-lab/sprite-compose";
@@ -60,14 +62,35 @@ test("chain: actions are checked against the version's own art", () => {
   assert.deepEqual(mantis.map(a => [a.label, a.present]), [["Body", true], ["Turret", true]]);
 });
 
-test("chain: checks are what the tools measured; a pass is not approval", () => {
+test("checks: only what the art tools saved, failing first, never derived", () => {
   assert.deepEqual(candidateChecks(null), []);
-  const gated = candidateChecks(cand({ id: "v4", kind: "voxel", createdAt: "x", qualityGate: { passes: true, checksPassed: 15, checksTotal: 15, ownerArtApproved: false } }));
-  assert.deepEqual(gated[0], { label: "Numerical gate", result: "15/15", pass: true });
-  const verified = candidateChecks(cand({ id: "s3", kind: "sprite", createdAt: "x", verify: { pass: true, checks: { frameRanges: true, noClipping: false } } }));
-  assert.deepEqual(verified.slice(0, 2), [{ label: "Format checks", result: "1/2", pass: false }, { label: "Frame ranges", result: "pass", pass: true }]);
-  assert.equal(checkName("sixColoursOnlyRemapChanges"), "Six colours only remap changes");
-  assert.equal(candidateChecks(glbVoxel).length, 0, "nothing measured: nothing claimed");
+  assert.deepEqual(candidateChecks(glbVoxel), [], "nothing saved: not measured yet");
+  assert.equal(checksSummary([]).state, "none");
+  // art_metrics.py via glb_route.py (gate.json): one row fails although the file's verdict is recorded as given.
+  const gate = { family: ["destroyer", "aegis"], pass: false, rows: [
+    { metric: "area_px", candidate: 1792.25, reference: 1909.875, bounds: [1182.75, 3430.86], pass: true, why: "silhouette footprint" },
+    { metric: "speckle", candidate: 0.3, reference: 0.1, bounds: [null, 0.2], pass: false, why: "isolated pixels" },
+  ] };
+  const vehicle = measuredGroups({ "gate.json": gate }, { decodeCheck: { pass: true, problems: [] }, playerColorCheck: { houses: ["F21818", "2050F0"], changedOutsideOwnership: 0 } });
+  assert.deepEqual(vehicle.map(g => [g.title, g.pass]), [["Against the stock family", false], ["Decodes in the Studio", true], ["Player colours", null]]);
+  assert.deepEqual(vehicle[0].rows.map(r => [r.label, r.stock, r.range, r.pass]), [["Size on screen", "stock 1910", "1183–3431", true], ["Speckle", "stock 0.100", "≤ 0.200", false]]);
+  assert.match(vehicle[2].notes[0], /0 pixels changed outside/, "a measurement without a recorded verdict stays a note");
+  const summary = checksSummary(vehicle);
+  assert.deepEqual([summary.state, summary.failing, summary.passed, summary.total], ["fail", 1, 1, 2]);
+  assert.equal(failingFirst(vehicle).failing[0].row.metric, "speckle", "failing checks lead");
+  // metrics_building.py: stock family range per metric.
+  const building = measuredGroups({ "metrics-building.json": { family: "gun", members: ["sentry", "pillbox"], pass: true, rows: [{ metric: "area_px", candidate: 1212, familyMin: 834.25, familyMax: 997, bounds: [625.688, 1345.95], pass: true, why: "near the stock defenses" }] } },
+    { verify: { pass: true, checks: { frameRanges: true, noClipping: true } } });
+  assert.deepEqual(building[0].family, ["gun", "sentry", "pillbox"]);
+  assert.equal(building[0].rows[0].stock, "stock 834–997");
+  assert.deepEqual(building[1].rows.map(r => r.label), ["Frame ranges", "No clipping"]);
+  assert.equal(plainCheck("sixColoursOnlyRemapChanges"), "Six colours only remap changes");
+  // infantry_route.py verify.json: structure verdict and metrics_infantry.py family gate.
+  const infantry = measuredGroups({ "verify.json": { structure: { ok: false, problems: ["frame 12 clipped"], frames: 1016, clippedFrames: [12], remapOutsideOwnership: 0 }, family: { pass: true, rows: [], extras: { candidate: {}, gi: {}, conscript: {} } } } }, {});
+  assert.deepEqual(infantry.map(g => [g.title, g.pass]), [["Against the stock family", true], ["SHP structure", false]]);
+  assert.deepEqual(infantry[0].family, ["gi", "conscript"]);
+  assert.deepEqual(failingFirst(infantry).failedGroups.map(g => g.problems), [["frame 12 clipped"]]);
+  assert.equal(checksSummary(infantry).state, "fail");
 });
 
 test("chain: decisions are read, never assumed", () => {
@@ -155,4 +178,22 @@ test("preview mod: an actor is in local preview only by installed bytes", () => 
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("candidate rules: removal keys are not sequences; overlays keep their role; ships sit on water", () => {
+  const rules = parseCandidateRules("r2spectrum:\n\tDefaults:\n\t\tFilename: r2spectrum.shp\n\t-turret:\n\t-damaged-turret:\n\tidle:\n\t\tStart: 0\n\tactive:\n\t\tStart: 6\n\t\tLength: 32\n", "r2spectrum");
+  assert.deepEqual(Object.keys(rules.sequences), ["idle", "active"]);
+  assert.deepEqual(rules.removed, ["turret", "damaged-turret"]);
+  const spectrum = artLab.actors.r2spectrum;
+  assert.deepEqual(sequenceRole("active", "defense", [], spriteWithUrls(spectrum)), ["WithIdleOverlay@dish"], "the dish loop stays an overlay on the idle body");
+  assert.equal(groundFor("ship", "sand"), "water");
+  assert.equal(groundFor("vehicle", "grass"), "grass");
+});
+
+test("voxel candidates match parts served under the dev roster's hashed file names", () => {
+  const crane = renderSpec(artLab.actors.r2crane);
+  const rosterLike = { ...crane, voxel: { ...crane.voxel!, parts: crane.voxel!.parts.map(p => ({ ...p, vxl: `/api/art-review/mod/92827ae1d573-${p.vxl.split("/").pop()}?mode=ra2` })) } };
+  const c = cand({ id: "voxel-v5-glb", kind: "voxel", createdAt: "x", actor: "r2crane", files: { vxl: ["r2crane.vxl"], hva: ["r2crane.hva"] }, urls: urls(["r2crane.vxl", "r2crane.hva"]), hvaFrames: { r2crane: 4 } });
+  const part = candidateRenderSpec(rosterLike, c)!.voxel!.parts[0];
+  assert.deepEqual([part.frames, part.tickRate], [4, 1], "the rotor frames play at the helicopter body's TickRate");
 });

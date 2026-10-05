@@ -26,6 +26,17 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
   queued jobs never add up into coverage.
 - New candidates written by other tools appear without a reload: a 28-byte fingerprint is polled every 15 s while
   the tab is visible (`/api/art-review/stamp`), and the full state is fetched only when it changes.
+- Checks show only what the art routes saved beside the candidate, failing checks first, in plain words against the
+  named stock family: `gate.json`/`meta.gate` (tools/art_metrics.py via glb_route.py: vehicles, ships, aircraft),
+  `metrics-building.json` (tools/metrics_building.py), `verify.json` (infantry route: structure and
+  tools/metrics_infantry.py), plus the recorded format/decode checks. No saved results: "Not measured yet".
+  The Studio never derives a pass itself (`lib/art-lab/measurements.ts`).
+- 3D-model thumbnails are pre-rendered on the CPU: `npm run thumbs:glb` (Blender Cycles CPU, `.cache/glb-thumbs/`,
+  about 0.3 s per model). A thumbnail is served only while the GLB's size and modification time still match.
+- Ships are drawn on water; helicopters play their candidate's HVA rotor frames at the rules' TickRate; buildings
+  read `-sequence` removals, idle overlays (e.g. a radar dish), damaged/critical states and turret fire.
+- A faction switch holds frame rendering for 150 ms so its repaint presents first (software GPUs otherwise spend
+  that time on voxel frames); flags are rasterised once in idle time so the faction picker opens quickly.
 - `?authored=1` hides original RA2 units and references, for screenshots that may be shared.
 - Other keys: J/K next/previous actor, ←/→ versions, I build icon, P next player colour, 0 true size, ? help.
 

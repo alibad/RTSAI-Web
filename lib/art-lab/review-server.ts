@@ -24,7 +24,9 @@ import { reviewEnabled } from "./review-gate";
 import { duelJob, startDuel } from "./duel-server";
 import { baselineCounts, rebuildSummary, type RebuildCampaign } from "./rebuild";
 import { readModelLibrary } from "./model-library-server";
+import type { ModelLibrary } from "./models";
 import { readPreviewStatus, workspaceStamp } from "./preview-server";
+import { MEASUREMENT_FILES, measuredGroups } from "./measurements";
 
 const TYPES: Record<string, string> = {
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".json": "application/json; charset=utf-8",
@@ -92,7 +94,11 @@ export function readState(root: string, mode: "ra2" | "classic" = "ra2", fileRoo
         try { if (path && statSync(path).size < 256 * 1024) texts.push(readFileSync(path, "utf8")); } catch { /* unreadable: ignored */ }
       }
       const rulesText: string | null = texts.length ? texts.join("\n") : null;
-      candidates.push({ ...meta, id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls, rulesText });
+      // Measured results the art routes saved beside the candidate (small JSON files), reshaped for the Checks step.
+      const measuredFiles: Record<string, unknown> = {};
+      for (const name of MEASUREMENT_FILES) if (files.includes(name)) { const parsed = readJson(join(root, cdir, name)); if (parsed) measuredFiles[name] = parsed; }
+      const measured = measuredGroups(measuredFiles, meta as unknown as Record<string, unknown>);
+      candidates.push({ ...meta, id: meta.id ?? id, actor: meta.actor ?? actor, files: meta.files ?? {}, dir: cdir, urls, rulesText, measured });
     }
     candidates.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const comparisons = listFiles(join(root, "reference-local", "comparisons"), 0)
@@ -116,6 +122,24 @@ export function readState(root: string, mode: "ra2" | "classic" = "ra2", fileRoo
     };
   });
   return { root, exists, units, review, stock, stockPalette, bibles, errors };
+}
+
+/**
+ * Adds pre-rendered thumbnails (scripts/render-glb-thumbs.mjs) to GLB options, only while the index's size and
+ * modification time still match the model on disk: a changed GLB never shows its old picture.
+ */
+function attachGlbThumbnails(library: ModelLibrary, workspace: string, dir: string) {
+  const index = readJson<Record<string, { stamp: string; thumb: string }>>(join(dir, "index.json"));
+  if (!index) return;
+  for (const actor of library.actors) for (const option of actor.options) {
+    const rel = new URL(option.url, "http://localhost").searchParams.get("path");
+    const entry = rel ? index[rel] : undefined;
+    if (!rel || !entry) continue;
+    try {
+      const s = statSync(join(workspace, rel));
+      if (`${s.size}:${Math.round(s.mtimeMs)}` === entry.stamp && existsSync(join(dir, entry.thumb))) option.thumbnail = `/api/art-review/glb-thumb/${encodeURIComponent(entry.thumb)}?v=${encodeURIComponent(entry.stamp)}`;
+    } catch { /* model gone */ }
+  }
 }
 
 /** Read-modify-write of review.json (fresh read, atomic replace) so concurrent Forge edits are not lost. */
@@ -183,7 +207,15 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         const roster=originals?await rosterPayload(mode==="classic"?classicConfig(originals):originals):null;
         const thumbnails=Object.fromEntries(Object.entries(roster?.stock??{}).map(([actor,stock])=>[actor,stock.spec.cameo]));
         const models=readModelLibrary(workspace,mode,thumbnails);
+        if(models)attachGlbThumbnails(models,workspace,join(web,".cache","glb-thumbs"));
         return models?send(res,200,models):send(res,404,{error:"Run the local model inventory first."});
+      }
+      if (req.method === "GET" && path.startsWith("/glb-thumb/")) {
+        const name = decodeURIComponent(path.slice(11));
+        const file = /^[a-z0-9_-]+--[a-z0-9._-]+\.png$/i.test(name) ? join(web, ".cache", "glb-thumbs", name) : null;
+        if (!file || !existsSync(file)) return send(res, 404, { error: "No such thumbnail" });
+        res.setHeader("Cache-Control", "private, max-age=3600");
+        return send(res, 200, readFileSync(file), "image/png");
       }
       if (req.method === "GET" && path === "/state") return send(res, 200, readState(workspace, reviewMode as "ra2" | "classic"));
       if (req.method === "GET" && path === "/stamp") return send(res, 200, { stamp: workspaceStamp(reviewMode === "classic" ? join(workspace, "modes", "classic") : workspace, preview) });
