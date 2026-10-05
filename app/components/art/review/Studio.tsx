@@ -1,5 +1,6 @@
 "use client";
-import { Building2, Film, Swords, Palette, Library, Check, X, Minus, LayoutGrid } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { Building2, Film, Swords, Palette, Library, Check, X, Minus, LayoutGrid, Flag, Map as MapIcon } from "lucide-react";
 import { failingFirst, type ActionCheck } from "../../../../lib/art-lab/chain";
 import type { MeasuredGroup, MeasuredRow } from "../../../../lib/art-lab/measurements";
 import type { Candidate } from "../../../../lib/art-lab/review";
@@ -11,8 +12,13 @@ import type { ReviewUnit,Version } from "./versions";
 import { AnimationReadiness } from "./AnimationReadiness";
 import { voxelAnimationParts } from "../../../../lib/art-lab/voxel-animation";
 
+const noSubscribe = () => () => {};
+/** The installed local app (scripts/local-app.ps1) serves the website beside the Studio and marks the page for it. */
+const useLocalSite = () => useSyncExternalStore(noSubscribe, () => document.body.dataset.site === "1", () => false);
+
 export function StudioBar({ mode, onMode, surface, onSurface, onSources }: { mode: "ra2" | "classic"; onMode: (m: "ra2" | "classic") => void; surface: "art" | "arena" | "board"; onSurface: (s: "art" | "arena" | "board") => void; onSources: () => void }) {
-  return <header className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "board", label: "Review board", Icon: LayoutGrid }, { id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).filter(t => t.id !== "board" || mode === "ra2").map(({ id, label, Icon }) => <button key={id} aria-current={surface === id ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>)}</nav><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><select className="studio-mode" aria-label="Game mode" value={mode} onChange={e => onMode(e.target.value as "ra2" | "classic")}><option value="ra2">Red Alert 2</option><option value="classic">Red Alert · Classic</option></select></header>;
+  const site = useLocalSite();
+  return <header className="studio-bar"><div className="studio-title"><Building2 size={19} /><b>Faction Studio</b><span>LOCAL</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "board", label: "Review board", Icon: LayoutGrid }, { id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).filter(t => t.id !== "board" || mode === "ra2").map(({ id, label, Icon }) => <button key={id} aria-current={surface === id ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>)}{site && <><span className="studio-nav-divider" aria-hidden="true" /><a href="/factions"><Flag size={16} />Factions</a><a href="/workshop"><MapIcon size={16} />Workshop</a></>}</nav><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><select className="studio-mode" aria-label="Game mode" value={mode} onChange={e => onMode(e.target.value as "ra2" | "classic")}><option value="ra2">Red Alert 2</option><option value="classic">Red Alert · Classic</option></select></header>; // eslint-disable-line @next/next/no-html-link-for-pages -- full page loads into the website the local app serves beside this standalone Studio
 }
 
 /** Actions live beside the art they control; unsupported rotations are explained rather than faked. */

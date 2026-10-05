@@ -1,5 +1,5 @@
 /** Compile and serve the standalone Studio locally, without a worker or dev module transport. */
-import { createServer } from "node:http";
+import { createServer, request, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,21 +31,54 @@ const files = bundles.flatMap(r => "output" in r ? r.output : []);
 const entry = files.find(f => f.type === "chunk" && f.isEntry);
 if (!entry) throw new Error("Studio entry was not compiled");
 const styles = files.filter(f => f.type === "asset" && f.fileName.endsWith(".css")).map(f => `<link rel="stylesheet" href="/${f.fileName}">`).join("");
-const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title>${styles}</head><body style="--font-geist:Arial"><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
+// The installed local app (scripts/local-app.ps1) puts the production website behind the Studio on one origin.
+const site = process.env.RTSAI_SITE_ORIGIN ? new URL(process.env.RTSAI_SITE_ORIGIN) : null;
+const manifest = JSON.stringify({
+  id: "/art/review", name: "RTS AI Studio", short_name: "RTS AI",
+  description: "Local Faction Studio and website: explore the factions, test encounters and review new art.",
+  start_url: "/art/review", scope: "/", display: "standalone", background_color: "#111411", theme_color: "#111411",
+  icons: [
+    { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+  ],
+});
+const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#111411"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
 const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });
 const port = Number(process.env.RTSAI_STUDIO_PORT ?? 3461);
 const mime: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".vxl": "application/octet-stream", ".hva": "application/octet-stream", ".pal": "application/octet-stream", ".shp": "application/octet-stream", ".wasm": "application/wasm" };
+/** Everything the Studio does not serve goes to the website; its redirects stay on this origin. */
+function toSite(req: IncomingMessage, res: ServerResponse, target: URL) {
+  const url = new URL(req.url ?? "/", target);
+  const upstream = request(url, { method: req.method, headers: { ...req.headers, host: url.host } }, up => {
+    const headers = { ...up.headers };
+    if (typeof headers.location === "string") headers.location = headers.location.replace(target.origin, "");
+    res.writeHead(up.statusCode ?? 502, headers);
+    up.pipe(res);
+  });
+  upstream.on("error", () => {
+    if (!res.headersSent) res.writeHead(502, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("The local website is still starting. Reload in a moment.");
+  });
+  req.pipe(upstream);
+}
+
 createServer((req, res) => {
   if (req.url?.startsWith("/api/art-review/")) { void api(req, res); return; }
-  if (req.method !== "GET") { res.writeHead(405).end(); return; }
   const path = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
-  if (path === "/art/review" || path === "/") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }).end(html); return; }
-  let decoded: string;
-  try { decoded = decodeURIComponent(path); } catch { res.writeHead(400).end(); return; }
-  for (const directory of [output, resolve(root, "public")]) {
-    const file = resolve(directory, `.${decoded}`);
-    if (!file.startsWith(directory + sep) || !existsSync(file)) continue;
-    try { res.writeHead(200, { "Content-Type": mime[extname(file)] ?? "application/octet-stream", "Cache-Control": "no-store" }).end(readFileSync(file)); return; } catch { /* directory or missing file */ }
+  if (req.method === "GET") {
+    // One manifest for the installed app, whichever page it is installed from.
+    if (path === "/studio.webmanifest" || (site && path === "/manifest.webmanifest")) { res.writeHead(200, { "Content-Type": "application/manifest+json", "Cache-Control": "no-store" }).end(manifest); return; }
+    if (path === "/art/review" || path === "/") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }).end(html); return; }
+    let decoded: string;
+    try { decoded = decodeURIComponent(path); } catch { res.writeHead(400).end(); return; }
+    for (const directory of [output, resolve(root, "public")]) {
+      const file = resolve(directory, `.${decoded}`);
+      if (!file.startsWith(directory + sep) || !existsSync(file)) continue;
+      try { res.writeHead(200, { "Content-Type": mime[extname(file)] ?? "application/octet-stream", "Cache-Control": "no-store" }).end(readFileSync(file)); return; } catch { /* directory or missing file */ }
+    }
   }
-  res.writeHead(404).end();
-}).listen(port, "127.0.0.1", () => console.log(`Local Studio: http://127.0.0.1:${port}/art/review`));
+  if (site) { toSite(req, res, site); return; }
+  res.writeHead(req.method === "GET" ? 404 : 405).end();
+}).listen(port, "127.0.0.1", () => console.log(`Local Studio: http://127.0.0.1:${port}/art/review${site ? ` · website from ${site.origin}` : ""}`));

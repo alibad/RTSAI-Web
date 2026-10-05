@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GAMES = ROOT.parent
 CATALOG = json.loads((ROOT / "data/factions.generated.json").read_text(encoding="utf-8"))["rosters"]
 POLICIES = {"nearest", "focus", "hold"}
-ORIGINS = {f"http://{host}:{port}" for host in ("127.0.0.1", "localhost") for port in (3000, 3460, 3463)}
+ORIGINS = {f"http://{host}:{port}" for host in ("127.0.0.1", "localhost") for port in (3000, 3450, 3460, 3463)}
 JOBS: dict[str, dict] = {}
 LOCK = threading.Lock()
 PNG = bytes.fromhex("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000b49444154789c636000020000050001a5f645400000000049454e44ae426082")
