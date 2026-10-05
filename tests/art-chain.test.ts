@@ -108,8 +108,8 @@ test("chain: roster counts are per actor over one denominator", () => {
     ["r2c", ws([concept], "r2c")],
   ]);
   const review: ReviewFile = { r2b: { version: 2, status: "in-review", slots: { model: { chosen: "current", rejected: [], at: "x" }, icon: { chosen: null, rejected: [], at: null }, concept: { chosen: null, rejected: [], at: null } }, comments: [], log: [] } };
-  const counts = rosterCounts(["r2a", "r2b", "r2c", "r2d"], spaces, null, { available: true, branch: null, head: null, actors: { r2a: { model: "voxel-v5-glb", icon: null, files: ["voxels/r2a.vxl"], rules: false } }, unmatched: [] }, review);
-  assert.deepEqual(counts, { total: 4, designs: 2, models3d: 1, gameModels: 1, inPreview: 1, decided: 1 }, "two native routes on r2a still count once; r2b's older candidate is not a 3D game model");
+  const counts = rosterCounts(["r2a", "r2b", "r2c", "r2d"], spaces, null, { available: true, branch: null, head: null, actors: { r2a: { model: "voxel-v5-glb", icon: null, files: ["voxels/r2a.vxl"], rules: false }, r2d: { model: null, icon: "cameo-v3-render", files: ["icons/r2d.png"], rules: true } }, unmatched: [] }, review);
+  assert.deepEqual(counts, { total: 4, designs: 2, models3d: 1, gameModels: 1, inPreview: 1, decided: 1 }, "two native routes on r2a still count once; r2b's older candidate is not a 3D game model; r2d's installed icon is not a model in the preview");
 });
 
 test("voxel candidates: declared light, rotor roles and HVA frames", () => {

@@ -186,9 +186,13 @@ export function rosterCounts(actors: string[], workspaces: Map<string, UnitWorks
     if (designFor(ws, mesh, fromGlb[0] ?? null)) designs++;
     if (glbOptions(byActor.get(actor), mesh).length) models3d++;
     if (fromGlb.length) gameModels++;
-    const p = preview?.actors[actor];
-    if (p && (p.model || p.files.length)) inPreview++;
-    if (review?.[actor]?.slots.model.chosen) decided++;
+    // The same rules as the review board: the candidate under review is the newest GLB-made native one (else the
+    // newest native one); "in preview" means that candidate's exact bytes are installed (an icon alone is not a
+    // model in the preview), and "decided" means it is used, rejected, or "keep current" came after it.
+    const candidate = fromGlb[0] ?? natives[0] ?? null;
+    if (candidate && preview?.actors[actor]?.model === candidate.id) inPreview++;
+    const state = decisionState(review?.[actor]?.slots.model, candidate);
+    if (state.kind === "use" || state.kind === "rejected" || state.kind === "keep") decided++;
   }
   return { total: actors.length, designs, models3d, gameModels, inPreview, decided };
 }

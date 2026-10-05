@@ -4,7 +4,7 @@
    the tile's candidate, R rejects it, C writes a note, Z undoes, Enter opens the unit in the asset chain. A
    decision is written to review.json only when the owner presses a key or clicks; then the next open tile is
    focused. */
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clipboard, Download, Gamepad2, Minus, X } from "lucide-react";
 import { actionCoverage, candidateChecks, checksSummary, fromModel, type PreviewStatus } from "../../../../lib/art-lab/chain";
 import { boardCounts, boardTile, isOpen, missingAnimations, nextOpen, type BoardTile } from "../../../../lib/art-lab/board";
@@ -90,7 +90,7 @@ function PlayCard({ preview, onClose }: { preview: PreviewStatus | null; onClose
           <li>Open <b>Command Prompt</b>.</li>
           <li>Paste and run:</li>
         </ol>
-        <div className="board-command"><code>{launch.command}</code><button className="lab-ghost" onClick={() => { void navigator.clipboard?.writeText(launch.command).then(() => setCopied(true)); }}><Clipboard size={14} />{copied ? "Copied" : "Copy"}</button></div>
+        <div className="board-command"><code>{launch.command.split(/(?<=\\)/).map((part, i) => <Fragment key={i}>{part}<wbr /></Fragment>)}</code><button className="lab-ghost" onClick={() => { void navigator.clipboard?.writeText(launch.command).then(() => setCopied(true)); }}><Clipboard size={14} />{copied ? "Copied" : "Copy"}</button></div>
         <ol start={3}><li>Choose <b>Skirmish</b> and one of the modern factions.</li></ol>
         <ul className="board-facts">
           <li className={launch.engineBuilt ? "is-ok" : "is-bad"}>{launch.engineBuilt ? "Engine built in the preview copy" : "Engine not built: run make.cmd all in the preview copy first"}</li>

@@ -22,8 +22,9 @@ Every new RA2 actor shows its whole art chain above the stage. Click a step or p
 - Voxel candidates that declare `renderLight` are drawn with it and the stage says so ("stock RA2 light");
   sprite candidates read their own `rules`/`sequences` files, so buildings get their make, damaged and turret-fire frames.
 - The top-bar counts are per actor over the 122 new RA2 actors: 3D models (new-design GLB present), game models
-  (a native candidate made from that GLB), in preview (bytes matched), decided (model slot decided). Routes and
-  queued jobs never add up into coverage.
+  (a native candidate made from that GLB), in preview (the reviewed candidate's model bytes matched; an installed
+  icon alone does not count), decided (that candidate used or rejected, or "keep current" after it arrived), the
+  same rules as the review board. Routes and queued jobs never add up into coverage.
 - New candidates written by other tools appear without a reload: a 28-byte fingerprint (candidate folders, meta and
   metrics files, review.json, preview overlay) is polled every 15 s while the tab is visible (`/api/art-review/stamp`);
   the state is fetched, and read on the server, only when it changes. Long generation prompts are left out of the
