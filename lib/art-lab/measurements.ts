@@ -2,6 +2,7 @@
  * The measured results the art routes save next to a candidate, normalised for the Studio's Checks step.
  * Client-safe and pure: review-server.ts reads the files; this only reshapes what the tools recorded.
  *
+ *   metrics.json (rtsai.*-metrics) the route's full record: per-check rows, family leave-one-out calibration
  *   gate.json / meta.gate        tools/art_metrics.py via glb_route.py (vehicles, ships, aircraft)
  *   metrics-building.json        tools/metrics_building.py (defences and buildings)
  *   verify.json                  tools/infantry_route.py: structure + tools/metrics_infantry.py family gate
@@ -64,14 +65,14 @@ function range(bounds: unknown): string | null {
   const [lo, hi] = [num(bounds[0]), num(bounds[1])];
   return lo !== null && hi !== null ? `${fmt(lo)}–${fmt(hi)}` : lo !== null ? `≥ ${fmt(lo)}` : hi !== null ? `≤ ${fmt(hi)}` : null;
 }
-type RawRow = { metric?: unknown; candidate?: unknown; reference?: unknown; familyMin?: unknown; familyMax?: unknown; bounds?: unknown; pass?: unknown; why?: unknown };
+type RawRow = { metric?: unknown; candidate?: unknown; value?: unknown; reference?: unknown; familyMin?: unknown; familyMax?: unknown; bounds?: unknown; pass?: unknown; why?: unknown };
 function rows(raw: unknown): MeasuredRow[] {
   if (!Array.isArray(raw)) return [];
   return (raw as RawRow[]).filter(r => typeof r?.metric === "string" && typeof r.pass === "boolean").map(r => {
     const ref = num(r.reference), lo = num(r.familyMin), hi = num(r.familyMax);
     return {
       metric: r.metric as string, label: plainMetric(r.metric as string), why: typeof r.why === "string" ? r.why : "",
-      value: num(r.candidate), stock: ref !== null ? `stock ${fmt(ref)}` : lo !== null && hi !== null ? (lo === hi ? `stock ${fmt(lo)}` : `stock ${fmt(lo)}–${fmt(hi)}`) : null,
+      value: num(r.candidate) ?? num(r.value), stock: ref !== null ? `stock ${fmt(ref)}` : lo !== null && hi !== null ? (lo === hi ? `stock ${fmt(lo)}` : `stock ${fmt(lo)}–${fmt(hi)}`) : null,
       range: range(r.bounds), pass: r.pass as boolean,
     };
   });
@@ -83,9 +84,19 @@ const bool = (v: unknown) => (typeof v === "boolean" ? v : null);
 export function measuredGroups(files: Record<string, unknown>, meta: Record<string, unknown>): MeasuredGroup[] {
   const out: MeasuredGroup[] = [];
   const group = (g: Omit<MeasuredGroup, "notes" | "problems"> & Partial<Pick<MeasuredGroup, "notes" | "problems">>) => out.push({ notes: [], problems: [], ...g });
+  // The route's full record (schema rtsai.<kind>-metrics/N): per-check rows and the family's own calibration.
+  const full = files["metrics.json"] as Record<string, unknown> | undefined;
+  const fullOk = typeof full?.schema === "string" && /^rtsai\.[a-z]+-metrics\//.test(full.schema) && Array.isArray(full.checks);
+  if (full && fullOk) {
+    const loo = Array.isArray(full.familyLeaveOneOut) ? (full.familyLeaveOneOut as { unit?: unknown; pass?: unknown }[]).filter(x => typeof x.pass === "boolean") : [];
+    group({ id: "family", title: "Against the stock family", tool: typeof full.tool === "string" ? full.tool : "art_metrics.py", file: "metrics.json", family: family(full.family), pass: bool(full.pass), rows: rows(full.checks),
+      notes: loo.length ? [`Calibration: ${loo.filter(x => x.pass).length} of ${loo.length} stock units pass the same gate against the rest of their family`] : [] });
+  }
   // Vehicles, ships, aircraft: art_metrics.py through glb_route.py (gate.json, mirrored into meta.gate).
   const gate = (files["gate.json"] ?? meta.gate) as Record<string, unknown> | undefined;
-  if (gate && Array.isArray(gate.rows)) group({ id: "family", title: "Against the stock family", tool: "art_metrics.py", file: files["gate.json"] ? "gate.json" : "meta.json (gate)", family: family(gate.family), pass: bool(gate.pass), rows: rows(gate.rows) });
+  if (!fullOk && gate && Array.isArray(gate.rows)) group({ id: "family", title: "Against the stock family", tool: "art_metrics.py", file: files["gate.json"] ? "gate.json" : "meta.json (gate)", family: family(gate.family), pass: bool(gate.pass), rows: rows(gate.rows) });
+  else if (!fullOk && gate && typeof gate.pass === "boolean") group({ id: "family", title: "Against the stock family", tool: "art_metrics.py", file: "meta.json (gate)", family: family(gate.family), pass: gate.pass, rows: [],
+    notes: [`Per-check results are in ${typeof gate.metrics === "string" ? gate.metrics : "the route's metrics file"}, which is not readable here`] });
   // Defences and buildings: metrics_building.py.
   const building = files["metrics-building.json"] as Record<string, unknown> | undefined;
   if (building && Array.isArray(building.rows)) group({ id: "family", title: "Against the stock family", tool: "metrics_building.py", file: "metrics-building.json", family: [...family(building.family), ...family(building.members).map(m => `${m}`)].filter((v, i, a) => a.indexOf(v) === i), pass: bool(building.pass), rows: rows(building.rows) });
@@ -121,4 +132,4 @@ export function measuredGroups(files: Record<string, unknown>, meta: Record<stri
 }
 
 /** Files the Studio reads from a candidate directory for its checks (small JSON only). */
-export const MEASUREMENT_FILES = ["gate.json", "metrics-building.json", "verify.json"] as const;
+export const MEASUREMENT_FILES = ["metrics.json", "gate.json", "metrics-building.json", "verify.json"] as const;

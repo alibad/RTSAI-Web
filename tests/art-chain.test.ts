@@ -197,3 +197,17 @@ test("voxel candidates match parts served under the dev roster's hashed file nam
   const part = candidateRenderSpec(rosterLike, c)!.voxel!.parts[0];
   assert.deepEqual([part.frames, part.tickRate], [4, 1], "the rotor frames play at the helicopter body's TickRate");
 });
+
+test("checks: the route's full metrics record, and format checks alone are not 'all passed'", () => {
+  const full = { schema: "rtsai.voxel-metrics/1", tool: "tools/glb_route.py (art_metrics.py gate)", pass: true, family: ["flaktrack", "ifv"],
+    familyLeaveOneOut: [{ unit: "flaktrack", pass: true }, { unit: "ifv", pass: false }],
+    checks: [{ metric: "area_px", value: 1108.75, reference: 1111.125, bounds: [597.75, 1649.375], pass: true, why: "footprint" }] };
+  const groups = measuredGroups({ "metrics.json": full }, { gate: { family: ["flaktrack"], pass: true, metrics: "metrics.json" } });
+  assert.equal(groups.filter(g => g.id === "family").length, 1, "the full record replaces the summary");
+  assert.deepEqual([groups[0].rows[0].value, groups[0].rows[0].stock], [1108.75, "stock 1111"]);
+  assert.match(groups[0].notes[0], /1 of 2 stock units pass/);
+  assert.equal(measuredGroups({ "metrics.json": { readability: 1 } }, {}).length, 0, "an image route's metrics.json is not a gate");
+  const summaryOnly = measuredGroups({}, { gate: { family: ["v3"], pass: true, metrics: "metrics.json" } });
+  assert.deepEqual([summaryOnly[0].pass, summaryOnly[0].rows.length], [true, 0], "a recorded verdict without detail stays a verdict");
+  assert.equal(checksSummary(measuredGroups({}, { decodeCheck: { pass: true, problems: [] } })).state, "partial", "decoding is not an art check");
+});
