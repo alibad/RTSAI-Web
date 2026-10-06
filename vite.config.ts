@@ -16,6 +16,9 @@ const vercelRouteRules = {
   "/game-media/**": {
     headers: { "cache-control": "public, max-age=31536000, immutable" },
   },
+  "/faction-art/**": {
+    headers: { "cache-control": "public, max-age=31536000, immutable" },
+  },
 };
 
 const localBindingConfig = {

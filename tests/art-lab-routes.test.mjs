@@ -59,14 +59,13 @@ test("the Art Lab stays out of the sitemap and is not linked from live pages", a
   }
 });
 
-test("public faction and unit pages embed the shared viewers; three.js loads only on demand", async () => {
+test("public faction and unit pages show the project's own art as images; three.js loads only on demand", async () => {
   const faction = await (await render("/factions/china?mode=ra2")).text();
-  assert.match(faction, /The full roster at in-game scale/);
-  assert.match(faction, /not a release announcement/);
+  assert.match(faction, /\/faction-art\/units\/r2qilin-480\.[0-9a-f]{12}\.avif/);
+  assert.match(faction, /\/faction-art\/cameos\/r2qilin\.[0-9a-f]{12}\.png/);
   const unit = await (await render("/units/cnqilin?mode=ra2")).text();
-  assert.match(unit, /IN GAME · RED ALERT 2/);
-  const classic = await (await render("/units/cnqilin?mode=ra")).text();
-  assert.doesNotMatch(classic, /IN GAME · RED ALERT 2/, "Classic mode keeps its own art");
+  assert.match(unit, /\/faction-art\/sprites\/r2qilin\.[0-9a-f]{12}\.webp/, "the in-game sprite animates on the unit page");
+  assert.match(unit, /fetchpriority="high"/i, "the unit render is the page's priority image");
   for (const html of [faction, unit, await (await render("/")).text()]) assert.doesNotMatch(html, /voxel-three/, "three.js is not preloaded");
   const chunks = new URL("../dist/client/_next/static/chunks/", import.meta.url);
   for (const chunk of readdirSync(chunks)) {

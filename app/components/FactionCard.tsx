@@ -1,18 +1,60 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Shield } from "lucide-react";
-import { dossierForRoster, rosterActors, rosterHref, type RosterFaction } from "../../lib/game-content";
+import { ArrowUpRight } from "lucide-react";
+import { categoryLabels, dossierForRoster, rosterActors, rosterHref, type RosterFaction } from "../../lib/game-content";
+import { artActorFor, categoryOrder } from "../../lib/faction-art";
+import { Cameo, CountChips, FactionFlag, LineupImage } from "./FactionVisuals";
+import "../factions/factions.css";
 
-export function FactionCard({ faction, compact = false }: { faction: RosterFaction; compact?: boolean }) {
-  const dossier = dossierForRoster(faction);
+const sideAccent = (side: string) => (side === "Allies" ? "#85afcc" : "#ce8779");
+
+/** Category counts for chips: buildings and defenses together, as the game's build tabs show them. */
+export function rosterCounts(faction: RosterFaction) {
   const actors = rosterActors(faction);
-  const buildings = actors.filter(a => a.category === "structure" || a.category === "defense").length;
-  const accent = dossier?.accent ?? (faction.side === "Allies" ? "#85afcc" : "#ce8779");
-  return <Link href={rosterHref(faction)} className={`faction-tile ${compact ? "is-compact" : ""}`} style={{ "--faction-accent": accent } as CSSProperties}>
-    <div className="faction-tile-top"><Shield size={24} aria-hidden="true" /><span>{dossier ? "Modern faction" : faction.side}</span><ArrowUpRight size={17} aria-hidden="true" /></div>
-    <h3>{faction.name}</h3>
-    {dossier && <p>{dossier.tagline}</p>}
-    {!compact && <div className="faction-tile-counts"><span>{actors.length - buildings} units</span><span>{buildings} buildings & defenses</span></div>}
-    <span className="faction-tile-link">Explore faction <ArrowUpRight size={14} aria-hidden="true" /></span>
+  return [
+    ...(["infantry", "vehicle", "aircraft", "ship"] as const).map(category => ({ category, label: categoryLabels[category], count: actors.filter(a => a.category === category).length })),
+    { category: "structure", label: "Base", count: actors.filter(a => a.category === "structure" || a.category === "defense").length },
+  ];
+}
+
+/** The faction's own units with art, in build-tab order: the thumbnail strip. */
+export function signatureActors(faction: RosterFaction, limit = 8) {
+  const order = (key: string) => faction.actors.indexOf(key);
+  const actors = rosterActors(faction).sort((a, b) => order(a.key) - order(b.key));
+  const withArt = categoryOrder.flatMap(category => actors.filter(a => a.category === category).map(a => ({ actor: a, art: artActorFor(a, faction) })).filter(x => x.art));
+  // One of each category first, then fill, so the strip shows the breadth of the force; shown in build-tab order.
+  const first = categoryOrder.map(c => withArt.find(x => x.actor.category === c)).filter(Boolean) as typeof withArt;
+  const picked = new Set([...first, ...withArt.filter(x => !first.includes(x))].slice(0, limit));
+  return withArt.filter(x => picked.has(x));
+}
+
+export function FactionCard({ faction, compact = false, featured = false }: { faction: RosterFaction; compact?: boolean; featured?: boolean }) {
+  const dossier = dossierForRoster(faction);
+  const accent = dossier?.accent ?? sideAccent(faction.side);
+  const style = { "--faction-accent": accent } as CSSProperties;
+  if (!dossier) {
+    // Original factions: flag and text only. Their units are original game art, which this site never shows.
+    const counts = rosterCounts(faction);
+    return <Link href={rosterHref(faction)} className="faction-tile is-original" style={style}>
+      <FactionFlag factionId={faction.id} name={faction.name} accent={accent} size="md" />
+      <div><h3>{faction.name}</h3><span>{faction.side} · {counts.reduce((n, c) => n + c.count, 0)} entries</span></div>
+      <ArrowUpRight size={16} aria-hidden="true" />
+    </Link>;
+  }
+  const strip = compact ? [] : signatureActors(faction, featured ? 10 : 7);
+  return <Link href={rosterHref(faction)} className={`faction-tile is-modern ${compact ? "is-compact" : ""} ${featured ? "is-featured" : ""}`} style={style}>
+    <div className="faction-tile-stage">
+      <LineupImage factionId={dossier.id} alt={`${dossier.name} units`} sizes={featured ? "(min-width: 1000px) 760px, 100vw" : "(min-width: 1000px) 580px, (min-width: 700px) 50vw, 100vw"} priority={featured} />
+    </div>
+    <div className="faction-tile-body">
+      <div className="faction-tile-name">
+        <FactionFlag factionId={dossier.id} name={dossier.name} accent={accent} size="md" />
+        <div><h3>{dossier.name}</h3><span>{dossier.title}</span></div>
+        <ArrowUpRight className="faction-tile-arrow" size={18} aria-hidden="true" />
+      </div>
+      <p>{dossier.tagline}</p>
+      {strip.length > 0 && <div className="cameo-strip" aria-hidden="true">{strip.map(x => <Cameo key={x.actor.key} actorId={x.art!} alt="" />)}</div>}
+      {!compact && <CountChips counts={rosterCounts(faction)} />}
+    </div>
   </Link>;
 }

@@ -1,0 +1,3767 @@
+{
+ "schemaVersion": 1,
+ "units": {
+  "r2cnrifle": {
+   "faction": "china",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2cnrifle-480.f28ec7d4d298.avif",
+     "240": "/faction-art/units/r2cnrifle-240.8b7f12385cf3.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2cnrifle-480.4330bb09def7.webp",
+     "240": "/faction-art/units/r2cnrifle-240.5a98b9f4615f.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2cnrifle.7a6d1052e653.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2cnrifle.e05860961e88.webp",
+    "frameWidth": 32,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2cnportable": {
+   "faction": "china",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2cnportable-480.b4e8b71141c3.avif",
+     "240": "/faction-art/units/r2cnportable-240.ad6e4dbca19b.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2cnportable-480.8e5019cff893.webp",
+     "240": "/faction-art/units/r2cnportable-240.53a73fa2a8fc.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2cnportable.caa125948d16.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2cnportable.dc3f44855d7d.webp",
+    "frameWidth": 30,
+    "frameHeight": 44,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2cnnetwork": {
+   "faction": "china",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2cnnetwork-480.b1c3cc418542.avif",
+     "240": "/faction-art/units/r2cnnetwork-240.ab2a0be9493b.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2cnnetwork-480.60d1a0ae1e02.webp",
+     "240": "/faction-art/units/r2cnnetwork-240.a5503ddbb4e8.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2cnnetwork.2b381fb87afb.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2cnnetwork.165b8905286a.webp",
+    "frameWidth": 28,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2redspear": {
+   "faction": "china",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2redspear-480.fc4967223ee2.avif",
+     "240": "/faction-art/units/r2redspear-240.f72e0a92d2f1.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2redspear-480.e83852e18a25.webp",
+     "240": "/faction-art/units/r2redspear-240.336a0d63c835.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2redspear.2f98efcc2ab2.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2redspear.d9c2f8dc247e.webp",
+    "frameWidth": 30,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2qilin": {
+   "faction": "china",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2qilin-480.8e71d52ca811.avif",
+     "240": "/faction-art/units/r2qilin-240.15e8abad4093.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2qilin-480.603c3e4c3396.webp",
+     "240": "/faction-art/units/r2qilin-240.e5022b2be339.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2qilin.44f4d47c4dbb.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2qilin.cf3bd0881dbb.webp",
+    "frameWidth": 88,
+    "frameHeight": 56,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2zbd": {
+   "faction": "china",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2zbd-480.c7899a9ff8bd.avif",
+     "240": "/faction-art/units/r2zbd-240.74869932d863.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2zbd-480.87b6fa12f678.webp",
+     "240": "/faction-art/units/r2zbd-240.256c4fd1b656.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2zbd.acb80cd73eb9.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2zbd.a5192f5d8890.webp",
+    "frameWidth": 74,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2lynx": {
+   "faction": "china",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2lynx-480.2c9001ce62e0.avif",
+     "240": "/faction-art/units/r2lynx-240.000a7ea90013.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2lynx-480.35625400fc1a.webp",
+     "240": "/faction-art/units/r2lynx-240.8c942293fdf1.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2lynx.cf1ada8019f1.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2lynx.3e2905a4ecf3.webp",
+    "frameWidth": 66,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2mantis": {
+   "faction": "china",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2mantis-480.4986790e49f8.avif",
+     "240": "/faction-art/units/r2mantis-240.694426b6ab36.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2mantis-480.819d79636a90.webp",
+     "240": "/faction-art/units/r2mantis-240.1b1da1a07dcd.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2mantis.8c36e19eba16.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2mantis.932ed6eed1b6.webp",
+    "frameWidth": 68,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2phl": {
+   "faction": "china",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2phl-480.e995068fbef8.avif",
+     "240": "/faction-art/units/r2phl-240.0c11131f7828.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2phl-480.2db63ffa0a71.webp",
+     "240": "/faction-art/units/r2phl-240.dd518486f549.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2phl.4adfa57c9b29.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2phl.92c294b82030.webp",
+    "frameWidth": 66,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2skyspear": {
+   "faction": "china",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2skyspear-480.62efd1436efa.avif",
+     "240": "/faction-art/units/r2skyspear-240.2d17389a7c8e.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2skyspear-480.f3012ba8a21b.webp",
+     "240": "/faction-art/units/r2skyspear-240.c9e59633ad41.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2skyspear.6d1f4b66d480.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2skyspear.bcbdd1be18aa.webp",
+    "frameWidth": 60,
+    "frameHeight": 44,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2cloud": {
+   "faction": "china",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2cloud-480.ace1d75db7ac.avif",
+     "240": "/faction-art/units/r2cloud-240.f67cf54b4591.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2cloud-480.d09d44cb86d5.webp",
+     "240": "/faction-art/units/r2cloud-240.5ceb75fd931f.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2cloud.5f2d49944b0a.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2cloud.2cb3f3e4d338.webp",
+    "frameWidth": 52,
+    "frameHeight": 36,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2crane": {
+   "faction": "china",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2crane-480.799b8b61ab37.avif",
+     "240": "/faction-art/units/r2crane-240.25370c0f7923.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2crane-480.3197816cb815.webp",
+     "240": "/faction-art/units/r2crane-240.c58ac83f8789.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2crane.0bd0f452fb1e.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2crane.b0f2c8c20b04.webp",
+    "frameWidth": 110,
+    "frameHeight": 72,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2kunlun": {
+   "faction": "china",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2kunlun-480.4a540112b72e.avif",
+     "240": "/faction-art/units/r2kunlun-240.86a4bdfb5e43.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2kunlun-480.ddc1bb7c5f41.webp",
+     "240": "/faction-art/units/r2kunlun-240.301041501ab7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2kunlun.0d963eff5356.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2kunlun.9f5debd625f8.webp",
+    "frameWidth": 104,
+    "frameHeight": 66,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2luyang": {
+   "faction": "china",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2luyang-480.726623536b14.avif",
+     "240": "/faction-art/units/r2luyang-240.d2a3d03fa27e.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2luyang-480.591e1f444591.webp",
+     "240": "/faction-art/units/r2luyang-240.cedade460931.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2luyang.d924f1771f3f.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2luyang.4c887a2a3eca.webp",
+    "frameWidth": 118,
+    "frameHeight": 70,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2haiying": {
+   "faction": "china",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2haiying-480.aabb21561efc.avif",
+     "240": "/faction-art/units/r2haiying-240.e28a3d8b4f21.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2haiying-480.f4cc1f019c3f.webp",
+     "240": "/faction-art/units/r2haiying-240.55fd48fb7338.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2haiying.3fa4a48f63a5.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2haiying.f6ea8bb5eb8c.webp",
+    "frameWidth": 88,
+    "frameHeight": 54,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2jiaolong": {
+   "faction": "china",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2jiaolong-480.dfd6f427d8d1.avif",
+     "240": "/faction-art/units/r2jiaolong-240.b9b31433fb17.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2jiaolong-480.4fcfbf814d3c.webp",
+     "240": "/faction-art/units/r2jiaolong-240.e9ced8337ca0.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2jiaolong.f89a27ddee2d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2jiaolong.058d0fe33743.webp",
+    "frameWidth": 108,
+    "frameHeight": 62,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2haiwang": {
+   "faction": "china",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2haiwang-480.bf9813f60963.avif",
+     "240": "/faction-art/units/r2haiwang-240.58460c36e4e5.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2haiwang-480.927be0a0ca18.webp",
+     "240": "/faction-art/units/r2haiwang-240.5421179dfe4f.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2haiwang.3d435b472fab.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2haiwang.fe40d119ad5e.webp",
+    "frameWidth": 124,
+    "frameHeight": 74,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2bastion": {
+   "faction": "china",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2bastion-480.de83422b7d79.avif",
+     "240": "/faction-art/units/r2bastion-240.6508fb9c18cb.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2bastion-480.f3a922d84475.webp",
+     "240": "/faction-art/units/r2bastion-240.51b5da8c7bfd.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2bastion.86dc5b61518e.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2bastion.38f5c997072d.webp",
+    "frameWidth": 72,
+    "frameHeight": 48,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2skyshield": {
+   "faction": "china",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2skyshield-480.fa4f2f063eb6.avif",
+     "240": "/faction-art/units/r2skyshield-240.89e9b0f070e0.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2skyshield-480.b72fb751e80e.webp",
+     "240": "/faction-art/units/r2skyshield-240.b8b49c386699.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2skyshield.7ee72bff5d11.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2skyshield.b14ee457b8df.webp",
+    "frameWidth": 66,
+    "frameHeight": 52,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2spectrum": {
+   "faction": "china",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2spectrum-480.bf52e83e88d1.avif",
+     "240": "/faction-art/units/r2spectrum-240.d7415d77b9f6.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2spectrum-480.aaae9f73d36f.webp",
+     "240": "/faction-art/units/r2spectrum-240.4f5475e56c98.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2spectrum.19b73a8cffa1.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2spectrum.4d62a9a1b51b.webp",
+    "frameWidth": 66,
+    "frameHeight": 54,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2basij": {
+   "faction": "iran",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2basij-480.798e35d02a16.avif",
+     "240": "/faction-art/units/r2basij-240.6e6642aada67.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2basij-480.9416a815266b.webp",
+     "240": "/faction-art/units/r2basij-240.7bba22c4c049.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2basij.a51e761029ab.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2basij.e5220d52b0ef.webp",
+    "frameWidth": 30,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2toophan": {
+   "faction": "iran",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2toophan-480.089ae6f396ec.avif",
+     "240": "/faction-art/units/r2toophan-240.cb986ad3c02f.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2toophan-480.cb95dd022b0a.webp",
+     "240": "/faction-art/units/r2toophan-240.2ba76aff22fa.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2toophan.8d9ce512e790.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2toophan.772323dff498.webp",
+    "frameWidth": 34,
+    "frameHeight": 44,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2dronecontrol": {
+   "faction": "iran",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2dronecontrol-480.0879171fadd9.avif",
+     "240": "/faction-art/units/r2dronecontrol-240.edf2ff7d1612.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2dronecontrol-480.fc9f78c3a411.webp",
+     "240": "/faction-art/units/r2dronecontrol-240.bc5c1e7e5571.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2dronecontrol.e52942c9acce.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2dronecontrol.a2bc105b0d37.webp",
+    "frameWidth": 26,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2shadowone": {
+   "faction": "iran",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2shadowone-480.b7667856c1b4.avif",
+     "240": "/faction-art/units/r2shadowone-240.c3c0556d0622.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2shadowone-480.1d130e3f3a83.webp",
+     "240": "/faction-art/units/r2shadowone-240.5adfb01d4a91.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2shadowone.3c8372cc66a5.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2shadowone.d22b583bd3a3.webp",
+    "frameWidth": 32,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2karrar": {
+   "faction": "iran",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2karrar-480.d657ea4ef0a2.avif",
+     "240": "/faction-art/units/r2karrar-240.dd45fd9663b4.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2karrar-480.5992f5811b12.webp",
+     "240": "/faction-art/units/r2karrar-240.3002c3bce7a8.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2karrar.147855b14103.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2karrar.84ce745e1276.webp",
+    "frameWidth": 80,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2raad": {
+   "faction": "iran",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2raad-480.e595c1cdd32b.avif",
+     "240": "/faction-art/units/r2raad-240.b1fd9e9675ca.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2raad-480.57fa3ce9e33b.webp",
+     "240": "/faction-art/units/r2raad-240.eaba2b93f40c.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2raad.e14d4c7e1f19.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2raad.ea435d748f9f.webp",
+    "frameWidth": 78,
+    "frameHeight": 56,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2fajr": {
+   "faction": "iran",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2fajr-480.528a82a97bc8.avif",
+     "240": "/faction-art/units/r2fajr-240.232d400de443.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2fajr-480.4d410eacc9a9.webp",
+     "240": "/faction-art/units/r2fajr-240.b04d1d4882d1.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2fajr.3aec19503d6b.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2fajr.ccfc135ae04d.webp",
+    "frameWidth": 74,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2coast": {
+   "faction": "iran",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2coast-480.5671d58160ef.avif",
+     "240": "/faction-art/units/r2coast-240.847d53be9d2d.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2coast-480.73579dafcda0.webp",
+     "240": "/faction-art/units/r2coast-240.a4588fd211bc.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2coast.402f854a4348.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2coast.1180c06a9f69.webp",
+    "frameWidth": 72,
+    "frameHeight": 54,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2mohajer": {
+   "faction": "iran",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2mohajer-480.301bbb040d1e.avif",
+     "240": "/faction-art/units/r2mohajer-240.db21dc559675.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2mohajer-480.e6e8796d93cf.webp",
+     "240": "/faction-art/units/r2mohajer-240.b60bba340339.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2mohajer.6c28da3c7058.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2mohajer.c3f2b038eb0a.webp",
+    "frameWidth": 58,
+    "frameHeight": 36,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2loiter": {
+   "faction": "iran",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2loiter-480.7cb6ddf1e520.avif",
+     "240": "/faction-art/units/r2loiter-240.5866dcd111c9.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2loiter-480.174ab561b525.webp",
+     "240": "/faction-art/units/r2loiter-240.1d9933aa2dae.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2loiter.4a2a9dcb03a9.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2loiter.b5e9a347383e.webp",
+    "frameWidth": 50,
+    "frameHeight": 38,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2toufan": {
+   "faction": "iran",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2toufan-480.0fa3ffb91027.avif",
+     "240": "/faction-art/units/r2toufan-240.7be0766c6e96.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2toufan-480.41d0ed6b2cbc.webp",
+     "240": "/faction-art/units/r2toufan-240.e0068ac57ff4.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2toufan.e15cacceb618.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2toufan.f0b7b67dc704.webp",
+    "frameWidth": 96,
+    "frameHeight": 78,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2azar": {
+   "faction": "iran",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2azar-480.a8055ebf626f.avif",
+     "240": "/faction-art/units/r2azar-240.5cad39fbeb31.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2azar-480.db6d51dbbe99.webp",
+     "240": "/faction-art/units/r2azar-240.26ed55aa8646.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2azar.ab7e5bedc0a2.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2azar.ea92ecad6433.webp",
+    "frameWidth": 56,
+    "frameHeight": 38,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2peykaap": {
+   "faction": "iran",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2peykaap-480.8f69e0094690.avif",
+     "240": "/faction-art/units/r2peykaap-240.93f9b9168b1c.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2peykaap-480.522b3907704f.webp",
+     "240": "/faction-art/units/r2peykaap-240.3fadd2d05e62.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2peykaap.e5b4edc2da97.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2peykaap.9e8ea8d7a5e4.webp",
+    "frameWidth": 86,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ghadir": {
+   "faction": "iran",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ghadir-480.97f123787fa9.avif",
+     "240": "/faction-art/units/r2ghadir-240.e87e29396669.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ghadir-480.6624594de37b.webp",
+     "240": "/faction-art/units/r2ghadir-240.1021ed997bec.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ghadir.711fdedda360.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ghadir.56ec12165047.webp",
+    "frameWidth": 92,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2irbunker": {
+   "faction": "iran",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2irbunker-480.a9079b9d4ebf.avif",
+     "240": "/faction-art/units/r2irbunker-240.83370fe1a074.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2irbunker-480.9dc94bdbd2ea.webp",
+     "240": "/faction-art/units/r2irbunker-240.463519f987bc.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2irbunker.f131a6ad22a2.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2irbunker.c942e97d19e9.webp",
+    "frameWidth": 58,
+    "frameHeight": 40,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2iraasite": {
+   "faction": "iran",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2iraasite-480.8b83e6d748ad.avif",
+     "240": "/faction-art/units/r2iraasite-240.c0f3c6f8c9a1.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2iraasite-480.f787c6e3e0a7.webp",
+     "240": "/faction-art/units/r2iraasite-240.2aeab2caef4f.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2iraasite.914f59494286.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2iraasite.0f67b2b8ca97.webp",
+    "frameWidth": 78,
+    "frameHeight": 50,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ircoast": {
+   "faction": "iran",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ircoast-480.7885354a83f6.avif",
+     "240": "/faction-art/units/r2ircoast-240.9af29a34dc8e.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ircoast-480.32020d2ae14c.webp",
+     "240": "/faction-art/units/r2ircoast-240.0f6b499c78d2.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ircoast.21aade6fa408.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ircoast.c7f7f1e51849.webp",
+    "frameWidth": 64,
+    "frameHeight": 48,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2trrifle": {
+   "faction": "turkey",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2trrifle-480.d8d3ebe2f185.avif",
+     "240": "/faction-art/units/r2trrifle-240.9d6d64725989.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2trrifle-480.9ccf4c798547.webp",
+     "240": "/faction-art/units/r2trrifle-240.62a49ed134ae.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2trrifle.4dc13b119fbf.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2trrifle.46feb52ec406.webp",
+    "frameWidth": 30,
+    "frameHeight": 40,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2trat": {
+   "faction": "turkey",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2trat-480.cb96f26d3841.avif",
+     "240": "/faction-art/units/r2trat-240.5a27a6a8e2ed.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2trat-480.2db850874fe9.webp",
+     "240": "/faction-art/units/r2trat-240.4ff87bbd5177.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2trat.d9dd4260027d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2trat.0331dcb13759.webp",
+    "frameWidth": 36,
+    "frameHeight": 42,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2trdroneop": {
+   "faction": "turkey",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2trdroneop-480.854a6d900156.avif",
+     "240": "/faction-art/units/r2trdroneop-240.39e509b950f5.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2trdroneop-480.bafe0f6aa05b.webp",
+     "240": "/faction-art/units/r2trdroneop-240.6b788f82ca06.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2trdroneop.7cfff0ecb3f0.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2trdroneop.f3907c7b8e58.webp",
+    "frameWidth": 28,
+    "frameHeight": 40,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2greywolf": {
+   "faction": "turkey",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2greywolf-480.dcc9458ade45.avif",
+     "240": "/faction-art/units/r2greywolf-240.17f433454b61.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2greywolf-480.d5caba88c243.webp",
+     "240": "/faction-art/units/r2greywolf-240.f036d95c0f29.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2greywolf.c95dcc81d870.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2greywolf.1628072c6554.webp",
+    "frameWidth": 30,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2aras": {
+   "faction": "turkey",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2aras-480.5a325e2affee.avif",
+     "240": "/faction-art/units/r2aras-240.e2dd1bf556d6.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2aras-480.a18bdd27a4eb.webp",
+     "240": "/faction-art/units/r2aras-240.8ecdfc772344.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2aras.d8e44564a252.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2aras.dd0afc7e97cd.webp",
+    "frameWidth": 68,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2bozkir": {
+   "faction": "turkey",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2bozkir-480.890a6627c96f.avif",
+     "240": "/faction-art/units/r2bozkir-240.8ec0f6fa7204.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2bozkir-480.7e3ee583801d.webp",
+     "240": "/faction-art/units/r2bozkir-240.3a52154f5087.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2bozkir.bd95668ec0b8.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2bozkir.428b066bae4d.webp",
+    "frameWidth": 84,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2gokkalkan": {
+   "faction": "turkey",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2gokkalkan-480.0f114c4c6e5a.avif",
+     "240": "/faction-art/units/r2gokkalkan-240.14bd32ccf5f3.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2gokkalkan-480.42f83a0cf636.webp",
+     "240": "/faction-art/units/r2gokkalkan-240.d8cfa564149c.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2gokkalkan.a0dee0e9f55f.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2gokkalkan.607218919029.webp",
+    "frameWidth": 70,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2yildirim": {
+   "faction": "turkey",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2yildirim-480.48d2366747c6.avif",
+     "240": "/faction-art/units/r2yildirim-240.679d45dba85f.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2yildirim-480.94a57962fae7.webp",
+     "240": "/faction-art/units/r2yildirim-240.4cec2b6b6053.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2yildirim.211634e4259b.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2yildirim.233587eddaea.webp",
+    "frameWidth": 96,
+    "frameHeight": 66,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2deniz": {
+   "faction": "turkey",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2deniz-480.0bd206b8b42a.avif",
+     "240": "/faction-art/units/r2deniz-240.f27f13b99b45.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2deniz-480.b26e4799fbf8.webp",
+     "240": "/faction-art/units/r2deniz-240.6b0862e1ad41.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2deniz.92900ec97f40.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2deniz.48c68b739019.webp",
+    "frameWidth": 74,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2sancak": {
+   "faction": "turkey",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sancak-480.8e4e2bba02f5.avif",
+     "240": "/faction-art/units/r2sancak-240.1d07bbdf9f09.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sancak-480.a30b16ee2c07.webp",
+     "240": "/faction-art/units/r2sancak-240.af0dff592276.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sancak.1efcc1124f34.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sancak.782c5799c60f.webp",
+    "frameWidth": 60,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2sahin": {
+   "faction": "turkey",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sahin-480.d749ffa6d3a7.avif",
+     "240": "/faction-art/units/r2sahin-240.06cfbf31c6ac.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sahin-480.e1296cb62378.webp",
+     "240": "/faction-art/units/r2sahin-240.08c911ae187b.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sahin.9712196cdf47.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sahin.54d0eb763cad.webp",
+    "frameWidth": 62,
+    "frameHeight": 40,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2kuzgun": {
+   "faction": "turkey",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2kuzgun-480.fed9f4e0a4b3.avif",
+     "240": "/faction-art/units/r2kuzgun-240.5f079392fc81.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2kuzgun-480.bbb7f4cbd95e.webp",
+     "240": "/faction-art/units/r2kuzgun-240.64ed50846d32.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2kuzgun.1162a0dd31a1.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2kuzgun.7d88032a076a.webp",
+    "frameWidth": 52,
+    "frameHeight": 34,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2turna": {
+   "faction": "turkey",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2turna-480.0e920aa13734.avif",
+     "240": "/faction-art/units/r2turna-240.a388a55c2008.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2turna-480.086ba014d6ae.webp",
+     "240": "/faction-art/units/r2turna-240.b0425535aa29.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2turna.0ef554abe6bd.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2turna.b278336fba80.webp",
+    "frameWidth": 104,
+    "frameHeight": 72,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2poyraz": {
+   "faction": "turkey",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2poyraz-480.a43099410dc7.avif",
+     "240": "/faction-art/units/r2poyraz-240.cda21658e150.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2poyraz-480.dd67a8dc800a.webp",
+     "240": "/faction-art/units/r2poyraz-240.1f8a69ce9e27.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2poyraz.df94aed30468.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2poyraz.3ecbc4e9967b.webp",
+    "frameWidth": 86,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ege": {
+   "faction": "turkey",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ege-480.c95dbb9984f7.avif",
+     "240": "/faction-art/units/r2ege-240.f8a188330223.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ege-480.aafd82114986.webp",
+     "240": "/faction-art/units/r2ege-240.0eef52267ba5.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ege.5e270e945155.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ege.c5eeacc9d4f9.webp",
+    "frameWidth": 110,
+    "frameHeight": 64,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2marmara": {
+   "faction": "turkey",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2marmara-480.06f69dc1361a.avif",
+     "240": "/faction-art/units/r2marmara-240.27512e568623.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2marmara-480.204f27db51f2.webp",
+     "240": "/faction-art/units/r2marmara-240.3c1537f867e9.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2marmara.c29db7f099f6.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2marmara.3324407cb42f.webp",
+    "frameWidth": 122,
+    "frameHeight": 76,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hisar": {
+   "faction": "turkey",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hisar-480.570aa8c10c1f.avif",
+     "240": "/faction-art/units/r2hisar-240.adf22e34c3d1.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hisar-480.8a5b4c07daaa.webp",
+     "240": "/faction-art/units/r2hisar-240.83c14721c6e8.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hisar.c860d9dcdc2e.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hisar.430cbc555e28.webp",
+    "frameWidth": 62,
+    "frameHeight": 44,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2siper": {
+   "faction": "turkey",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2siper-480.f0b931b00b5c.avif",
+     "240": "/faction-art/units/r2siper-240.f004a5209246.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2siper-480.f0eaadf725e7.webp",
+     "240": "/faction-art/units/r2siper-240.79a864d1e542.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2siper.a9ee33a4595c.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2siper.7638c2a36983.webp",
+    "frameWidth": 74,
+    "frameHeight": 58,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2boran": {
+   "faction": "turkey",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2boran-480.c8e64b4599d6.avif",
+     "240": "/faction-art/units/r2boran-240.bcd2394ab084.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2boran-480.d0286eb5e762.webp",
+     "240": "/faction-art/units/r2boran-240.000b01bffee7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2boran.2239a2c9aaa7.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2boran.fdce1f318f25.webp",
+    "frameWidth": 66,
+    "frameHeight": 44,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2sang": {
+   "faction": "saudi-arabia",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sang-480.d107cbe17508.avif",
+     "240": "/faction-art/units/r2sang-240.e66443e2ae00.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sang-480.50e3750793a9.webp",
+     "240": "/faction-art/units/r2sang-240.9cc0bcfc9a42.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sang.23a83c53523a.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sang.cff249c1b8e5.webp",
+    "frameWidth": 28,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2saat": {
+   "faction": "saudi-arabia",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2saat-480.2b335638151f.avif",
+     "240": "/faction-art/units/r2saat-240.6d18e920aa9a.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2saat-480.13dcc780c98c.webp",
+     "240": "/faction-art/units/r2saat-240.c32ae35ca3a7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2saat.b055060b855e.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2saat.961998f26cd3.webp",
+    "frameWidth": 34,
+    "frameHeight": 46,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2sajtac": {
+   "faction": "saudi-arabia",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sajtac-480.75b96f33bbae.avif",
+     "240": "/faction-art/units/r2sajtac-240.d809a67d728b.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sajtac-480.f1af088e8882.webp",
+     "240": "/faction-art/units/r2sajtac-240.d1b5ae9d5e26.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sajtac.698a5245b064.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sajtac.b17db545d3d0.webp",
+    "frameWidth": 26,
+    "frameHeight": 36,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2falcon": {
+   "faction": "saudi-arabia",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2falcon-480.30ad991ca38f.avif",
+     "240": "/faction-art/units/r2falcon-240.cef138fe3f20.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2falcon-480.b8fc16b15beb.webp",
+     "240": "/faction-art/units/r2falcon-240.af2cf1ae5b1e.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2falcon.ba6339bb1063.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2falcon.3207a4450dd3.webp",
+    "frameWidth": 32,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2m1a2s": {
+   "faction": "saudi-arabia",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2m1a2s-480.f411817e44b4.avif",
+     "240": "/faction-art/units/r2m1a2s-240.3be63d5ce42e.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2m1a2s-480.2617569f4fa4.webp",
+     "240": "/faction-art/units/r2m1a2s-240.3e150255a2e1.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2m1a2s.fba25c2899fb.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2m1a2s.288a8cb31a4a.webp",
+    "frameWidth": 88,
+    "frameHeight": 54,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2bradley": {
+   "faction": "saudi-arabia",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2bradley-480.0d0d52f12201.avif",
+     "240": "/faction-art/units/r2bradley-240.5a825fcbda0f.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2bradley-480.17c6a267070d.webp",
+     "240": "/faction-art/units/r2bradley-240.d6525462b587.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2bradley.98785c172b39.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2bradley.f850931106c1.webp",
+    "frameWidth": 72,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2sads": {
+   "faction": "saudi-arabia",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sads-480.5c7d67eef818.avif",
+     "240": "/faction-art/units/r2sads-240.af910ff764c6.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sads-480.c42bc0792b03.webp",
+     "240": "/faction-art/units/r2sads-240.f3ef517432e4.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sads.bce6990681ee.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sads.3ad30494e61d.webp",
+    "frameWidth": 66,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2caesar": {
+   "faction": "saudi-arabia",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2caesar-480.0a6cc72a806e.avif",
+     "240": "/faction-art/units/r2caesar-240.8427e3d3603f.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2caesar-480.db7bf3a503c6.webp",
+     "240": "/faction-art/units/r2caesar-240.8f820fe476ef.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2caesar.b2f22620d322.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2caesar.58d1dae28e16.webp",
+    "frameWidth": 92,
+    "frameHeight": 64,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2f15sa": {
+   "faction": "saudi-arabia",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2f15sa-480.939e7e10443f.avif",
+     "240": "/faction-art/units/r2f15sa-240.c57d6c102dad.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2f15sa-480.1d8f271b695e.webp",
+     "240": "/faction-art/units/r2f15sa-240.858a88cf27e9.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2f15sa.1cfab8708d17.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2f15sa.d56eaf4282c5.webp",
+    "frameWidth": 62,
+    "frameHeight": 42,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ah64sa": {
+   "faction": "saudi-arabia",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ah64sa-480.e9c279746ac8.avif",
+     "240": "/faction-art/units/r2ah64sa-240.1de01ef23e08.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ah64sa-480.e75cdefe4bc9.webp",
+     "240": "/faction-art/units/r2ah64sa-240.ac933eca8622.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ah64sa.fde65a070969.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ah64sa.43ed839e7f75.webp",
+    "frameWidth": 100,
+    "frameHeight": 74,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2sadiq": {
+   "faction": "saudi-arabia",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sadiq-480.4967f41b7fa2.avif",
+     "240": "/faction-art/units/r2sadiq-240.ac6d044642bc.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sadiq-480.f5e654ea8809.webp",
+     "240": "/faction-art/units/r2sadiq-240.10949f10cd91.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sadiq.a48f214033a1.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sadiq.83a92f86c8ad.webp",
+    "frameWidth": 86,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2riyadh": {
+   "faction": "saudi-arabia",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2riyadh-480.7bbb71548cfa.avif",
+     "240": "/faction-art/units/r2riyadh-240.21dfc3ea59ba.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2riyadh-480.a517dd2824c6.webp",
+     "240": "/faction-art/units/r2riyadh-240.8b318f96f873.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2riyadh.4a482f317471.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2riyadh.9281b40c872f.webp",
+    "frameWidth": 108,
+    "frameHeight": 62,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2jubail": {
+   "faction": "saudi-arabia",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2jubail-480.d4463bc61bb9.avif",
+     "240": "/faction-art/units/r2jubail-240.6b041926aebd.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2jubail-480.f777c3e4484a.webp",
+     "240": "/faction-art/units/r2jubail-240.3787fce92d2d.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2jubail.c3166812a4af.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2jubail.8febad870226.webp",
+    "frameWidth": 94,
+    "frameHeight": 62,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2saguard": {
+   "faction": "saudi-arabia",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2saguard-480.da83b03a4ed7.avif",
+     "240": "/faction-art/units/r2saguard-240.4a365bd1ccf6.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2saguard-480.1a93d2748fcb.webp",
+     "240": "/faction-art/units/r2saguard-240.a50f9986eaae.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2saguard.a747f4cb0d4d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2saguard.1b9aafb241ff.webp",
+    "frameWidth": 62,
+    "frameHeight": 50,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2sapatriot": {
+   "faction": "saudi-arabia",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sapatriot-480.f932563da941.avif",
+     "240": "/faction-art/units/r2sapatriot-240.67b502f23c71.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sapatriot-480.628aba5f44f8.webp",
+     "240": "/faction-art/units/r2sapatriot-240.995efa093efe.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sapatriot.48d70e0816a5.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sapatriot.2266b9028c4c.webp",
+    "frameWidth": 64,
+    "frameHeight": 44,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2satow": {
+   "faction": "saudi-arabia",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2satow-480.9bebd308f976.avif",
+     "240": "/faction-art/units/r2satow-240.9c7a920c887d.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2satow-480.e0db98f9acab.webp",
+     "240": "/faction-art/units/r2satow-240.c3b64b16a5d2.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2satow.96fcf1a5d530.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2satow.52864a29b59a.webp",
+    "frameWidth": 62,
+    "frameHeight": 44,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ymr": {
+   "faction": "yemen",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ymr-480.deb3fed87642.avif",
+     "240": "/faction-art/units/r2ymr-240.2a7c08f22750.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ymr-480.ce15967bd64f.webp",
+     "240": "/faction-art/units/r2ymr-240.704eec9b897d.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ymr.cedb166906db.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ymr.0602ddeb25de.webp",
+    "frameWidth": 30,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2yrpg": {
+   "faction": "yemen",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2yrpg-480.6ebb3173c973.avif",
+     "240": "/faction-art/units/r2yrpg-240.b17df212b35e.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2yrpg-480.51ea7bbb934f.webp",
+     "240": "/faction-art/units/r2yrpg-240.1ba8663ea0c7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2yrpg.edaad2f96afe.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2yrpg.2c80c25756df.webp",
+    "frameWidth": 32,
+    "frameHeight": 44,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2yspot": {
+   "faction": "yemen",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2yspot-480.c69bcbff2cb7.avif",
+     "240": "/faction-art/units/r2yspot-240.790ee0a314e0.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2yspot-480.7124afeb99f7.webp",
+     "240": "/faction-art/units/r2yspot-240.6fda55347c84.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2yspot.1b775d0bf4c2.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2yspot.6f86fd285d52.webp",
+    "frameWidth": 28,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2wadighost": {
+   "faction": "yemen",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2wadighost-480.7eed0190aaaf.avif",
+     "240": "/faction-art/units/r2wadighost-240.2b2b671876fa.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2wadighost-480.868c31aafdc9.webp",
+     "240": "/faction-art/units/r2wadighost-240.3de0993338ea.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2wadighost.c478fbd8ee07.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2wadighost.997e1ca4d75b.webp",
+    "frameWidth": 34,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2technical": {
+   "faction": "yemen",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2technical-480.f0f2eef1ee1c.avif",
+     "240": "/faction-art/units/r2technical-240.a8957d0be0a7.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2technical-480.e7320ab36e29.webp",
+     "240": "/faction-art/units/r2technical-240.1a4465656889.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2technical.144d272394ec.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2technical.48c0eff6cd79.webp",
+    "frameWidth": 64,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ytechrr": {
+   "faction": "yemen",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ytechrr-480.b1bef1eb6151.avif",
+     "240": "/faction-art/units/r2ytechrr-240.75691320b929.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ytechrr-480.81852ebec386.webp",
+     "240": "/faction-art/units/r2ytechrr-240.c9f809a6e7da.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ytechrr.b7849ff73ae8.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ytechrr.9acf6c561750.webp",
+    "frameWidth": 70,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2yzu": {
+   "faction": "yemen",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2yzu-480.d03914ee8537.avif",
+     "240": "/faction-art/units/r2yzu-240.511abd6d819d.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2yzu-480.3e72e5b8e9c9.webp",
+     "240": "/faction-art/units/r2yzu-240.e633fe2e8ac7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2yzu.7b5939447aa5.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2yzu.5e748f858f7d.webp",
+    "frameWidth": 64,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ymlr": {
+   "faction": "yemen",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ymlr-480.65ac633dde09.avif",
+     "240": "/faction-art/units/r2ymlr-240.0412449171e5.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ymlr-480.41eea4121c09.webp",
+     "240": "/faction-art/units/r2ymlr-240.574ea5824a32.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ymlr.383e6639bef6.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ymlr.2d6d9c64adea.webp",
+    "frameWidth": 70,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2samad": {
+   "faction": "yemen",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2samad-480.e8ad72c534ac.avif",
+     "240": "/faction-art/units/r2samad-240.f40d9de33c0c.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2samad-480.662be6d3107a.webp",
+     "240": "/faction-art/units/r2samad-240.3535a3069fe9.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2samad.28881571c4c4.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2samad.8d371aabf536.webp",
+    "frameWidth": 54,
+    "frameHeight": 38,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2sahaab": {
+   "faction": "yemen",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2sahaab-480.be44e1ef394c.avif",
+     "240": "/faction-art/units/r2sahaab-240.9efe49b4a6cd.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2sahaab-480.cecb12220350.webp",
+     "240": "/faction-art/units/r2sahaab-240.2841a3ed35af.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2sahaab.fe6a4bb566f4.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2sahaab.c904d1bfec86.webp",
+    "frameWidth": 78,
+    "frameHeight": 44,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hodeidah": {
+   "faction": "yemen",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hodeidah-480.288e9c5c9dda.avif",
+     "240": "/faction-art/units/r2hodeidah-240.c9eb09b8e20c.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hodeidah-480.7c2ca498c2b1.webp",
+     "240": "/faction-art/units/r2hodeidah-240.cee5d186720b.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hodeidah.6558df0680e1.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hodeidah.5b86eee381f1.webp",
+    "frameWidth": 72,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2mokha": {
+   "faction": "yemen",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2mokha-480.da42e206f3da.avif",
+     "240": "/faction-art/units/r2mokha-240.b87ccc5a3517.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2mokha-480.77ffa0339e2c.webp",
+     "240": "/faction-art/units/r2mokha-240.fe3ca93e5143.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2mokha.88dc8039d88c.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2mokha.7f3ee1623b02.webp",
+    "frameWidth": 74,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ybunker": {
+   "faction": "yemen",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ybunker-480.edef26499253.avif",
+     "240": "/faction-art/units/r2ybunker-240.1c4ce27b7e54.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ybunker-480.46d3256ff675.webp",
+     "240": "/faction-art/units/r2ybunker-240.d42c9ea2bd24.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ybunker.15d053e68316.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ybunker.554517e58d6e.webp",
+    "frameWidth": 52,
+    "frameHeight": 36,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2yzunest": {
+   "faction": "yemen",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2yzunest-480.1f9440331cd3.avif",
+     "240": "/faction-art/units/r2yzunest-240.67dc337c7054.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2yzunest-480.b50d7a37c1a2.webp",
+     "240": "/faction-art/units/r2yzunest-240.6a720f41ca83.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2yzunest.f9a3e5771a12.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2yzunest.6a13dd858fd9.webp",
+    "frameWidth": 62,
+    "frameHeight": 38,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ycoastal": {
+   "faction": "yemen",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ycoastal-480.2f7bbacd4600.avif",
+     "240": "/faction-art/units/r2ycoastal-240.e629656a32ae.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ycoastal-480.a6c6cd73223a.webp",
+     "240": "/faction-art/units/r2ycoastal-240.1a9f0c2ae029.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ycoastal.6908e1bef04d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ycoastal.fe5f9b049403.webp",
+    "frameWidth": 64,
+    "frameHeight": 40,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ilrifle": {
+   "faction": "israel",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilrifle-480.d9a75bced878.avif",
+     "240": "/faction-art/units/r2ilrifle-240.bd2c6faac1cd.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilrifle-480.d42c4652b2cd.webp",
+     "240": "/faction-art/units/r2ilrifle-240.dd8051053390.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilrifle.6206ca2f6623.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilrifle.49e5fff3d92a.webp",
+    "frameWidth": 30,
+    "frameHeight": 40,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2ilat": {
+   "faction": "israel",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilat-480.847bdd61995a.avif",
+     "240": "/faction-art/units/r2ilat-240.4fdd66b16819.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilat-480.05a6acced3dc.webp",
+     "240": "/faction-art/units/r2ilat-240.6c6e9794eb98.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilat.335b209acea2.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilat.0f5067de5892.webp",
+    "frameWidth": 34,
+    "frameHeight": 42,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2ilobserver": {
+   "faction": "israel",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilobserver-480.fee834c08213.avif",
+     "240": "/faction-art/units/r2ilobserver-240.c4410dbd9d3b.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilobserver-480.3c5ce8f6f509.webp",
+     "240": "/faction-art/units/r2ilobserver-240.777f8cb765ee.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilobserver.eb05e19e650a.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilobserver.ed914627c177.webp",
+    "frameWidth": 28,
+    "frameHeight": 40,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2ilrecon": {
+   "faction": "israel",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilrecon-480.a932682dfc20.avif",
+     "240": "/faction-art/units/r2ilrecon-240.1de51e46de48.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilrecon-480.b599ca9fc3f3.webp",
+     "240": "/faction-art/units/r2ilrecon-240.1dad81a8537c.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilrecon.e5a5f207405f.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilrecon.f8ed7c59d0b0.webp",
+    "frameWidth": 30,
+    "frameHeight": 40,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2merkava": {
+   "faction": "israel",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2merkava-480.0521a409737e.avif",
+     "240": "/faction-art/units/r2merkava-240.6ff6c33d80a0.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2merkava-480.b9aa518d00ad.webp",
+     "240": "/faction-art/units/r2merkava-240.0473b5fdbb1c.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2merkava.2a7de4338227.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2merkava.e82b9b3071bf.webp",
+    "frameWidth": 84,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2namer": {
+   "faction": "israel",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2namer-480.f1c554e77d8a.avif",
+     "240": "/faction-art/units/r2namer-240.e28e398f9c1a.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2namer-480.a812c2d023c5.webp",
+     "240": "/faction-art/units/r2namer-240.3a3359bc86ce.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2namer.ef8e6046aa0d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2namer.cc186b0c0b79.webp",
+    "frameWidth": 72,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilshield": {
+   "faction": "israel",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilshield-480.8c3281963043.avif",
+     "240": "/faction-art/units/r2ilshield-240.9432501d5037.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilshield-480.f0e26cab1267.webp",
+     "240": "/faction-art/units/r2ilshield-240.ef0687e6fae7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilshield.3741e21e0477.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilshield.329384c45835.webp",
+    "frameWidth": 66,
+    "frameHeight": 50,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilhowitzer": {
+   "faction": "israel",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilhowitzer-480.10078d6c8e23.avif",
+     "240": "/faction-art/units/r2ilhowitzer-240.0bff7c348f93.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilhowitzer-480.eaaa5c5aec07.webp",
+     "240": "/faction-art/units/r2ilhowitzer-240.47f239832869.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilhowitzer.07c66a2cac47.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilhowitzer.8c472c3f42c8.webp",
+    "frameWidth": 90,
+    "frameHeight": 64,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilfalcon": {
+   "faction": "israel",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilfalcon-480.cdcf59dd1507.avif",
+     "240": "/faction-art/units/r2ilfalcon-240.c29d224853c4.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilfalcon-480.5d7b0a239665.webp",
+     "240": "/faction-art/units/r2ilfalcon-240.270e45d7459c.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilfalcon.acf5afb0a8a3.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilfalcon.f35dd59b3072.webp",
+    "frameWidth": 56,
+    "frameHeight": 36,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilgunship": {
+   "faction": "israel",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilgunship-480.982c70eb97be.avif",
+     "240": "/faction-art/units/r2ilgunship-240.cf9e4a61043a.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilgunship-480.82ebd34cda36.webp",
+     "240": "/faction-art/units/r2ilgunship-240.103a13f12b07.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilgunship.311c8f108c19.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilgunship.1d92d3cc47f0.webp",
+    "frameWidth": 94,
+    "frameHeight": 72,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilpatrol": {
+   "faction": "israel",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilpatrol-480.b9d33e96b16f.avif",
+     "240": "/faction-art/units/r2ilpatrol-240.bcb78ce13451.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilpatrol-480.5c4427f6df58.webp",
+     "240": "/faction-art/units/r2ilpatrol-240.0e9e12605322.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilpatrol.fb3a35f0d6fa.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilpatrol.1c25443de48a.webp",
+    "frameWidth": 78,
+    "frameHeight": 52,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilfrigate": {
+   "faction": "israel",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilfrigate-480.6f7953ef8bfc.avif",
+     "240": "/faction-art/units/r2ilfrigate-240.1aae2d247155.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilfrigate-480.d11a6f160fa7.webp",
+     "240": "/faction-art/units/r2ilfrigate-240.a51ff6aace11.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilfrigate.19ee70964ee0.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilfrigate.20f592aa76da.webp",
+    "frameWidth": 110,
+    "frameHeight": 68,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2iltender": {
+   "faction": "israel",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2iltender-480.d56e82df5bf1.avif",
+     "240": "/faction-art/units/r2iltender-240.829c1720d33e.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2iltender-480.a5bde47adb65.webp",
+     "240": "/faction-art/units/r2iltender-240.3fbb3ef6ba68.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2iltender.8446fa0f7428.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2iltender.09c0af0c6692.webp",
+    "frameWidth": 96,
+    "frameHeight": 62,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2ilsentry": {
+   "faction": "israel",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilsentry-480.738f55030765.avif",
+     "240": "/faction-art/units/r2ilsentry-240.1c5177c34ecf.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilsentry-480.910c32d73a7d.webp",
+     "240": "/faction-art/units/r2ilsentry-240.667b31b8644c.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilsentry.088ede12c80b.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilsentry.f27d7e3b60ba.webp",
+    "frameWidth": 66,
+    "frameHeight": 44,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ilbattery": {
+   "faction": "israel",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilbattery-480.4390b7b33fdc.avif",
+     "240": "/faction-art/units/r2ilbattery-240.b07a9e2726ce.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilbattery-480.bd3919008241.webp",
+     "240": "/faction-art/units/r2ilbattery-240.3fb60c7de30b.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilbattery.6a352fa93292.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilbattery.73eaaa62f0c3.webp",
+    "frameWidth": 68,
+    "frameHeight": 50,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ilatpost": {
+   "faction": "israel",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilatpost-480.61eeaee68a73.avif",
+     "240": "/faction-art/units/r2ilatpost-240.992ecd0f0ee1.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilatpost-480.0aa51074fd51.webp",
+     "240": "/faction-art/units/r2ilatpost-240.9184d88ad257.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilatpost.044c4e949aea.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilatpost.d3edeebb3d81.webp",
+    "frameWidth": 68,
+    "frameHeight": 46,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ilrelay": {
+   "faction": "israel",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilrelay-480.8b358f5d3ddc.avif",
+     "240": "/faction-art/units/r2ilrelay-240.b6d28985096d.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilrelay-480.698ea5e5c55a.webp",
+     "240": "/faction-art/units/r2ilrelay-240.e2788bfde511.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilrelay.18b234be82aa.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilrelay.eebba972fdcd.webp",
+    "frameWidth": 66,
+    "frameHeight": 56,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2ilworkshop": {
+   "faction": "israel",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2ilworkshop-480.26c8ec39b648.avif",
+     "240": "/faction-art/units/r2ilworkshop-240.85d347515430.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2ilworkshop-480.b3fd0c3e488b.webp",
+     "240": "/faction-art/units/r2ilworkshop-240.4f40c5b7f97e.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2ilworkshop.525478dd396a.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2ilworkshop.8d1c635e5c75.webp",
+    "frameWidth": 70,
+    "frameHeight": 46,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2hzrifle": {
+   "faction": "hezbollah",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzrifle-480.0b27a70f1e95.avif",
+     "240": "/faction-art/units/r2hzrifle-240.e462a513867c.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzrifle-480.bdd5ecdcac04.webp",
+     "240": "/faction-art/units/r2hzrifle-240.385852e43347.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzrifle.76cfbf145457.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzrifle.f595e865b1a3.webp",
+    "frameWidth": 30,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2hzat": {
+   "faction": "hezbollah",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzat-480.b798fc07e413.avif",
+     "240": "/faction-art/units/r2hzat-240.886705049f19.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzat-480.123e35b7fa5c.webp",
+     "240": "/faction-art/units/r2hzat-240.90dda0c8b0e0.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzat.1dad3a977e7f.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzat.750a99057f35.webp",
+    "frameWidth": 36,
+    "frameHeight": 42,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2hzspotter": {
+   "faction": "hezbollah",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzspotter-480.97b0ad1ca587.avif",
+     "240": "/faction-art/units/r2hzspotter-240.6dca7646719a.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzspotter-480.22f7c9d60258.webp",
+     "240": "/faction-art/units/r2hzspotter-240.4ffec68aaf26.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzspotter.e6b55917c3c8.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzspotter.90c569f01a5c.webp",
+    "frameWidth": 28,
+    "frameHeight": 38,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2hzscout": {
+   "faction": "hezbollah",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzscout-480.48cde7f5f638.avif",
+     "240": "/faction-art/units/r2hzscout-240.83e1325f9f59.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzscout-480.21d4d334967e.webp",
+     "240": "/faction-art/units/r2hzscout-240.8c2e38776ca5.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzscout.61c9e055ead6.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzscout.845d96df95ec.webp",
+    "frameWidth": 28,
+    "frameHeight": 36,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
+  "r2hztechnical": {
+   "faction": "hezbollah",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hztechnical-480.180e21f6b760.avif",
+     "240": "/faction-art/units/r2hztechnical-240.7ec92e3df7da.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hztechnical-480.ca359e47f607.webp",
+     "240": "/faction-art/units/r2hztechnical-240.64075a7f6691.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hztechnical.3e0e1b18cc45.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hztechnical.90b137c7d743.webp",
+    "frameWidth": 64,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzrecoilless": {
+   "faction": "hezbollah",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzrecoilless-480.000593137a7e.avif",
+     "240": "/faction-art/units/r2hzrecoilless-240.f6cd5ae3ebc3.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzrecoilless-480.9768b1037cd4.webp",
+     "240": "/faction-art/units/r2hzrecoilless-240.ade09ec78d5e.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzrecoilless.59974f97256f.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzrecoilless.c9bccfae0b3d.webp",
+    "frameWidth": 64,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzescort": {
+   "faction": "hezbollah",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzescort-480.c986ea80370f.avif",
+     "240": "/faction-art/units/r2hzescort-240.bed0cda3194a.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzescort-480.c55250be80a4.webp",
+     "240": "/faction-art/units/r2hzescort-240.077560fe52e4.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzescort.63d80fb90e13.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzescort.3f20b425690b.webp",
+    "frameWidth": 68,
+    "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzrockets": {
+   "faction": "hezbollah",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzrockets-480.67da3d3a84dd.avif",
+     "240": "/faction-art/units/r2hzrockets-240.e524c55fe5ce.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzrockets-480.e1a67bd30a33.webp",
+     "240": "/faction-art/units/r2hzrockets-240.258cc8202d61.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzrockets.3cebada3128b.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzrockets.c2246281d7a0.webp",
+    "frameWidth": 70,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzdrone": {
+   "faction": "hezbollah",
+   "category": "aircraft",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzdrone-480.78b9f2c04e80.avif",
+     "240": "/faction-art/units/r2hzdrone-240.fb1b1c942179.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzdrone-480.988c6780c0a5.webp",
+     "240": "/faction-art/units/r2hzdrone-240.b55de835e889.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzdrone.d0af972405cd.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzdrone.f6a92fdde74a.webp",
+    "frameWidth": 48,
+    "frameHeight": 32,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzskiff": {
+   "faction": "hezbollah",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzskiff-480.5a8fc2c0b6fd.avif",
+     "240": "/faction-art/units/r2hzskiff-240.7edc6c2a9d2f.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzskiff-480.246a7ba977cb.webp",
+     "240": "/faction-art/units/r2hzskiff-240.e07c75ea2591.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzskiff.981c495e2907.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzskiff.69631afadd20.webp",
+    "frameWidth": 68,
+    "frameHeight": 42,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzmissileboat": {
+   "faction": "hezbollah",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzmissileboat-480.9fceb355cd62.avif",
+     "240": "/faction-art/units/r2hzmissileboat-240.a034b9348466.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzmissileboat-480.ce9c174ebb04.webp",
+     "240": "/faction-art/units/r2hzmissileboat-240.0da9435d9c02.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzmissileboat.7168d2aa2692.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzmissileboat.1a826a4e45d6.webp",
+    "frameWidth": 84,
+    "frameHeight": 48,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzsurvey": {
+   "faction": "hezbollah",
+   "category": "ship",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzsurvey-480.20137ac474e8.avif",
+     "240": "/faction-art/units/r2hzsurvey-240.9fae529d5487.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzsurvey-480.4d4b679b7818.webp",
+     "240": "/faction-art/units/r2hzsurvey-240.cf8b00d18da6.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzsurvey.e5d46da60284.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzsurvey.c70773cb5488.webp",
+    "frameWidth": 84,
+    "frameHeight": 54,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzbunker": {
+   "faction": "hezbollah",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzbunker-480.3484a5109f67.avif",
+     "240": "/faction-art/units/r2hzbunker-240.ce142b42231b.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzbunker-480.d96a39028106.webp",
+     "240": "/faction-art/units/r2hzbunker-240.523ca8d8d3ac.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzbunker.bd59d8cf41af.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzbunker.ef4e373b818c.webp",
+    "frameWidth": 56,
+    "frameHeight": 36,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2hzaanest": {
+   "faction": "hezbollah",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzaanest-480.506ec92d5475.avif",
+     "240": "/faction-art/units/r2hzaanest-240.3ff605685728.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzaanest-480.857e89bfa643.webp",
+     "240": "/faction-art/units/r2hzaanest-240.382c92e50db7.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzaanest.c1d14273e04d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzaanest.3335332592d6.webp",
+    "frameWidth": 58,
+    "frameHeight": 42,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2hzcoastal": {
+   "faction": "hezbollah",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzcoastal-480.636dc5dbb593.avif",
+     "240": "/faction-art/units/r2hzcoastal-240.9e62f024933d.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzcoastal-480.e74e1a14e068.webp",
+     "240": "/faction-art/units/r2hzcoastal-240.80aea1e6db6e.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzcoastal.6a842aaf1cb9.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzcoastal.8c55661cdc54.webp",
+    "frameWidth": 60,
+    "frameHeight": 46,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2hzrelay": {
+   "faction": "hezbollah",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzrelay-480.842502ca7739.avif",
+     "240": "/faction-art/units/r2hzrelay-240.ea86ab67bd3c.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzrelay-480.94c48a92897f.webp",
+     "240": "/faction-art/units/r2hzrelay-240.87c2ea9d7c66.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzrelay.8583bb485062.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzrelay.a5ddda6ea944.webp",
+    "frameWidth": 68,
+    "frameHeight": 68,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  },
+  "r2hzworkshop": {
+   "faction": "hezbollah",
+   "category": "defense",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzworkshop-480.d52b42fc79f3.avif",
+     "240": "/faction-art/units/r2hzworkshop-240.5b87c2c81685.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzworkshop-480.bda0a1fcfab6.webp",
+     "240": "/faction-art/units/r2hzworkshop-240.09ad06278adc.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzworkshop.759fea0bfa1d.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzworkshop.ab386c1a3340.webp",
+    "frameWidth": 66,
+    "frameHeight": 52,
+    "frames": 24,
+    "frameMs": 60,
+    "motion": "build"
+   }
+  }
+ },
+ "lineups": {
+  "china": {
+   "actors": [
+    "r2skyspear",
+    "r2luyang",
+    "r2bastion",
+    "r2zbd",
+    "r2cnrifle",
+    "r2qilin"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/china-1440.77bd17814293.avif",
+    "720": "/faction-art/lineups/china-720.303e8f58a325.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/china-1440.b4ee2eb43522.webp",
+    "720": "/faction-art/lineups/china-720.23cf5d30e9a6.webp"
+   }
+  },
+  "iran": {
+   "actors": [
+    "r2toufan",
+    "r2peykaap",
+    "r2iraasite",
+    "r2raad",
+    "r2basij",
+    "r2karrar"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/iran-1440.a3bda9a89899.avif",
+    "720": "/faction-art/lineups/iran-720.b486893ce2ac.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/iran-1440.bee322e12c9d.webp",
+    "720": "/faction-art/lineups/iran-720.ee351211c554.webp"
+   }
+  },
+  "turkey": {
+   "actors": [
+    "r2kuzgun",
+    "r2marmara",
+    "r2hisar",
+    "r2yildirim",
+    "r2trrifle",
+    "r2bozkir"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/turkey-1440.bdb63f728312.avif",
+    "720": "/faction-art/lineups/turkey-720.d54e5d0ba252.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/turkey-1440.59bee8264826.webp",
+    "720": "/faction-art/lineups/turkey-720.528bb952e6bc.webp"
+   }
+  },
+  "saudi-arabia": {
+   "actors": [
+    "r2f15sa",
+    "r2riyadh",
+    "r2sapatriot",
+    "r2bradley",
+    "r2sang",
+    "r2m1a2s"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/saudi-arabia-1440.8d6833cd5b34.avif",
+    "720": "/faction-art/lineups/saudi-arabia-720.a24e1b79acd1.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/saudi-arabia-1440.83f1bd6e179d.webp",
+    "720": "/faction-art/lineups/saudi-arabia-720.1b129b4f10ca.webp"
+   }
+  },
+  "yemen": {
+   "actors": [
+    "r2samad",
+    "r2mokha",
+    "r2ycoastal",
+    "r2ymlr",
+    "r2ymr",
+    "r2technical"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/yemen-1440.a471552383d6.avif",
+    "720": "/faction-art/lineups/yemen-720.d1f884f8147a.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/yemen-1440.7bda286731ce.webp",
+    "720": "/faction-art/lineups/yemen-720.d09d5207b25a.webp"
+   }
+  },
+  "israel": {
+   "actors": [
+    "r2ilfalcon",
+    "r2ilfrigate",
+    "r2ilbattery",
+    "r2namer",
+    "r2ilrifle",
+    "r2merkava"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/israel-1440.8213ee67a125.avif",
+    "720": "/faction-art/lineups/israel-720.6808dfb6a9e8.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/israel-1440.e474d7cd6041.webp",
+    "720": "/faction-art/lineups/israel-720.a071498677cb.webp"
+   }
+  },
+  "hezbollah": {
+   "actors": [
+    "r2hzdrone",
+    "r2hzmissileboat",
+    "r2hzaanest",
+    "r2hzrockets",
+    "r2hzrifle",
+    "r2hzrecoilless"
+   ],
+   "width": 1440,
+   "height": 560,
+   "avif": {
+    "1440": "/faction-art/lineups/hezbollah-1440.b267283aaa0d.avif",
+    "720": "/faction-art/lineups/hezbollah-720.37b810f42e5d.avif"
+   },
+   "webp": {
+    "1440": "/faction-art/lineups/hezbollah-1440.a259fa42f7e4.webp",
+    "720": "/faction-art/lineups/hezbollah-720.f0c9438cbcb9.webp"
+   }
+  }
+ },
+ "flags": {
+  "america": {
+   "src": "/faction-art/flags/america.52d6d3be1693.svg",
+   "width": 640,
+   "height": 480
+  },
+  "germany": {
+   "src": "/faction-art/flags/germany.4c7ca6eb38c3.svg",
+   "width": 640,
+   "height": 480
+  },
+  "england": {
+   "src": "/faction-art/flags/england.84136bf6db0c.svg",
+   "width": 640,
+   "height": 480
+  },
+  "france": {
+   "src": "/faction-art/flags/france.72fb23c3dcf5.svg",
+   "width": 640,
+   "height": 480
+  },
+  "korea": {
+   "src": "/faction-art/flags/korea.1f6559457671.svg",
+   "width": 640,
+   "height": 480
+  },
+  "cuba": {
+   "src": "/faction-art/flags/cuba.6a71fc76fcac.svg",
+   "width": 640,
+   "height": 480
+  },
+  "libya": {
+   "src": "/faction-art/flags/libya.f4b5d9006abb.svg",
+   "width": 640,
+   "height": 480
+  },
+  "iraq": {
+   "src": "/faction-art/flags/iraq.45cbbe60ebf3.svg",
+   "width": 640,
+   "height": 480
+  },
+  "russia": {
+   "src": "/faction-art/flags/russia.b632879e3bc6.svg",
+   "width": 640,
+   "height": 480
+  },
+  "ukraine": {
+   "src": "/faction-art/flags/ukraine.dbc3e9823bab.svg",
+   "width": 640,
+   "height": 480
+  },
+  "israel": {
+   "src": "/faction-art/flags/israel.dfd787641612.svg",
+   "width": 640,
+   "height": 480
+  },
+  "china": {
+   "src": "/faction-art/flags/china.3c823a083599.svg",
+   "width": 640,
+   "height": 480
+  },
+  "iran": {
+   "src": "/faction-art/flags/iran.2049ff18bb4f.svg",
+   "width": 640,
+   "height": 480
+  },
+  "turkey": {
+   "src": "/faction-art/flags/turkey.de9a0e80c335.svg",
+   "width": 640,
+   "height": 480
+  },
+  "saudi": {
+   "src": "/faction-art/flags/saudi.dfaf19b48c02.svg",
+   "width": 640,
+   "height": 480
+  },
+  "yemen": {
+   "src": "/faction-art/flags/yemen.91e7526d47ae.svg",
+   "width": 640,
+   "height": 480
+  }
+ }
+}

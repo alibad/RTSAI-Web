@@ -1,2 +1,4 @@
 # Art Lab files are byte-exact copies checked against ART-PROVENANCE.json SHA-256s.
 public/art-lab/** binary
+# Faction art files are byte-exact; their SHA-256s are recorded in data/faction-art-provenance.json.
+public/faction-art/** binary
