@@ -27,6 +27,8 @@ export function previewIconFile(actor: string, entry: PreviewActor | undefined):
 
 /** The picture that identifies the unit in lists: the preview's cameo, else the release icon. */
 export function identityCameo(actor: string, releaseCameo: string | null, entry: PreviewActor | undefined, head: string | null): string | null {
+  // Promoted: the release carries the same bytes, so its own icon needs no preview checkout.
+  if (entry?.released && releaseCameo) return releaseCameo;
   const file = previewIconFile(actor, entry);
   return file ? `${PREVIEW_FILE_ROUTE}${encodeURIComponent(file)}${head ? `&v=${head.slice(0, 12)}` : ""}` : releaseCameo;
 }
@@ -96,7 +98,9 @@ export type HistoryEntry = {
 };
 
 /** One archived file as RTSAI-Art/history/<actor>/manifest.json lists it (fields read leniently). */
-export type ArchivedArt = { file: string; url: string | null; slot: HistorySlot | null; label: string | null; generator: string | null; date: string | null; sha256: string | null };
+export type ArchivedArt = { file: string; url: string | null; slot: HistorySlot | null; label: string | null; generator: string | null; date: string | null; sha256: string | null;
+  /** "generated", "procedural", ... as the provenance record has it. */
+  origin?: string | null };
 
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : null);
 /** Provenance records carry the source commit's date beside repo, path and commit. */
@@ -147,10 +151,23 @@ export function historyFor(args: {
     out.push({ key: "previous:model", slot: "model", origin: "release", image: null, previous: true,
       label: "Historical · game model (release before the new art was promoted)", generator: body.generator, date: day(body.date), file: body.file });
   }
-  for (const a of [...archive].sort((x, y) => (x.date ?? "") < (y.date ?? "") ? 1 : (x.date ?? "") > (y.date ?? "") ? -1 : 0)) {
+  // Archive files are named <installed yyyymmdd>-<sha>-<file>: newest first by that, else by the recorded date. A
+  // model's parts (body, turret, barrel) archived together are one version, shown by its body file.
+  const order = (a: ArchivedArt) => /^(\d{8})-/.exec(a.file.split("/").pop()!)?.[1] ?? (a.date ?? "").replace(/-/g, "").slice(0, 8);
+  const groups = new Map<string, ArchivedArt[]>();
+  for (const a of archive) {
     const slot = a.slot ?? (/\.(png|jpe?g)$/i.test(a.file) ? "icon" : "model");
+    const key = slot === "icon" ? `icon|${a.file}` : `model|${order(a)}|${(a.label ?? "").replace(/,?\s*\b(body|turret|barrel)\b/gi, "")}`;
+    groups.set(key, [...(groups.get(key) ?? []), { ...a, slot }]);
+  }
+  const isBody = (a: ArchivedArt) => a.file.split("/").pop()!.toLowerCase().replace(/^\d{8}-[0-9a-f]+-/, "").replace(/\.(vxl|shp)$/, "") === args.actor.toLowerCase();
+  const newer = (x: ArchivedArt, y: ArchivedArt) => { const a = `${order(x)}|${x.date ?? ""}`, b = `${order(y)}|${y.date ?? ""}`; return a < b ? 1 : a > b ? -1 : 0; };
+  const picked = [...groups.values()].map(list => list.find(isBody) ?? list[0]).sort(newer);
+  for (const a of picked) {
+    const slot = a.slot!;
+    const name = slot === "icon" ? (a.origin === "generated" ? "painted icon" : a.label ?? "icon") : a.label ?? "game model";
     out.push({ key: `archive:${a.file}`, slot, origin: "archive", image: slot === "icon" ? a.url : null,
-      label: `Historical · ${a.label ?? (slot === "icon" ? "icon" : "game model")}`, generator: a.generator, date: day(a.date), file: a.file });
+      label: `Historical · ${name}`, generator: a.generator, date: day(a.date), file: a.file });
   }
   const installed = new Set([entry?.model, entry?.icon].filter(Boolean));
   for (const c of [...(ws?.candidates ?? [])].sort(newestFirst)) {
@@ -168,18 +185,28 @@ export function historyFor(args: {
   return [...out.filter(e => e.slot === "icon"), ...out.filter(e => e.slot === "model")];
 }
 
-/** Reads a promotion manifest leniently: an array, or { entries | files | items: [...] }, of objects or paths. */
+/**
+ * Reads a promotion manifest leniently: RTSAI-Art/history/<actor>/manifest.json ({ entries: [{ file, what, modPath,
+ * sha256, source: { generator, date }, installed: { first: { date } } }] }), or a plain list of objects or paths.
+ * Only pictures (PNG) and game models (VXL/SHP) that were copied into the archive are listed; palettes, HVA files and
+ * entries that only reference a file elsewhere are not separate versions.
+ */
 export function parseArchive(json: unknown, urlOf: (file: string) => string): ArchivedArt[] {
   const list = Array.isArray(json) ? json : json && typeof json === "object"
     ? (["entries", "files", "items", "archived"].map(k => (json as Record<string, unknown>)[k]).find(Array.isArray) as unknown[] | undefined) ?? [] : [];
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
+  const obj = (v: unknown) => (v && typeof v === "object" ? v as Record<string, unknown> : {});
+  const seen = new Set<string>();
   return list.flatMap((raw): ArchivedArt[] => {
     const o = typeof raw === "string" ? { file: raw } : raw && typeof raw === "object" ? raw as Record<string, unknown> : null;
     const file = o && (str(o.file) ?? str(o.path) ?? str(o.archived) ?? str(o.archivePath));
-    if (!o || !file || file.includes("..")) return [];
-    const slotText = str(o.slot) ?? str(o.kind) ?? str(o.type);
-    const slot: HistorySlot | null = slotText ? (/icon|cameo/i.test(slotText) ? "icon" : /model|voxel|sprite|vxl|shp/i.test(slotText) ? "model" : null) : null;
-    return [{ file, url: /\.(png|jpe?g)$/i.test(file) ? urlOf(file) : null, slot, label: str(o.label) ?? str(o.title),
-      generator: str(o.generator) ?? str(o.tool) ?? str(o.model), date: str(o.date) ?? str(o.archivedAt) ?? str(o.createdAt), sha256: str(o.sha256) }];
+    if (!o || !file || file.includes("..") || !/\.(png|jpe?g|vxl|shp)$/i.test(file) || seen.has(file)) return [];
+    seen.add(file);
+    const slotText = [str(o.slot), str(o.what), str(o.kind), str(o.type)].filter(Boolean).join(" ");
+    const slot: HistorySlot | null = /icon|cameo/i.test(slotText) ? "icon" : /model|voxel|sprite|vxl|shp/i.test(slotText) ? "model" : null;
+    const source = obj(o.source), first = obj(obj(o.installed).first);
+    return [{ file, url: /\.(png|jpe?g)$/i.test(file) ? urlOf(file) : null, slot, label: str(o.label) ?? str(o.title) ?? str(o.what),
+      generator: str(o.generator) ?? str(o.tool) ?? str(o.model) ?? str(source.generator),
+      date: str(o.date) ?? str(o.archivedAt) ?? str(o.createdAt) ?? str(source.date) ?? str(first.date), sha256: str(o.sha256), origin: str(o.origin) ?? str(source.origin) }];
   });
 }

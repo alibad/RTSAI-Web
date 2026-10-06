@@ -123,3 +123,29 @@ test("history after promotion, before the archive: the synced manifest's release
   // Before promotion the live release itself is the entry; the manifest record is not shown twice.
   assert.ok(!historyFor({ actor: "r2qilin", ws, entry, release: { cameo: "/release.png", hasModel: true, sources: release }, previous }).some(e => e.key.startsWith("previous:")));
 });
+
+test("history: the real archive schema (history/<actor>/manifest.json) groups model parts and names painted icons", () => {
+  const manifest = { schemaVersion: 1, actor: "r2qilin", entries: [
+    { sha256: "a1", what: "build-menu cameo, 60x48", modPath: "mods/rtsai/modern-factions/icons/r2qilin.png", file: "20261002-bc65a64158-r2qilin.png", source: { origin: "generated", generator: "openai-image-tool", date: "2026-09-03" } },
+    { sha256: "a2", what: "build-menu cameo, 60x48", file: "20261002-b00bfe12f6-r2qilin.png", source: { origin: "generated", generator: "qwen-image", date: "2026-10-02" } },
+    { sha256: "h1", what: "placeholder voxel model, body (procedural mesh from the faction port)", modPath: "x/r2qilin.hva" },
+    { sha256: "v1", what: "placeholder voxel model, body (procedural mesh from the faction port)", file: "20261002-ed1d08d085-r2qilin.vxl", source: { origin: "procedural", generator: "project-geometry" }, installed: { first: { date: "2026-10-02" } } },
+    { sha256: "v2", what: "placeholder voxel model, turret (procedural mesh from the faction port)", file: "20261002-87731af779-r2qilintur.vxl", source: { generator: "project-geometry" } },
+    { sha256: "g1", what: "GLB voxel route model, body (art preview, superseded by the prerendered sprite)", file: "20261005-94ce000fc9-r2qilin.vxl", installed: { first: { date: "2026-10-05" } } },
+    { sha256: "g2", what: "GLB voxel route model, turret (art preview, superseded by the prerendered sprite)", file: "20261005-9a1773b78d-r2qilintur.vxl" },
+    { sha256: "p1", what: "placeholder voxel palette", file: "20261004-aaaaaaaaaa-r2qilin.pal" },
+  ] };
+  const list = parseArchive(manifest, f => `/file/${f}`);
+  assert.equal(list.length, 6, "palettes and uncopied files are not versions");
+  const h = historyFor({ actor: "r2qilin", ws: undefined, entry: { ...entry, released: true }, release: { cameo: "/new.png", hasModel: true }, archive: list });
+  assert.deepEqual(h.map(e => [e.label, e.file]), [
+    ["Historical · painted icon", "20261002-b00bfe12f6-r2qilin.png"],
+    ["Historical · painted icon", "20261002-bc65a64158-r2qilin.png"],
+    ["Historical · GLB voxel route model, body (art preview, superseded by the prerendered sprite)", "20261005-94ce000fc9-r2qilin.vxl"],
+    ["Historical · placeholder voxel model, body (procedural mesh from the faction port)", "20261002-ed1d08d085-r2qilin.vxl"],
+  ]);
+  assert.equal(h[0].generator, "qwen-image");
+  assert.equal(h[1].date, "2026-09-03");
+  // Promoted: lists show the release's own icon.
+  assert.equal(identityCameo("r2qilin", "/release.png", { ...entry, released: true }, "abc"), "/release.png");
+});
