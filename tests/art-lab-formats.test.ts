@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import { decodePal, isSixBitPal } from "../lib/art-lab/pal";
 import { checkVxl, decodeVxl, voxelAt } from "../lib/art-lab/vxl";
@@ -7,9 +6,9 @@ import { decodeHva, hvaColumnMajor } from "../lib/art-lab/hva";
 import { decodeShp, isShpTs } from "../lib/art-lab/shp";
 import { hsvToRgb, parseHexColor, remapPalette, rgbToHsv } from "../lib/art-lab/remap";
 import { parseFluent } from "../lib/art-lab/fluent";
-import manifest from "../data/art-lab.json";
+import { legacyArt as manifest, legacyBytes } from "./legacy-art";
 
-const art = (key: string) => new Uint8Array(readFileSync(new URL(`../public/art-lab/${key}`, import.meta.url)));
+const art = (key: string) => legacyBytes(key);
 
 /** Minimal VXL writer (one limb), following the layout the decoder and OpenRA read. */
 function encodeVxl(size: [number, number, number], voxels: Map<string, [number, number]>, normalsMode = 4) {

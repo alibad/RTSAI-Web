@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { candidateRenderSpec, candidateVehicleSprite, type Candidate } from "../lib/art-lab/review";
-import { artLab, renderSpec } from "../lib/art-lab/manifest";
+import { legacyArt as artLab, legacyRenderSpec as renderSpec } from "./legacy-art";
 import { spriteAnimations } from "../lib/art-lab/sprite-anim";
 import { barrelScreenOffset, rigFiles, spriteRig, turretScreenOffset } from "../lib/art-lab/sprite-compose";
 import { actionCoverage } from "../lib/art-lab/chain";

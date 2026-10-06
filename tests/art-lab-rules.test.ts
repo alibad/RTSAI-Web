@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import { child, childValue, mergeMiniYaml, parseMiniYaml, YamlError, type Yaml } from "../lib/art-lab/miniyaml";
 import { cameraMatrix, facingLabel, invert, offsetScreenVector, partMatrices, screenVector, transformVector, wcos, wrotMatrix, wrotQuaternion } from "../lib/art-lab/voxel-math";
@@ -10,7 +9,7 @@ import { decodeVxl } from "../lib/art-lab/vxl";
 import { decodeHva } from "../lib/art-lab/hva";
 import { decodePal } from "../lib/art-lab/pal";
 import { RA2_NORMALS, TS_NORMALS } from "../lib/art-lab/normals.generated";
-import manifest from "../data/art-lab.json";
+import { legacyArt as manifest, legacyBytes } from "./legacy-art";
 import type { SpriteSequence } from "../lib/art-lab/types";
 
 const merged = (...files: string[]) => new Map(mergeMiniYaml(files.map((f, i) => parseMiniYaml(f, `f${i}`))).map(n => [n.key, n.value]));
@@ -133,7 +132,7 @@ test("Voxel offsets: ScreenVector's screen x/y with the camera's depth (engine 5
 });
 
 test("CPU reference render: the Karrar at facing 896 points up-right with a shadow on the ground", () => {
-  const read = (key: string) => new Uint8Array(readFileSync(new URL(`../public/art-lab/${key}`, import.meta.url)));
+  const read = (key: string) => legacyBytes(key);
   const v = manifest.actors.r2karrar.voxel!;
   const parts = poseParts(v.parts as never[], 896, 0, v.useClassicPerspectiveFudge, v.cameraPitch).map(({ part, yaw, worldOffset }: { part: { model: { vxl: string; hva: string }; showShadow: boolean }; yaw: number; worldOffset: [number, number, number] }) => ({
     vxl: decodeVxl(read(part.model.vxl)), hva: decodeHva(read(part.model.hva)), yaw, worldOffset, frame: 0, showShadow: part.showShadow,

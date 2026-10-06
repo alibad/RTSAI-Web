@@ -11,7 +11,7 @@ import { groundFor } from "../app/components/art/review/ground";
 import { overlayAnimations, readPreviewStatus, workspaceStamp } from "../lib/art-lab/preview-server";
 import { spriteAnimations } from "../lib/art-lab/sprite-anim";
 import { spriteRig } from "../lib/art-lab/sprite-compose";
-import { artLab, renderSpec, spriteWithUrls } from "../lib/art-lab/manifest";
+import { legacyArt as artLab, legacyRenderSpec as renderSpec, legacySpriteWithUrls as spriteWithUrls } from "./legacy-art";
 import type { ModelActor } from "../lib/art-lab/models";
 
 const urls = (files: string[]) => Object.fromEntries(files.map(f => [f, `/api/art-review/file?path=${encodeURIComponent(f)}`]));

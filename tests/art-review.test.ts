@@ -8,7 +8,7 @@ import test from "node:test";
 import { applyReviewAction, candidateCost, candidateRenderSpec, formatCost, migrateEntry, needsDecision, slotState, validateAction, type Candidate, type ReviewFile, type ReviewState, type UnitWorkspace } from "../lib/art-lab/review";
 import { reviewEnabled } from "../lib/art-lab/review-gate";
 import { createArtReviewMiddleware, safeResolve } from "../lib/art-lab/review-server";
-import { artLab, renderSpec } from "../lib/art-lab/manifest";
+import { legacyArt as artLab, legacyRenderSpec as renderSpec } from "./legacy-art";
 
 type Reply = { status: number; type: string; body: string };
 

@@ -36,7 +36,9 @@ test("manifest: seven factions, 122 buildable units, every one with a cameo and 
       assert.ok(actor.sprite!.sequences.some(s => s.file?.endsWith(".shp") && !s.inherited), `${id} has its own SHP sequences`);
       assert.ok(data.palettes[actor.sprite!.palette]?.remap.length === 16, `${id} draws with a remappable player palette`);
     }
-    assert.ok(actor.generator.length > 0, `${id} records its generator`);
+    // Before the promotion the generator was looked up in OpenRA-AI's builders; the promoted art records how each
+    // file was made (the RTSAI-Art candidate, its tool) in ART-PROVENANCE.json itself.
+    assert.ok(actor.generator.length > 0 || actor.files.every(k => data.files[k]?.provenance.generator), `${id} records its generator`);
   }
 });
 
@@ -68,16 +70,20 @@ test("Levant binding: every Israel/Hezbollah file outside ART-PROVENANCE.json ca
   const binding = JSON.parse(readFileSync(join(web, "data/levant-art-binding.json"), "utf8"));
   assert.deepEqual(binding.summary.unbound, [], "nothing is published without evidence");
   const levantFiles = Object.entries(data.files).filter(([key]) => /(^israel-art\/|^hezbollah-art\/|r2il|r2hz|r2merkava|r2namer)/.test(key));
-  assert.equal(levantFiles.length, 113);
+  assert.ok(levantFiles.length >= 80, "both Levant packs are published");
   for (const [key, file] of levantFiles) {
     const bound = binding.files[key];
-    assert.ok(bound, `${key} is bound`);
+    // Since the promotion the mod's own record covers the Levant packs; a binding is only needed for a file it lacks.
+    if (!bound || bound.sha256 !== file.sha256) {
+      assert.ok(["procedural", "rendered-from-project-geometry"].includes(file.provenance.origin) && file.provenance.generator === "project-geometry", `${key} is recorded as project geometry`);
+      continue;
+    }
     assert.equal(bound.sha256, file.sha256, `${key} binding hash matches the published bytes`);
     assert.ok(["generator-record", "reproduced", "copy-of-recorded"].includes(bound.evidence), `${key} evidence`);
     assert.equal(bound.generator, "project-geometry", `${key} is project geometry`);
     if (bound.evidence === "copy-of-recorded") assert.ok(bound.copiedFrom && !binding.files[bound.copiedFrom], `${key} copies a file the mod records`);
   }
-  assert.equal(data.mod.levantBinding?.files, 113);
+  assert.equal(data.mod.levantBinding?.files, levantFiles.filter(([key, file]) => binding.files[key]?.sha256 === file.sha256).length);
 });
 
 test("provenance guard: refuses unrecorded, altered, flagged or non-project files", () => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { candidateRenderSpec, candidateSprite, candidateVehicleSprite, declaredTurretOffset, parseCandidateRules, type Candidate, validateAction } from "../lib/art-lab/review";
-import { artLab, renderSpec } from "../lib/art-lab/manifest";
+import { legacyArt as artLab, legacyRenderSpec as renderSpec } from "./legacy-art";
 import { pickAnimation, turretSequence } from "../lib/art-lab/sprite-anim";
 import type { SpriteArt, SpriteSequence } from "../lib/art-lab/types";
 

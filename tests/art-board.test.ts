@@ -3,7 +3,7 @@ import test from "node:test";
 import { allTiles, boardCandidate, boardCounts, boardTile, isOpen, missingAnimations, nextOpen } from "../lib/art-lab/board";
 import { actionCoverage } from "../lib/art-lab/chain";
 import type { Candidate, ReviewEntry, UnitWorkspace } from "../lib/art-lab/review";
-import { artLab, renderSpec, spriteWithUrls } from "../lib/art-lab/manifest";
+import { legacyArt as artLab, legacyRenderSpec as renderSpec, legacySpriteWithUrls as spriteWithUrls } from "./legacy-art";
 
 const cand = (id: string, kind: string, createdAt: string, extra: Partial<Candidate> = {}): Candidate => ({ id, actor: "r2x", kind, createdAt, files: kind === "voxel" ? { vxl: ["a.vxl"] } : kind === "sprite" ? { shp: ["a.shp"] } : { concept: "c.png" }, dir: "", urls: {}, ...extra } as Candidate);
 const ws = (actor: string, candidates: Candidate[]): UnitWorkspace => ({ actor, spec: null, candidates, comparisons: [] });

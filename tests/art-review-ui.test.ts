@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { artLab, spriteWithUrls } from "../lib/art-lab/manifest";
+import { legacyArt as artLab, legacyBytes, legacySpriteWithUrls as spriteWithUrls } from "./legacy-art";
 import { decodePal } from "../lib/art-lab/pal";
 import {
   appendChip, cellZoom, clampZoom, dragFacing, dragTurret, fitZoom, letter, lineupFacings, provenanceChain, relativeTime, reviewProgress, versionLabels,
@@ -76,7 +76,7 @@ test("quick chips add to the note once; times read as short relative phrases", (
 test("sprite rigs animate only when the picture changes, around a fixed centre", () => {
   const actor = artLab.actors.r2sang;
   const sprite = spriteWithUrls(actor) as SpriteArt;
-  const local = (url: string) => new Uint8Array(readFileSync(new URL(`../public${url}`, import.meta.url)));
+  const local = (url: string) => legacyBytes(url);
   const palette = decodePal(local("/art-lab/saudi-art/saudi.pal"), [0], []);
   const shpFor = (rig: NonNullable<ReturnType<typeof spriteRig>>) => {
     const [file] = rigFiles(rig);
