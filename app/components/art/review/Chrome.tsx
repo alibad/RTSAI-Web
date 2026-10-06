@@ -230,7 +230,7 @@ const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: {
       <button type="button" aria-current={current ? "true" : undefined} onClick={() => onSelect(unit.id)}
         title={`${unit.name} · ${originTitle[origin]}${count ? ` · ${count} candidate${count === 1 ? "" : "s"}, ${status!.toLowerCase()}` : ""}`}>
         <span className="lab-cameo">
-          {unit.spec.cameo ? <img src={unit.spec.cameo} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="lab-noicon" />}
+          {(unit.identity ?? unit.spec.cameo) ? <img src={(unit.identity ?? unit.spec.cameo)!} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="lab-noicon" />}
         </span>
         {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b><small>{sourceLabel(unit)}</small></span>}
         {count > 0 && (

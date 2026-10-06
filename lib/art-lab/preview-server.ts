@@ -38,6 +38,34 @@ export function previewFingerprint(previewMod: string | null) {
 }
 
 const cache = new Map<string, { key: string; status: PreviewStatus }>();
+const hashes = new Map<string, { stamp: string; sha: string }>();
+/** sha256 of a file, cached on its size and mtime. */
+function fileSha(path: string): string | null {
+  try {
+    const s = statSync(path), stamp = `${s.size}:${s.mtimeMs}`, hit = hashes.get(path);
+    if (hit?.stamp === stamp) return hit.sha;
+    const value = sha(path);
+    hashes.set(path, { stamp, sha: value });
+    return value;
+  } catch { return null; }
+}
+
+/**
+ * Marks the actors whose preview art the release (the RTSAI-Mod main checkout) already carries byte for byte:
+ * after a promotion the preview is the game, and the release art it once replaced is history, not current.
+ */
+export function withReleased(status: PreviewStatus, previewMod: string | null, releaseMod: string | null): PreviewStatus {
+  if (!status.available || !previewMod || !releaseMod) return status;
+  // A promotion either merges the overlay as it is or moves its folders into modern-factions/.
+  const from = join(previewMod, OVERLAY), homes = [join(releaseMod, OVERLAY), join(releaseMod, "mods/rtsai/modern-factions")].filter(existsSync);
+  if (!homes.length) return status;
+  const actors = Object.fromEntries(Object.entries(status.actors).map(([id, entry]) => {
+    const art = entry.files.filter(f => ART.test(f));
+    const released = art.length > 0 && art.every(f => { const a = fileSha(join(from, f)); return a !== null && homes.some(h => fileSha(join(h, f)) === a); });
+    return [id, released ? { ...entry, released } : entry];
+  }));
+  return { ...status, actors };
+}
 
 export function readPreviewStatus(artRoot: string, previewMod: string | null): PreviewStatus {
   const empty: PreviewStatus = { available: false, branch: null, head: null, actors: {}, unmatched: [] };

@@ -422,6 +422,23 @@
 .studio-inspector .studio-facts { padding:18px 16px; }
 .studio-inspector .studio-facts section:has(.studio-action-list) { display:none; }
 .studio-review-notes { border-top:1px solid var(--line); }
+/* History: admin-only and tucked away at the foot of the inspector; small, faint, closed by default. */
+.studio-history { border-top: 1px solid var(--line); }
+.studio-history > summary { cursor: pointer; padding: 10px 16px; font-size: 11px; color: var(--faint); }
+.studio-history > summary:hover { color: var(--muted); }
+.history-body { padding: 0 12px 14px; display: grid; gap: 6px; }
+.history-body h4 { margin: 6px 4px 0; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+.history-body ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.history-entry { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px; border-radius: 6px; background: rgba(240, 238, 230, 0.03); }
+.history-pic { display: grid; place-items: center; width: 72px; height: 56px; border-radius: 4px; overflow: hidden; background: #0b0e0b; filter: saturate(0.7); }
+.history-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.history-pic img.is-pixel { image-rendering: pixelated; }
+.history-nopic { font: 600 10px/1 var(--font-mono), monospace; color: var(--faint); }
+.history-text { display: grid; gap: 2px; min-width: 0; }
+.history-text b { font-size: 12px; font-weight: 600; color: var(--muted); }
+.history-text small { font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-text code { font-size: 10px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-show { padding: 4px; }
 .studio-review-notes > summary { cursor:pointer; padding:16px; font-size:12px; color:var(--gold); }
 .studio-inspector h2 { font-size:19px; }
 .studio-inspector .studio-panel-head p { margin-bottom:16px; font-size:12px; }
@@ -651,7 +668,8 @@
 .lab-main.has-chain:not(:has(.lab-film)) { grid-template-rows: auto minmax(0, 1fr); }
 .lab-main.has-chain.has-actions { grid-template-rows: auto minmax(200px, 1fr) auto auto; }
 .lab-main.has-chain.has-actions:not(:has(.lab-film)) { grid-template-rows: auto minmax(200px, 1fr) auto; }
-.chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; }
+/* Steps never shrink below a readable width (title, caption and status on one line each); narrower rows scroll. */
+.chain { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(80px, 1fr); gap: 14px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; padding: 2px; margin: -2px; }
 .chain-step { position: relative; min-width: 0; }
 .chain-step + .chain-step::before { content: ""; position: absolute; left: -11px; top: 30px; width: 8px; height: 8px; border-top: 2px solid var(--line-2); border-right: 2px solid var(--line-2); transform: rotate(45deg); }
 .chain-step > button { position: relative; width: 100%; height: 100%; display: grid; grid-template-rows: 56px auto; gap: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: left; }
@@ -664,12 +682,18 @@
 .chain-thumb canvas { max-width: 100%; image-rendering: pixelated; }
 .chain-missing { width: 28px; height: 2px; border-radius: 2px; background: var(--line-2); }
 .chain-glyph { color: var(--muted); }
-.chain-text { display: grid; gap: 1px; min-width: 0; padding: 0 2px; }
+.chain-text { display: grid; align-content: start; gap: 1px; min-width: 0; padding: 0 2px; }
 .chain-text b { font-size: var(--t-s); font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chain-text small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chain-text small { display: flex; align-items: center; min-width: 0; font-size: 11px; line-height: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.chain-state { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Preview status lives in the caption row, never over the art: "SHP from 3D · ● In preview", one line at every width. */
+.chain-live { flex: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--green); white-space: nowrap; }
+.chain-state + .chain-live::before { content: "·"; margin: 0 4px; font-weight: 400; color: var(--faint); }
+.chain-live i { width: 6px; height: 6px; border-radius: 999px; background: var(--green); }
+.chain-live .is-short { display: none; }
+.chain-step > button { container-type: inline-size; }
 .chain-step kbd { position: absolute; top: 9px; left: 9px; font-size: 10px; padding: 1px 4px; color: var(--faint); background: rgba(14, 17, 14, 0.8); }
 .chain-step.is-active kbd { color: var(--gold); }
-.chain-badge { position: absolute; right: 4px; bottom: 4px; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; color: #0e110e; background: var(--green); }
 .chain-actions { display: grid; grid-template-columns: repeat(3, 20px); gap: 4px; }
 .chain-actions i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; font: 700 10px/1 var(--font-mono), monospace; font-style: normal; color: var(--faint); border: 1px dashed var(--line-2); }
 .chain-actions i.is-on { color: #0e110e; background: var(--gold); border: 0; }
@@ -690,7 +714,9 @@
 .chain-tally small { color: var(--faint); font: 500 var(--t-s)/1 var(--font-mono), monospace; }
 .chain-tally i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--green) calc(var(--done) * 100%), rgba(240, 238, 230, 0.1) 0); }
 .studio-art-switch > button small { margin-left: 4px; color: var(--faint); font: 500 11px/1 var(--font-mono), monospace; }
-.lab-card-preview { position: absolute; left: 4px; bottom: 4px; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; color: #0e110e; background: var(--green); }
+/* Same size as the chain step chip: one line, in the corner padding, a dot rather than a slab of colour over the art. */
+.lab-card-preview { position: absolute; left: 4px; top: 4px; display: inline-flex; align-items: center; gap: 4px; padding: 1px 5px; border-radius: 4px; font-size: 10px; line-height: 14px; font-weight: 700; white-space: nowrap; color: var(--green); background: rgba(14, 17, 14, 0.8); }
+.lab-card-preview i { width: 6px; height: 6px; border-radius: 999px; background: var(--green); }
 /* The 3D model step: the GLB on the main stage. */
 .glb-stage { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #111811; }
 .glb-viewport { position: absolute; inset: 0; }
@@ -714,8 +740,13 @@
 .studio-check-list li b { font: 600 var(--t-s)/1 var(--font-mono), monospace; }
 .studio-check-list .is-good { color: var(--green); }
 .studio-check-list .is-bad { color: #f5a291; }
-@media (max-width: 1200px) { .chain { gap: 10px; } .chain-text small { display: none; } .chain-tally small, .chain-tally span { font-size: 11px; } }
-@media (max-width: 760px) { .chain { grid-template-columns: repeat(7, 104px); overflow-x: auto; } }
+@media (max-width: 1200px) { .chain { gap: 10px; } .chain-text small:not(:has(.chain-live)), .chain-state { display: none; } .chain-state + .chain-live::before { content: none; } .chain-tally small, .chain-tally span { font-size: 11px; } }
+/* Narrow steps keep the status on one line by dropping words, never by wrapping. */
+@container (max-width: 92px) { .chain-state { display: none; } .chain-state + .chain-live::before { content: none; } }
+/* Too narrow for "SHP from 3D · ● In preview": the status wins, the format stays on the stage tag. */
+@container (max-width: 150px) { .chain-state:has(+ .chain-live) { display: none; } .chain-state + .chain-live::before { content: none; } }
+@container (max-width: 76px) { .chain-live .is-long { display: none; } .chain-live .is-short { display: inline; } }
+@media (max-width: 760px) { .chain { grid-auto-columns: 104px; } }
 .chain-figure small { font-size: 13px; color: var(--faint); }
 .lab-colours { gap: 4px; padding: 4px 6px; }
 .studio-action-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
@@ -756,13 +787,16 @@
 .board-tile.is-focused > button { box-shadow: inset 0 0 0 2px var(--gold); background: var(--raised); }
 .board-tile.is-focused > button:focus-visible { outline: none; }
 .board-pics { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.board-pic { position: relative; display: grid; place-items: center; height: 104px; border-radius: 6px; background: #0b0e0b; overflow: hidden; }
+/* Labels and the verdict sit in a head row above the art, never on it. */
+.board-pic { position: relative; display: grid; grid-template-rows: 18px minmax(0, 1fr); height: 104px; border-radius: 6px; background: #0b0e0b; overflow: hidden; }
 .board-pic.is-new { background: #10140f; box-shadow: inset 0 0 0 1px rgba(241, 210, 139, 0.18); }
+.board-pic-head { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 4px 0 6px; }
+.board-pic-head small { flex: 1 1 auto; min-width: 0; font-size: 10px; line-height: 18px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board-pic.is-new .board-pic-head small { color: var(--gold); text-transform: none; letter-spacing: 0; }
+.board-art { display: grid; place-items: center; min-height: 0; overflow: hidden; }
 .board-pic canvas { image-rendering: pixelated; }
-.board-pic small { position: absolute; left: 6px; top: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
-.board-pic.is-new small { color: var(--gold); text-transform: none; letter-spacing: 0; right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .board-none { font-style: normal; font-size: 11px; color: var(--faint); }
-.board-verdict { position: absolute; right: 6px; bottom: 6px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 999px; }
+.board-verdict { flex: none; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 999px; }
 .board-verdict.is-use { background: var(--green); color: #0e110e; }
 .board-verdict.is-rejected { background: #ef5b3f; color: #0e110e; }
 .board-verdict.is-keep { background: var(--raised-2); color: var(--text); }
@@ -771,7 +805,7 @@
 .board-name b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .board-notes { color: var(--gold); font-size: 11px; white-space: nowrap; }
 .board-chips { display: flex; gap: 4px; flex-wrap: wrap; min-height: 22px; }
-.board-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--raised); color: var(--muted); }
+.board-chip { display: inline-block; height: 22px; line-height: 22px; max-width: 100%; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--raised); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .board-chip.is-pass { background: var(--green-bg); color: var(--green); }
 .board-chip.is-fail { background: rgba(239, 91, 63, 0.14); color: #f5a291; }
 .board-chip.is-open, .board-chip.is-advisory, .board-chip.is-partial { background: rgba(241, 210, 139, 0.14); color: var(--gold); }

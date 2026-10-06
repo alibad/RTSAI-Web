@@ -37,7 +37,9 @@ export const isChainStep = (value: string | null): value is ChainStep => chainSt
  */
 export type PreviewAnimation = { trait: string; sequence: string; file: string | null; tickRate: number | null; turret: string | null; condition: string | null; airborne: boolean };
 /* trait "sequence": a voxel sequence the overlay remaps to another file; the actor's own trait for it plays it. */
-export type PreviewActor = { model: string | null; icon: string | null; files: string[]; rules: boolean; animations?: PreviewAnimation[] };
+export type PreviewActor = { model: string | null; icon: string | null; files: string[]; rules: boolean; animations?: PreviewAnimation[];
+  /** The release (RTSAI-Mod main) carries this art byte for byte: promoted, so it is what the game plays. */
+  released?: boolean };
 /** How to play the preview copy: measured facts about the folders, and the command that launches it. */
 export type PreviewLaunch = { worktree: string; supportDir: string; engineBuilt: boolean; ra2Content: boolean; companionFiles: boolean; command: string };
 export type PreviewStatus = { available: boolean; branch: string | null; head: string | null; actors: Record<string, PreviewActor>; unmatched: string[]; launch?: PreviewLaunch };
@@ -202,14 +204,16 @@ export function decisionState(decision: SlotDecision | undefined, candidate: Can
   return { kind: "open", label: "Not decided" };
 }
 
-export type RosterCounts = { total: number; designs: number; models3d: number; gameModels: number; inPreview: number; decided: number };
+export type RosterCounts = { total: number; designs: number; models3d: number; gameModels: number; inPreview: number; decided: number;
+  /** Of those in preview, how many the release (RTSAI-Mod main) already plays byte for byte. */
+  released?: number };
 /**
  * Per-actor counts over the new RA2 roster. An actor counts once per column whatever number of files, jobs or
  * routes it has; queued work and converted existing art never count as new coverage.
  */
 export function rosterCounts(actors: string[], workspaces: Map<string, UnitWorkspace>, library: ModelLibrary | null, preview: PreviewStatus | null, review: ReviewFile | undefined): RosterCounts {
   const byActor = new Map((library?.actors ?? []).map(a => [a.actor, a]));
-  let designs = 0, models3d = 0, gameModels = 0, inPreview = 0, decided = 0;
+  let designs = 0, models3d = 0, gameModels = 0, inPreview = 0, decided = 0, released = 0;
   for (const actor of actors) {
     const ws = workspaces.get(actor);
     const natives = nativeCandidates(ws);
@@ -222,11 +226,11 @@ export function rosterCounts(actors: string[], workspaces: Map<string, UnitWorks
     // newest native one); "in preview" means that candidate's exact bytes are installed (an icon alone is not a
     // model in the preview), and "decided" means it is used, rejected, or "keep current" came after it.
     const candidate = reviewCandidate(ws, preview?.actors[actor]?.model);
-    if (candidate && preview?.actors[actor]?.model === candidate.id) inPreview++;
+    if (candidate && preview?.actors[actor]?.model === candidate.id) { inPreview++; if (preview.actors[actor].released) released++; }
     const state = decisionState(review?.[actor]?.slots.model, candidate);
     if (state.kind === "use" || state.kind === "rejected" || state.kind === "keep") decided++;
   }
-  return { total: actors.length, designs, models3d, gameModels, inPreview, decided };
+  return { total: actors.length, designs, models3d, gameModels, inPreview, decided, released };
 }
 
 export { hasViewableFiles };

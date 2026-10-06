@@ -66,7 +66,7 @@ export const ModelThumb = memo(function ModelThumb({ item, frames, tints, zoom, 
  * One equal-size card per version: Current first, then candidates by creation order. The chosen version carries
  * a green check; rejected ones are dimmed with a cross. Click or Left/Right to focus.
  */
-export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, frames, tints, thumbZoom, radius, imageFit, onFocus, inPreview = null }: {
+export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, frames, tints, thumbZoom, radius, imageFit, onFocus, inPreview = null, released = false }: {
   versions: Version[];
   focus: number;
   decision: SlotDecision;
@@ -79,6 +79,8 @@ export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, fr
   onFocus: (index: number) => void;
   /** The candidate installed in the local preview mod (matched by bytes), if any. */
   inPreview?: string | null;
+  /** The release already plays the preview's model (promoted). */
+  released?: boolean;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -113,7 +115,7 @@ export const Filmstrip = memo(function Filmstrip({ versions, focus, decision, fr
                 : <span className="lab-card-empty">No preview</span>}
               {chosen && <span className="lab-badge is-chosen" aria-label="Chosen"><Check size={14} strokeWidth={3} /></span>}
               {rejected && <span className="lab-badge is-rejected" aria-label="Rejected"><X size={14} strokeWidth={3} /></span>}
-              {inPreview === v.key && <span className="lab-card-preview" title="Installed in the local preview mod, not in the game">Preview</span>}
+              {inPreview === v.key && <span className="lab-card-preview" title={released ? "Promoted: the release plays this model" : "Installed in the local preview mod, not in the game"}><i aria-hidden="true" />{released ? "In game" : "Preview"}</span>}
             </span>
             <span className="lab-card-label"><b>{v.label}</b><small>{v.tag}</small></span>
           </button>

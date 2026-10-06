@@ -374,8 +374,10 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     const actor = data.rules.get(id)!;
     const granted = spawnConditions(actor);
     const conditional = new Set<string>();
-    for (const [trait, fallback] of [["WithSpriteTurret", "turret"], ["WithIdleOverlay", "idle-overlay"], ["WithSpriteBody", "idle"]] as const) {
+    for (const [trait, fallback] of [["WithSpriteTurret", "turret"], ["WithIdleOverlay", "idle-overlay"], ["WithSpriteBody", "idle"], ["WithFacingSpriteBody", "idle"]] as const) {
       for (const [, node] of traits(actor, trait)) {
+        const otherImage = childValue(node.value, "Image");
+        if (otherImage && otherImage.toLowerCase() !== art.sprite?.image.toLowerCase()) continue;
         const condition = childValue(node.value, "RequiresCondition");
         if (condition && !conditionHolds(condition, granted)) conditional.add(childValue(node.value, "Sequence") ?? fallback);
       }

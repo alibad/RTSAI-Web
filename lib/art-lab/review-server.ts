@@ -11,6 +11,8 @@
  *                               published; this route, like the others, does not exist in production)
  *   GET  /stamp                 a short fingerprint that changes when candidates, decisions or preview art change
  *   GET  /preview               which actors the local preview mod (rtsai/art-preview) installs, matched by bytes
+ *   GET  /preview-file?path=    a cameo PNG the preview overlay installs (read-only, path-checked)
+ *   GET  /history?actor=        superseded art archived under RTSAI-Art/history/<actor>/ (read-only)
  *
  * RTSAI-Art files are read in place; nothing is copied into public/.
  */
@@ -26,7 +28,8 @@ import { duelJob, startDuel } from "./duel-server";
 import { baselineCounts, rebuildSummary, type RebuildCampaign } from "./rebuild";
 import { readModelLibrary } from "./model-library-server";
 import type { ModelLibrary } from "./models";
-import { readPreviewStatus, workspaceStamp } from "./preview-server";
+import { readPreviewStatus, withReleased, workspaceStamp } from "./preview-server";
+import { parseArchive } from "./installed-art";
 import { MEASUREMENT_FILES, measuredGroups } from "./measurements";
 
 const TYPES: Record<string, string> = {
@@ -241,7 +244,7 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
       if (req.method === "GET" && path === "/preview") {
         // The preview overlay is an RA2 mod branch; Classic has none.
         if (reviewMode === "classic") return send(res, 200, { available: false, branch: null, head: null, actors: {}, unmatched: [] });
-        const status = readPreviewStatus(workspace, preview);
+        const status = withReleased(readPreviewStatus(workspace, preview), preview, originals?.modRoot ?? null);
         if (status.available && preview) {
           // The preview copy has no companion files; OPENRA_AI_HOST=0 keeps the co-commander off cleanly. The RA2
           // files the player imported live in the support folder the Studio's originals use.
@@ -308,6 +311,24 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         const cfg = originals && (url.searchParams.get("mode") === "classic" ? classicConfig(originals) : originals);
         const file = cfg && SAFE_NAME.test(name) ? cachedFile(cfg, `owned/${name}`) : null;
         return file ? send(res, 200, readFileSync(file), name.endsWith(".png") ? "image/png" : "application/octet-stream") : send(res, 404, { error: "No such mod file" });
+      }
+      if (req.method === "GET" && path === "/preview-file") {
+        // A picture the local preview copy installs (its cameos), read in place from the overlay; read-only.
+        const rel = url.searchParams.get("path") ?? "";
+        const target = preview && /\.png$/i.test(rel) ? safeResolve(join(preview, "mods", "rtsai", "art-preview"), rel) : null;
+        if (!target || !existsSync(target) || !statSync(target).isFile()) return send(res, 404, { error: "No such preview file" });
+        return send(res, 200, readFileSync(target), "image/png");
+      }
+      if (req.method === "GET" && path === "/history") {
+        // The promotion's archive of superseded art (RTSAI-Art/history/<actor>/manifest.json), read-only; files
+        // are served by /file. An actor without an archive answers an empty list.
+        const actor = (url.searchParams.get("actor") ?? "").toLowerCase();
+        if (!/^[a-z0-9_-]+$/.test(actor)) return send(res, 400, { error: "Bad actor" });
+        const dir = join(workspace, "history", actor);
+        const manifest = readJson<unknown>(join(dir, "manifest.json"));
+        const files = manifest ? [] : listFiles(dir, 3).filter(f => f !== "manifest.json");
+        const fileUrl = (f: string) => `${FILE_ROUTE}${encodeURIComponent(`history/${actor}/${f.replace(/^history\/[^/]+\//, "")}`)}`;
+        return send(res, 200, { actor, archive: parseArchive(manifest ?? files, fileUrl) });
       }
       if (req.method === "GET" && path === "/file") {
         const target = safeResolve(workspace, url.searchParams.get("path") ?? "");

@@ -76,7 +76,7 @@ function SidebarStrip({ unit, units, cameo }: { unit: ReviewUnit; units: ReviewU
     <div className="lab-sidebar" title="In the build sidebar (1×)">
       <div className="lab-sidebar-row">
         {shown.map(u => {
-          const src = u.id === unit.id ? cameo : u.spec.cameo;
+          const src = u.id === unit.id ? cameo : u.identity ?? u.spec.cameo;
           return <span key={u.id} className={u.id === unit.id ? "is-this" : undefined}>{src ? <img src={src} width={CAMEO_W} height={CAMEO_H} alt={u.id === unit.id ? `${u.name} (this slot)` : u.name} /> : null}</span>;
         })}
       </div>

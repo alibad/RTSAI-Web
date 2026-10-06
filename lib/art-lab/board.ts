@@ -14,7 +14,7 @@ export function boardCandidate(ws: UnitWorkspace | undefined, installed?: string
   return reviewCandidate(ws, installed);
 }
 
-export type BoardTile = { actor: string; candidate: Candidate | null; decision: DecisionState; notes: number; inPreview: boolean; previewOther: boolean };
+export type BoardTile = { actor: string; candidate: Candidate | null; decision: DecisionState; notes: number; inPreview: boolean; previewOther: boolean; released?: boolean };
 
 export function boardTile(actor: string, ws: UnitWorkspace | undefined, entry: ReviewEntry | undefined, preview: PreviewStatus | null): BoardTile {
   const p = preview?.actors[actor];
@@ -24,6 +24,7 @@ export function boardTile(actor: string, ws: UnitWorkspace | undefined, entry: R
     decision: decisionState(entry?.slots.model, candidate),
     notes: (entry?.comments ?? []).filter(c => !candidate || c.candidate === candidate.id || c.candidate === null).length,
     inPreview: Boolean(candidate && p?.model === candidate.id),
+    released: Boolean(candidate && p?.model === candidate.id && p?.released),
     previewOther: Boolean(p && p.files.length && (!candidate || p.model !== candidate.id)),
   };
 }

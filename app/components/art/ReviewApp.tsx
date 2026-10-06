@@ -22,6 +22,8 @@ import { ModelStage, useUnitRadius } from "./review/Stage";
 import { candidateFire, slotVersions, stageItem, type FireSources, type ReviewUnit } from "./review/versions";
 import { FIRE_ACTION, type FireRules } from "../../../lib/art-lab/fire";
 import { AssetChain, RosterTally, type ChainData } from "./review/Chain";
+import { identityCameo, installedSources, type HistoryEntry } from "../../../lib/art-lab/installed-art";
+import { UnitHistory } from "./review/History";
 import { GlbStage } from "./review/GlbStage";
 import { ReviewBoard } from "./review/ReviewBoard";
 import type { MapTint } from "./viewSettings";
@@ -209,10 +211,20 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       m.set(id, {
         ...existing, id, factionId: existing?.factionId ?? "", factionName: existing?.factionName ?? "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
         queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits, sources: s.sources,
+        ...(existing?.spec.voxel && !s.spec.voxel ? { voxelBase: existing.spec } : {}),
       });
     }
+    // Lists identify a unit by what the game the owner plays installs: the preview copy's cameo and the sources
+    // of the candidate it came from. The release art itself (spec) stays the "In game now" version.
+    for (const [id, entry] of Object.entries(preview?.actors ?? {})) {
+      const u = m.get(id);
+      if (!u) continue;
+      const identity = identityCameo(id, u.spec.cameo, entry, preview?.head ?? null);
+      const sources = installedSources(workspace.get(id), entry, u.sources) ?? u.sources;
+      if (identity !== u.spec.cameo || sources !== u.sources) m.set(id, { ...u, identity, sources, ...(entry.released ? {} : { releaseSources: u.sources }) });
+    }
     return m;
-  }, [units, roster, mode]);
+  }, [units, roster, mode, preview, workspace]);
   // Dev-only test hook (this whole component is stubbed out of production builds): the exact 1x picture the
   // stage draws for a unit, for pixel comparisons against the engine's own render.
   useEffect(() => {
@@ -348,6 +360,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       candidate: gameCandidate, item: gameItem, tag: gameCandidate ? kindTags[gameCandidate.kind] ?? String(gameCandidate.kind).toUpperCase() : "",
       fromGlb: gameCandidate ? fromModel(gameCandidate, ws?.candidates) : false, count: natives.length,
       preview: Boolean(gameCandidate && preview?.actors[unit.id]?.model === gameCandidate.id),
+      released: Boolean(gameCandidate && preview?.actors[unit.id]?.model === gameCandidate.id && preview?.actors[unit.id]?.released),
       light: gameCandidate?.renderLight === "stock" ? "stock light" : gameCandidate?.renderLight ? "own light" : null,
     },
     actions: actionCoverage(unit.category, (gameItem ?? currentItem)?.spec, (gameItem ?? currentItem)?.sprite, { spec: currentItem?.spec, sprite: currentItem?.sprite }),
@@ -408,6 +421,15 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const changeFaction = useCallback((id: string) => { frames.hold(SWITCH_HOLD_MS); frames.clearQueue(); setFaction(id); setSelected(null); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, [frames]);
   const changeSlot = useCallback((s: SlotId) => { setIconMode(s === "icon"); if (s === "concept") setStep("design"); else if (s === "model" && step === "design") setStep(AUTO); setFocusKey(AUTO); setLab({ zoom: null }); }, [step]);
   const focusIndex = useCallback((i: number) => { const v = versions[i]; if (v) setFocusKey(v.key); }, [versions]);
+  // History opens an earlier version where it lives: the release as "In game now", a candidate as itself.
+  const showHistory = useCallback((e: HistoryEntry) => {
+    const key = e.release ? "current" : e.candidate;
+    if (!key) return;
+    setIconMode(e.slot === "icon");
+    if (e.slot === "model") setStep(e.release ? "now" : "game");
+    setFocusKey(key);
+    setLab({ view3d: "off" });
+  }, []);
   const openStep = useCallback((s: ChainStep) => {
     setIconMode(false);
     setStep(s);
@@ -528,7 +550,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             : surface === "arena" ? <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} /> : stage}
           {showFilm && focused && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
-              imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} />
+              imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} released={Boolean(unit && preview?.actors[unit.id]?.released)} />
           )}
           {showShelf && unit && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
             : <ActionShelf unit={unit} version={focused} mode={mode} fireUnknown={Boolean(fireActor && !fireRules[fireActor])} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
@@ -541,6 +563,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         </details>}
+        {unit && mode === "ra2" && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} />}
         </aside>}
       </div>
     </div>

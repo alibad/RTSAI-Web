@@ -1,7 +1,7 @@
 "use client";
 /* Concept and GLB thumbnails come from the local dev route; next/image cannot serve them. */
 /* eslint-disable @next/next/no-img-element */
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Box, Check, Minus, X } from "lucide-react";
 import { chainSteps, checksSummary, type ActionCheck, type ChainStep, type DecisionState, type Design, type RosterCounts } from "../../../../lib/art-lab/chain";
 import type { MeasuredGroup } from "../../../../lib/art-lab/measurements";
@@ -16,7 +16,7 @@ export type ChainData = {
   current: { item: StageItem | null; tag: string };
   design: Design | null;
   glb: { options: ModelOption[] };
-  game: { candidate: Candidate | null; item: StageItem | null; tag: string; fromGlb: boolean; count: number; preview: boolean; light: string | null };
+  game: { candidate: Candidate | null; item: StageItem | null; tag: string; fromGlb: boolean; count: number; preview: boolean; released?: boolean; light: string | null };
   actions: ActionCheck[];
   checks: MeasuredGroup[];
   decision: DecisionState;
@@ -34,12 +34,22 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
   data: ChainData; step: ChainStep | null; onStep: (step: ChainStep) => void; frames: FrameStore; tints: MapTint[]; zoom: number; radius: number | null;
 }) {
   useGlbSnapshots();
+  const listRef = useRef<HTMLOListElement>(null);
+  // Narrow layouts scroll the row rather than squeezing steps below a readable width; keep the open step in view.
+  useEffect(() => {
+    const list = listRef.current, active = list?.querySelector<HTMLElement>(".chain-step.is-active");
+    if (!list || !active || list.scrollWidth <= list.clientWidth) return;
+    const box = list.getBoundingClientRect(), at = active.getBoundingClientRect();
+    const left = at.left - box.left + list.scrollLeft, right = left + at.width;
+    if (left < list.scrollLeft) list.scrollLeft = left;
+    else if (right > list.scrollLeft + list.clientWidth) list.scrollLeft = right - list.clientWidth;
+  }, [step]);
   const glb = data.glb.options[0] ?? null;
   // The pre-rendered picture (npm run thumbs:glb) when it matches the model; else the one taken on first view.
   const snapshot = glb?.thumbnail ?? glbSnapshot(glb?.url);
   const present = data.actions.filter(a => a.present).length;
   const checks = checksSummary(data.checks);
-  const cells: Record<ChainStep, { thumb: React.ReactNode; state: string; status: "ok" | "missing" | "open" | "good" | "bad"; badge?: string }> = {
+  const cells: Record<ChainStep, { thumb: React.ReactNode; state: string; status: "ok" | "missing" | "open" | "good" | "bad"; live?: { title: string; long: string; short: string } }> = {
     now: {
       thumb: data.current.item ? <ModelThumb item={data.current.item} frames={frames} tints={tints} zoom={zoom} width={THUMB_W} height={THUMB_H} radius={radius} /> : <Missing />,
       state: `${data.current.tag} · in game`, status: "ok",
@@ -55,7 +65,8 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
     game: {
       thumb: data.game.item ? <ModelThumb item={data.game.item} frames={frames} tints={tints} zoom={zoom} width={THUMB_W} height={THUMB_H} radius={radius} /> : <Missing />,
       state: data.game.candidate ? `${data.game.tag}${data.game.fromGlb ? " from 3D" : " · older route"}` : "Not made yet",
-      status: data.game.candidate ? "ok" : "missing", badge: data.game.preview ? "In local preview" : undefined,
+      status: data.game.candidate ? "ok" : "missing", live: data.game.released ? { title: "Promoted: the release plays this model", long: "In game", short: "In game" }
+        : data.game.preview ? { title: "Installed in the local preview copy of the game", long: "In preview", short: "Preview" } : undefined,
     },
     anim: {
       thumb: data.actions.length ? <span className="chain-figure">{present}<small>/{data.actions.length}</small></span> : <Missing />,
@@ -73,14 +84,15 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
     },
   };
   return (
-    <ol className="chain" aria-label="Asset chain">
+    <ol className="chain" ref={listRef} aria-label="Asset chain">
       {chainSteps.map((s, i) => {
         const cell = cells[s.id];
         return (
           <li key={s.id} className={`chain-step is-${cell.status}${step === s.id ? " is-active" : ""}`}>
             <button type="button" aria-current={step === s.id ? "step" : undefined} onClick={() => onStep(s.id)} title={`${s.label} (${i + 1})`}>
-              <span className="chain-thumb">{cell.thumb}{cell.badge && <span className="chain-badge">{cell.badge}</span>}</span>
-              <span className="chain-text"><b>{s.label}</b><small>{cell.state}</small></span>
+              <span className="chain-thumb">{cell.thumb}</span>
+              <span className="chain-text"><b>{s.label}</b>
+                <small><span className="chain-state">{cell.state}</span>{cell.live && <span className="chain-live" title={cell.live.title}><i aria-hidden="true" /><span className="is-long">{cell.live.long}</span><span className="is-short">{cell.live.short}</span></span>}</small></span>
               <kbd aria-hidden="true">{i + 1}</kbd>
             </button>
           </li>
@@ -96,7 +108,10 @@ export function RosterTally({ counts }: { counts: RosterCounts | null }) {
   const items: [string, number, string][] = [
     ["3D models", counts.models3d, "Actors with a generated 3D model (GLB)"],
     ["Game models", counts.gameModels, "Actors with a native VXL/SHP candidate made from that 3D model"],
-    ["In preview", counts.inPreview, "Actors whose candidate is installed in the local preview mod"],
+    // After a promotion the release plays the preview's art: the column then counts what is in the game.
+    counts.inPreview > 0 && counts.released === counts.inPreview
+      ? ["In game", counts.released, "Actors whose new model the release plays (promoted from the local preview)"]
+      : ["In preview", counts.inPreview, "Actors whose candidate is installed in the local preview mod"],
     ["Decided", counts.decided, "Actors whose battlefield model you have decided"],
   ];
   return (

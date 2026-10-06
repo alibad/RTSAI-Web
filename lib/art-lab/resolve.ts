@@ -439,11 +439,14 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
     list(childValue(infantry, "IdleSequences")).forEach(s => addUser(s, "WithInfantryBody idle"));
   }
   const deathPrefixes = traits(actor, "WithDeathAnimation").map(([i, n]) => [i, childValue(n.value, "DeathSequence") ?? "die"] as const);
-  for (const [instance, node] of traits(actor, "WithSpriteBody")) {
-    const seq = childValue(node.value, "Sequence") ?? "idle";
-    addUser(seq, `WithSpriteBody${instance ? "@" + instance : ""}`);
-    addUser(`damaged-${seq}`, `WithSpriteBody${instance ? "@" + instance : ""} (damaged)`);
-    addUser(childValue(node.value, "StartSequence"), `WithSpriteBody start`);
+  // WithFacingSpriteBody (a prerendered vehicle's body) is a WithSpriteBody that turns with the actor.
+  for (const bodyTrait of ["WithSpriteBody", "WithFacingSpriteBody"]) {
+    for (const [instance, node] of traits(actor, bodyTrait)) {
+      const seq = childValue(node.value, "Sequence") ?? "idle";
+      addUser(seq, `${bodyTrait}${instance ? "@" + instance : ""}`);
+      addUser(`damaged-${seq}`, `${bodyTrait}${instance ? "@" + instance : ""} (damaged)`);
+      addUser(childValue(node.value, "StartSequence"), `${bodyTrait} start`);
+    }
   }
   let turret: SpriteArt["turret"] = null;
   for (const [instance, node] of traits(actor, "WithSpriteTurret")) {
@@ -458,6 +461,10 @@ function resolveSprite(reader: ModReader, data: ModData, actor: Yaml, image: str
   const overlays: NonNullable<SpriteArt["overlays"]> = [];
   for (const [trait, fallback, mode] of [["WithIdleOverlay", "idle-overlay", "loop"], ["WithProductionDoorOverlay", "build-door", "door"], ["WithExitOverlay", "exit-overlay", "activity"], ["WithProductionOverlay", "production", "activity"]] as const) {
     for (const [instance, node] of traits(actor, trait)) {
+      // An overlay drawing another image (damage smoke and fire: Image: r2fxsmoke) does not use this image's
+      // sequences, even when its sequence name matches one ("idle").
+      const otherImage = childValue(node.value, "Image");
+      if (otherImage && otherImage.toLowerCase() !== image.toLowerCase()) continue;
       const sequence = childValue(node.value, "Sequence") ?? fallback;
       const label = `${trait}${instance ? "@" + instance : ""}`;
       addUser(sequence, label);

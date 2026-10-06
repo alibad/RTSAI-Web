@@ -20,6 +20,13 @@ export type ReviewUnit = {
   files?: string[];
   fromModBits?: string[];
   sources?: ActorSources;
+  /** The picture lists show for the unit: the cameo the local preview copy installs, else the release icon. */
+  identity?: string | null;
+  /** The release's own sources when `sources` describes the art the local preview installs instead. */
+  releaseSources?: ActorSources;
+  /** The last voxel release (the synced manifest) once the game plays a sprite: voxel candidates and History
+   *  still draw on the turret offsets and light they were made for. */
+  voxelBase?: RenderSpec;
 };
 
 /** One card in the filmstrip: what is in game now, the original RA2 unit it replaces, or one candidate. */
@@ -52,11 +59,13 @@ export function stageItem(unit: ReviewUnit, candidate: Candidate | null, play: P
     if (!itemCache.has(key)) itemCache.set(key, { key: "current", spec: unit.spec, sprite: unit.sprite, ...(fire ? { fire } : {}) });
     return itemCache.get(key)!;
   }
-  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${JSON.stringify(unit.spec)}:${JSON.stringify(candidate.urls)}:${JSON.stringify(candidate.sprite)}:${JSON.stringify(candidate.voxelize)}:${candidate.rulesText ?? ""}:${play?.length ? JSON.stringify(play) : ""}:${fireKey}`;
+  // A voxel candidate for a unit the game now draws as a sprite builds on the last voxel release.
+  const base = candidate.files.vxl?.length && !unit.spec.voxel && unit.voxelBase?.voxel ? unit.voxelBase : unit.spec;
+  const key = `${unit.id}:${candidate.id}:${candidate.createdAt}:${JSON.stringify(base)}:${JSON.stringify(candidate.urls)}:${JSON.stringify(candidate.sprite)}:${JSON.stringify(candidate.voxelize)}:${candidate.rulesText ?? ""}:${play?.length ? JSON.stringify(play) : ""}:${fireKey}`;
   if (!itemCache.has(key)) {
     // Voxel candidates draw in the voxel slot; sprite candidates use their own frame layout (rules snippet or
     // meta.sprite) when the unit is a voxel today, else the unit's current sprite sequences.
-    const voxel = candidateRenderSpec(unit.spec, candidate, play);
+    const voxel = candidateRenderSpec(base, candidate, play);
     const sprite = voxel ? null : candidateVehicleSprite(unit.spec, candidate, unit.sprite) ?? candidateSprite(unit.spec, unit.sprite, candidate);
     const fired = fire ? { fire } : {};
     itemCache.set(key, voxel ? { key: candidate.id, spec: voxel, sprite: null, ...fired } : sprite ? { key: candidate.id, spec: sprite.spec, sprite: sprite.sprite, ...fired } : null);

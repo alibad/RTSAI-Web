@@ -40,11 +40,13 @@ const Tile = memo(function Tile({ tile, focused, index, frames, tints, onFocus, 
         onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => onFocus(index)}
         aria-label={`${tile.unit.name}: ${tile.decision.label}`}>
         <span className="board-pics">
-          <span className="board-pic">{tile.currentItem ? <ModelThumb item={tile.currentItem} frames={frames} tints={tints} zoom={zoom} width={PIC_W} height={PIC_H} radius={22} /> : <i />}<small>In game now</small></span>
-          <span className="board-pic is-new">{tile.nextItem ? <ModelThumb item={tile.nextItem} frames={frames} tints={tints} zoom={zoom} width={PIC_W} height={PIC_H} radius={22} /> : <i className="board-none">No new model yet</i>}<small>{tile.candidate ? `New · ${tile.label}` : "New"}</small></span>
-          {d === "use" && <span className="board-verdict is-use" title="Use in game"><Check size={16} strokeWidth={3} /></span>}
-          {d === "rejected" && <span className="board-verdict is-rejected" title="Rejected"><X size={16} strokeWidth={3} /></span>}
-          {d === "keep" && <span className="board-verdict is-keep" title="Keep current"><Minus size={16} strokeWidth={3} /></span>}
+          <span className="board-pic"><span className="board-pic-head"><small>In game now</small></span>
+            <span className="board-art">{tile.currentItem ? <ModelThumb item={tile.currentItem} frames={frames} tints={tints} zoom={zoom} width={PIC_W} height={PIC_H} radius={22} /> : <i />}</span></span>
+          <span className="board-pic is-new"><span className="board-pic-head"><small>{tile.candidate ? `New · ${tile.label}` : "New"}</small>
+            {d === "use" && <span className="board-verdict is-use" title="Use in game"><Check size={11} strokeWidth={3.5} /></span>}
+            {d === "rejected" && <span className="board-verdict is-rejected" title="Rejected"><X size={11} strokeWidth={3.5} /></span>}
+            {d === "keep" && <span className="board-verdict is-keep" title="Keep current"><Minus size={11} strokeWidth={3.5} /></span>}</span>
+            <span className="board-art">{tile.nextItem ? <ModelThumb item={tile.nextItem} frames={frames} tints={tints} zoom={zoom} width={PIC_W} height={PIC_H} radius={22} /> : <i className="board-none">No new model yet</i>}</span></span>
         </span>
         <span className="board-name"><b>{tile.unit.name}</b>{tile.notes > 0 && <small className="board-notes">{tile.notes} note{tile.notes === 1 ? "" : "s"}</small>}</span>
         <span className="board-chips">
@@ -52,7 +54,8 @@ const Tile = memo(function Tile({ tile, focused, index, frames, tints, onFocus, 
             {c.state === "none" ? "Not measured" : c.state === "partial" ? "No stock check" : c.state === "fail" ? `${c.failing} failing` : `${c.passed}/${c.total} pass`}{c.advisory ? " · advisory" : ""}</span>}
           {tile.candidate && tile.actions.length > 0 && <span className={`board-chip ${present === tile.actions.length ? "is-pass" : "is-open"}`} title={tile.actions.map(a => `${a.label}${a.present ? "" : " (missing)"}`).join(", ")}>
             {present === tile.actions.length ? `${present} action${present === 1 ? "" : "s"}` : `No ${tile.actions.filter(a => !a.present).map(a => a.label.toLowerCase()).join(", ")}`}</span>}
-          {tile.inPreview && <span className="board-chip is-preview" title="Installed in the local preview copy of the game">In preview</span>}
+          {tile.inPreview && (tile.released ? <span className="board-chip is-pass" title="Promoted: the release plays this model">In game</span>
+            : <span className="board-chip is-preview" title="Installed in the local preview copy of the game">In preview</span>)}
           {tile.previewOther && <span className="board-chip" title="The preview copy holds other art for this unit">Preview: other art</span>}
         </span>
       </button>
