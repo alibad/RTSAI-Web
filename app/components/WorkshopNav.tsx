@@ -1,5 +1,12 @@
 import Link from 'next/link';
 import type { GameMode } from '../../lib/game-content';
+import { ADMIN_BUILD } from '../../lib/admin';
+
+// Campaign studio and AI testing are admin tools: listed only in dev and admin builds (lib/admin.ts).
+const apps = [['map', '/workshop', 'Map editor', false], ['evals', '/workshop/evals', 'AI testing', true], ['campaigns', '/workshop/campaigns', 'Campaign studio', true]] as const;
+
 export function WorkshopNav({ mode, active }: { mode: GameMode; active: 'map' | 'evals' | 'campaigns' }) {
-  return <nav className="workshop-app-nav" aria-label="Workshop apps">{([['map', '/workshop', 'Map editor'], ['evals', '/workshop/evals', 'AI testing'], ['campaigns', '/workshop/campaigns', 'Campaign studio']] as const).map(([key, href, title]) => <Link key={key} href={`${href}?mode=${mode}`} aria-current={key === active ? 'page' : undefined}>{title}</Link>)}</nav>;
+  const shown = apps.filter(([, , , admin]) => ADMIN_BUILD || !admin);
+  if (shown.length < 2) return null;
+  return <nav className="workshop-app-nav" aria-label="Workshop apps">{shown.map(([key, href, title]) => <Link key={key} href={`${href}?mode=${mode}`} aria-current={key === active ? 'page' : undefined}>{title}</Link>)}</nav>;
 }

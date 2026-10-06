@@ -69,11 +69,14 @@ try {
     if (-not (Test-Path $link) -and (Test-Path $source)) { New-Item -ItemType Junction -Path $link -Target $source | Out-Null }
   }
 
+  # The local app is an admin build: it keeps Campaign studio and AI testing, which rtsai.net leaves out (lib/admin.ts).
+  $env:RTSAI_ADMIN = "1"
   $siteStamp = Join-Path $State "site.sha"
-  if (-not (Test-Path dist) -or -not (Test-Path $siteStamp) -or (Get-Content $siteStamp) -ne $head) {
+  $siteBuild = "$head admin"
+  if (-not (Test-Path dist) -or -not (Test-Path $siteStamp) -or (Get-Content $siteStamp) -ne $siteBuild) {
     npm run build
     if ($LASTEXITCODE -ne 0) { throw "Website build failed" }
-    Set-Content $siteStamp $head
+    Set-Content $siteStamp $siteBuild
   }
 
   $busy = Get-PortOwner $AppPort

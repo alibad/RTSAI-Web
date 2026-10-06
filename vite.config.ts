@@ -29,7 +29,9 @@ const localBindingConfig = {
 // the video and its poster at build time (see lib/trailer.ts).
 const publicDirectory = fileURLToPath(new URL("./public", import.meta.url));
 const trailer = findTrailer((publicPath) => existsSync(`${publicDirectory}${publicPath}`));
-const define = { "process.env.RTSAI_TRAILER": JSON.stringify(trailer ? JSON.stringify(trailer) : "") };
+// Admin builds (RTSAI_ADMIN=1, the local app) keep the admin tools; public builds drop them (lib/admin.ts).
+const adminBuild = process.env.RTSAI_ADMIN === "1";
+const define = { "process.env.RTSAI_TRAILER": JSON.stringify(trailer ? JSON.stringify(trailer) : ""), "process.env.RTSAI_ADMIN": JSON.stringify(adminBuild ? "1" : "") };
 
 // Faction Art Lab Review mode: a dev-server-only API over the local RTSAI-Art workspace. `apply: "serve"`
 // keeps it out of every build; the handler also refuses to answer when NODE_ENV is "production".
@@ -63,6 +65,25 @@ function artReviewProductionStub(): Plugin {
     },
     load(id) {
       return id === stubId ? "export function ReviewApp() { return null; }\n" : null;
+    },
+  };
+}
+
+// Public builds swap the admin-only Workshop tools (Campaign studio, AI testing) for empty stubs, so their code never
+// reaches an rtsai.net bundle; their pages answer 404 there (lib/admin.ts). Admin builds and dev keep them.
+function adminToolsProductionStub(): Plugin {
+  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab" };
+  return {
+    name: "rtsai-admin-tools-production-stub",
+    apply: (_, env) => env.command === "build" && !adminBuild,
+    enforce: "pre",
+    resolveId(source) {
+      const name = /(?:^|[\\/])components[\\/](CampaignStudio|BehaviorLab)(?:\.tsx)?$/.exec(source)?.[1];
+      return name ? stubs[name] : null;
+    },
+    load(id) {
+      const name = Object.keys(stubs).find(key => stubs[key] === id);
+      return name ? `export function ${name}() { return null; }\n` : null;
     },
   };
 }
@@ -108,7 +129,7 @@ export default defineConfig(async ({ command }) => {
       cacheDir: "node_modules/.vite-art-lab",
       optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
       resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
-      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), tailwindcss(), react()],
+      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), adminToolsProductionStub(), tailwindcss(), react()],
     };
   }
 
@@ -119,7 +140,7 @@ export default defineConfig(async ({ command }) => {
     return {
       server,
       define,
-      plugins: [artReviewDevApi(), artReviewProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
+      plugins: [artReviewDevApi(), artReviewProductionStub(), adminToolsProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
@@ -132,6 +153,7 @@ export default defineConfig(async ({ command }) => {
     plugins: [
       artReviewDevApi(),
       artReviewProductionStub(),
+      adminToolsProductionStub(),
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

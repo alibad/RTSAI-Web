@@ -13,7 +13,19 @@ async function render(pathname = "/") {
   );
 }
 
-test("campaign studio renders real editing, local video and fictional civilian starter in both modes", async () => {
+// Admin tools render only in an admin build (RTSAI_ADMIN=1 npm test); public builds must answer 404 (lib/admin.ts).
+const adminBuild = process.env.RTSAI_ADMIN === "1";
+
+test("public builds leave the admin Workshop tools out: 404, no nav links, not in the sitemap", { skip: adminBuild }, async () => {
+  for (const path of ["/workshop/campaigns?mode=ra2", "/workshop/evals?mode=ra"]) assert.equal((await render(path)).status, 404, path);
+  const workshop = await (await render("/workshop?mode=ra2")).text();
+  assert.doesNotMatch(workshop, /href="\/workshop\/(?:campaigns|evals)/);
+  assert.doesNotMatch(workshop, /Campaign studio|AI testing/);
+  const sitemap = await (await render("/sitemap.xml")).text();
+  assert.doesNotMatch(sitemap, /workshop\/(?:campaigns|evals)/);
+});
+
+test("campaign studio renders real editing, local video and fictional civilian starter in both modes", { skip: !adminBuild }, async () => {
   for (const mode of ["ra2", "ra"]) {
     const response = await render(`/workshop/campaigns?mode=${mode}`), html = await response.text();
     assert.equal(response.status, 200); assert.match(html, /<title>Campaign Story Builder/);
@@ -44,7 +56,7 @@ test("new faction dossiers keep complete rosters, source-art labels and honest r
   assert.doesNotMatch(observer, /no direct damage/);
 });
 
-test("AI evaluations render both modes, policy controls and separated native evidence",async()=>{
+test("AI evaluations render both modes, policy controls and separated native evidence",{skip:!adminBuild},async()=>{
   for(const mode of ["ra2","ra"]){const response=await render("/workshop/evals?mode="+mode),html=await response.text();assert.equal(response.status,200);assert.match(html,/<title>AI Behavior Lab/);assert.match(html,/Run comparison/);assert.match(html,/Run native comparison/);assert.match(html,/browser simulator|approximate simulator/);assert.match(html,/Neither is a model-quality evaluation/);assert.match(html,/Native arenas use a fixed separation/);assert.match(html,/Use saved Workshop scene/);assert.match(html,/Export evidence/);assert.doesNotMatch(html,/â†|Â·|â€“/);}
 });
 
