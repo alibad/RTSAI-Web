@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -190,7 +191,9 @@ test("preview mod: an actor is in local preview only by installed bytes", () => 
     writeFileSync(join(overlay, "vehicles.yaml"), "# overlay\nr2mantis:\n\tRenderVoxels:\n\t\tScale: 11.7\n");
     const before = workspaceStamp(art, mod);
     const status = readPreviewStatus(art, mod);
-    assert.deepEqual(status.actors.r2mantis, { model: "voxel-v5-glb", icon: null, files: ["voxels/r2mantis.vxl", "voxels/r2mantistur.vxl"], rules: true });
+    const sha = (text: string) => createHash("sha256").update(text).digest("hex");
+    assert.deepEqual(status.actors.r2mantis, { model: "voxel-v5-glb", icon: null, files: ["voxels/r2mantis.vxl", "voxels/r2mantistur.vxl"], rules: true,
+      iconShas: [], modelShas: [sha("hull"), sha("turret")] });
     assert.deepEqual(status.unmatched, ["voxels/zz.vxl"]);
     writeFileSync(join(overlay, "voxels/r2mantistur.vxl"), "edited turret");
     assert.equal(readPreviewStatus(art, mod).actors.r2mantis.model, null, "different bytes: installed, but not this candidate");
