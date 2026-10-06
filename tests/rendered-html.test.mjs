@@ -70,7 +70,7 @@ test("owner-approved Workshop renders both mode palettes and honest experiment c
     assert.match(html,/Interactive battlefield/);
     assert.match(html,/Save scene/);assert.match(html,/Load scene/);assert.match(html,/OpenRA map/);
     assert.match(html,/Run battle/);assert.match(html,/Terrain generator/);
-    assert.match(html,/Illustrated browser prototype/);assert.match(html,/simplified combat/);
+    assert.match(html,/Browser prototype/);assert.match(html,/illustrated terrain/);assert.match(html,/simplified combat/);
     assert.match(html,/native engine testing/);
     const {rosters}=JSON.parse(await readFile(new URL("../data/factions.generated.json",import.meta.url),"utf8"));
     const faction=rosters.factions.find(f=>f.mode===mode&&f.id==="china");

@@ -113,6 +113,10 @@ function artReviewClientPreview(): Plugin {
   };
 }
 
+// Module workers can split code: the Workshop's unit-art worker loads its local-Studio resolver as a separate chunk that
+// only the local app (where the dev-only art API answers) ever fetches.
+const worker = { format: "es" as const };
+
 export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
@@ -132,6 +136,7 @@ export default defineConfig(async ({ command }) => {
       server,
       define,
       cacheDir: "node_modules/.vite-art-lab",
+      worker,
       optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
       resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
       plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), adminToolsProductionStub(), tailwindcss(), react()],
@@ -145,6 +150,7 @@ export default defineConfig(async ({ command }) => {
     return {
       server,
       define,
+      worker,
       plugins: [artReviewDevApi(), artReviewProductionStub(), adminToolsProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
@@ -155,6 +161,7 @@ export default defineConfig(async ({ command }) => {
   return {
     server,
     define,
+    worker,
     plugins: [
       artReviewDevApi(),
       artReviewProductionStub(),

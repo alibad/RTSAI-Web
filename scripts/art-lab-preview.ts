@@ -5,6 +5,7 @@ import { dirname, extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { createArtReviewMiddleware } from "../lib/art-lab/review-server";
 import { originalsConfig } from "../lib/art-lab/originals";
 
@@ -12,17 +13,26 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
 const globalsCssFile = resolve(root, "app/globals.css").replaceAll("\\", "/");
 const aliases = Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, resolve(root, `node_modules/vinext/dist/shims/${name}.js`)]));
-// This entry uses only the site's existing palette/defaults and Studio CSS, without the marketing layout.
-const baseCss = readFileSync(resolve(root, "app/globals.css"), "utf8").split(".skip-link")[0].replace(/^@import .*;\r?\n/gm, "");
+// This entry uses only the site's existing palette/defaults and Studio CSS, without the marketing layout. Tailwind adds
+// its theme and utility layers for the shadcn UI kit (app/components/ui) only: no preflight, and no utilities generated
+// from Studio class names. A Studio file that puts extra Tailwind classes on kit components adds an @source line here.
+const kitCss = [
+  `@import "tailwindcss/theme.css" layer(theme);`,
+  `@import "tailwindcss/utilities.css" layer(utilities) source(none);`,
+  `@source "./components/ui";`,
+  `@import "./components/ui/kit.css";`,
+].join("\n") + "\n";
+const baseCss = kitCss + readFileSync(resolve(root, "app/globals.css"), "utf8").split(".skip-link")[0].replace(/^@import .*;\r?\n/gm, "");
 const result = await build({
   configFile: false, root, base: "/", publicDir: false,
-  plugins: [react(), {
+  plugins: [react(), tailwindcss(), {
     name: "local-studio-base-css",
     enforce: "pre",
     load(id) { return id.split("?")[0].replaceAll("\\", "/") === globalsCssFile ? baseCss : null; },
   }],
   css: { postcss: { plugins: [] } },
-  resolve: { alias: aliases },
+  // "@/..." resolves as in tsconfig.json and components.json, for files the shadcn CLI adds.
+  resolve: { alias: [...Object.entries(aliases).map(([find, replacement]) => ({ find, replacement })), { find: /^@\//, replacement: `${root.replaceAll("\\", "/")}/` }] },
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
   build: { outDir: output, emptyOutDir: false, rollupOptions: { input: resolve(root, "app/art/review/local-entry.tsx") } },
 });

@@ -25,6 +25,14 @@ import {
 } from "../../lib/feedback/diagnostics";
 import { useFeedbackStore } from "../../lib/stores/feedback-store";
 import { DictationButton, useFeedbackDictation } from "./useFeedbackDictation";
+import { OptionSelect, type Option } from "./ui/fields";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { kitPopupOpen } from "./ui/layers";
+
+const consoleLevels: Option<"error" | "warn" | "all">[] = [{ value: "error", label: "Errors only" }, { value: "warn", label: "Warnings + errors" }, { value: "all", label: "All messages" }];
+const consoleLimits: Option<number>[] = [10, 30, 50].map(n => ({ value: n, label: `Last ${n}` }));
+const networkLimits: Option<number>[] = [10, 20, 50].map(n => ({ value: n, label: `Last ${n} requests` }));
+const categoryOptions: Option<FeedbackCategory>[] = feedbackCategories.map(category => ({ value: category, label: category }));
 
 function describeElement(element: Element) {
   const tag = element.tagName.toLowerCase();
@@ -80,15 +88,15 @@ function ElementSelector({ onSelect, onCancel }: { onSelect: (capture: Omit<Feed
 function FeedbackSettings({ onClose }: { onClose: () => void }) {
   const store = useFeedbackStore();
   return (
-    <div className="feedback-settings" role="dialog" aria-label="Diagnostic sharing settings">
+    <>
       <div className="feedback-settings-head"><div><b>Diagnostic context</b><span>Choose exactly what accompanies your note.</span></div><button type="button" onClick={onClose} aria-label="Close diagnostic settings"><X size={16} /></button></div>
       <div className="feedback-settings-toggle"><span><label htmlFor="feedback-metadata">Browser metadata</label><small>Viewport, platform, language, and connection state</small></span><input id="feedback-metadata" type="checkbox" checked={store.includeMetadata} onChange={(event) => store.setSetting("includeMetadata", event.target.checked)} /></div>
       <div className="feedback-settings-toggle"><span><label htmlFor="feedback-console">Console messages</label><small>Recent messages only; disabled by default</small></span><input id="feedback-console" type="checkbox" checked={store.includeConsole} onChange={(event) => store.setSetting("includeConsole", event.target.checked)} /></div>
-      {store.includeConsole && <div className="feedback-settings-row"><select aria-label="Console level" value={store.consoleLevel} onChange={(event) => store.setSetting("consoleLevel", event.target.value as "error" | "warn" | "all")}><option value="error">Errors only</option><option value="warn">Warnings + errors</option><option value="all">All messages</option></select><select aria-label="Console message limit" value={store.consoleLimit} onChange={(event) => store.setSetting("consoleLimit", Number(event.target.value))}><option value={10}>Last 10</option><option value={30}>Last 30</option><option value={50}>Last 50</option></select></div>}
+      {store.includeConsole && <div className="feedback-settings-row"><OptionSelect aria-label="Console level" value={store.consoleLevel} onValueChange={(value) => store.setSetting("consoleLevel", value)} options={consoleLevels} contentClassName="ui-paper" /><OptionSelect aria-label="Console message limit" value={store.consoleLimit} onValueChange={(value) => store.setSetting("consoleLimit", value)} options={consoleLimits} contentClassName="ui-paper" /></div>}
       <div className="feedback-settings-toggle"><span><label htmlFor="feedback-network">Network summary</label><small>Method, path, status, and timing—never bodies or headers</small></span><input id="feedback-network" type="checkbox" checked={store.includeNetwork} onChange={(event) => store.setSetting("includeNetwork", event.target.checked)} /></div>
-      {store.includeNetwork && <div className="feedback-settings-row"><select aria-label="Network request limit" value={store.networkLimit} onChange={(event) => store.setSetting("networkLimit", Number(event.target.value))}><option value={10}>Last 10 requests</option><option value={20}>Last 20 requests</option><option value={50}>Last 50 requests</option></select></div>}
+      {store.includeNetwork && <div className="feedback-settings-row"><OptionSelect aria-label="Network request limit" value={store.networkLimit} onValueChange={(value) => store.setSetting("networkLimit", value)} options={networkLimits} contentClassName="ui-paper" /></div>}
       <p><ShieldCheck size={13} /> No screenshot, HTML, input value, request body, header, or URL query is collected.</p>
-    </div>
+    </>
   );
 }
 
@@ -118,7 +126,8 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
   useEffect(() => initDiagnostics(), []);
   useEffect(() => {
     if (!store.isOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && !busy && !settingsOpen) store.close(); };
+    // Escape closes an open picker or the settings first; only the next one closes the dialog.
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && !busy && !settingsOpen && !kitPopupOpen()) store.close(); };
     window.addEventListener("keydown", closeOnEscape);
     titleRef.current?.focus();
     return () => window.removeEventListener("keydown", closeOnEscape);
@@ -223,10 +232,12 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
         <div className="feedback-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
           <section className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
             <div className="feedback-dialog-actions">
-              {!success && <button type="button" onClick={() => setSettingsOpen((value) => !value)} aria-label="Feedback diagnostic settings" aria-expanded={settingsOpen}><Settings2 size={18} /></button>}
+              {!success && <Popover open={settingsOpen} onOpenChange={setSettingsOpen} modal={false}>
+                <PopoverTrigger aria-label="Feedback diagnostic settings"><Settings2 size={18} /></PopoverTrigger>
+                <PopoverContent align="end" sideOffset={8} aria-label="Diagnostic sharing settings" className="feedback-settings feedback-settings-popup ui-paper"><FeedbackSettings onClose={() => setSettingsOpen(false)} /></PopoverContent>
+              </Popover>}
               <button type="button" onClick={close} aria-label="Close feedback"><X size={18} /></button>
             </div>
-            {settingsOpen && <FeedbackSettings onClose={() => setSettingsOpen(false)} />}
             {success ? (
               <div className="feedback-success" role="status">
                 <span><CheckCircle2 size={28} /></span>
@@ -243,7 +254,7 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
                   <p>Your note becomes a private issue for the builder. Attach the exact part of the page when context matters.</p>
                 </div>
                 <div className="feedback-form-grid">
-                  <label className="feedback-field"><span>Category</span><select value={store.category} onChange={(event) => store.setCategory(event.target.value as FeedbackCategory)}>{feedbackCategories.map((category) => <option key={category}>{category}</option>)}</select></label>
+                  <label className="feedback-field"><span>Category</span><OptionSelect value={store.category} onValueChange={store.setCategory} options={categoryOptions} contentClassName="ui-paper" /></label>
                   <label className="feedback-field"><span>Short title <small>optional</small></span><span style={{ position: "relative", display: "block" }}><input ref={titleRef} value={store.title} onChange={(event) => store.setTitle(event.target.value)} maxLength={120} placeholder="Optional — we'll take one from your note" style={dictation.supported ? { paddingRight: 44 } : undefined} />{dictation.supported ? <DictationButton field="title" listening={dictation.listening} onToggle={dictation.toggle} /> : null}</span></label>
                 </div>
                 <label className="feedback-field"><span>What happened—or what should we build?</span><span style={{ position: "relative", display: "block" }}><textarea value={store.description} onChange={(event) => store.setDescription(event.target.value)} minLength={10} maxLength={4000} placeholder="Include what you expected, what you saw, and why it matters." required style={dictation.supported ? { paddingRight: 44 } : undefined} />{dictation.supported ? <DictationButton field="description" listening={dictation.listening} onToggle={dictation.toggle} /> : null}</span><small>{store.description.length} / 4,000</small></label>

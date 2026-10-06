@@ -195,6 +195,36 @@ npm run check:art    # fail if the committed copy is stale
   Nothing reaches the mod until a separate export step. Production builds
   contain neither the tab, the UI nor the API.
 
+## UI kit (shadcn/ui)
+
+Dropdowns, pickers, popovers and menus use [shadcn/ui](https://ui.shadcn.com) on Base UI (the `base-nova` style;
+`components.json`), copied into `app/components/ui/` and themed with the site palette in `app/components/ui/kit.css`
+(dark panel tokens with the gold accent; `.ui-paper` for light surfaces). `lib/utils.ts` holds `cn` (clsx +
+tailwind-merge). Add more with `npx shadcn@latest add <name>`, then keep imports relative (the standalone Studio build
+also resolves `@/`).
+
+- `OptionSelect` (`ui/fields.tsx`): a short fixed list. `SearchSelect`: a long list with search (actors, factions);
+  options take `description`, `leading` (e.g. `<Swatch color>`) and `group`. Both keep the value type (string or
+  number) and work inside a wrapping `<label>` or with `aria-label`.
+- `Select`, `Combobox`, `Popover`, `DropdownMenu`, `Command`: the shadcn primitives, for anything the two fields do not cover.
+- Popups portal to `<body>` above dialogs (`--z-popover`) and never lock page scroll (`modal={false}`). On a light
+  surface pass `contentClassName="ui-paper"` (or `className` on a primitive's content).
+- Triggers are buttons: a surface whose CSS styles every `button` (for example `.workshop button`) styles the closed
+  field with `:is([data-slot=select-trigger],[data-slot=combobox-trigger])` (see `app/workshop/workshop.css`).
+- A hand-written dialog that closes on Escape checks `kitPopupOpen()` (`ui/layers.ts`) first.
+- The standalone Studio (`scripts/art-lab-preview.ts`) compiles Tailwind's theme and utility layers for
+  `app/components/ui` only; a Studio file that adds its own Tailwind classes adds an `@source` line there.
+
+## Workshop unit art
+
+The Workshop battlefield draws actors with their in-game art (`lib/unit-art/`, `lib/workshop-units.ts`): a worker
+resolves each actor's art and rasterizes frames with the Art Lab's decoders and renderers (`raster.ts` for voxels,
+`sprite-compose.ts` for SHP rigs, `fire.ts` for muzzle flashes); frames are packed into a `SpriteAtlas` and drawn as
+instances (`drawInstances` for Canvas 2D; `packInstances` gives a WebGL instanced draw the same data). On rtsai.net only
+the committed `public/art-lab` art is used and original RA2 units are drawn as markers. In the local app (the Studio
+API answers on the same origin) the art is what the local game plays: preview-mod candidates, the main mod, and
+original units from the private cache. `?authored=1` forces the public art for shareable screenshots.
+
 ## Deployment
 
 The production site is hosted by Vercel at `rtsai.net` and `www.rtsai.net`.

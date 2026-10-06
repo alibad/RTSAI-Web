@@ -2,3 +2,9 @@
 @media(max-width:1050px){.eval-layout{grid-template-columns:260px minmax(0,1fr)}.eval-trials{grid-template-columns:repeat(2,1fr)}.eval-card-heading{flex-wrap:wrap}.eval-checks{grid-template-columns:1fr}.eval-replay canvas{height:350px}.eval-empty>div:last-child{flex-wrap:wrap;justify-content:center;gap:12px}}
 @media(max-width:700px){.eval-layout{grid-template-columns:1fr}.eval-presets{grid-template-columns:1fr 1fr}.eval-settings,.eval-card,.eval-replay{padding:16px}.eval-banner{padding:14px}.eval-empty{min-height:280px;padding:15px}.eval-empty h3{font-size:20px}.eval-replay canvas{height:320px}}
 .eval-results{grid-template-columns:minmax(0,1fr)}.eval-card,.eval-replay{min-width:0}
+
+/* UI kit fields (shadcn Select and Combobox triggers) match the evaluation form's native fields. */
+.eval-lab :is([data-slot=select-trigger],[data-slot=combobox-trigger]){width:100%;min-width:0;min-height:38px;display:flex;justify-content:space-between;gap:6px;background:#111a15;color:#e7e7dc;border:1px solid #465046;border-radius:6px;padding:9px;font-size:12px;text-align:left}
+.eval-lab :is([data-slot=select-trigger],[data-slot=combobox-trigger]):hover{background:#142019;border-color:#68756a}
+.eval-lab :is([data-slot=select-trigger],[data-slot=combobox-trigger])[aria-expanded=true]{border-color:#c9b782}
+.eval-lab label>:is([data-slot=select-trigger],[data-slot=combobox-trigger]){margin-top:6px}

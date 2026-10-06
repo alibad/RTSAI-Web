@@ -37,6 +37,12 @@ const eslintConfig = defineConfig([
       },
     },
   },
+  {
+    // UI kit pickers render a labelled control (a Select or Combobox trigger) inside the wrapping <label>.
+    rules: {
+      "jsx-a11y/label-has-associated-control": ["error", { controlComponents: ["OptionSelect", "SearchSelect", "RequiredActor"], depth: 3 }],
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./components/ui/kit.css";
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 :root {
@@ -60,19 +61,20 @@ a { color: inherit; text-decoration: none; }
 .nav-account { min-width: 78px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(239,91,63,.55); background: rgba(239,91,63,.08); color: #f3c4b9; padding: 8px 12px; font-size: 11px; font-weight: 660; cursor: pointer; }
 .nav-account:hover { background: var(--red); border-color: var(--red); color: #fff; }
 .nav-account.is-loading { opacity: .45; cursor: wait; }
-.account-menu { position: relative; }
-.account-menu summary { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(241,210,139,.3); padding: 8px 11px; color: var(--gold); font-size: 11px; font-weight: 620; cursor: pointer; list-style: none; }
-.account-menu summary::-webkit-details-marker { display: none; }
-.account-menu > div { position: absolute; top: calc(100% + 9px); right: 0; width: 230px; padding: 15px; background: #1a1e1a; border: 1px solid #4b4e46; box-shadow: 0 18px 45px rgba(0,0,0,.38); display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
+/* Account menu: a UI kit DropdownMenu (AccountNav.tsx). */
+.account-menu-trigger { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(241,210,139,.3); background: transparent; padding: 8px 11px; color: var(--gold); font-size: 11px; font-weight: 620; cursor: pointer; }
+.account-menu-trigger:hover, .account-menu-trigger[aria-expanded="true"] { border-color: rgba(241,210,139,.62); }
+.account-menu-content { width: 230px; padding: 15px; background: #1a1e1a; border: 1px solid #4b4e46; border-radius: 0; box-shadow: 0 18px 45px rgba(0,0,0,.38); display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
 .account-avatar { width: 20px; height: 20px; flex: 0 0 20px; display: inline-grid; place-items: center; overflow: hidden; border: 1px solid rgba(241,210,139,.42); border-radius: 50%; object-fit: cover; background: #292e28; color: var(--gold); font: 700 7px/1 var(--font-mono); letter-spacing: -.02em; }
 .account-avatar.is-large { width: 40px; height: 40px; flex-basis: 40px; font-size: 11px; }
 .account-avatar.is-fallback { background: linear-gradient(145deg, rgba(239,91,63,.3), rgba(241,210,139,.08)); }
 .account-menu-profile { min-width: 0; display: flex; align-items: center; gap: 11px; padding-bottom: 5px; }
 .account-menu-profile > span { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.account-menu strong { color: #e8e6db; font-size: 12px; }
-.account-menu small { overflow: hidden; text-overflow: ellipsis; color: #868a80; font: 500 9px var(--font-mono); }
-.account-menu button { margin-top: 11px; min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); background: transparent; color: #bcbeb5; font-size: 10px; cursor: pointer; }
-.account-menu button:hover { border-color: var(--red); color: #fff; }
+.account-menu-content strong { color: #e8e6db; font-size: 12px; }
+.account-menu-content small { overflow: hidden; text-overflow: ellipsis; color: #868a80; font: 500 9px var(--font-mono); }
+.account-menu-content .account-menu-profile { padding: 0 0 5px; text-transform: none; letter-spacing: 0; }
+.account-menu-signout { margin-top: 11px; min-height: 34px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); border-radius: 0; background: transparent; color: #bcbeb5; font-size: 10px; cursor: pointer; }
+.account-menu-signout[data-highlighted] { border-color: var(--red); background: transparent; color: #fff; }
 .legal-strip { width: min(1320px, calc(100% - 48px)); margin: 10px auto 0; color: #777b72; font: 500 9px/1.4 var(--font-mono); letter-spacing: .04em; text-align: right; }
 
 .hero {
@@ -645,3 +647,11 @@ footer p { text-align: center; } footer > div { display: flex; justify-content: 
 .privacy-detail ul { margin: 0; padding-left: 18px; color: #9da097; font-size: 14px; line-height: 1.7; }
 .privacy-detail li + li { margin-top: 8px; }
 .privacy-detail b { color: #d9d8ce; font-weight: 620; }
+
+/* UI kit fields (shadcn Select triggers) on the light paper forms: the Earth studio and the feedback dialog. */
+.mission-form [data-slot=select-trigger] { width: 100%; height: auto; min-height: 43px; border: 1px solid #bbb7a9; border-radius: 0; background: #f4f1e8; color: var(--ink); padding: 11px 12px; font: 500 13px var(--font-geist); letter-spacing: 0; text-transform: none; }
+.mission-form [data-slot=select-trigger][aria-expanded="true"], .feedback-field [data-slot=select-trigger][aria-expanded="true"] { border-color: var(--red-dark); box-shadow: 0 0 0 2px rgba(200,70,49,.1); }
+.feedback-field [data-slot=select-trigger] { width: 100%; height: auto; min-height: 46px; border: 1px solid #aaa69a; border-radius: 0; background: #faf8f1; color: var(--ink); padding: 12px 13px; font: 500 13px var(--font-geist); letter-spacing: 0; text-transform: none; }
+.feedback-settings-row [data-slot=select-trigger] { width: 100%; height: auto; min-height: 38px; border: 1px solid #b9b5a8; border-radius: 0; background: #fff; color: var(--ink); padding: 0 9px; font-size: 10px; }
+.location-results.location-results-popup { position: static; top: auto; left: auto; z-index: auto; width: min(470px, calc(100vw - 26px)); padding: 0; gap: 0; border-radius: 0; color: var(--ink); }
+.feedback-settings.feedback-settings-popup { position: static; top: auto; right: auto; z-index: auto; display: block; width: min(410px, calc(100vw - 26px)); border-radius: 0; color: var(--ink); font-size: 13px; }

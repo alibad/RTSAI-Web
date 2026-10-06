@@ -5,6 +5,7 @@ import Image from "next/image";
 import { LogOut } from "lucide-react";
 import type { User } from "firebase/auth";
 import { useAuth } from "./AuthProvider";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 export function firebaseProfilePhoto(user: User) {
   return user.photoURL || user.providerData.find((provider) => provider.photoURL)?.photoURL || null;
@@ -37,15 +38,17 @@ export function AccountNav() {
   const firstName = displayName.split(/\s+/)[0];
   const photoUrl = firebaseProfilePhoto(user);
   return (
-    <details className="account-menu">
-      <summary aria-label={`Open account menu for ${displayName}`}><AccountAvatar photoUrl={photoUrl} name={displayName} /> <span>{firstName}</span></summary>
-      <div>
-        <div className="account-menu-profile">
-          <AccountAvatar photoUrl={photoUrl} name={displayName} large />
-          <span><strong>{displayName}</strong><small>{user.email}</small></span>
-        </div>
-        <button type="button" onClick={() => void signOutUser()}><LogOut size={14} /> Sign out</button>
-      </div>
-    </details>
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger className="account-menu-trigger" aria-label={`Open account menu for ${displayName}`}><AccountAvatar photoUrl={photoUrl} name={displayName} /> <span>{firstName}</span></DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={9} className="account-menu-content">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="account-menu-profile">
+            <AccountAvatar photoUrl={photoUrl} name={displayName} large />
+            <span><strong>{displayName}</strong><small>{user.email}</small></span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuItem className="account-menu-signout" onClick={() => void signOutUser()}><LogOut size={14} /> Sign out</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -21,8 +21,12 @@ import { decodeMissionBlueprint, encodeMissionBlueprint } from "../../lib/missio
 import type { WindowsRelease } from "../../lib/release";
 import { useAuth } from "./AuthProvider";
 import { trackAnalyticsEvent } from "../../lib/firebase-client";
+import { OptionSelect, type Option } from "./ui/fields";
+import { Popover, PopoverContent } from "./ui/popover";
 
 type LocationResult = { latitude: number; longitude: number; label: string; kind?: string };
+const sizeOptions: Option<64 | 96 | 128>[] = [{ value: 64, label: "64 × 64 · Quick" }, { value: 96, label: "96 × 96 · Standard" }, { value: 128, label: "128 × 128 · Epic" }];
+const footprintOptions: Option<number>[] = [{ value: 2000, label: "4 km · Local" }, { value: 3500, label: "7 km · District" }, { value: 6000, label: "12 km · Regional" }];
 
 const presets = [
   { label: "Riyadh", latitude: 24.7136, longitude: 46.6753 },
@@ -40,6 +44,9 @@ function randomInteger(max: number) {
 export function MissionStudio({ windowsRelease }: { windowsRelease: WindowsRelease }) {
   const { user, loading: authLoading, openAuth } = useAuth();
   const mapNode = useRef<HTMLDivElement>(null);
+  const searchField = useRef<HTMLDivElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const firstResult = useRef<HTMLButtonElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
   const generationControllerRef = useRef<AbortController | null>(null);
@@ -283,9 +290,10 @@ export function MissionStudio({ windowsRelease }: { windowsRelease: WindowsRelea
       <div className="studio-grid">
         <div className="map-panel">
           <div className="map-toolbar">
-            <div className="search-field">
+            <div className="search-field" ref={searchField}>
               <Search size={16} aria-hidden="true" />
               <input
+                ref={searchInput}
                 value={search}
                 onChange={(event) => { setSearch(event.target.value); setSearchResults([]); }}
                 onKeyDown={(event) => {
@@ -300,17 +308,17 @@ export function MissionStudio({ windowsRelease }: { windowsRelease: WindowsRelea
                 {status === "locating" ? <LoaderCircle className="spin" size={14} /> : "Go"}
               </button>
             </div>
-            {searchResults.length > 0 && (
-              <div className="location-results" id="location-results" role="region" aria-live="polite" aria-label={`${searchResults.length} location results`}>
+            <Popover open={searchResults.length > 0} onOpenChange={(open) => { if (!open) setSearchResults([]); }} modal={false}>
+              <PopoverContent anchor={searchField} align="start" sideOffset={6} initialFocus={firstResult} finalFocus={searchInput} id="location-results" aria-label={`${searchResults.length} location results`} className="location-results location-results-popup ui-paper">
                 <div><span>Choose the exact place</span><button onClick={() => setSearchResults([])} aria-label="Close location results"><X size={14} /></button></div>
                 <ul>
-                  {searchResults.map((result) => {
+                  {searchResults.map((result, index) => {
                     const [name, ...detail] = result.label.split(",");
-                    return <li key={`${result.latitude}-${result.longitude}`}><button onClick={() => chooseLocation(result)}><strong>{name}</strong><span>{detail.join(",").trim()}</span><small>{result.kind ?? "place"}</small></button></li>;
+                    return <li key={`${result.latitude}-${result.longitude}`}><button ref={index === 0 ? firstResult : undefined} onClick={() => chooseLocation(result)}><strong>{name}</strong><span>{detail.join(",").trim()}</span><small>{result.kind ?? "place"}</small></button></li>;
                   })}
                 </ul>
-              </div>
-            )}
+              </PopoverContent>
+            </Popover>
             <span className="coordinates"><LocateFixed size={14} /> {latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
           </div>
           <div ref={mapNode} className="map-canvas" aria-label="Interactive location map" />
@@ -340,19 +348,11 @@ export function MissionStudio({ windowsRelease }: { windowsRelease: WindowsRelea
             <div className="mission-selectors">
               <label>
                 Map size
-                <select value={size} onChange={(event) => { setSize(Number(event.target.value) as 64 | 96 | 128); clearGeneratedMission(); }}>
-                  <option value={64}>64 × 64 · Quick</option>
-                  <option value={96}>96 × 96 · Standard</option>
-                  <option value={128}>128 × 128 · Epic</option>
-                </select>
+                <OptionSelect value={size} onValueChange={(value) => { setSize(value); clearGeneratedMission(); }} options={sizeOptions} contentClassName="ui-paper" />
               </label>
               <label>
                 Earth footprint
-                <select value={radiusM} onChange={(event) => { setRadiusM(Number(event.target.value)); clearGeneratedMission(); }}>
-                  <option value={2000}>4 km · Local</option>
-                  <option value={3500}>7 km · District</option>
-                  <option value={6000}>12 km · Regional</option>
-                </select>
+                <OptionSelect value={radiusM} onValueChange={(value) => { setRadiusM(value); clearGeneratedMission(); }} options={footprintOptions} contentClassName="ui-paper" />
               </label>
             </div>
             <div className="variation-control">
