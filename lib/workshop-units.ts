@@ -168,6 +168,8 @@ export class WorkshopUnitArt {
   deadFor(world: World, id: number) { const t = this.track.get(id); return t?.deadAt === null || t?.deadAt === undefined ? null : world.time - t.deadAt; }
   /** Seconds since the piece last fired. */
   firedFor(world: World, id: number) { const t = this.track.get(id); return t ? world.time - t.shotAt : Infinity; }
+  /** True while the actor's art is still being resolved or its first frame rasterized (not yet known to be missing). */
+  loading(piece: LivePiece) { const meta = this.service.meta(piece.actorKey); return meta === undefined || (meta !== null && this.service.pending > 0); }
   /** Whether the piece's art shows its own muzzle flash (local firing rules), so no illustrative flash is needed. */
   ownFlash(piece: LivePiece) { return Boolean(this.service.meta(piece.actorKey)?.firePeriodMs); }
 }

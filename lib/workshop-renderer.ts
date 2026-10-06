@@ -172,6 +172,11 @@ export function drawWorld(ctx: CanvasRenderingContext2D, scene: Scene, world: Wo
       continue;
     }
     art!.flush(ctx);
+    if (piece.health > 0 && art!.loading(piece)) {
+      // Art on its way: a quiet ground ring rather than a marker that would flash before the art appears.
+      ctx.strokeStyle = teamColor(piece) + "88"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(p.x, p.y, 10, camera.iso ? 5 : 10, 0, 0, Math.PI * 2); ctx.stroke();
+      continue;
+    }
     if (piece.health > 0 || piece.phase === "falling") {
       const altitude = actor.category === "aircraft" ? (piece.phase === "falling" ? Math.max(0, piece.phaseTime / 1.5) : 1) * 25 : 0;
       drawToken(ctx, piece, actor, p, camera.iso, altitude);

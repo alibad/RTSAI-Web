@@ -4,15 +4,14 @@ import { Building2, Download, Footprints, Hand, MousePointer2, Pause, Plane, Pla
 import { rosters, rosterFactions, rosterActors, categoryLabels, type GameMode } from "../../lib/game-content";
 import { activeWeapons, actorFor, canDeploy, conditionActive, conditionNames, createWorld, dimensions, generateScene, issueOrder, makePiece, maxHealth, paintScene, parseScene, placementIssue, prototypeRange, scenarioJson, stepWorld, type Piece, type Point, type Preset, type Scene, type Team, type Terrain } from "../../lib/workshop";
 import { drawWorld, fitScale, footprintCenter, project, screenToCell, terrainCanvas, type Camera } from "../../lib/workshop-renderer";
-import { UnitArtService } from "../../lib/unit-art/service";
-import { WorkshopUnitArt } from "../../lib/workshop-units";
+import type { WorkshopUnitArt } from "../../lib/workshop-units";
 import { workshopArchive } from "../../lib/workshop-export";
 import { useAuth } from "./AuthProvider";
 import { WorkshopEarth } from "./WorkshopEarth";
 import type { EarthFeature } from "../../lib/oramap";
 import { campaignPreviewStorage, campaignResultStorage, checkMission, parsePreview } from "../../lib/campaign";
 import { OptionSelect, SearchSelect, type Option } from "./ui/fields";
-import { factionOptions, teamOptions } from "./pickers";
+import { factionOptions, teamOptions, type FlagMap } from "./pickers";
 
 type Tool = "select" | "place" | "move" | "attack" | "pan" | "land" | "water" | "road" | "ore" | "erase";
 type Phase = "edit" | "running" | "paused";
@@ -52,7 +51,7 @@ export function starterScene(mode: GameMode, seed=42, size: Scene["size"]=64, pr
   return scene;
 }
 
-export function MapWorkshop({initialMode="ra2",campaignPreview=false}:{initialMode?:GameMode;campaignPreview?:boolean}) {
+export function MapWorkshop({initialMode="ra2",campaignPreview=false,flags={}}:{initialMode?:GameMode;campaignPreview?:boolean;flags?:FlagMap}) {
   const [campaignContext,setCampaignContext]=useState<ReturnType<typeof parsePreview>|null>(null);
   const [scene,setScene]=useState(()=>starterScene(initialMode));
   const doc=useRef(scene), world=useRef(createWorld(scene));
@@ -95,6 +94,10 @@ export function MapWorkshop({initialMode="ra2",campaignPreview=false}:{initialMo
   useEffect(()=>{
     // ?authored=1 shows only the project's published art even in the local app (for screenshots that may be shared).
     const authored=new URLSearchParams(window.location.search).get("authored")==="1";
+    // Loaded after first paint, in its own chunk: workers, decoders and the atlas never delay the page.
+    let alive=true,cleanup=()=>{};
+    void Promise.all([import("../../lib/unit-art/service"),import("../../lib/workshop-units")]).then(([{UnitArtService},{WorkshopUnitArt}])=>{
+    if(!alive)return;
     const service=new UnitArtService(scene.mode,authored?{probeLocal:false}:{}), layer=new WorkshopUnitArt(service,scene.mode);
     art.current=layer;
     const off=service.subscribe(()=>{invalidate();
@@ -102,7 +105,9 @@ export function MapWorkshop({initialMode="ra2",campaignPreview=false}:{initialMo
       const host=canvas.current?.parentElement;if(host){host.dataset.artFrames=String(service.atlas.size);host.dataset.artPending=String(service.pending);host.dataset.artSource=service.local===null?"":service.local?"local":"public";}
       const keys=[...new Set(world.current.pieces.map(p=>p.actorKey))];setArtStatus(s=>{const next={local:service.local,missing:keys.filter(k=>service.meta(k)===null).length};return s.local===next.local&&s.missing===next.missing?s:next;});});
     invalidate();
-    return()=>{off();service.dispose();if(art.current===layer)art.current=null;};
+    cleanup=()=>{off();service.dispose();if(art.current===layer)art.current=null;};
+    });
+    return()=>{alive=false;cleanup();};
   },[scene.mode,invalidate]);
   function changePhase(next:Phase){phaseRef.current=next;setPhase(next);}
   function remember(previous:Scene){undo.current.push(previous);if(undo.current.length>30)undo.current.shift();redo.current=[];setHistory({undo:undo.current.length,redo:0});}
@@ -276,7 +281,7 @@ export function MapWorkshop({initialMode="ra2",campaignPreview=false}:{initialMo
           <p className="workshop-hint">Generating replaces this scene. Undo restores it.</p>
         </details>
         <div className="workshop-panel-title"><h2>Actor palette</h2><span>{palette.length}</span></div>
-        <label>Faction<SearchSelect value={country.id} onValueChange={id=>{setFaction(id);setActorKey("");setTool("select");}} options={factionOptions(scene.mode)} placeholder="Search factions…"/></label>
+        <label>Faction<SearchSelect value={country.id} onValueChange={id=>{setFaction(id);setActorKey("");setTool("select");}} options={factionOptions(scene.mode,flags)} placeholder="Search factions…"/></label>
         <div className="workshop-search"><Search size={14}/><input aria-label="Search actors" placeholder="Search units, buildings…" value={query} onChange={e=>setQuery(e.target.value)}/></div>
         <div className="workshop-row"><label>Category<OptionSelect value={category} onValueChange={setCategory} options={categoryOptions}/></label><label>Place for<OptionSelect value={team} onValueChange={setTeam} options={teamOptions}/></label></div>
         <div className="workshop-actor-list">{palette.map(a=>{const Icon=icons[a.category as keyof typeof icons]??Truck;return <button draggable key={a.key} aria-pressed={actorKey===a.key} onDragEnd={()=>{ghost.current=null;hover.current=null;}} onDragStart={e=>{e.dataTransfer.setData("application/x-rtsai-actor",a.key);e.dataTransfer.effectAllowed="copy";setActorKey(a.key);setTool("place");}} onClick={()=>{setActorKey(a.key);setTool("place");setNotice(a.name+" selected. Click a map cell to place it for "+team+".");}}><Icon size={18}/><span><b>{a.name}</b><small>{categoryLabels[a.category]} {a.cost!==null&&<>· {"$"}{a.cost.toLocaleString()}</>}</small></span><span className="workshop-add">+</span></button>;})}{!palette.length&&<p className="workshop-hint">No actors match this search.</p>}</div>

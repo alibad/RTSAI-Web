@@ -129,9 +129,10 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
     // Escape closes an open picker or the settings first; only the next one closes the dialog.
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && !busy && !settingsOpen && !kitPopupOpen()) store.close(); };
     window.addEventListener("keydown", closeOnEscape);
-    titleRef.current?.focus();
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [store.isOpen, busy, settingsOpen, store]);
+  // Focus the title when the dialog opens (not when the settings popover closes: focus returns to its button).
+  useEffect(() => { if (store.isOpen) titleRef.current?.focus(); }, [store.isOpen]);
   useEffect(() => {
     if (!user || !awaitingAuth.current) return;
     awaitingAuth.current = false;

@@ -10,9 +10,16 @@ const categoryIcons = { infantry: Footprints, vehicle: Truck, aircraft: Plane, s
 /** The faction's accent (modern factions) or its side's colour, as the faction cards show it. */
 export const factionAccent = (faction: RosterFaction) => dossierForRoster(faction)?.accent ?? (faction.side === "Allies" ? "#85afcc" : "#ce8779");
 
-/** Factions of a mode grouped by side, each with its accent swatch. National flags are a local-Studio-only asset. */
-export function factionOptions(mode: GameMode): Option[] {
-  return rosterFactions(mode).map(f => ({ value: f.id, label: f.name, group: f.side, leading: <Swatch color={factionAccent(f)} /> }));
+/** Flag image URLs by roster faction id (public/faction-art/flags), computed on the server by `factionFlags`. */
+export type FlagMap = Record<string, string>;
+
+/** Factions of a mode grouped by side, each with its national flag, or its accent swatch when it is not a state. */
+export function factionOptions(mode: GameMode, flags: FlagMap = {}): Option[] {
+  return rosterFactions(mode).map(f => ({
+    value: f.id, label: f.name, group: f.side,
+    // eslint-disable-next-line @next/next/no-img-element -- a 16 x 12 content-hashed SVG flag; next/image adds nothing here.
+    leading: flags[f.id] ? <img src={flags[f.id]} width={16} height={12} alt="" className="h-3 w-4 shrink-0 rounded-[1px] object-cover ring-1 ring-black/40" /> : <Swatch color={factionAccent(f)} />,
+  }));
 }
 
 /** Actors grouped by category, with the category icon; the description adds the category and cost. */

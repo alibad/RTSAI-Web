@@ -87,13 +87,14 @@ export function SearchSelect<V extends string | number>({ value, onValueChange, 
       onValueChange={next => { if (next) onValueChange(next.value) }}
       itemToStringLabel={o => o.description ? `${o.label} ${o.description}` : o.label}
       isItemEqualToValue={(a, b) => a.value === b.value}
+      autoHighlight
       disabled={disabled}
       modal={false}
     >
       <ComboboxTrigger id={id} data-size={size} className={cn(selectTriggerClassName, className)} {...aria}>
         <ComboboxValue>{(current: Option<V> | null) => <span data-slot="select-value" className="flex min-w-0 flex-1 items-center gap-1.5 text-left">{current ? <OptionLabel option={current} /> : null}</span>}</ComboboxValue>
       </ComboboxTrigger>
-      <ComboboxContent className={cn("min-w-64", contentClassName)}>
+      <ComboboxContent className={cn("min-w-64 text-[13px]", contentClassName)}>
         <ComboboxInput showTrigger={false} placeholder={placeholder} aria-label={placeholder} />
         <ComboboxEmpty>{empty}</ComboboxEmpty>
         <ComboboxList>
