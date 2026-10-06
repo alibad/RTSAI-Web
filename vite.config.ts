@@ -93,6 +93,20 @@ function adminToolsProductionStub(): Plugin {
   };
 }
 
+// Public builds also drop the Workshop's local-art resolver (lib/unit-art/resolve-local.ts): rtsai.net draws only the
+// committed public/art-lab art, so no code that reads the dev-only Studio API or the private originals ships there.
+// The local app is an admin build and keeps it.
+function localUnitArtProductionStub(): Plugin {
+  const stubId = "\0rtsai-local-unit-art-stub";
+  return {
+    name: "rtsai-local-unit-art-production-stub",
+    apply: (_, env) => env.command === "build" && !adminBuild,
+    enforce: "pre",
+    resolveId(source, importer) { return /(^|[\\/])resolve-local(\.ts)?$/.test(source) && /[\\/]unit-art[\\/]/.test(`${importer ?? ""}/${source}`) ? stubId : null; },
+    load(id) { return id === stubId ? "export async function localResolver() { return null; }\n" : null; },
+  };
+}
+
 // The standalone Studio is a client app. A local Node preview can mount that
 // same component directly, avoiding worker/RSC transport startup on Windows.
 function artReviewClientPreview(): Plugin {
@@ -115,7 +129,7 @@ function artReviewClientPreview(): Plugin {
 
 // Module workers can split code: the Workshop's unit-art worker loads its local-Studio resolver as a separate chunk that
 // only the local app (where the dev-only art API answers) ever fetches.
-const worker = { format: "es" as const };
+const worker = { format: "es" as const, plugins: () => [localUnitArtProductionStub()] };
 
 export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
@@ -139,7 +153,7 @@ export default defineConfig(async ({ command }) => {
       worker,
       optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
       resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
-      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), adminToolsProductionStub(), tailwindcss(), react()],
+      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), react()],
     };
   }
 
@@ -151,7 +165,7 @@ export default defineConfig(async ({ command }) => {
       server,
       define,
       worker,
-      plugins: [artReviewDevApi(), artReviewProductionStub(), adminToolsProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
+      plugins: [artReviewDevApi(), artReviewProductionStub(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
@@ -166,6 +180,7 @@ export default defineConfig(async ({ command }) => {
       artReviewDevApi(),
       artReviewProductionStub(),
       adminToolsProductionStub(),
+      localUnitArtProductionStub(),
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
