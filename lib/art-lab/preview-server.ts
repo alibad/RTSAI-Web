@@ -113,6 +113,7 @@ export function readPreviewStatus(artRoot: string, previewMod: string | null): P
   for (const [actor, entry] of Object.entries(actors)) {
     const installed = (ext: RegExp) => entry.files.filter(f => ext.test(f)).map(f => sha(join(overlay, f)));
     const models = installed(/\.(vxl|shp)$/i), icons = installed(/^icons\/.*\.png$/i);
+    entry.iconShas = icons; entry.modelShas = models;
     for (const id of dirs(join(artRoot, "units", actor, "candidates"))) {
       const dir = join(artRoot, "units", actor, "candidates", id);
       const meta = readJson(join(dir, "meta.json"));

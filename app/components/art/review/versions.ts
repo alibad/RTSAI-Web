@@ -6,6 +6,7 @@ import { byCreation, kindTags, versionLabels } from "../../../../lib/art-lab/rev
 import type { SpriteArt } from "../../../../lib/art-lab/types";
 import type { StageItem } from "./frames";
 import type { ActorSources } from "../../../../lib/art-lab/asset-source";
+import type { PreviousRelease } from "../../../../lib/art-lab/installed-art";
 import type { PreviewAnimation } from "../../../../lib/art-lab/chain";
 import { withInstalledArmaments, type FireRules } from "../../../../lib/art-lab/fire";
 
@@ -27,6 +28,10 @@ export type ReviewUnit = {
   /** The last voxel release (the synced manifest) once the game plays a sprite: voxel candidates and History
    *  still draw on the turret offsets and light they were made for. */
   voxelBase?: RenderSpec;
+  /** The synced manifest's record of the release art (provenance per file). */
+  previous?: PreviousRelease;
+  /** The synced manifest's drawing of that release, kept once the live release differs (History). */
+  previousArt?: { spec: RenderSpec; sprite: SpriteArt | null };
 };
 
 /** One card in the filmstrip: what is in game now, the original RA2 unit it replaces, or one candidate. */

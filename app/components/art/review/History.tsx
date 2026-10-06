@@ -23,7 +23,8 @@ function archiveOf(actor: string): Promise<ArchivedArt[]> {
 function Entry({ e, unit, ws, frames, tints, onShow }: { e: HistoryEntry; unit: ReviewUnit; ws: UnitWorkspace | undefined; frames: FrameStore; tints: MapTint[]; onShow: (e: HistoryEntry) => void }) {
   // Models draw as the stage draws them (the same cached frames the filmstrip uses), not as contact sheets.
   const candidate = e.slot === "model" && e.candidate ? ws?.candidates.find(c => c.id === e.candidate) ?? null : null;
-  const releaseModel = e.slot === "model" && (e.release || candidate) ? stageItem(unit, candidate) : null;
+  const releaseModel = e.slot === "model" && (e.release || candidate) ? stageItem(unit, candidate)
+    : e.previous && unit.previousArt ? stageItem({ ...unit, id: `${unit.id}:previous`, spec: unit.previousArt.spec, sprite: unit.previousArt.sprite }, null) : null;
   const canShow = Boolean(e.release || e.candidate);
   return (
     <li className="history-entry">
@@ -60,7 +61,7 @@ export const UnitHistory = memo(function UnitHistory({ unit, ws, entry, frames, 
   const entries = useMemo(() => (open ? historyFor({
     actor: unit.id, ws, entry,
     release: { cameo: unit.spec.cameo, hasModel: Boolean(unit.spec.voxel || unit.sprite), sources: unit.releaseSources ?? unit.sources },
-    archive: archive?.actor === unit.id ? archive.list : [],
+    archive: archive?.actor === unit.id ? archive.list : [], previous: unit.previous,
   }) : []), [open, unit, ws, entry, archive]);
   const icons = entries.filter(e => e.slot === "icon"), models = entries.filter(e => e.slot === "model");
   return (
@@ -70,7 +71,7 @@ export const UnitHistory = memo(function UnitHistory({ unit, ws, entry, frames, 
         <div className="history-body">
           <p className="lab-hint">Earlier art for {unit.name}. Historical only: none of it is what the game plays.</p>
           {!entries.length && <p className="lab-hint">No earlier art recorded.</p>}
-          {entry?.released && archive?.actor === unit.id && !archive.list.length && <p className="lab-hint">Promoted: the release art it replaced is archived under RTSAI-Art/history/{unit.id}/ by the promotion step. Nothing is archived there yet.</p>}
+          {entry?.released && archive?.actor === unit.id && !archive.list.length && <p className="lab-hint">Promoted. The archive under RTSAI-Art/history/{unit.id}/ is empty so far, so the release it replaced comes from the last synced art manifest.</p>}
           {icons.length > 0 && <><h4>Icons · {icons.length}</h4><ul>{icons.map(e => <Entry key={e.key} e={e} unit={unit} ws={ws} frames={frames} tints={tints} onShow={onShow} />)}</ul></>}
           {models.length > 0 && <><h4>Game models · {models.length}</h4><ul>{models.map(e => <Entry key={e.key} e={e} unit={unit} ws={ws} frames={frames} tints={tints} onShow={onShow} />)}</ul></>}
         </div>

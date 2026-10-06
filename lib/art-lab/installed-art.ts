@@ -73,6 +73,9 @@ export function installedSources(ws: UnitWorkspace | undefined, entry: PreviewAc
 }
 
 export type HistorySlot = "icon" | "model";
+/** One release file as the synced manifest records it. */
+export type ReleaseArt = { file: string; url: string; sha256: string; origin: string; generator: string | null; date: string | null };
+export type PreviousRelease = { icon: ReleaseArt | null; model: ReleaseArt[] };
 export type HistoryEntry = {
   key: string;
   slot: HistorySlot;
@@ -85,6 +88,8 @@ export type HistoryEntry = {
   candidate?: string;
   /** Draw the release model (the stage item "current"). */
   release?: boolean;
+  /** Draw the release before the promotion (the synced manifest's drawing). */
+  previous?: boolean;
   generator: string | null;
   date: string | null;
   file: string | null;
@@ -106,8 +111,10 @@ export function historyFor(args: {
   actor: string; ws: UnitWorkspace | undefined; entry: PreviewActor | undefined;
   release: { cameo: string | null; hasModel: boolean; sources?: ActorSources };
   archive?: ArchivedArt[];
+  /** The synced manifest's release record: after a promotion, the art the new release replaced. */
+  previous?: PreviousRelease;
 }): HistoryEntry[] {
-  const { ws, entry, release, archive = [] } = args;
+  const { ws, entry, release, archive = [], previous } = args;
   const out: HistoryEntry[] = [];
   // Once promoted (entry.released) the release IS the installed art; what it replaced lives in the archive.
   const iconInstalled = Boolean(entry && !entry.released && previewIconFile(args.actor, entry));
@@ -127,6 +134,18 @@ export function historyFor(args: {
       label: "Historical · game model (current release until the new art is promoted)",
       generator: release.sources?.model.tool ?? release.sources?.model.label ?? null, date: sourceDate(modelFile),
       file: modelFile?.file ?? release.sources?.model.file ?? null });
+  }
+  // Promoted, not yet archived: the release before the promotion, from the manifest synced at the time.
+  const archived = new Set(archive.map(a => a.sha256).filter(Boolean));
+  if (entry?.released && previous?.icon && !entry.iconShas?.includes(previous.icon.sha256) && !archived.has(previous.icon.sha256)) {
+    const p = previous.icon;
+    out.push({ key: "previous:icon", slot: "icon", origin: "release", image: p.url,
+      label: `Historical · ${p.origin === "generated" ? "painted icon" : "release icon"} (release before the new art was promoted)`, generator: p.generator, date: day(p.date), file: p.file });
+  }
+  const body = previous?.model.find(m => m.file.split("/").pop()!.toLowerCase().replace(/\.(vxl|shp)$/, "") === args.actor.toLowerCase()) ?? previous?.model[0];
+  if (entry?.released && body && previous!.model.some(m => !entry.modelShas?.includes(m.sha256)) && !previous!.model.every(m => archived.has(m.sha256))) {
+    out.push({ key: "previous:model", slot: "model", origin: "release", image: null, previous: true,
+      label: "Historical · game model (release before the new art was promoted)", generator: body.generator, date: day(body.date), file: body.file });
   }
   for (const a of [...archive].sort((x, y) => (x.date ?? "") < (y.date ?? "") ? 1 : (x.date ?? "") > (y.date ?? "") ? -1 : 0)) {
     const slot = a.slot ?? (/\.(png|jpe?g)$/i.test(a.file) ? "icon" : "model");

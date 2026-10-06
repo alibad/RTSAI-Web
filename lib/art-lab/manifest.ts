@@ -3,6 +3,7 @@ import data from "../../data/art-lab.json";
 import type { ActorArt, ArtCategory, ArtLabManifest, FactionArt, PaletteRef } from "./types";
 import { buildRenderSpec, spriteWithUrlsOf } from "./render-spec";
 import type { PaletteSpec, RenderSpec } from "./spec";
+import type { PreviousRelease, ReleaseArt } from "./installed-art";
 export type { PaletteSpec, RenderSpec } from "./spec";
 
 export const artLab = data as unknown as ArtLabManifest;
@@ -27,6 +28,22 @@ export function paletteSpec(name: string | undefined): PaletteSpec | null {
 
 export function renderSpec(actor: ActorArt): RenderSpec {
   return buildRenderSpec(actor, fileUrl, paletteSpec);
+}
+
+/**
+ * The release art this manifest was synced from, with its provenance: what History shows as the release before a
+ * promotion replaced it (until `npm run sync:art` refreshes the manifest from the promoted mod).
+ */
+export function releaseRecord(actor: ActorArt): PreviousRelease {
+  const art = (key: string): ReleaseArt | null => {
+    const f = artLab.files[key];
+    if (!f) return null;
+    const p = f.provenance;
+    return { file: f.modPath, url: f.url, sha256: f.sha256, origin: p?.origin ?? "unknown", generator: p?.generation?.model ?? p?.tool ?? p?.generator ?? null, date: p?.date ?? p?.source?.date ?? null };
+  };
+  const icon = actor.cameo.file ? art(actor.cameo.file) : null;
+  const model = actor.files.filter(k => /\.(vxl|shp)$/i.test(k) && k !== actor.cameo.file).flatMap(k => { const a = art(k); return a ? [a] : []; });
+  return { icon, model };
 }
 
 /** Map lighting presets: the mod's maps tint the whole battlefield with TintPostProcessEffect. */

@@ -212,6 +212,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
         ...existing, id, factionId: existing?.factionId ?? "", factionName: existing?.factionName ?? "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
         queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits, sources: s.sources,
         ...(existing?.spec.voxel && !s.spec.voxel ? { voxelBase: existing.spec } : {}),
+        ...(existing ? { previousArt: { spec: existing.spec, sprite: existing.sprite } } : {}),
       });
     }
     // Lists identify a unit by what the game the owner plays installs: the preview copy's cameo and the sources

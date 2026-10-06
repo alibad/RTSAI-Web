@@ -39,7 +39,9 @@ export type PreviewAnimation = { trait: string; sequence: string; file: string |
 /* trait "sequence": a voxel sequence the overlay remaps to another file; the actor's own trait for it plays it. */
 export type PreviewActor = { model: string | null; icon: string | null; files: string[]; rules: boolean; animations?: PreviewAnimation[];
   /** The release (RTSAI-Mod main) carries this art byte for byte: promoted, so it is what the game plays. */
-  released?: boolean };
+  released?: boolean;
+  /** sha256 of the installed cameo(s) and native model files (VXL/SHP). */
+  iconShas?: string[]; modelShas?: string[] };
 /** How to play the preview copy: measured facts about the folders, and the command that launches it. */
 export type PreviewLaunch = { worktree: string; supportDir: string; engineBuilt: boolean; ra2Content: boolean; companionFiles: boolean; command: string };
 export type PreviewStatus = { available: boolean; branch: string | null; head: string | null; actors: Record<string, PreviewActor>; unmatched: string[]; launch?: PreviewLaunch };

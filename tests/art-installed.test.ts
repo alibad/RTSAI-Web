@@ -102,3 +102,24 @@ test("promotion: preview art the release carries byte for byte is marked release
   const h = historyFor({ actor: "r2qilin", ws, entry: marked.actors.r2qilin, release: { cameo: "/release.png", hasModel: true, sources: release } });
   assert.ok(!h.some(e => e.origin === "release"));
 });
+
+test("history after promotion, before the archive: the synced manifest's release shows as Historical with its provenance", () => {
+  const previous = {
+    icon: { file: "mods/rtsai/modern-factions/icons/r2qilin.png", url: "/art-lab/icons/r2qilin.png", sha256: "old-icon", origin: "generated", generator: "Qwen/Qwen-Image", date: "2026-10-02" },
+    model: [{ file: "mods/rtsai/modern-factions/voxels/r2qilintur.vxl", url: "/t", sha256: "old-tur", origin: "rendered-from-project-geometry", generator: "project-geometry", date: null },
+      { file: "mods/rtsai/modern-factions/voxels/r2qilin.vxl", url: "/b", sha256: "old-body", origin: "rendered-from-project-geometry", generator: "project-geometry", date: "2026-09-05" }],
+  };
+  const promoted = { ...entry, released: true, iconShas: ["new-icon"], modelShas: ["new-shp"] };
+  const h = historyFor({ actor: "r2qilin", ws, entry: promoted, release: { cameo: "/new.png", hasModel: true }, previous });
+  const icon = h.find(e => e.key === "previous:icon")!, model = h.find(e => e.key === "previous:model")!;
+  assert.equal(icon.label, "Historical · painted icon (release before the new art was promoted)");
+  assert.deepEqual([icon.generator, icon.date, icon.file, icon.image], ["Qwen/Qwen-Image", "2026-10-02", "mods/rtsai/modern-factions/icons/r2qilin.png", "/art-lab/icons/r2qilin.png"]);
+  assert.equal(model.file, "mods/rtsai/modern-factions/voxels/r2qilin.vxl", "the body names the model");
+  assert.equal(model.previous, true);
+  // Once the manifest is synced from the promoted mod (same bytes) or the archive holds them, they are not repeated.
+  assert.ok(!historyFor({ actor: "r2qilin", ws, entry: { ...promoted, iconShas: ["old-icon"], modelShas: ["old-tur", "old-body"] }, release: { cameo: null, hasModel: true }, previous }).some(e => e.key.startsWith("previous:")));
+  const archive = [{ file: "icon.png", url: "/a", slot: "icon" as const, label: null, generator: null, date: null, sha256: "old-icon" }];
+  assert.ok(!historyFor({ actor: "r2qilin", ws, entry: promoted, release: { cameo: null, hasModel: true }, previous, archive }).some(e => e.key === "previous:icon"));
+  // Before promotion the live release itself is the entry; the manifest record is not shown twice.
+  assert.ok(!historyFor({ actor: "r2qilin", ws, entry, release: { cameo: "/release.png", hasModel: true, sources: release }, previous }).some(e => e.key.startsWith("previous:")));
+});
