@@ -21,9 +21,10 @@ const noindex = /name="robots" content="noindex, nofollow"/;
 test("the Faction Art Lab renders and is never indexed", async () => {
   const pages = {
     "/art": [/Faction Art Lab/, /Five-faction comparison/, /href="\/art\/saudi"/],
-    "/art/china": [/Qilin Battle Tank/, /Build-palette cameos/, /model sequence “rotor”/],
-    "/art/iran/r2karrar": [/Karrar Battle Tank/, /How the parts come together/, /Generator source/, /github\.com\/alibad\/OpenRA-AI\/blob\/[0-9a-f]{40}\/scripts\//, /Give feedback on this unit|art-viewer/],
-    "/art/china/r2cnrifle": [/SHP sprite/, /china-art\/r2cnrifle\.shp/],
+    "/art/china": [/Qilin Battle Tank/, /Build-palette cameos/],
+    // Promoted art: a prerendered sprite rendered from the unit's 3D model, credited to its RTSAI-Art candidate.
+    "/art/iran/r2karrar": [/Karrar Battle Tank/, /SHP sprite/, /vehicles\/r2karrar\.shp/, /3D model <code>units\/r2karrar\/candidates\/[^<]+\.glb<\/code>/, /Give feedback on this unit|art-viewer/],
+    "/art/china/r2cnrifle": [/SHP sprite/, /infantry\/r2cnrifle\.shp/],
   };
   for (const [path, patterns] of Object.entries(pages)) {
     const response = await render(path);

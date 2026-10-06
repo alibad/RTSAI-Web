@@ -32,7 +32,9 @@ function FileRow({ file }: { file: ArtFile }) {
       <td>
         {p.source ? <>{p.source.repo} <code>{p.source.commit.slice(0, 10)}</code> {p.source.date}<br /><code>{p.source.path}</code></> : null}
         {p.generation ? <>{p.generation.model} rev <code>{p.generation.model_revision?.slice(0, 10)}</code>, seed {p.generation.seed}, variant {p.generation.variant}, {p.generation.runtime}{p.tool ? <>, <code>{p.tool}</code></> : null}{p.date ? `, ${p.date}` : ""}</> : null}
-        {p.script ? <><br /><code>{p.script}</code>{p.geometry ? <> · geometry <code>{p.geometry}</code></> : null}</> : null}
+        {p.script ? <><br /><code>{p.script}</code>{typeof p.geometry === "string" ? <> · geometry <code>{p.geometry}</code></> : null}</> : null}
+        {p.geometry && typeof p.geometry === "object" ? <><br />3D model <code>{p.geometry.mesh}</code>{p.geometry.madeBy ? ` · ${p.geometry.madeBy}` : ""}</> : null}
+        {!p.generation && p.tool ? <><br /><code>{p.tool}</code>{p.date ? `, ${p.date}` : ""}</> : null}
       </td>
     </tr>
   );

@@ -11,7 +11,8 @@ export type ProvenanceSummary = {
   origin: string;
   generator: string;
   script?: string;
-  geometry?: string;
+  /** The script's geometry source, or (promoted art) the 3D model it was rendered from. */
+  geometry?: string | { mesh?: string; sha256?: string; madeBy?: string; fromImage?: string };
   source?: { repo: string; path: string; commit: string; date?: string };
   tool?: string;
   date?: string;
