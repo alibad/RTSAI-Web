@@ -33,7 +33,7 @@ test("every public faction-art file is recorded, content-hashed and made by the 
 
 test("all modern units have a render and a cameo; every faction has a lineup", () => {
   const actors = artLab.factions.flatMap(f => f.actors);
-  assert.equal(actors.length, 122);
+  assert.equal(actors.length, 124);
   for (const id of actors) {
     const unit = manifest.units[id];
     assert.ok(unit, id);

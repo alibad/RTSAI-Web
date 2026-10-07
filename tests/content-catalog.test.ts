@@ -6,7 +6,7 @@ import { verifyEvidence } from "../scripts/release-evidence.mjs";
 test("shared catalog has complete faction, unit, mode and media relationships", () => {
   assert.equal(catalog.schemaVersion, 1);
   assert.equal(new Set(factions.map(f => f.id)).size, 7);
-  assert.equal(new Set(units.map(u => u.id)).size, 47);
+  assert.equal(new Set(units.map(u => u.id)).size, 49);
   assert.deepEqual(catalog.modes.map(m => m.id), ["ra", "ra2"]);
   for (const f of factions) {
     assert.ok(mediaById(f.heroAssetId));
@@ -16,7 +16,7 @@ test("shared catalog has complete faction, unit, mode and media relationships", 
     }
   }
   for (const u of units) for (const id of u.assetIds) assert.ok(mediaById(id), id);
-  assert.equal(unitById("cncloud")?.variants.ra.actorId, "CNCLOUD");
+  assert.equal(unitById("cncloud")?.variants.ra?.actorId, "CNCLOUD");
   assert.equal(unitById("cncloud")?.variants.ra2?.actorId, "r2cloud");
   assert.equal(unitById("cnhaiwang")?.variants.ra2?.actorId, "r2haiwang");
 });
@@ -64,7 +64,7 @@ test("complete rosters retain source names, countries and all buildings", async 
   const source = JSON.parse(await readFile(new URL("../../RTSAI-Art/rebuild/catalog.json", import.meta.url), "utf8"));
   assert.equal(rosterFactions("ra2").length, 16);
   assert.equal(rosterFactions("ra").length, 12);
-  assert.equal(rosters.actors.length, 396);
+  assert.equal(rosters.actors.length, 398);
   for (const faction of rosters.factions) {
     const original = source.factions.find((f: {id: string; mode: string}) => f.id === faction.id && f.mode === (faction.mode === "ra" ? "classic" : "ra2"));
     assert.equal(faction.name, original.name);

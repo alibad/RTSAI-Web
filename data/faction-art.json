@@ -3104,6 +3104,35 @@
     "motion": "run"
    }
   },
+  "r2hzfpv": {
+   "faction": "hezbollah",
+   "category": "infantry",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzfpv-480.db29e6c9d6e5.avif",
+     "240": "/faction-art/units/r2hzfpv-240.573cfe6a4114.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzfpv-480.3496d7541776.webp",
+     "240": "/faction-art/units/r2hzfpv-240.168f0a72a558.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzfpv.c824b18d43f4.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzfpv.c58dc3a59367.webp",
+    "frameWidth": 24,
+    "frameHeight": 42,
+    "frames": 8,
+    "frameMs": 90,
+    "motion": "run"
+   }
+  },
   "r2hzspotter": {
    "faction": "hezbollah",
    "category": "infantry",
@@ -3244,6 +3273,35 @@
     "src": "/faction-art/sprites/r2hzescort.3f20b425690b.webp",
     "frameWidth": 68,
     "frameHeight": 46,
+    "frames": 32,
+    "frameMs": 70,
+    "motion": "turntable"
+   }
+  },
+  "r2hzrail": {
+   "faction": "hezbollah",
+   "category": "vehicle",
+   "render": {
+    "width": 480,
+    "height": 384,
+    "avif": {
+     "480": "/faction-art/units/r2hzrail-480.db44288833e9.avif",
+     "240": "/faction-art/units/r2hzrail-240.cc975b1c1087.avif"
+    },
+    "webp": {
+     "480": "/faction-art/units/r2hzrail-480.1e0d69c63efb.webp",
+     "240": "/faction-art/units/r2hzrail-240.a87b8e71c375.webp"
+    }
+   },
+   "cameo": {
+    "src": "/faction-art/cameos/r2hzrail.61b30fa64bbf.png",
+    "width": 60,
+    "height": 48
+   },
+   "sprite": {
+    "src": "/faction-art/sprites/r2hzrail.4c18899e2537.webp",
+    "frameWidth": 62,
+    "frameHeight": 40,
     "frames": 32,
     "frameMs": 70,
     "motion": "turntable"

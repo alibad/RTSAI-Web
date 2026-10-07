@@ -846,6 +846,32 @@ export const gameMedia = [
     "sourcePath": "../RTSAI-Art/units/r2hzescort/candidates/cameo-v3-render/render-x4.png"
   },
   {
+    "id": "hezbollah-hzfpv-cameo",
+    "faction": "hezbollah",
+    "title": "FPV Team production cameo",
+    "category": "cameo",
+    "detail": "Installed build-menu cameo",
+    "validation": "Shipped asset",
+    "src": "/game-media/hezbollah/hzfpv.c824b18d43f4.png",
+    "bytes": 4965,
+    "width": 60,
+    "height": 48,
+    "sourcePath": "../RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzfpv.png"
+  },
+  {
+    "id": "hezbollah-hzfpv-source",
+    "faction": "hezbollah",
+    "title": "FPV Team render",
+    "category": "unit",
+    "detail": "Rendered from the approved 3D model",
+    "validation": "Source artwork",
+    "src": "/game-media/hezbollah/hzfpv-source.56ca13674c2c.png",
+    "bytes": 31864,
+    "width": 240,
+    "height": 192,
+    "sourcePath": "../RTSAI-Art/units/r2hzfpv/candidates/cameo-v3-render/render-x4.png"
+  },
+  {
     "id": "hezbollah-hzmissileboat-cameo",
     "faction": "hezbollah",
     "title": "Coastal Missile Boat production cameo",
@@ -870,6 +896,32 @@ export const gameMedia = [
     "width": 240,
     "height": 192,
     "sourcePath": "../RTSAI-Art/units/r2hzmissileboat/candidates/cameo-v3-render/render-x4.png"
+  },
+  {
+    "id": "hezbollah-hzrail-cameo",
+    "faction": "hezbollah",
+    "title": "Rail Technical production cameo",
+    "category": "cameo",
+    "detail": "Installed build-menu cameo",
+    "validation": "Shipped asset",
+    "src": "/game-media/hezbollah/hzrail.61b30fa64bbf.png",
+    "bytes": 5051,
+    "width": 60,
+    "height": 48,
+    "sourcePath": "../RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzrail.png"
+  },
+  {
+    "id": "hezbollah-hzrail-source",
+    "faction": "hezbollah",
+    "title": "Rail Technical render",
+    "category": "unit",
+    "detail": "Rendered from the approved 3D model",
+    "validation": "Source artwork",
+    "src": "/game-media/hezbollah/hzrail-source.66133c668a49.png",
+    "bytes": 44200,
+    "width": 240,
+    "height": 192,
+    "sourcePath": "../RTSAI-Art/units/r2hzrail/candidates/cameo-v3-render/render-x4.png"
   },
   {
     "id": "hezbollah-hzrecoilless-cameo",

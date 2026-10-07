@@ -3,9 +3,9 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "5df5950ade705955fa55b363ba293a9d920b4214",
+  "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8",
   "provenanceGeneratedBy": "tools/art-provenance.py",
-  "provenanceSha256": "83066e7b60702a9a982ecedef9e6d95468da46dc8e8e9706319c136cd9badc56",
+  "provenanceSha256": "14c2ccd60f9e6876f608a85cd389f505395d7572fb79f96f6ffc84e55138f9bf",
   "commercialRa2Data": "None found. Every unit sprite and cameo is a render of the project's own 3D model (a GLB generated locally from the project's concept picture), installed from a committed RTSAI-Art candidate with the same bytes; original RA2 files were read only locally to measure target statistics, never as input pixels; the flags are drawn from code. See docs/art-provenance.md.",
   "levantBinding": {
    "generatedBy": "scripts/bind-levant-provenance.mjs",
@@ -268,6 +268,19 @@
     1
    ],
    "definedBy": "World PaletteFromFile@r2hzat-glb"
+  },
+  "r2hzfpv-glb": {
+   "name": "r2hzfpv-glb",
+   "file": "infantry/r2hzfpv.pal",
+   "remap": [],
+   "basePalette": null,
+   "transparent": [
+    0
+   ],
+   "shadow": [
+    1
+   ],
+   "definedBy": "World PaletteFromFile@r2hzfpv-glb"
   },
   "r2hzrifle-glb": {
    "name": "r2hzrifle-glb",
@@ -1303,6 +1316,36 @@
     1
    ],
    "definedBy": "World PlayerColorPalette@r2hzat-glb"
+  },
+  "r2hzfpv-glb-player": {
+   "name": "r2hzfpv-glb-player",
+   "file": "infantry/r2hzfpv.pal",
+   "remap": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "basePalette": "r2hzfpv-glb",
+   "transparent": [
+    0
+   ],
+   "shadow": [
+    1
+   ],
+   "definedBy": "World PlayerColorPalette@r2hzfpv-glb"
   },
   "r2hzrifle-glb-player": {
    "name": "r2hzrifle-glb-player",
@@ -2824,11 +2867,13 @@
    "actors": [
     "r2hzrifle",
     "r2hzat",
+    "r2hzfpv",
     "r2hzspotter",
     "r2hzscout",
     "r2hztechnical",
     "r2hzrecoilless",
     "r2hzescort",
+    "r2hzrail",
     "r2hzrockets",
     "r2hzdrone",
     "r2hzskiff",
@@ -33184,7 +33229,7 @@
    "id": "r2hzrifle",
    "factionId": "hezbollah",
    "name": "Line Fighter",
-   "description": "Inexpensive rifle infantry. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and artillery defeat isolated positions.",
+   "description": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
    "category": "infantry",
    "domain": "ground",
    "roles": [
@@ -33194,7 +33239,7 @@
     "Infantry"
    ],
    "buildPaletteOrder": 10,
-   "cost": 150,
+   "cost": 275,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzrifle.png",
@@ -33602,7 +33647,7 @@
    "id": "r2hzat",
    "factionId": "hezbollah",
    "name": "Ridge Missile Team",
-   "description": "Light anti-armor missile infantry. A signal post or scout improves range and reload. Vulnerable to infantry, detectors and air attacks.",
+   "description": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
    "category": "infantry",
    "domain": "ground",
    "roles": [
@@ -33612,7 +33657,7 @@
     "Infantry"
    ],
    "buildPaletteOrder": 20,
-   "cost": 350,
+   "cost": 500,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzat.png",
@@ -34016,11 +34061,429 @@
    "catalogUnitId": "hzat",
    "generator": []
   },
+  "r2hzfpv": {
+   "id": "r2hzfpv",
+   "factionId": "hezbollah",
+   "name": "FPV Team",
+   "description": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
+   "category": "infantry",
+   "domain": "ground",
+   "roles": [
+    "drone-swarm"
+   ],
+   "queue": [
+    "Infantry"
+   ],
+   "buildPaletteOrder": 50,
+   "cost": 500,
+   "cameo": {
+    "sequence": "icon",
+    "file": "icons/r2hzfpv.png",
+    "external": null
+   },
+   "render": "sprite",
+   "voxel": null,
+   "sprite": {
+    "image": "r2hzfpv",
+    "palette": "r2hzfpv-glb-player",
+    "shp": {
+     "width": 96,
+     "height": 96,
+     "frames": 1016,
+     "compression": [
+      3
+     ]
+    },
+    "sequences": [
+     {
+      "name": "mindcontrol",
+      "file": null,
+      "external": {
+       "ref": "yuricntl.shp",
+       "reason": "RA2 game data (mounted from the player's installed RA2 content)"
+      },
+      "start": 0,
+      "length": "*",
+      "stride": 0,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       -24,
+       24
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithIdleOverlay@mindcontrol"
+      ],
+      "inherited": true
+     },
+     {
+      "name": "stand",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 0,
+      "length": 1,
+      "stride": 1,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 160,
+      "zOffset": 0,
+      "shadowStart": 508,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithInfantryBody stand"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "run",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 8,
+      "length": 8,
+      "stride": 8,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 90,
+      "zOffset": 0,
+      "shadowStart": 516,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithInfantryBody move"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "idle1",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 72,
+      "length": 12,
+      "stride": 12,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 120,
+      "zOffset": 0,
+      "shadowStart": 580,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithInfantryBody idle"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "idle2",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 168,
+      "length": 12,
+      "stride": 12,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 120,
+      "zOffset": 0,
+      "shadowStart": 676,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithInfantryBody idle"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "prone-run",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 264,
+      "length": 6,
+      "stride": 6,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 110,
+      "zOffset": 0,
+      "shadowStart": 772,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": false
+     },
+     {
+      "name": "prone-stand",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 312,
+      "length": 1,
+      "stride": 1,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 160,
+      "zOffset": 0,
+      "shadowStart": 820,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": false
+     },
+     {
+      "name": "die1",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 320,
+      "length": 14,
+      "stride": 14,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 70,
+      "zOffset": 0,
+      "shadowStart": 828,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithDeathAnimation@normal"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "die2",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 334,
+      "length": 14,
+      "stride": 14,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 70,
+      "zOffset": 0,
+      "shadowStart": 842,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithDeathAnimation@normal"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "shoot",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 348,
+      "length": 6,
+      "stride": 6,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 80,
+      "zOffset": 0,
+      "shadowStart": 856,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithInfantryBody attack"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "prone-shoot",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 396,
+      "length": 6,
+      "stride": 6,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 80,
+      "zOffset": 0,
+      "shadowStart": 904,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": false
+     },
+     {
+      "name": "liedown",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 444,
+      "length": 4,
+      "stride": 4,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 80,
+      "zOffset": 0,
+      "shadowStart": 952,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": false
+     },
+     {
+      "name": "standup",
+      "file": "infantry/r2hzfpv.shp",
+      "external": null,
+      "start": 476,
+      "length": 4,
+      "stride": 4,
+      "facings": 8,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 80,
+      "zOffset": 0,
+      "shadowStart": 984,
+      "offset": [
+       0,
+       0,
+       16
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": false
+     },
+     {
+      "name": "icon",
+      "file": "icons/r2hzfpv.png",
+      "external": null,
+      "start": 0,
+      "length": 1,
+      "stride": 1,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "Buildable icon (cameo)"
+      ],
+      "inherited": false
+     }
+    ],
+    "quantizedFacings": null,
+    "classicFacingBodyOrientation": false,
+    "turret": null,
+    "overlays": [
+     {
+      "sequence": "mindcontrol",
+      "trait": "WithIdleOverlay@mindcontrol",
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "requiresCondition": "controlled",
+      "mode": "loop"
+     }
+    ]
+   },
+   "files": [
+    "icons/r2hzfpv.png",
+    "infantry/r2hzfpv.pal",
+    "infantry/r2hzfpv.shp"
+   ],
+   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "catalogUnitId": "hzfpv",
+   "generator": []
+  },
   "r2hzspotter": {
    "id": "r2hzspotter",
    "factionId": "hezbollah",
    "name": "Field Spotter",
-   "description": "Reconnaissance specialist who detects cloaked units and guides nearby eligible missile teams and vehicles. A weak weapon makes escorts essential.",
+   "description": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
    "category": "infantry",
    "domain": "ground",
    "roles": [
@@ -34030,7 +34493,7 @@
     "Infantry"
    ],
    "buildPaletteOrder": 60,
-   "cost": 525,
+   "cost": 450,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzspotter.png",
@@ -34438,7 +34901,7 @@
    "id": "r2hzscout",
    "factionId": "hezbollah",
    "name": "Cedar Scout",
-   "description": "One concealed scout with a suppressed carbine and demolition ability. Stationary concealment breaks when firing, moving or damaged. Vulnerable once detected.",
+   "description": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
    "category": "infantry",
    "domain": "ground",
    "roles": [
@@ -34448,7 +34911,7 @@
     "Infantry"
    ],
    "buildPaletteOrder": 140,
-   "cost": 1650,
+   "cost": 1800,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzscout.png",
@@ -35087,7 +35550,7 @@
    "id": "r2hzrecoilless",
    "factionId": "hezbollah",
    "name": "Recoilless Technical",
-   "description": "Mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
+   "description": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
    "category": "vehicle",
    "domain": "ground",
    "roles": [
@@ -35097,7 +35560,7 @@
     "Vehicle"
    ],
    "buildPaletteOrder": 21,
-   "cost": 550,
+   "cost": 475,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzrecoilless.png",
@@ -35545,11 +36008,234 @@
    "catalogUnitId": "hzescort",
    "generator": []
   },
+  "r2hzrail": {
+   "id": "r2hzrail",
+   "factionId": "hezbollah",
+   "name": "Rail Technical",
+   "description": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
+   "category": "vehicle",
+   "domain": "ground",
+   "roles": [
+    "artillery"
+   ],
+   "queue": [
+    "Vehicle"
+   ],
+   "buildPaletteOrder": 55,
+   "cost": 450,
+   "cameo": {
+    "sequence": "icon",
+    "file": "icons/r2hzrail.png",
+    "external": null
+   },
+   "render": "sprite",
+   "voxel": null,
+   "sprite": {
+    "image": "r2hzrail",
+    "palette": "r2prerender-hezbollahplayer",
+    "shp": {
+     "width": 74,
+     "height": 60,
+     "frames": 64,
+     "compression": [
+      3
+     ]
+    },
+    "sequences": [
+     {
+      "name": "mindcontrol",
+      "file": null,
+      "external": {
+       "ref": "yuricntl.shp",
+       "reason": "RA2 game data (mounted from the player's installed RA2 content)"
+      },
+      "start": 0,
+      "length": "*",
+      "stride": 0,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       -24,
+       24
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithIdleOverlay@mindcontrol"
+      ],
+      "inherited": true
+     },
+     {
+      "name": "muzzle",
+      "file": null,
+      "external": {
+       "ref": "gunfire.shp",
+       "reason": "RA2 game data (mounted from the player's installed RA2 content)"
+      },
+      "start": 0,
+      "length": "*",
+      "stride": 0,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": true
+     },
+     {
+      "name": "muzzle-2",
+      "file": null,
+      "external": {
+       "ref": "vtmuzzle.shp",
+       "reason": "RA2 game data (mounted from the player's installed RA2 content)"
+      },
+      "start": 0,
+      "length": "*",
+      "stride": 0,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": true
+     },
+     {
+      "name": "idle",
+      "file": "vehicles/r2hzrail.shp",
+      "external": null,
+      "start": 0,
+      "length": 1,
+      "stride": 1,
+      "facings": 32,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": 32,
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "WithFacingSpriteBody"
+      ],
+      "inherited": false
+     },
+     {
+      "name": "muzzle-launch",
+      "file": null,
+      "external": {
+       "ref": "sgrysmk1.shp",
+       "reason": "RA2 game data (mounted from the player's installed RA2 content)"
+      },
+      "start": 0,
+      "length": "*",
+      "stride": 0,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [],
+      "inherited": false
+     },
+     {
+      "name": "icon",
+      "file": "icons/r2hzrail.png",
+      "external": null,
+      "start": 0,
+      "length": 1,
+      "stride": 1,
+      "facings": 1,
+      "reverseFacings": false,
+      "useClassicFacings": false,
+      "transpose": false,
+      "tick": 40,
+      "zOffset": 0,
+      "shadowStart": -1,
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "frames": null,
+      "reverses": false,
+      "usedBy": [
+       "Buildable icon (cameo)"
+      ],
+      "inherited": false
+     }
+    ],
+    "quantizedFacings": 32,
+    "classicFacingBodyOrientation": false,
+    "turret": null,
+    "overlays": [
+     {
+      "sequence": "mindcontrol",
+      "trait": "WithIdleOverlay@mindcontrol",
+      "offset": [
+       0,
+       0,
+       0
+      ],
+      "requiresCondition": "controlled",
+      "mode": "loop"
+     }
+    ]
+   },
+   "files": [
+    "icons/r2hzrail.png",
+    "vehicles/hezbollah-prerender.pal",
+    "vehicles/r2hzrail.shp"
+   ],
+   "definedIn": "mods/rtsai/modern-factions/hezbollah.yaml",
+   "catalogUnitId": "hzrail",
+   "generator": []
+  },
   "r2hzrockets": {
    "id": "r2hzrockets",
    "factionId": "hezbollah",
    "name": "Mobile Rocket Battery",
-   "description": "Long-range rocket artillery with a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Scouts or signal posts improve guided fire; close attacks force withdrawal.",
+   "description": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
    "category": "vehicle",
    "domain": "ground",
    "roles": [
@@ -35559,7 +36245,7 @@
     "Vehicle"
    ],
    "buildPaletteOrder": 61,
-   "cost": 900,
+   "cost": 800,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzrockets.png",
@@ -35798,7 +36484,7 @@
    "id": "r2hzdrone",
    "factionId": "hezbollah",
    "name": "Loiter Drone",
-   "description": "One-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
+   "description": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
    "category": "aircraft",
    "domain": "air",
    "roles": [
@@ -35808,7 +36494,7 @@
     "Vehicle"
    ],
    "buildPaletteOrder": 85,
-   "cost": 700,
+   "cost": 450,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzdrone.png",
@@ -36200,7 +36886,7 @@
    "id": "r2hzmissileboat",
    "factionId": "hezbollah",
    "name": "Coastal Missile Boat",
-   "description": "Light guided-missile craft. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
+   "description": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
    "category": "ship",
    "domain": "naval",
    "roles": [
@@ -36210,7 +36896,7 @@
     "Ship"
    ],
    "buildPaletteOrder": 20,
-   "cost": 1100,
+   "cost": 1000,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzmissileboat.png",
@@ -37317,7 +38003,7 @@
    "id": "r2hzcoastal",
    "factionId": "hezbollah",
    "name": "Coastal Missile Emplacement",
-   "description": "Concealed missile defense against ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
+   "description": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
    "category": "defense",
    "domain": "defense",
    "roles": [
@@ -37327,7 +38013,7 @@
     "Support"
    ],
    "buildPaletteOrder": 40,
-   "cost": 1200,
+   "cost": 1000,
    "cameo": {
     "sequence": "icon",
     "file": "icons/r2hzcoastal.png",
@@ -37678,7 +38364,7 @@
    "id": "r2hzrelay",
    "factionId": "hezbollah",
    "name": "Signal Post",
-   "description": "Powered six-cell support and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
+   "description": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
    "category": "defense",
    "domain": "defense",
    "roles": [
@@ -40623,6 +41309,26 @@
     "date": "2026-10-06"
    }
   },
+  "icons/r2hzfpv.png": {
+   "url": "/art-lab/icons/r2hzfpv.png",
+   "modPath": "mods/rtsai/modern-factions/icons/r2hzfpv.png",
+   "bytes": 4965,
+   "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8",
+   "provenance": {
+    "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8",
+    "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
+    "origin": "rendered-from-project-geometry",
+    "generator": "project-geometry",
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "path": "units/r2hzfpv/candidates/cameo-v3-render/cameo.png",
+     "commit": "c08a25f8cc14d5cf0ca18ca8198524a8521c72ec",
+     "date": "2026-10-07"
+    },
+    "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
+    "date": "2026-10-07"
+   }
+  },
   "icons/r2hzmissileboat.png": {
    "url": "/art-lab/icons/r2hzmissileboat.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzmissileboat.png",
@@ -40652,6 +41358,31 @@
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
+   }
+  },
+  "icons/r2hzrail.png": {
+   "url": "/art-lab/icons/r2hzrail.png",
+   "modPath": "mods/rtsai/modern-factions/icons/r2hzrail.png",
+   "bytes": 5051,
+   "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12",
+   "provenance": {
+    "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12",
+    "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
+    "origin": "rendered-from-project-geometry",
+    "generator": "project-geometry",
+    "geometry": {
+     "mesh": "units/r2hzrail/candidates/mesh-v1-blender/mesh.glb",
+     "sha256": "b194be7f3a30cea822b004a3ff2392083747a5bfd94d4875513db60d0452ed42",
+     "madeBy": "Blender 5.2.2 LTS: hand-authored bmesh script (tools/hz_doctrine_models.py)"
+    },
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "path": "units/r2hzrail/candidates/cameo-v3-render/cameo.png",
+     "commit": "c08a25f8cc14d5cf0ca18ca8198524a8521c72ec",
+     "date": "2026-10-07"
+    },
+    "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
+    "date": "2026-10-07"
    }
   },
   "icons/r2hzrecoilless.png": {
@@ -43426,6 +44157,57 @@
     "date": "2026-10-06"
    }
   },
+  "infantry/r2hzfpv.pal": {
+   "url": "/art-lab/infantry/r2hzfpv.pal",
+   "modPath": "mods/rtsai/modern-factions/infantry/r2hzfpv.pal",
+   "bytes": 768,
+   "sha256": "061c3eff61241c52ae1faeb5f21fd4094924db3ee3a786e8b14bdc74183c3e19",
+   "provenance": {
+    "sha256": "061c3eff61241c52ae1faeb5f21fd4094924db3ee3a786e8b14bdc74183c3e19",
+    "type": "palette (index 0 transparent, 1 shadow, 16-31 player remap)",
+    "origin": "procedural",
+    "generator": "project-geometry",
+    "script": "computed by the route from the project's material classes and faction colours",
+    "geometry": {
+     "mesh": "units/r2hzfpv/candidates/mesh-v1-blender/mesh.glb",
+     "sha256": "bfcb43494b0a5ad81e7f1326529a9625f071ce717bd6fb89f04d85aa155049b4",
+     "madeBy": "Blender 5.2.2 LTS: hand-authored bmesh script (tools/hz_doctrine_models.py)"
+    },
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "path": "units/r2hzfpv/candidates/sprite-v3-glb/r2hzfpv.pal",
+     "commit": "c08a25f8cc14d5cf0ca18ca8198524a8521c72ec",
+     "date": "2026-10-07"
+    },
+    "tool": "Blender CPU rig + render of the generated GLB (tools/infantry_blender.py, infantry_sprite_post.py)",
+    "date": "2026-10-07"
+   }
+  },
+  "infantry/r2hzfpv.shp": {
+   "url": "/art-lab/infantry/r2hzfpv.shp",
+   "modPath": "mods/rtsai/modern-factions/infantry/r2hzfpv.shp",
+   "bytes": 314535,
+   "sha256": "3fb62604a173055e4682b5db9b174ef7f9eb9d3461e42d4d4f8cabf95d440222",
+   "provenance": {
+    "sha256": "3fb62604a173055e4682b5db9b174ef7f9eb9d3461e42d4d4f8cabf95d440222",
+    "type": "infantry sprite (TS/RA2 SHP: stand, run, fire, prone, idle and death, 8 facings, shadow frames)",
+    "origin": "rendered-from-project-geometry",
+    "generator": "project-geometry",
+    "geometry": {
+     "mesh": "units/r2hzfpv/candidates/mesh-v1-blender/mesh.glb",
+     "sha256": "bfcb43494b0a5ad81e7f1326529a9625f071ce717bd6fb89f04d85aa155049b4",
+     "madeBy": "Blender 5.2.2 LTS: hand-authored bmesh script (tools/hz_doctrine_models.py)"
+    },
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "path": "units/r2hzfpv/candidates/sprite-v3-glb/r2hzfpv.shp",
+     "commit": "c08a25f8cc14d5cf0ca18ca8198524a8521c72ec",
+     "date": "2026-10-07"
+    },
+    "tool": "Blender CPU rig + render of the generated GLB (tools/infantry_blender.py, infantry_sprite_post.py)",
+    "date": "2026-10-07"
+   }
+  },
   "infantry/r2hzrifle.pal": {
    "url": "/art-lab/infantry/r2hzrifle.pal",
    "modPath": "mods/rtsai/modern-factions/infantry/r2hzrifle.pal",
@@ -45463,6 +46245,31 @@
     },
     "tool": "tools/glb_prerender.py",
     "date": "2026-10-06"
+   }
+  },
+  "vehicles/r2hzrail.shp": {
+   "url": "/art-lab/vehicles/r2hzrail.shp",
+   "modPath": "mods/rtsai/modern-factions/vehicles/r2hzrail.shp",
+   "bytes": 39849,
+   "sha256": "035901dfeaf866f3052d20b7e2af3dd3c4e164c71c37e8dce2430392622eb51c",
+   "provenance": {
+    "sha256": "035901dfeaf866f3052d20b7e2af3dd3c4e164c71c37e8dce2430392622eb51c",
+    "type": "prerendered vehicle, ship or aircraft sprite (TS/RA2 SHP: 32 facings, turret, spin and reload variants, sun-shadow frames)",
+    "origin": "rendered-from-project-geometry",
+    "generator": "project-geometry",
+    "geometry": {
+     "mesh": "units/r2hzrail/candidates/mesh-v1-blender/mesh.glb",
+     "sha256": "b194be7f3a30cea822b004a3ff2392083747a5bfd94d4875513db60d0452ed42",
+     "madeBy": "Blender 5.2.2 LTS: hand-authored bmesh script (tools/hz_doctrine_models.py)"
+    },
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "path": "units/r2hzrail/candidates/sprite-v6-prerender/r2hzrail.shp",
+     "commit": "c08a25f8cc14d5cf0ca18ca8198524a8521c72ec",
+     "date": "2026-10-07"
+    },
+    "tool": "tools/glb_prerender.py",
+    "date": "2026-10-07"
    }
   },
   "vehicles/r2hzrecoilless.shp": {

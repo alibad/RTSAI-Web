@@ -1,6 +1,6 @@
 {
   "source": "OpenRA-AI/catalog/factions.json",
-  "sha256": "62e7d76e46e4c35dea8a1b7437fa6873e725e78e8825613c911de421dd14c667",
+  "sha256": "0dac3ea5fe27d89a6976b0ed62c9128e294f3635b4c954fe6d174294b8f63f3c",
   "catalog": {
     "schemaVersion": 1,
     "id": "modern-factions",
@@ -283,12 +283,12 @@
       {
         "id": "hezbollah",
         "name": "Hezbollah",
-        "title": "Concealed defense",
-        "tagline": "Hold the ground. Move before the counterattack.",
+        "title": "Salvo and swarm",
+        "tagline": "Few fighters. Many rockets. Small drones.",
         "story": "A fictional strategy-game roster built around light forces, concealed positions and vulnerable support nodes. It depicts gameplay roles, not real-world capability or operational doctrine.",
-        "playstyle": "Scout, spread out and control approaches with concealed positions. Guide missiles through spotters and signal posts, then relocate before close attackers or artillery arrive.",
-        "strengths": "Low-cost forces, stationary concealment, guided rocket pressure and agile coastal craft.",
-        "counterplay": "Detect concealed units, destroy signal posts and close the artillery minimum-range gap. Light armor loses concentrated fights.",
+        "playstyle": "Field a small core of veteran fighters, cover them with cheap rocket volleys and launch FPV drones from concealment. Fight from rough ground, keep drone teams inside their link and move launchers after each volley.",
+        "strengths": "Veteran infantry from the first minute, cheap rocket volume and regenerating micro-drones that cannons and artillery cannot hit.",
+        "counterplay": "Anti-air and small arms down FPV drones; kill the operator or leave the link. Close the rocket minimum range and use splash and detection against fewer, costlier fighters.",
         "heroAssetId": "hezbollah-roster",
         "accent": "#b3b881",
         "unitIds": [
@@ -296,10 +296,12 @@
           "hzat",
           "hzspotter",
           "hzscout",
+          "hzfpv",
           "hztechnical",
           "hzrecoilless",
           "hzescort",
           "hzrockets",
+          "hzrail",
           "hzdrone",
           "hzmissileboat",
           "hzskiff",
@@ -1236,7 +1238,7 @@
         "factionId": "hezbollah",
         "name": "Line Fighter",
         "role": "Line infantry",
-        "story": "Inexpensive rifle infantry. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and artillery defeat isolated positions.",
+        "story": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1253,7 +1255,7 @@
             "role": "Line infantry"
           },
           "ra2": {
-            "description": "Inexpensive rifle infantry. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and artillery defeat isolated positions.",
+            "description": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
             "actorId": "r2hzrifle",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
@@ -1267,7 +1269,7 @@
         "factionId": "hezbollah",
         "name": "Ridge Missile Team",
         "role": "Anti armor",
-        "story": "Light anti-armor missile infantry. A signal post or scout improves range and reload. Vulnerable to infantry, detectors and air attacks.",
+        "story": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1284,7 +1286,7 @@
             "role": "Anti armor"
           },
           "ra2": {
-            "description": "Light anti-armor missile infantry. A signal post or scout improves range and reload. Vulnerable to infantry, detectors and air attacks.",
+            "description": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
             "actorId": "r2hzat",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
@@ -1298,7 +1300,7 @@
         "factionId": "hezbollah",
         "name": "Field Spotter",
         "role": "Support",
-        "story": "Reconnaissance specialist who detects cloaked units and guides nearby eligible missile teams and vehicles. A weak weapon makes escorts essential.",
+        "story": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1315,7 +1317,7 @@
             "role": "Support"
           },
           "ra2": {
-            "description": "Reconnaissance specialist who detects cloaked units and guides nearby eligible missile teams and vehicles. A weak weapon makes escorts essential.",
+            "description": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
             "actorId": "r2hzspotter",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
@@ -1329,7 +1331,7 @@
         "factionId": "hezbollah",
         "name": "Cedar Scout",
         "role": "Line infantry",
-        "story": "One concealed scout with a suppressed carbine and demolition ability. Stationary concealment breaks when firing, moving or damaged. Vulnerable once detected.",
+        "story": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1346,12 +1348,35 @@
             "role": "Line infantry"
           },
           "ra2": {
-            "description": "One concealed scout with a suppressed carbine and demolition ability. Stationary concealment breaks when firing, moving or damaged. Vulnerable once detected.",
+            "description": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
             "actorId": "r2hzscout",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
             "name": "Cedar Scout",
             "role": "Line infantry"
+          }
+        }
+      },
+      {
+        "id": "hzfpv",
+        "factionId": "hezbollah",
+        "name": "FPV Team",
+        "role": "Drone swarm",
+        "story": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
+        "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
+        "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
+        "assetIds": [
+          "hezbollah-hzfpv-source",
+          "hezbollah-hzfpv-cameo"
+        ],
+        "variants": {
+          "ra2": {
+            "description": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
+            "actorId": "r2hzfpv",
+            "repository": "mod",
+            "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+            "name": "FPV Team",
+            "role": "Drone swarm"
           }
         }
       },
@@ -1391,7 +1416,7 @@
         "factionId": "hezbollah",
         "name": "Recoilless Technical",
         "role": "Anti armor",
-        "story": "Mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
+        "story": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1408,7 +1433,7 @@
             "role": "Anti armor"
           },
           "ra2": {
-            "description": "Mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
+            "description": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
             "actorId": "r2hzrecoilless",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah.yaml",
@@ -1453,7 +1478,7 @@
         "factionId": "hezbollah",
         "name": "Mobile Rocket Battery",
         "role": "Artillery",
-        "story": "Long-range rocket artillery with a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Scouts or signal posts improve guided fire; close attacks force withdrawal.",
+        "story": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1470,7 +1495,7 @@
             "role": "Artillery"
           },
           "ra2": {
-            "description": "Long-range rocket artillery with a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Scouts or signal posts improve guided fire; close attacks force withdrawal.",
+            "description": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
             "actorId": "r2hzrockets",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah.yaml",
@@ -1480,11 +1505,34 @@
         }
       },
       {
+        "id": "hzrail",
+        "factionId": "hezbollah",
+        "name": "Rail Technical",
+        "role": "Artillery",
+        "story": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
+        "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
+        "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
+        "assetIds": [
+          "hezbollah-hzrail-source",
+          "hezbollah-hzrail-cameo"
+        ],
+        "variants": {
+          "ra2": {
+            "description": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
+            "actorId": "r2hzrail",
+            "repository": "mod",
+            "rulesPath": "mods/rtsai/modern-factions/hezbollah.yaml",
+            "name": "Rail Technical",
+            "role": "Artillery"
+          }
+        }
+      },
+      {
         "id": "hzdrone",
         "factionId": "hezbollah",
         "name": "Loiter Drone",
         "role": "Strike aircraft",
-        "story": "One-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
+        "story": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1501,7 +1549,7 @@
             "role": "Strike aircraft"
           },
           "ra2": {
-            "description": "One-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
+            "description": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
             "actorId": "r2hzdrone",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
@@ -1515,7 +1563,7 @@
         "factionId": "hezbollah",
         "name": "Coastal Missile Boat",
         "role": "Naval screen",
-        "story": "Light guided-missile craft. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
+        "story": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1532,7 +1580,7 @@
             "role": "Naval screen"
           },
           "ra2": {
-            "description": "Light guided-missile craft. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
+            "description": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
             "actorId": "r2hzmissileboat",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
@@ -1670,7 +1718,7 @@
         "factionId": "hezbollah",
         "name": "Coastal Missile Emplacement",
         "role": "Anti armor",
-        "story": "Concealed missile defense against ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
+        "story": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
         "strengths": "Use the role and support relationships shown in the current mode’s rule-derived roster.",
         "counterplay": "Respect detection, range, armor and support dependencies; the local evaluation tools expose these tradeoffs.",
         "assetIds": [
@@ -1687,7 +1735,7 @@
             "role": "Anti armor"
           },
           "ra2": {
-            "description": "Concealed missile defense against ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
+            "description": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
             "actorId": "r2hzcoastal",
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
@@ -1701,7 +1749,7 @@
         "factionId": "hezbollah",
         "name": "Signal Post",
         "role": "Support structure",
-        "story": "A powered, unarmed support building. Local benefits end when it is destroyed or loses power.",
+        "story": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
         "strengths": "Supports eligible friendly units inside its visible range. Multiple sources do not multiply the bonus.",
         "counterplay": "Cut power, destroy the exposed node or fight outside its range.",
         "assetIds": [
@@ -1721,7 +1769,8 @@
             "repository": "mod",
             "rulesPath": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
             "name": "Signal Post",
-            "role": "Support structure"
+            "role": "Support structure",
+            "description": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack."
           }
         }
       },
@@ -1765,12 +1814,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "5df5950ade705955fa55b363ba293a9d920b4214",
-        "snapshotSha256": "6401ff627b16f88be635493ce5f5f216dbbbfd5381ae8c95e055a76de2f0bbf1"
+        "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8",
+        "snapshotSha256": "ff091ecd7cd04443a4fce0f52c4e5ac9f306f4c0fe41e24437b08c0e15977d3e"
       },
       "ra": {
         "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "31afaad8010658522ac1403ed69073319af679bf0cd45e4612c80e10953c760c"
+        "snapshotSha256": "d5247646319f633c9ca72eb98ee257374f05a3bed41a3c0ad9c2ec3b01e445c0"
       }
     },
     "factions": [
@@ -2459,6 +2508,7 @@
         "actors": [
           "ra2:r2hzrifle",
           "ra2:r2hzat",
+          "ra2:r2hzfpv",
           "ra2:r2hzspotter",
           "ra2:r2hzscout",
           "ra2:engineer",
@@ -2466,6 +2516,7 @@
           "ra2:r2hztechnical",
           "ra2:r2hzrecoilless",
           "ra2:r2hzescort",
+          "ra2:r2hzrail",
           "ra2:r2hzrockets",
           "ra2:harv",
           "ra2:htk",
@@ -5090,7 +5141,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 20,
@@ -5117,7 +5169,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 25,
@@ -5144,7 +5197,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 15,
@@ -5171,7 +5225,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 25,
@@ -5306,7 +5361,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 15,
@@ -5333,7 +5389,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 20,
@@ -5825,7 +5882,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 20,
@@ -5892,7 +5950,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 125,
@@ -6405,7 +6464,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 50,
@@ -6926,7 +6986,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 30,
@@ -8526,7 +8587,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 50,
@@ -9698,7 +9760,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 12,
@@ -10534,7 +10597,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 6,
@@ -10856,7 +10920,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 9,
@@ -11120,7 +11185,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 25,
@@ -11399,7 +11465,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 10,
@@ -11960,7 +12027,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 45,
@@ -12372,7 +12440,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 20,
@@ -12799,7 +12868,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 10,
@@ -13065,21 +13135,21 @@
         "mode": "ra2",
         "name": "Ridge Missile Team",
         "category": "infantry",
-        "cost": 350,
+        "cost": 500,
         "roles": [
           "anti-armor"
         ],
         "behavior": {
-          "health": 95,
+          "health": 120,
           "armor": "None",
           "speed": 60,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Light anti-armor missile infantry. A signal post or scout improves range and reload. Vulnerable to infantry, detectors and air attacks.",
+          "description": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
           "weapons": [
             {
               "id": "R2HZYemenRPG",
-              "range": 4.5,
+              "range": 5,
               "minRange": 0.75,
               "reload": 90,
               "burst": 1,
@@ -13088,15 +13158,15 @@
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 80,
+              "damage": 90,
               "versus": {
                 "Concrete": 35,
                 "None": 12,
                 "Flak": 20,
                 "Plate": 25,
                 "Light": 110,
-                "Medium": 100,
-                "Heavy": 95,
+                "Medium": 80,
+                "Heavy": 65,
                 "Wood": 55,
                 "Steel": 45
               },
@@ -13113,6 +13183,11 @@
               "id": "WithDeathAnimation",
               "label": "Death animation",
               "detail": "Death sequences vary with the damage type."
+            },
+            {
+              "id": "Cloak",
+              "label": "Cloak",
+              "detail": "Visibility changes with cloak conditions and detector coverage."
             },
             {
               "id": "FirepowerMultiplier:VETERAN",
@@ -13175,6 +13250,11 @@
               "detail": "50% when crate-damage."
             },
             {
+              "id": "DamageMultiplier:rough",
+              "label": "Damage Multiplier",
+              "detail": "90% when hz-rough."
+            },
+            {
               "id": "SpeedMultiplier:VETERAN",
               "label": "Speed Multiplier",
               "detail": "120% when rank-veteran && !rank-elite."
@@ -13227,7 +13307,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 13,
@@ -13290,7 +13371,7 @@
         "mode": "ra2",
         "name": "Coastal Missile Emplacement",
         "category": "defense",
-        "cost": 1200,
+        "cost": 1000,
         "roles": [
           "anti-armor"
         ],
@@ -13300,20 +13381,20 @@
           "speed": null,
           "footprint": "1, 1",
           "waterPlacement": false,
-          "description": "Concealed missile defense against ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
+          "description": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
           "weapons": [
             {
               "id": "R2HZYemenCoastalMissile",
               "range": 12,
               "minRange": 3,
-              "reload": 170,
-              "burst": 2,
+              "reload": 210,
+              "burst": 4,
               "targets": [
                 "Water",
                 "Ground"
               ],
               "projectile": "Missile",
-              "damage": 75,
+              "damage": 42,
               "versus": {
                 "Concrete": 50,
                 "None": 10,
@@ -13376,17 +13457,17 @@
         "mode": "ra2",
         "name": "Loiter Drone",
         "category": "aircraft",
-        "cost": 700,
+        "cost": 450,
         "roles": [
           "strike-aircraft"
         ],
         "behavior": {
-          "health": 90,
+          "health": 60,
           "armor": "Light",
-          "speed": 150,
+          "speed": 190,
           "footprint": null,
           "waterPlacement": false,
-          "description": "One-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
+          "description": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
           "weapons": [
             {
               "id": "R2HZSamadWarhead",
@@ -13399,7 +13480,7 @@
                 "Water"
               ],
               "projectile": "Bullet",
-              "damage": 220,
+              "damage": 150,
               "versus": {
                 "Concrete": 110,
                 "None": 30,
@@ -13621,12 +13702,187 @@
         }
       },
       {
+        "key": "ra2:r2hzfpv",
+        "id": "r2hzfpv",
+        "mode": "ra2",
+        "name": "FPV Team",
+        "category": "infantry",
+        "cost": 500,
+        "roles": [
+          "drone-swarm"
+        ],
+        "behavior": {
+          "health": 110,
+          "armor": "None",
+          "speed": 60,
+          "footprint": null,
+          "waterPlacement": false,
+          "description": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
+          "weapons": [
+            {
+              "id": "R2HZSpotterCarbine",
+              "range": 4,
+              "minRange": 0,
+              "reload": 46,
+              "burst": 2,
+              "targets": [
+                "Ground",
+                "Water",
+                "MicroDrone"
+              ],
+              "projectile": "InstantHit",
+              "damage": 7,
+              "versus": {
+                "None": 100,
+                "Flak": 80,
+                "Plate": 70,
+                "Light": 50,
+                "Medium": 25,
+                "Heavy": 25,
+                "Wood": 75,
+                "Steel": 50,
+                "Concrete": 25,
+                "Drone": 100,
+                "Rocket": 100
+              },
+              "condition": null
+            },
+            {
+              "id": "R2HZFPVLink",
+              "range": 7,
+              "minRange": 0,
+              "reload": 25,
+              "burst": 1,
+              "targets": [
+                "Ground",
+                "Water"
+              ],
+              "projectile": "InstantHit",
+              "damage": null,
+              "versus": {},
+              "condition": null
+            }
+          ],
+          "actions": [
+            {
+              "id": "SpawnActorOnDeath",
+              "label": "Wreck",
+              "detail": "Spawns a configured actor when destroyed."
+            },
+            {
+              "id": "WithDeathAnimation",
+              "label": "Death animation",
+              "detail": "Death sequences vary with the damage type."
+            },
+            {
+              "id": "Cloak",
+              "label": "Cloak",
+              "detail": "Visibility changes with cloak conditions and detector coverage."
+            },
+            {
+              "id": "aura:fpvlink",
+              "label": "Support aura",
+              "detail": "Grants r2-hz-fpvlink within 8 cells to Ally."
+            },
+            {
+              "id": "FirepowerMultiplier:VETERAN",
+              "label": "Firepower Multiplier",
+              "detail": "110% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "FirepowerMultiplier:ELITE",
+              "label": "Firepower Multiplier",
+              "detail": "130% when rank-elite."
+            },
+            {
+              "id": "FirepowerMultiplier:CRATES",
+              "label": "Firepower Multiplier",
+              "detail": "200% when crate-firepower."
+            },
+            {
+              "id": "FirepowerMultiplier:ELITEARMS",
+              "label": "Firepower Multiplier",
+              "detail": "140% when rank-elite."
+            },
+            {
+              "id": "ReloadDelayMultiplier:VETERAN",
+              "label": "Reload Delay Multiplier",
+              "detail": "90% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "ReloadDelayMultiplier:ELITE",
+              "label": "Reload Delay Multiplier",
+              "detail": "75% when rank-elite."
+            },
+            {
+              "id": "ReloadDelayMultiplier:guidance",
+              "label": "Reload Delay Multiplier",
+              "detail": "80% when r2-hz-guidance."
+            },
+            {
+              "id": "RangeMultiplier:guidance",
+              "label": "Range Multiplier",
+              "detail": "120% when r2-hz-guidance."
+            },
+            {
+              "id": "DamageMultiplier:R2DESIGNATED",
+              "label": "Damage Multiplier",
+              "detail": "120% when r2-designated."
+            },
+            {
+              "id": "DamageMultiplier:VETERAN",
+              "label": "Damage Multiplier",
+              "detail": "90% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "DamageMultiplier:ELITE",
+              "label": "Damage Multiplier",
+              "detail": "75% when rank-elite."
+            },
+            {
+              "id": "DamageMultiplier:CRATES",
+              "label": "Damage Multiplier",
+              "detail": "50% when crate-damage."
+            },
+            {
+              "id": "DamageMultiplier:rough",
+              "label": "Damage Multiplier",
+              "detail": "90% when hz-rough."
+            },
+            {
+              "id": "SpeedMultiplier:VETERAN",
+              "label": "Speed Multiplier",
+              "detail": "120% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "SpeedMultiplier:ELITE",
+              "label": "Speed Multiplier",
+              "detail": "140% when rank-elite."
+            },
+            {
+              "id": "SpeedMultiplier:CRATES",
+              "label": "Speed Multiplier",
+              "detail": "170% when crate-speed."
+            }
+          ],
+          "targetTypes": [
+            "R2Lased",
+            "R2ILMarked",
+            "Ground",
+            "Infantry",
+            "DetonateAttack",
+            "Disguise",
+            "MindControl"
+          ]
+        }
+      },
+      {
         "key": "ra2:r2hzmissileboat",
         "id": "r2hzmissileboat",
         "mode": "ra2",
         "name": "Coastal Missile Boat",
         "category": "ship",
-        "cost": 1100,
+        "cost": 1000,
         "roles": [
           "naval-screen"
         ],
@@ -13636,20 +13892,20 @@
           "speed": 120,
           "footprint": null,
           "waterPlacement": true,
-          "description": "Light guided-missile craft. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
+          "description": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
           "weapons": [
             {
               "id": "R2HZHodeidahMissile",
               "range": 10,
               "minRange": 3,
-              "reload": 160,
-              "burst": 2,
+              "reload": 170,
+              "burst": 3,
               "targets": [
                 "Water",
                 "Ground"
               ],
               "projectile": "Missile",
-              "damage": 60,
+              "damage": 42,
               "versus": {
                 "Concrete": 50,
                 "None": 20,
@@ -13752,12 +14008,150 @@
         }
       },
       {
+        "key": "ra2:r2hzrail",
+        "id": "r2hzrail",
+        "mode": "ra2",
+        "name": "Rail Technical",
+        "category": "vehicle",
+        "cost": 450,
+        "roles": [
+          "artillery"
+        ],
+        "behavior": {
+          "health": 140,
+          "armor": "Light",
+          "speed": 140,
+          "footprint": null,
+          "waterPlacement": false,
+          "description": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
+          "weapons": [
+            {
+              "id": "R2HZRailRockets",
+              "range": 10,
+              "minRange": 3,
+              "reload": 200,
+              "burst": 4,
+              "targets": [
+                "Ground",
+                "Water"
+              ],
+              "projectile": "Missile",
+              "damage": 28,
+              "versus": {
+                "Concrete": 70,
+                "None": 100,
+                "Flak": 100,
+                "Plate": 100,
+                "Light": 100,
+                "Medium": 70,
+                "Heavy": 50,
+                "Wood": 110,
+                "Steel": 90
+              },
+              "condition": null
+            }
+          ],
+          "actions": [
+            {
+              "id": "FirepowerMultiplier:VETERAN",
+              "label": "Firepower Multiplier",
+              "detail": "110% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "FirepowerMultiplier:ELITE",
+              "label": "Firepower Multiplier",
+              "detail": "130% when rank-elite."
+            },
+            {
+              "id": "FirepowerMultiplier:CRATES",
+              "label": "Firepower Multiplier",
+              "detail": "200% when crate-firepower."
+            },
+            {
+              "id": "FirepowerMultiplier:ELITEARMS",
+              "label": "Firepower Multiplier",
+              "detail": "140% when rank-elite."
+            },
+            {
+              "id": "ReloadDelayMultiplier:VETERAN",
+              "label": "Reload Delay Multiplier",
+              "detail": "90% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "ReloadDelayMultiplier:ELITE",
+              "label": "Reload Delay Multiplier",
+              "detail": "75% when rank-elite."
+            },
+            {
+              "id": "ReloadDelayMultiplier:guidance",
+              "label": "Reload Delay Multiplier",
+              "detail": "80% when r2-hz-guidance."
+            },
+            {
+              "id": "RangeMultiplier:guidance",
+              "label": "Range Multiplier",
+              "detail": "120% when r2-hz-guidance."
+            },
+            {
+              "id": "DamageMultiplier:R2DESIGNATED",
+              "label": "Damage Multiplier",
+              "detail": "120% when r2-designated."
+            },
+            {
+              "id": "DamageMultiplier:VETERAN",
+              "label": "Damage Multiplier",
+              "detail": "90% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "DamageMultiplier:ELITE",
+              "label": "Damage Multiplier",
+              "detail": "75% when rank-elite."
+            },
+            {
+              "id": "DamageMultiplier:ironcurtain",
+              "label": "Damage Multiplier",
+              "detail": "0% when invulnerability."
+            },
+            {
+              "id": "DamageMultiplier:CRATES",
+              "label": "Damage Multiplier",
+              "detail": "50% when crate-damage."
+            },
+            {
+              "id": "SpeedMultiplier:VETERAN",
+              "label": "Speed Multiplier",
+              "detail": "120% when rank-veteran && !rank-elite."
+            },
+            {
+              "id": "SpeedMultiplier:ELITE",
+              "label": "Speed Multiplier",
+              "detail": "140% when rank-elite."
+            },
+            {
+              "id": "SpeedMultiplier:CRATES",
+              "label": "Speed Multiplier",
+              "detail": "170% when crate-speed."
+            }
+          ],
+          "targetTypes": [
+            "R2Lased",
+            "R2ILMarked",
+            "Ground",
+            "Vehicle",
+            "DetonateAttack",
+            "Air",
+            "Repair",
+            "MindControl"
+          ]
+        }
+      },
+      {
         "key": "ra2:r2hzrecoilless",
         "id": "r2hzrecoilless",
         "mode": "ra2",
         "name": "Recoilless Technical",
         "category": "vehicle",
-        "cost": 550,
+        "cost": 475,
         "roles": [
           "anti-armor"
         ],
@@ -13767,7 +14161,7 @@
           "speed": 145,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
+          "description": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
           "weapons": [
             {
               "id": "R2HZRecoillessRifle",
@@ -13780,7 +14174,7 @@
                 "Water"
               ],
               "projectile": "Bullet",
-              "damage": 85,
+              "damage": 78,
               "versus": {
                 "None": 25,
                 "Flak": 25,
@@ -13897,7 +14291,7 @@
           "speed": null,
           "footprint": "1, 1",
           "waterPlacement": false,
-          "description": "Powered six-cell support and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
+          "description": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
           "weapons": [],
           "actions": [
             {
@@ -13914,6 +14308,11 @@
               "id": "aura:link",
               "label": "Support aura",
               "detail": "Grants r2-hz-guidance within 6 cells to Ally when !lowpower && !build-incomplete."
+            },
+            {
+              "id": "aura:fpvlink",
+              "label": "Support aura",
+              "detail": "Grants r2-hz-fpvlink within 6 cells to Ally when !lowpower && !build-incomplete."
             },
             {
               "id": "detector:",
@@ -13947,17 +14346,17 @@
         "mode": "ra2",
         "name": "Line Fighter",
         "category": "infantry",
-        "cost": 150,
+        "cost": 275,
         "roles": [
           "line-infantry"
         ],
         "behavior": {
-          "health": 100,
+          "health": 130,
           "armor": "None",
           "speed": 66,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Inexpensive rifle infantry. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and artillery defeat isolated positions.",
+          "description": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
           "weapons": [
             {
               "id": "R2HZMountainRifle",
@@ -13967,10 +14366,11 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
-              "damage": 13,
+              "damage": 16,
               "versus": {
                 "None": 100,
                 "Flak": 80,
@@ -14054,6 +14454,11 @@
               "detail": "50% when crate-damage."
             },
             {
+              "id": "DamageMultiplier:rough",
+              "label": "Damage Multiplier",
+              "detail": "90% when hz-rough."
+            },
+            {
               "id": "SpeedMultiplier:VETERAN",
               "label": "Speed Multiplier",
               "detail": "120% when rank-veteran && !rank-elite."
@@ -14086,7 +14491,7 @@
         "mode": "ra2",
         "name": "Mobile Rocket Battery",
         "category": "vehicle",
-        "cost": 900,
+        "cost": 800,
         "roles": [
           "artillery"
         ],
@@ -14096,28 +14501,28 @@
           "speed": 90,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Long-range rocket artillery with a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Scouts or signal posts improve guided fire; close attacks force withdrawal.",
+          "description": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
           "weapons": [
             {
-              "id": "R2HZYemenStrikeMissile",
-              "range": 13,
-              "minRange": 5,
-              "reload": 220,
-              "burst": 1,
+              "id": "R2HZRocketVolley",
+              "range": 12,
+              "minRange": 4,
+              "reload": 260,
+              "burst": 8,
               "targets": [
                 "Ground",
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 150,
+              "damage": 30,
               "versus": {
                 "Concrete": 90,
-                "None": 60,
-                "Flak": 65,
-                "Plate": 70,
+                "None": 100,
+                "Flak": 100,
+                "Plate": 100,
                 "Light": 100,
-                "Medium": 90,
-                "Heavy": 80,
+                "Medium": 85,
+                "Heavy": 70,
                 "Wood": 120,
                 "Steel": 100
               },
@@ -14229,17 +14634,17 @@
         "mode": "ra2",
         "name": "Cedar Scout",
         "category": "infantry",
-        "cost": 1650,
+        "cost": 1800,
         "roles": [
           "line-infantry"
         ],
         "behavior": {
-          "health": 170,
+          "health": 240,
           "armor": "None",
           "speed": 82,
           "footprint": null,
           "waterPlacement": false,
-          "description": "One concealed scout with a suppressed carbine and demolition ability. Stationary concealment breaks when firing, moving or damaged. Vulnerable once detected.",
+          "description": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
           "weapons": [
             {
               "id": "R2HZGhostCarbine",
@@ -14249,10 +14654,11 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
-              "damage": 30,
+              "damage": 34,
               "versus": {
                 "None": 100,
                 "Flak": 90,
@@ -14352,6 +14758,11 @@
               "id": "DamageMultiplier:CRATES",
               "label": "Damage Multiplier",
               "detail": "50% when crate-damage."
+            },
+            {
+              "id": "DamageMultiplier:rough",
+              "label": "Damage Multiplier",
+              "detail": "90% when hz-rough."
             },
             {
               "id": "SpeedMultiplier:VETERAN",
@@ -14501,17 +14912,17 @@
         "mode": "ra2",
         "name": "Field Spotter",
         "category": "infantry",
-        "cost": 525,
+        "cost": 450,
         "roles": [
           "support"
         ],
         "behavior": {
-          "health": 90,
+          "health": 115,
           "armor": "None",
           "speed": 64,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Reconnaissance specialist who detects cloaked units and guides nearby eligible missile teams and vehicles. A weak weapon makes escorts essential.",
+          "description": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
           "weapons": [
             {
               "id": "R2HZSpotterCarbine",
@@ -14521,7 +14932,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 7,
@@ -14553,9 +14965,19 @@
               "detail": "Death sequences vary with the damage type."
             },
             {
+              "id": "Cloak",
+              "label": "Cloak",
+              "detail": "Visibility changes with cloak conditions and detector coverage."
+            },
+            {
               "id": "aura:guidance",
               "label": "Support aura",
               "detail": "Grants r2-hz-guidance within 6 cells to Ally."
+            },
+            {
+              "id": "aura:fpvlink",
+              "label": "Support aura",
+              "detail": "Grants r2-hz-fpvlink within 6 cells to Ally."
             },
             {
               "id": "detector:",
@@ -14611,6 +15033,11 @@
               "id": "DamageMultiplier:CRATES",
               "label": "Damage Multiplier",
               "detail": "50% when crate-damage."
+            },
+            {
+              "id": "DamageMultiplier:rough",
+              "label": "Damage Multiplier",
+              "detail": "90% when hz-rough."
             },
             {
               "id": "SpeedMultiplier:VETERAN",
@@ -16169,7 +16596,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 45,
@@ -16368,7 +16796,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 9,
@@ -16527,7 +16956,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 12,
@@ -16981,7 +17411,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 20,
@@ -19852,7 +20283,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 22,
@@ -20575,7 +21007,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 12,
@@ -21293,7 +21726,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 9,
@@ -21600,7 +22034,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 18,
@@ -22821,7 +23256,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 7,
@@ -23093,7 +23529,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 30,
@@ -23250,7 +23687,8 @@
               "burst": 3,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 13,
@@ -23692,7 +24130,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 13,
@@ -23973,7 +24412,8 @@
               "burst": 2,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 7,
@@ -24693,7 +25133,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 25,
@@ -25775,7 +26216,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 125,
@@ -25802,7 +26244,8 @@
               "burst": 1,
               "targets": [
                 "Ground",
-                "Water"
+                "Water",
+                "MicroDrone"
               ],
               "projectile": "InstantHit",
               "damage": 125,

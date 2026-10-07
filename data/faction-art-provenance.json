@@ -4,12 +4,16 @@
  "policy": "Only project-made images, MIT national flags and the organisation flags the owner approved (docs/faction-art.md). No EA/RA2 file is opened or exported.",
  "sources": {
   "RTSAI-Art": {
-   "commit": "222e1172d673ef1a0092e158c812591fb70bad7e",
+   "commit": "c3b862c5736ead2acafac7a90445f062e7023232",
    "branch": "main"
   },
   "art-preview overlay": {
    "commit": "cda3ced99625ad02d1e562fb6003325916ba8322",
    "branch": "rtsai/art-preview"
+  },
+  "RTSAI-Mod main": {
+   "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8",
+   "branch": "main"
   },
   "flag-icons": {
    "version": "7.3.2",
@@ -529,6 +533,21 @@
    "method": "copied unchanged"
   },
   {
+   "path": "public/faction-art/cameos/r2hzfpv.c824b18d43f4.png",
+   "bytes": 4965,
+   "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8",
+   "kind": "cameo",
+   "actor": "r2hzfpv",
+   "derivedFrom": [
+    {
+     "role": "installed cameo",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzfpv.png",
+     "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8"
+    }
+   ],
+   "method": "copied unchanged"
+  },
+  {
    "path": "public/faction-art/cameos/r2hzmissileboat.7168d2aa2692.png",
    "bytes": 5336,
    "sha256": "7168d2aa26924576d78f665a0900cd9cb6dcf6e86c071b5a42ac52294f8d9eb7",
@@ -539,6 +558,21 @@
      "role": "installed cameo",
      "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/icons/r2hzmissileboat.png",
      "sha256": "7168d2aa26924576d78f665a0900cd9cb6dcf6e86c071b5a42ac52294f8d9eb7"
+    }
+   ],
+   "method": "copied unchanged"
+  },
+  {
+   "path": "public/faction-art/cameos/r2hzrail.61b30fa64bbf.png",
+   "bytes": 5051,
+   "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12",
+   "kind": "cameo",
+   "actor": "r2hzrail",
+   "derivedFrom": [
+    {
+     "role": "installed cameo",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzrail.png",
+     "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12"
     }
    ],
    "method": "copied unchanged"
@@ -4050,6 +4084,31 @@
    "method": "32 frames decoded from the installed SHP with player colour F21818, cropped to 68x46, lossless webp"
   },
   {
+   "path": "public/faction-art/sprites/r2hzfpv.c58dc3a59367.webp",
+   "bytes": 2342,
+   "sha256": "c58dc3a59367eb772f30b55601cd81d89d926fd25be54882ea3c89072d99ca13",
+   "kind": "sprite strip (run)",
+   "actor": "r2hzfpv",
+   "derivedFrom": [
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/infantry/r2hzfpv.shp",
+     "sha256": "3fb62604a173055e4682b5db9b174ef7f9eb9d3461e42d4d4f8cabf95d440222"
+    },
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/art-infantry-sequences.yaml",
+     "sha256": "41285d09b332b3ce665ccc52f9a0f4d7a5d3adf3be3f4249ef0918a1c4501098"
+    },
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/infantry/r2hzfpv.pal",
+     "sha256": "061c3eff61241c52ae1faeb5f21fd4094924db3ee3a786e8b14bdc74183c3e19"
+    }
+   ],
+   "method": "8 frames decoded from the installed SHP with player colour F21818, cropped to 24x42, lossless webp"
+  },
+  {
    "path": "public/faction-art/sprites/r2hzmissileboat.1a826a4e45d6.webp",
    "bytes": 20894,
    "sha256": "1a826a4e45d6c897b70c930782b418b5ae980ba73a9d5b8e3fccbb306834a394",
@@ -4078,6 +4137,36 @@
     }
    ],
    "method": "32 frames decoded from the installed SHP with player colour F21818, cropped to 84x48, lossless webp"
+  },
+  {
+   "path": "public/faction-art/sprites/r2hzrail.4c18899e2537.webp",
+   "bytes": 14632,
+   "sha256": "4c18899e25374e9296b7d32525574b50f68bd2ad6dadf95dab30efd0a1c88ac6",
+   "kind": "sprite strip (turntable)",
+   "actor": "r2hzrail",
+   "derivedFrom": [
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/vehicles/r2hzrail.shp",
+     "sha256": "035901dfeaf866f3052d20b7e2af3dd3c4e164c71c37e8dce2430392622eb51c"
+    },
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/art-vehicles-sequences.yaml",
+     "sha256": "1e9d0b7b7abd2b548c6afb1839c81e63b9bf7b0aaa87a83faf7880259a10ec31"
+    },
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/art-vehicles.yaml",
+     "sha256": "ae8b067830f9a54565c188f75227e94c3a6cc3a65b232b4bffa58c017289531c"
+    },
+    {
+     "role": "installed sprite data",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/vehicles/hezbollah-prerender.pal",
+     "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
+    }
+   ],
+   "method": "32 frames decoded from the installed SHP with player colour F21818, cropped to 62x40, lossless webp"
   },
   {
    "path": "public/faction-art/sprites/r2hzrecoilless.c9bccfae0b3d.webp",
@@ -9990,6 +10079,106 @@
    "method": "shadow faded at the frame edge, resized to 480px wide, encoded avif"
   },
   {
+   "path": "public/faction-art/units/r2hzfpv-240.168f0a72a558.webp",
+   "bytes": 5616,
+   "sha256": "168f0a72a5586d696b705c7ee318f9e8460342f4c7c1ec7e30ba48fb3a2f043f",
+   "kind": "unit render",
+   "actor": "r2hzfpv",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzfpv/renders/cameo.png",
+     "sha256": "e8779a214601772e56d71550b89f0ff2ca5001bdfd6444bfb1affab2c6b951d8"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzfpv.png",
+     "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzfpv/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "56ca13674c2c565d73ecf416b6707fe6051f910c5ec0398c94f28afe34d54b8b"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 240px wide, encoded webp"
+  },
+  {
+   "path": "public/faction-art/units/r2hzfpv-240.573cfe6a4114.avif",
+   "bytes": 5180,
+   "sha256": "573cfe6a41141789a43b00184f414649c39ce12a85164f4616e73e432591120e",
+   "kind": "unit render",
+   "actor": "r2hzfpv",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzfpv/renders/cameo.png",
+     "sha256": "e8779a214601772e56d71550b89f0ff2ca5001bdfd6444bfb1affab2c6b951d8"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzfpv.png",
+     "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzfpv/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "56ca13674c2c565d73ecf416b6707fe6051f910c5ec0398c94f28afe34d54b8b"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 240px wide, encoded avif"
+  },
+  {
+   "path": "public/faction-art/units/r2hzfpv-480.3496d7541776.webp",
+   "bytes": 9320,
+   "sha256": "3496d7541776e0b847801a83ec37c205d12b95220b4eeee90be67d58d613c7b3",
+   "kind": "unit render",
+   "actor": "r2hzfpv",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzfpv/renders/cameo.png",
+     "sha256": "e8779a214601772e56d71550b89f0ff2ca5001bdfd6444bfb1affab2c6b951d8"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzfpv.png",
+     "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzfpv/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "56ca13674c2c565d73ecf416b6707fe6051f910c5ec0398c94f28afe34d54b8b"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 480px wide, encoded webp"
+  },
+  {
+   "path": "public/faction-art/units/r2hzfpv-480.db29e6c9d6e5.avif",
+   "bytes": 8583,
+   "sha256": "db29e6c9d6e516ae10d839dbdb835c0a6df3bde56c02aea4509bc17eaa7d8c57",
+   "kind": "unit render",
+   "actor": "r2hzfpv",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzfpv/renders/cameo.png",
+     "sha256": "e8779a214601772e56d71550b89f0ff2ca5001bdfd6444bfb1affab2c6b951d8"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzfpv.png",
+     "sha256": "c824b18d43f4191a5f18f991510484d47705f4c13fa6e87432514038f4e3e0d8"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzfpv/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "56ca13674c2c565d73ecf416b6707fe6051f910c5ec0398c94f28afe34d54b8b"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 480px wide, encoded avif"
+  },
+  {
    "path": "public/faction-art/units/r2hzmissileboat-240.0da9435d9c02.webp",
    "bytes": 7242,
    "sha256": "0da9435d9c02edb69a10ea617b28b308d6b641d0fdeecfbb6a8b2f96a636432a",
@@ -10088,6 +10277,106 @@
     }
    ],
    "method": "shadow faded at the frame edge, resized to 480px wide, encoded webp"
+  },
+  {
+   "path": "public/faction-art/units/r2hzrail-240.a87b8e71c375.webp",
+   "bytes": 5644,
+   "sha256": "a87b8e71c37527b8a2d97f1c4ef391941fac12660d684d41b2001f99d48fe447",
+   "kind": "unit render",
+   "actor": "r2hzrail",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzrail/renders/cameo.png",
+     "sha256": "71253aff1d5279e30c92ed181ac56ea3a7de377ca4e102cfd40d6f390d046a68"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzrail.png",
+     "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzrail/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "66133c668a49d5e75c3e9ee1962d487f20014b078e7424aa6be3b9bca2c4af98"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 240px wide, encoded webp"
+  },
+  {
+   "path": "public/faction-art/units/r2hzrail-240.cc975b1c1087.avif",
+   "bytes": 4979,
+   "sha256": "cc975b1c10876156d435688c0400ec29a4fe322d36d045c7cd1a5bb9c9d39445",
+   "kind": "unit render",
+   "actor": "r2hzrail",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzrail/renders/cameo.png",
+     "sha256": "71253aff1d5279e30c92ed181ac56ea3a7de377ca4e102cfd40d6f390d046a68"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzrail.png",
+     "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzrail/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "66133c668a49d5e75c3e9ee1962d487f20014b078e7424aa6be3b9bca2c4af98"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 240px wide, encoded avif"
+  },
+  {
+   "path": "public/faction-art/units/r2hzrail-480.1e0d69c63efb.webp",
+   "bytes": 13810,
+   "sha256": "1e0d69c63efb662c4147dc8e8751937708343f7420b95af652593bc1678bc99e",
+   "kind": "unit render",
+   "actor": "r2hzrail",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzrail/renders/cameo.png",
+     "sha256": "71253aff1d5279e30c92ed181ac56ea3a7de377ca4e102cfd40d6f390d046a68"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzrail.png",
+     "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzrail/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "66133c668a49d5e75c3e9ee1962d487f20014b078e7424aa6be3b9bca2c4af98"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 480px wide, encoded webp"
+  },
+  {
+   "path": "public/faction-art/units/r2hzrail-480.db44288833e9.avif",
+   "bytes": 9784,
+   "sha256": "db44288833e90161bc5318a2b5ffceef71052f2b287c78c0929f7d5f4236f642",
+   "kind": "unit render",
+   "actor": "r2hzrail",
+   "derivedFrom": [
+    {
+     "role": "480x384 Blender Cycles render (tools/cameo_render.py)",
+     "path": "RTSAI-Art/.cache/cameo/r2hzrail/renders/cameo.png",
+     "sha256": "71253aff1d5279e30c92ed181ac56ea3a7de377ca4e102cfd40d6f390d046a68"
+    },
+    {
+     "role": "installed cameo this render belongs to",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/icons/r2hzrail.png",
+     "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12"
+    },
+    {
+     "role": "committed 240x192 reduction of the render",
+     "path": "RTSAI-Art/units/r2hzrail/candidates/cameo-v3-render/render-x4.png",
+     "sha256": "66133c668a49d5e75c3e9ee1962d487f20014b078e7424aa6be3b9bca2c4af98"
+    }
+   ],
+   "method": "shadow faded at the frame edge, resized to 480px wide, encoded avif"
   },
   {
    "path": "public/faction-art/units/r2hzrecoilless-240.ade09ec78d5e.webp",

@@ -9,7 +9,8 @@ Everything exported here is made by the project. No EA/RA2 file is ever opened.
                  installed build-menu cameo (tools/cameo_render.py). The script checks that its Lanczos reduction is
                  exactly the committed render-x4.png beside that cameo, and falls back to render-x4.png (240x192)
                  when the cache is absent.
-  cameos         the installed 60x48 cameos with name bars: art-preview overlay icons/<actor>.png, copied unchanged.
+  cameos         the installed 60x48 cameos with name bars: art-preview overlay icons/<actor>.png, copied unchanged;
+                 units promoted straight into the mod come from RTSAI-Mod main modern-factions/ (icons/, sprites alike).
   sprites        the installed in-game sprites (overlay vehicles/, infantry/, buildings/ SHP + PAL), decoded here and
                  laid out as one animation strip per unit: vehicles, ships and aircraft turn on the spot; infantry
                  run; buildings and defenses build up. Player colour: the mod's lobby red (F21818), remapped as
@@ -44,6 +45,19 @@ GAMES = WEB.parent
 ART = Path(os.environ.get("RTSAI_ART_DIR", GAMES / "RTSAI-Art"))
 OVERLAY_REPO = Path(os.environ.get("RTSAI_PREVIEW_MOD_DIR", GAMES / "RTSAI-Mod-wt-art-preview"))
 OVERLAY = OVERLAY_REPO / "mods" / "rtsai" / "art-preview"
+# Units promoted straight into the mod (not through the preview overlay) are read from its main checkout: the same
+# files under modern-factions/, whose sequence and rules files carry an "art-" prefix.
+MAIN_REPO = Path(os.environ.get("RTSAI_MOD_DIR", GAMES / "RTSAI-Mod"))
+MAIN = MAIN_REPO / "mods" / "rtsai" / "modern-factions"
+
+
+def installed_root(actor: str) -> tuple[Path, str]:
+    """(folder, sequence/rules file prefix) holding the actor's installed art: the preview overlay, else the mod's main."""
+    if (OVERLAY / "icons" / f"{actor}.png").exists():
+        return OVERLAY, ""
+    if (MAIN / "icons" / f"{actor}.png").exists():
+        return MAIN, "art-"
+    raise SystemExit(f"{actor}: no installed cameo in {OVERLAY / 'icons'} or {MAIN / 'icons'}")
 OUT = WEB / "public" / "faction-art"
 MANIFEST = WEB / "data" / "faction-art.json"
 PROVENANCE = WEB / "data" / "faction-art-provenance.json"
@@ -163,9 +177,7 @@ def unit_render(actor: str) -> tuple[Image.Image, list[dict]]:
     cand = ART / "units" / actor / "candidates" / "cameo-v3-render"
     x4 = cand / "render-x4.png"
     cache = ART / ".cache" / "cameo" / actor / "renders" / "cameo.png"
-    icon = OVERLAY / "icons" / f"{actor}.png"
-    if not icon.exists():
-        raise SystemExit(f"{actor}: no installed cameo at {icon}")
+    icon = installed_root(actor)[0] / "icons" / f"{actor}.png"
     if sha256(icon.read_bytes()) != sha256((cand / "cameo.png").read_bytes()):
         raise SystemExit(f"{actor}: the installed cameo is not the render's cameo; refusing to pair them")
     sources = [source(icon, "installed cameo this render belongs to"), source(x4, "committed 240x192 reduction of the render")]
@@ -332,22 +344,23 @@ def compose(size, layers) -> np.ndarray:
 
 
 def sequences_for(actor: str):
-    """(kind, sequences, palette path, turret offset, source files) from the installed overlay, or None."""
-    veh_shp = OVERLAY / "vehicles" / f"{actor}.shp"
-    inf_shp = OVERLAY / "infantry" / f"{actor}.shp"
-    bld_shp = OVERLAY / "buildings" / f"{actor}.shp"
+    """(kind, sequences, palette path, turret offset, source files) from the installed art, or None."""
+    root, pre = installed_root(actor)
+    veh_shp = root / "vehicles" / f"{actor}.shp"
+    inf_shp = root / "infantry" / f"{actor}.shp"
+    bld_shp = root / "buildings" / f"{actor}.shp"
     if veh_shp.exists():
-        seqs = parse_miniyaml((OVERLAY / "vehicles-sequences.yaml").read_text(encoding="utf8")).get(actor)
-        rules = parse_miniyaml((OVERLAY / "vehicles.yaml").read_text(encoding="utf8")).get(actor, {"children": {}})
+        seqs = parse_miniyaml((root / f"{pre}vehicles-sequences.yaml").read_text(encoding="utf8")).get(actor)
+        rules = parse_miniyaml((root / f"{pre}vehicles.yaml").read_text(encoding="utf8")).get(actor, {"children": {}})
         palette = rules["children"].get("RenderSprites", {"children": {}})["children"].get("PlayerPalette", {"value": ""})["value"]
         m = re.match(r"r2prerender-(\w+)player", palette)
-        pal = OVERLAY / "vehicles" / f"{m.group(1)}-prerender.pal" if m else None
+        pal = root / "vehicles" / f"{m.group(1)}-prerender.pal" if m else None
         off = rules["children"].get("Turreted", {"children": {}})["children"].get("Offset", {"value": "0,0,0"})["value"]
-        return "turntable", seqs, pal, tuple(int(v) for v in off.split(",")), [veh_shp, OVERLAY / "vehicles-sequences.yaml", OVERLAY / "vehicles.yaml"]
+        return "turntable", seqs, pal, tuple(int(v) for v in off.split(",")), [veh_shp, root / f"{pre}vehicles-sequences.yaml", root / f"{pre}vehicles.yaml"]
     if inf_shp.exists():
-        seqs = parse_miniyaml((OVERLAY / "infantry-sequences.yaml").read_text(encoding="utf8")).get(actor)
-        return "run", seqs, OVERLAY / "infantry" / f"{actor}.pal", (0, 0, 0), [inf_shp, OVERLAY / "infantry-sequences.yaml"]
-    if bld_shp.exists():
+        seqs = parse_miniyaml((root / f"{pre}infantry-sequences.yaml").read_text(encoding="utf8")).get(actor)
+        return "run", seqs, root / "infantry" / f"{actor}.pal", (0, 0, 0), [inf_shp, root / f"{pre}infantry-sequences.yaml"]
+    if bld_shp.exists() and root == OVERLAY:
         seqs = parse_miniyaml((OVERLAY / "buildings" / f"{actor}.sequences.part").read_text(encoding="utf8")).get(actor)
         rules = parse_miniyaml((OVERLAY / "buildings" / f"{actor}.rules.part").read_text(encoding="utf8")).get(actor, {"children": {}})
         off = rules["children"].get("Turreted", {"children": {}})["children"].get("Offset", {"value": "0,0,0"})["value"]
@@ -517,7 +530,7 @@ def build() -> tuple[dict[str, bytes], dict, dict]:
                                                   {"kind": "unit render", "actor": actor, "derivedFrom": render_sources,
                                                    "method": f"shadow faded at the frame edge, resized to {width}px wide, encoded {fmt}"})
             entry["render"] = {"width": render.width, "height": render.height, **srcs}
-            icon = OVERLAY / "icons" / f"{actor}.png"
+            icon = installed_root(actor)[0] / "icons" / f"{actor}.png"
             entry["cameo"] = {"src": w.add("cameos", actor, "png", icon.read_bytes(), {"kind": "cameo", "actor": actor, "derivedFrom": [source(icon, "installed cameo")], "method": "copied unchanged"}),
                               "width": 60, "height": 48}
             strip = sprite_strip(actor)
@@ -563,7 +576,7 @@ def build() -> tuple[dict[str, bytes], dict, dict]:
         "schemaVersion": 1,
         "generatedBy": "scripts/export-faction-art.py",
         "policy": "Only project-made images, MIT national flags and the organisation flags the owner approved (docs/faction-art.md). No EA/RA2 file is opened or exported.",
-        "sources": {"RTSAI-Art": git_head(ART), "art-preview overlay": git_head(OVERLAY_REPO),
+        "sources": {"RTSAI-Art": git_head(ART), "art-preview overlay": git_head(OVERLAY_REPO), "RTSAI-Mod main": git_head(MAIN_REPO),
                     "flag-icons": {"version": "7.3.2", "licence": "MIT", "url": "https://github.com/lipis/flag-icons/tree/v7.3.2/flags/4x3"}},
         "files": sorted(w.records, key=lambda r: r["path"]),
     }

@@ -20,9 +20,9 @@ const list = (dir: string): string[] => readdirSync(dir).flatMap(name => {
   return statSync(full).isDirectory() ? list(full) : [relative(publicDir, full).split(sep).join("/")];
 });
 
-test("manifest: seven factions, 122 buildable units, every one with a cameo and drawable art", () => {
+test("manifest: seven factions, 124 buildable units, every one with a cameo and drawable art", () => {
   assert.deepEqual(data.factions.map(f => f.id), ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"]);
-  assert.equal(Object.keys(data.actors).length, 122);
+  assert.equal(Object.keys(data.actors).length, 124);
   for (const faction of data.factions) for (const id of faction.actors) {
     const actor = data.actors[id];
     assert.equal(actor.factionId, faction.id);
@@ -143,5 +143,5 @@ test("resolver: art outside modern-factions is recorded as external, never publi
 
 test("sync:art --check: the committed copy matches the sibling RTSAI-Mod (skipped without the checkout)", { skip: !existsSync(join(web, "../RTSAI-Mod/mods/rtsai/mod.yaml")) }, () => {
   const output = execFileSync(process.execPath, ["--import", "tsx", "scripts/sync-mod-art.mjs", "--check"], { cwd: web, encoding: "utf8" });
-  assert.match(output, /122 actors in 7 factions/);
+  assert.match(output, /124 actors in 7 factions/);
 });

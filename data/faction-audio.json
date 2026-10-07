@@ -3,7 +3,7 @@
  "generatedBy": "scripts/sync-faction-audio.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "5df5950ade705955fa55b363ba293a9d920b4214"
+  "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8"
  },
  "encoder": "ffmpeg libmp3lame, mono, 22.05 kHz, 40 kbps",
  "policy": "Only the project's own, licensed clips (a per-clip record with a licence in the mod). Original Red Alert 2 sounds are never published.",
@@ -139,6 +139,94 @@
    "language": "en-US",
    "text": "Drone ready.",
    "english": "Drone ready."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-action-ar.wav": {
+   "src": "/faction-audio/hz-fpv-action-ar.98a111060758.mp3",
+   "bytes": 6994,
+   "sourceSha256": "5602b81a21062636fbe2b3b9ddcecaaf45864552b763eb04a0ddf4eb5819d348",
+   "license": "MIT",
+   "engine": "Chatterbox Multilingual V2 (0.5B)",
+   "speaker": "hezbollah-infantry",
+   "language": "ar-LB",
+   "text": "الإشارة منيحة.",
+   "english": "Signal's good."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-action-en.wav": {
+   "src": "/faction-audio/hz-fpv-action-en.34cff76b172f.mp3",
+   "bytes": 4904,
+   "sourceSha256": "c4e8778c8e19d9f6b430d4fd3494b00bcfd171a5dfb42f9e11d7a6b2abc79368",
+   "license": "Apache-2.0",
+   "engine": "Kokoro-82M v1.0 (StyleTTS 2 + ISTFTNet)",
+   "speaker": "hezbollah-infantry",
+   "language": "en-US",
+   "text": "Signal's good.",
+   "english": "Signal's good."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-attack-ar.wav": {
+   "src": "/faction-audio/hz-fpv-attack-ar.2d1fdd693619.mp3",
+   "bytes": 6602,
+   "sourceSha256": "9c35f9018208555adedd6522598ae3dd7b5dc78ee0457e78488bf58e3d4d859f",
+   "license": "MIT",
+   "engine": "Chatterbox Multilingual V2 (0.5B)",
+   "speaker": "hezbollah-infantry",
+   "language": "ar-LB",
+   "text": "طلعنا المسيرات.",
+   "english": "Drones away."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-attack-en.wav": {
+   "src": "/faction-audio/hz-fpv-attack-en.c6b7e30c57d3.mp3",
+   "bytes": 4381,
+   "sourceSha256": "ebbe29b3eee54fc3e8c16a74fca55e1e7a38fe81b3955f4107ce6a2ce650f17e",
+   "license": "Apache-2.0",
+   "engine": "Kokoro-82M v1.0 (StyleTTS 2 + ISTFTNet)",
+   "speaker": "hezbollah-infantry",
+   "language": "en-US",
+   "text": "Drones away.",
+   "english": "Drones away."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-move-ar.wav": {
+   "src": "/faction-audio/hz-fpv-move-ar.1ada23598fea.mp3",
+   "bytes": 11696,
+   "sourceSha256": "b0735d1772120aa2080ef037d9863ef362bfff8f3f48c739c97905550af5e358",
+   "license": "MIT",
+   "engine": "Chatterbox Multilingual V2 (0.5B)",
+   "speaker": "hezbollah-infantry",
+   "language": "ar-LB",
+   "text": "رايحين عالموقع الجديد.",
+   "english": "Moving to a new position."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-move-en.wav": {
+   "src": "/faction-audio/hz-fpv-move-en.e38775797e20.mp3",
+   "bytes": 6863,
+   "sourceSha256": "dcb3a11b753602bc4e99fc7ca5e42662175441a688171eda8a1dd14112857514",
+   "license": "Apache-2.0",
+   "engine": "Kokoro-82M v1.0 (StyleTTS 2 + ISTFTNet)",
+   "speaker": "hezbollah-infantry",
+   "language": "en-US",
+   "text": "Moving to a new position.",
+   "english": "Moving to a new position."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-select-ar.wav": {
+   "src": "/faction-audio/hz-fpv-select-ar.90d0d02c4340.mp3",
+   "bytes": 10781,
+   "sourceSha256": "ae342b4eeb6f35c0eced5b9f790ecb5d16cb4bd851c4fbdbf09cfb184b551d69",
+   "license": "MIT",
+   "engine": "Chatterbox Multilingual V2 (0.5B)",
+   "speaker": "hezbollah-infantry",
+   "language": "ar-LB",
+   "text": "فريق المسيرات جاهز.",
+   "english": "Drone team ready."
+  },
+  "mods/rtsai/modern-factions/audio/hz-fpv-select-en.wav": {
+   "src": "/faction-audio/hz-fpv-select-en.6b4f2b42e1ac.mp3",
+   "bytes": 5557,
+   "sourceSha256": "a4cba7f3e773ecbcb5704235f09390237a7ff23ef799eb4e20016b13d8ecfc19",
+   "license": "Apache-2.0",
+   "engine": "Kokoro-82M v1.0 (StyleTTS 2 + ISTFTNet)",
+   "speaker": "hezbollah-infantry",
+   "language": "en-US",
+   "text": "Drone team ready.",
+   "english": "Drone team ready."
   },
   "mods/rtsai/modern-factions/audio/hz-inf-action-ar.wav": {
    "src": "/faction-audio/hz-inf-action-ar.3d420fbf309d.mp3",
@@ -6964,6 +7052,62 @@
     ]
    }
   ],
+  "r2hzfpv": [
+   {
+    "id": "voice:Select",
+    "label": "Selected",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-fpv-select-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-fpv-select-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Move",
+    "label": "Move order",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-fpv-move-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-fpv-move-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Attack",
+    "label": "Attack order",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-fpv-attack-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-fpv-attack-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Action",
+    "label": "Action",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-fpv-action-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-fpv-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-fpv-select-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-fpv-select-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Demolish",
+    "label": "Demolish",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-fpv-action-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-fpv-action-en.wav"
+    ]
+   }
+  ],
   "r2hzspotter": [
    {
     "id": "voice:Select",
@@ -7169,6 +7313,52 @@
    }
   ],
   "r2hzescort": [
+   {
+    "id": "voice:Select",
+    "label": "Selected",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-veh-select-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-veh-select-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Move",
+    "label": "Move order",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-veh-move-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-veh-move-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Attack",
+    "label": "Attack order",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-veh-attack-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-veh-attack-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Action",
+    "label": "Action",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/hz-veh-action-ar.wav",
+     "mods/rtsai/modern-factions/audio/hz-veh-action-en.wav"
+    ]
+   },
+   {
+    "id": "death:explosion",
+    "label": "Destroyed · explosion",
+    "kind": "death",
+    "clips": [
+     "mods/rtsai/audio/sfx/rtsai-explode-small.wav"
+    ]
+   }
+  ],
+  "r2hzrail": [
    {
     "id": "voice:Select",
     "label": "Selected",
