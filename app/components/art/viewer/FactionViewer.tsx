@@ -44,8 +44,14 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
 
   const units = faction.units;
   const unit = units.find(u => u.id === selected) ?? null;
+  // The details panel follows one frame after the stage: on a software GPU, repainting both in the frame that answers
+  // the click doubles its cost, so the click paints the new unit first and its details right after.
+  const infoUnit = useAfterPaint(unit);
   const items = useMemo(() => new Map(units.flatMap(u => (u.art ? [[u.id, { key: u.id, spec: u.art.spec, sprite: u.art.sprite } as StageItem]] : []))), [units]);
   const item = unit ? items.get(unit.id) ?? null : null;
+  // The last unit with art stays on the (hidden) stage while the overview or a text-only unit is shown.
+  const [stageItem, setStageItem] = useState<StageItem | null>(item);
+  if (item && item !== stageItem) setStageItem(item);
 
   // Selection is client-side (the stage keeps its loaded art); the address follows it, and Back works.
   const select = useCallback((id: string | null) => {
@@ -94,14 +100,20 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
         </aside>
 
         <main className="viewer-main" id="viewer-main">
-          {unit && item ? (
-            <ViewerStage key={(shown?.item ?? item).key} frames={frames} item={shown?.item ?? item} color={color} onColor={pickColor}
-              tag={shown ? <span className="viewer-historical"><b>{shown.label}</b><button type="button" onClick={() => setShown(null)}>Back to the game’s art</button></span> : undefined}>
-              <div className="viewer-stage-name"><h1>{unit.name}</h1><span>{unit.role}</span></div>
-            </ViewerStage>
-          ) : unit ? (
+          {/* The stage stays mounted (hidden) while the overview or a text-only unit shows: its canvas and loaded art
+              come back without a new compositor layer. */}
+          {stageItem && (
+            <div className="viewer-stage-slot" hidden={!(unit && item)}>
+              <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor}
+                tag={shown ? <span className="viewer-historical"><b>{shown.label}</b><button type="button" onClick={() => setShown(null)}>Back to the game’s art</button></span> : undefined}>
+                {unit && item && <div className="viewer-stage-name"><h1>{unit.name}</h1><span>{unit.role}</span></div>}
+              </ViewerStage>
+            </div>
+          )}
+          {unit && !item && (
             <div className="viewer-stock"><Swords size={34} aria-hidden="true" /><h1>{unit.name}</h1><p>An original Red Alert 2 unit. Its art comes from your own copy of the game, so it is not shown here.</p></div>
-          ) : (
+          )}
+          {!unit && (
             <div className="viewer-hero">
               <div className="viewer-hero-art">{lineup}</div>
               <div className="viewer-hero-copy"><span className="eyebrow">{faction.title}</span><h1>{faction.tagline}</h1><p>{faction.story}</p>
@@ -112,12 +124,24 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
         </main>
 
         <aside className="viewer-info" aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
-          {unit ? <UnitInfo unit={unit} /> : <FactionInfo faction={faction} />}
-          {ADMIN_BUILD && unit?.art && <ViewerAdmin key={unit.id} unit={unit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
+          {infoUnit ? <UnitInfo unit={infoUnit} /> : <FactionInfo faction={faction} />}
+          {ADMIN_BUILD && infoUnit?.art && <ViewerAdmin key={infoUnit.id} unit={infoUnit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
         </aside>
       </div>
     </div>
   );
+}
+
+/** `value`, updated only after the frame that shows the change to everything else has painted. */
+function useAfterPaint<T>(value: T): T {
+  const [late, setLate] = useState(value);
+  useEffect(() => {
+    if (Object.is(late, value)) return;
+    let timer = 0;
+    const frame = requestAnimationFrame(() => { timer = window.setTimeout(() => setLate(value), 0); });
+    return () => { cancelAnimationFrame(frame); clearTimeout(timer); };
+  }, [value, late]);
+  return late;
 }
 
 function Stats({ unit }: { unit: ViewerUnit }) {

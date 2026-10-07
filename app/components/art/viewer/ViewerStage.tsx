@@ -48,7 +48,6 @@ function put(ctx: CanvasRenderingContext2D, dpr: number, p: Picture, cx: number,
  * keys) turns it, the wheel zooms, Space spins; actions play the game's own sequences. Draws only when something
  * changes; nothing loops while it is still.
  */
-/** Keyed by the item: a new unit starts on its first action, still, facing the camera, with the zoom refitted. */
 export function ViewerStage({ frames, item, color, onColor, tag, children }: {
   frames: FrameStore; item: StageItem; color: string; onColor: (hex: string) => void;
   /** A label over the art (admin History shows earlier versions here, never as current). */
@@ -69,6 +68,13 @@ export function ViewerStage({ frames, item, color, onColor, tag, children }: {
   /** The facing as screen readers hear it (the drawing reads view.current, so dragging never re-renders). */
   const [facing, setFacing] = useState(DEFAULT_FACING);
   const airborne = item.spec.category === "aircraft";
+  // A new unit starts on its first action, still, with the zoom refitted. The stage itself stays mounted: on a
+  // software GPU a fresh canvas layer per unit costs a frame of 150-200 ms to composite.
+  const [shown, setShown] = useState(item);
+  if (shown !== item) {
+    setShown(item); setAnimation(firstAction); setPlaying(false); setSpin(false); setZoomOverride(null); setRadius(null);
+  }
+  useEffect(() => { view.current.time = 0; }, [item]);
 
   useEffect(() => {
     const el = boxRef.current;

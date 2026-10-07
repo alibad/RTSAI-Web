@@ -53,11 +53,14 @@
 
 /* Stage: art first, the controls in one quiet row under it. */
 .viewer-main { position: relative; min-width: 0; min-height: 0; display: grid; }
-.viewer-stage { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; background: radial-gradient(ellipse at 50% 56%, #20261f 0%, var(--ink) 70%); }
+.viewer-stage-slot { display: grid; min-height: 0; }
+.viewer-stage-slot[hidden] { display: none; }
+/* Flat colours only: a full-stage gradient repaints with every frame the canvas draws on a software GPU. */
+.viewer-stage { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; background: #141914; }
 .viewer-canvas-box { position: relative; min-height: 0; cursor: grab; touch-action: pan-y; outline: none; }
 .viewer-canvas-box:active { cursor: grabbing; }
 .viewer-canvas-box:focus-visible { box-shadow: inset 0 0 0 2px var(--gold); }
-.viewer-canvas-box canvas { position: absolute; inset: 0; display: block; image-rendering: pixelated; }
+.viewer-canvas-box canvas { position: absolute; inset: 0; display: block; image-rendering: pixelated; contain: strict; }
 .viewer-stage-name { position: absolute; top: 18px; left: 22px; pointer-events: none; display: grid; gap: 4px; }
 .viewer-stage-name h1 { margin: 0; font-size: 26px; line-height: 1.1; }
 .viewer-stage-name span { color: var(--muted); font-size: 13px; }
@@ -165,3 +168,8 @@
   .viewer-info { box-shadow: inset 0 1px 0 var(--line); padding: 18px 16px 28px; }
   .viewer-hero-copy { padding: 8px 16px 20px; }
 }
+
+/* On a software GPU a backdrop blur recomposites everything under it whenever that content changes (every unit switch
+   redraws the panels under the feedback button). The viewer page keeps both overlays opaque instead. */
+body:has(.viewer) .site-nav { backdrop-filter: none; background: var(--ink); }
+body:has(.viewer) .feedback-launcher { backdrop-filter: none; box-shadow: none; background: #171b17; }
