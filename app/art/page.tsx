@@ -2,6 +2,8 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ADMIN_BUILD } from "../../lib/admin";
 import { ArtLabChrome } from "./ArtLabChrome";
 import { RosterBoard, type RosterGroup } from "../components/art/RosterBoard";
 import { artFactions, artLab, categoryLabels, factionActors, fileUrl, renderSpec, spriteWithUrls } from "../../lib/art-lab/manifest";
@@ -14,7 +16,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// The Art Lab shows provenance internals (prompts, seeds, hashes): admin builds only. Players use /viewer.
 export default function ArtLabIndex() {
+  if (!ADMIN_BUILD) notFound();
   const groups: RosterGroup[] = artCategories
     .map(category => ({
       id: category, label: categoryLabels[category],

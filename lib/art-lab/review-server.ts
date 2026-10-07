@@ -13,6 +13,7 @@
  *   GET  /preview               which actors the local preview mod (rtsai/art-preview) installs, matched by bytes
  *   GET  /preview-file?path=    a cameo PNG the preview overlay installs (read-only, path-checked)
  *   GET  /history?actor=        superseded art archived under RTSAI-Art/history/<actor>/ (read-only)
+ *   GET  /unit?actor=           one actor's workspace (candidates), for the admin Faction viewer (read-only)
  *
  * RTSAI-Art files are read in place; nothing is copied into public/.
  */
@@ -318,6 +319,12 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         const target = preview && /\.png$/i.test(rel) ? safeResolve(join(preview, "mods", "rtsai", "art-preview"), rel) : null;
         if (!target || !existsSync(target) || !statSync(target).isFile()) return send(res, 404, { error: "No such preview file" });
         return send(res, 200, readFileSync(target), "image/png");
+      }
+      if (req.method === "GET" && path === "/unit") {
+        // One actor's workspace (its candidates), for the admin Faction viewer's History; read-only.
+        const actor = (url.searchParams.get("actor") ?? "").toLowerCase();
+        if (reviewMode !== "ra2" || !/^[a-z0-9_-]+$/.test(actor)) return send(res, 400, { error: "Bad actor" });
+        return send(res, 200, { unit: unitWorkspace(workspace, actor) ?? null });
       }
       if (req.method === "GET" && path === "/history") {
         // The promotion's archive of superseded art (RTSAI-Art/history/<actor>/manifest.json), read-only; files

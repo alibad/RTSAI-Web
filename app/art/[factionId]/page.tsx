@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ADMIN_BUILD } from "../../../lib/admin";
 import { ArtLabChrome } from "../ArtLabChrome";
 import { RosterBoard, type RosterGroup } from "../../components/art/RosterBoard";
 import { artFactionById, artLab, categoryLabels, factionActors, fileUrl, renderSpec, spriteWithUrls } from "../../../lib/art-lab/manifest";
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function FactionArtPage({ params }: Props) {
+  if (!ADMIN_BUILD) notFound();
   const faction = artFactionById((await params).factionId);
   if (!faction) notFound();
   const actors = factionActors(faction.id);

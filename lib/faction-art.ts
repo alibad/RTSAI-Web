@@ -20,7 +20,7 @@ type Manifest = { units: Record<string, UnitArt>; lineups: Record<string, Lineup
 const art = data as unknown as Manifest;
 
 /** The Studio's read-only Faction viewer (/viewer/<catalogFactionId>[/<actorId>]). Links stay hidden until it ships. */
-export const VIEWER_READY = false;
+export const VIEWER_READY = true;
 export const viewerHref = (factionId: string, actorId?: string) => (actorId ? `/viewer/${factionId}/${actorId}` : `/viewer/${factionId}`);
 
 /** Catalog ids (saudi-arabia) and roster/engine ids (saudi) name the same faction. */

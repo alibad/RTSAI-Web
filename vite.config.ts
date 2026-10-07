@@ -75,13 +75,15 @@ function artReviewProductionStub(): Plugin {
 // Public builds swap the admin-only Workshop tools (Campaign studio, AI testing) for empty stubs, so their code never
 // reaches an rtsai.net bundle; their pages answer 404 there (lib/admin.ts). Admin builds and dev keep them.
 function adminToolsProductionStub(): Plugin {
-  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab" };
+  // ViewerAdmin: the Faction viewer's admin additions (a Studio link, History over the dev API).
+  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab", ViewerAdmin: "\0rtsai-admin-stub:ViewerAdmin" };
   return {
     name: "rtsai-admin-tools-production-stub",
     apply: (_, env) => env.command === "build" && !adminBuild,
     enforce: "pre",
     resolveId(source) {
-      const name = /(?:^|[\\/])components[\\/](CampaignStudio|BehaviorLab)(?:\.tsx)?$/.exec(source)?.[1];
+      const name = /(?:^|[\\/])components[\\/](CampaignStudio|BehaviorLab)(?:\.tsx)?$/.exec(source)?.[1]
+        ?? /(?:^|[\\/])(?:components[\\/]art[\\/]viewer[\\/]|\.[\\/])(ViewerAdmin)(?:\.tsx)?$/.exec(source)?.[1];
       return name ? stubs[name] : null;
     },
     load(id) {

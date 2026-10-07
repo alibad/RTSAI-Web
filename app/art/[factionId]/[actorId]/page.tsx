@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ADMIN_BUILD } from "../../../../lib/admin";
 import { ArtLabChrome } from "../../ArtLabChrome";
 import { UnitViewer } from "../../../components/art/UnitViewer";
 import { artActor, artFactionById, artLab, categoryLabels, fileUrl, renderSpec, spriteWithUrls } from "../../../../lib/art-lab/manifest";
@@ -41,6 +42,7 @@ function FileRow({ file }: { file: ArtFile }) {
 }
 
 export default async function ActorArtPage({ params }: Props) {
+  if (!ADMIN_BUILD) notFound();
   const { factionId, actorId } = await params;
   const faction = artFactionById(factionId);
   const actor = artActor(actorId);

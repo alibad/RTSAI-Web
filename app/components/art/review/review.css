@@ -395,6 +395,11 @@
 .studio-navigation a { display:flex; align-items:center; gap:8px; padding:0 4px; border-bottom:2px solid transparent; color:var(--muted); text-decoration:none; white-space:nowrap; }
 .studio-navigation a:hover, .studio-navigation button:hover { color:var(--text); }
 .studio-nav-divider { width:1px; margin:16px 0; background:var(--line-2); }
+/* Admin tools (local app only): quieter than the workspaces, labelled as admin. */
+.studio-admin { display:flex; align-items:stretch; gap:16px; }
+.studio-admin small { align-self:center; color:var(--faint); font:600 10px/1 var(--font-mono), monospace; letter-spacing:.1em; text-transform:uppercase; }
+.studio-admin a { font-size:13px; }
+@media (max-width: 1500px) { .studio-navigation { gap:16px; } .studio-admin small { display:none; } }
 .studio-mode, .studio-art-select select, .studio-roster-filter { background:var(--raised); border:1px solid var(--line-2); border-radius:6px; padding:7px 10px; min-width:0; }
 .studio-art-select { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; }
 .lab-top { grid-template-columns:minmax(0,1fr) auto auto; gap:12px; }
@@ -422,23 +427,6 @@
 .studio-inspector .studio-facts { padding:18px 16px; }
 .studio-inspector .studio-facts section:has(.studio-action-list) { display:none; }
 .studio-review-notes { border-top:1px solid var(--line); }
-/* History: admin-only and tucked away at the foot of the inspector; small, faint, closed by default. */
-.studio-history { border-top: 1px solid var(--line); }
-.studio-history > summary { cursor: pointer; padding: 10px 16px; font-size: 11px; color: var(--faint); }
-.studio-history > summary:hover { color: var(--muted); }
-.history-body { padding: 0 12px 14px; display: grid; gap: 6px; }
-.history-body h4 { margin: 6px 4px 0; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
-.history-body ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.history-entry { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px; border-radius: 6px; background: rgba(240, 238, 230, 0.03); }
-.history-pic { display: grid; place-items: center; width: 72px; height: 56px; border-radius: 4px; overflow: hidden; background: #0b0e0b; filter: saturate(0.7); }
-.history-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.history-pic img.is-pixel { image-rendering: pixelated; }
-.history-nopic { font: 600 10px/1 var(--font-mono), monospace; color: var(--faint); }
-.history-text { display: grid; gap: 2px; min-width: 0; }
-.history-text b { font-size: 12px; font-weight: 600; color: var(--muted); }
-.history-text small { font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.history-text code { font-size: 10px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.history-show { padding: 4px; }
 .studio-review-notes > summary { cursor:pointer; padding:16px; font-size:12px; color:var(--gold); }
 .studio-inspector h2 { font-size:19px; }
 .studio-inspector .studio-panel-head p { margin-bottom:16px; font-size:12px; }

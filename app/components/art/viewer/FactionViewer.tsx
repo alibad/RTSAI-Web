@@ -1,0 +1,169 @@
+"use client";
+/* Cameos are 60x48 pixel art, drawn at whole scales; next/image would resample them. */
+/* eslint-disable @next/next/no-img-element */
+
+import { ArrowLeft, BookOpen, Crosshair, Footprints, ShieldAlert, Swords, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { ADMIN_BUILD } from "../../../../lib/admin";
+import type { ViewerCampaign, ViewerFaction, ViewerFactionLink, ViewerUnit } from "../../../../lib/viewer";
+import { FrameStore, type StageItem } from "../review/frames";
+import { ViewerStage } from "./ViewerStage";
+import { ViewerAdmin, type ShownVersion } from "./ViewerAdmin";
+import "./viewer.css";
+
+const groups: [string, string][] = [["infantry", "Infantry"], ["vehicle", "Vehicles"], ["aircraft", "Aircraft"], ["ship", "Naval"], ["defense", "Defenses"], ["structure", "Buildings"]];
+const COLOR_KEY = "rtsai-viewer-color";
+
+const hrefFor = (faction: string, unit: string | null) => (unit ? `/viewer/${faction}/${unit}` : `/viewer/${faction}`);
+
+/**
+ * The public Faction viewer: a faction's units as the game draws them (turn them, play their actions), their stats
+ * and doctrine, and the faction's campaigns. Read-only and player-facing: no candidates, checks, decisions or
+ * provenance. Original EA units are listed by name only. The admin build adds a tucked-away History per unit.
+ */
+export function FactionViewer({ faction, factions, initial, marks, lineup, artFactionId }: {
+  faction: ViewerFaction;
+  factions: ViewerFactionLink[];
+  initial: string | null;
+  /** Flags or emblems per faction id, rendered on the server. */
+  marks: Record<string, ReactNode>;
+  /** The faction lineup picture, rendered on the server. */
+  lineup: ReactNode;
+  /** The art workspace's id for the faction (the Studio link in admin builds). */
+  artFactionId: string;
+}) {
+  const [selected, setSelected] = useState<string | null>(initial);
+  const [frames] = useState(() => new FrameStore());
+  useEffect(() => { frames.revive(); return () => frames.dispose(); }, [frames]);
+  const [color, setColor] = useState("F21818");
+  // The remembered colour is read after hydration (the server has no storage); a one-time update.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { try { const c = localStorage.getItem(COLOR_KEY); if (c && /^[0-9A-F]{6}$/i.test(c)) setColor(c); } catch { /* storage unavailable */ } }, []);
+  const pickColor = useCallback((hex: string) => { setColor(hex); try { localStorage.setItem(COLOR_KEY, hex); } catch { /* storage unavailable */ } }, []);
+  const [shown, setShown] = useState<ShownVersion | null>(null);
+
+  const units = faction.units;
+  const unit = units.find(u => u.id === selected) ?? null;
+  const items = useMemo(() => new Map(units.flatMap(u => (u.art ? [[u.id, { key: u.id, spec: u.art.spec, sprite: u.art.sprite } as StageItem]] : []))), [units]);
+  const item = unit ? items.get(unit.id) ?? null : null;
+
+  // Selection is client-side (the stage keeps its loaded art); the address follows it, and Back works.
+  const select = useCallback((id: string | null) => {
+    setSelected(id); setShown(null);
+    const href = hrefFor(faction.id, id);
+    if (window.location.pathname !== href) window.history.pushState({ unit: id }, "", href);
+    window.scrollTo({ top: 0 });
+  }, [faction.id]);
+  useEffect(() => {
+    const onPop = () => { const m = /^\/viewer\/[^/]+\/([^/?#]+)/.exec(window.location.pathname); setSelected(m ? decodeURIComponent(m[1]) : null); setShown(null); };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  useEffect(() => { document.title = `${unit ? `${unit.name} · ` : ""}${faction.name} · Faction viewer | RTS AI`; }, [unit, faction.name]);
+
+  const project = units.filter(u => u.art), shared = units.filter(u => !u.art);
+  const link = (u: ViewerUnit) => (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); select(u.id); };
+
+  return (
+    <div className="viewer" style={{ "--faction-accent": faction.accent } as CSSProperties}>
+      <header className="viewer-top">
+        <a className="viewer-back" href={`/factions/${faction.id}?mode=ra2`}><ArrowLeft size={15} aria-hidden="true" />{faction.name}</a>
+        <nav className="viewer-factions" aria-label="Factions">
+          {factions.map(f => <a key={f.id} href={hrefFor(f.id, null)} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>)}
+        </nav>
+        <span className="viewer-title">Faction viewer</span>
+      </header>
+      <div className="viewer-body">
+        <aside className="viewer-rail" aria-label={`${faction.name} units`}>
+          <a className={`viewer-overview${unit ? "" : " is-current"}`} href={hrefFor(faction.id, null)} aria-current={unit ? undefined : "page"} onClick={e => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); select(null); }}>
+            {marks[faction.id]}<span><b>{faction.name}</b><small>{faction.title}</small></span>
+          </a>
+          {groups.map(([category, label]) => {
+            const list = project.filter(u => u.category === category);
+            if (!list.length) return null;
+            return <section key={category}><h2>{label}<small>{list.length}</small></h2><ul>
+              {list.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}>
+                {u.cameo ? <img src={u.cameo} width={60} height={48} alt="" loading="lazy" decoding="async" /> : <i className="viewer-nocameo" />}
+                <span><b>{u.name}</b><small>{u.role}</small></span></a></li>)}
+            </ul></section>;
+          })}
+          {shared.length > 0 && <section className="viewer-shared"><h2>Shared units<small>{shared.length}</small></h2>
+            <p>Original Red Alert 2 units the faction also builds. Their art comes from your own copy of the game.</p>
+            <ul>{shared.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}><span><b>{u.name}</b><small>{groups.find(g => g[0] === u.category)?.[1] ?? u.category}</small></span></a></li>)}</ul>
+          </section>}
+        </aside>
+
+        <main className="viewer-main" id="viewer-main">
+          {unit && item ? (
+            <ViewerStage key={(shown?.item ?? item).key} frames={frames} item={shown?.item ?? item} color={color} onColor={pickColor}
+              tag={shown ? <span className="viewer-historical"><b>{shown.label}</b><button type="button" onClick={() => setShown(null)}>Back to the game’s art</button></span> : undefined}>
+              <div className="viewer-stage-name"><h1>{unit.name}</h1><span>{unit.role}</span></div>
+            </ViewerStage>
+          ) : unit ? (
+            <div className="viewer-stock"><Swords size={34} aria-hidden="true" /><h1>{unit.name}</h1><p>An original Red Alert 2 unit. Its art comes from your own copy of the game, so it is not shown here.</p></div>
+          ) : (
+            <div className="viewer-hero">
+              <div className="viewer-hero-art">{lineup}</div>
+              <div className="viewer-hero-copy"><span className="eyebrow">{faction.title}</span><h1>{faction.tagline}</h1><p>{faction.story}</p>
+                <div className="viewer-hero-pick">{project.slice(0, 12).map(u => <a key={u.id} href={hrefFor(faction.id, u.id)} onClick={link(u)} title={u.name}>{u.cameo && <img src={u.cameo} width={60} height={48} alt={u.name} loading="lazy" decoding="async" />}</a>)}</div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <aside className="viewer-info" aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
+          {unit ? <UnitInfo unit={unit} /> : <FactionInfo faction={faction} />}
+          {ADMIN_BUILD && unit?.art && <ViewerAdmin key={unit.id} unit={unit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function Stats({ unit }: { unit: ViewerUnit }) {
+  return <dl className="viewer-stats">{unit.stats.map(s => <div key={s.id}><dt>{s.label}</dt><dd><i style={{ "--value": s.value } as CSSProperties} aria-hidden="true" /><span>{s.display}</span></dd></div>)}</dl>;
+}
+
+function UnitInfo({ unit }: { unit: ViewerUnit }) {
+  return <>
+    <header className="viewer-info-head"><span className="eyebrow">{unit.role || groups.find(g => g[0] === unit.category)?.[1]}</span><h2>{unit.name}</h2>
+      {unit.cost != null && <span className="viewer-cost">${unit.cost.toLocaleString("en")}</span>}</header>
+    {unit.description && <p className="viewer-lead">{unit.description}</p>}
+    <Stats unit={unit} />
+    {unit.weapons.length > 0 && <section className="viewer-block"><h3><Crosshair size={15} aria-hidden="true" />Weapons</h3><ul className="viewer-weapons">
+      {unit.weapons.map((w, i) => <li key={i}><b>{w.projectile}</b><span>{[w.damage != null ? `${w.damage} damage` : null, w.range != null ? `${w.range} cells` : null, w.reloadSeconds != null ? `${w.reloadSeconds}s reload` : null].filter(Boolean).join(" · ")}</span>{w.targets.length > 0 && <small>Hits {w.targets.join(", ").toLowerCase()}</small>}</li>)}
+    </ul></section>}
+    {(unit.strengths || unit.counterplay) && <section className="viewer-block viewer-doctrine">
+      {unit.strengths && <p><Footprints size={15} aria-hidden="true" /><span><b>Use it to</b>{unit.strengths}</span></p>}
+      {unit.counterplay && <p><ShieldAlert size={15} aria-hidden="true" /><span><b>Watch for</b>{unit.counterplay}</span></p>}
+    </section>}
+    {unit.dossier && <a className="viewer-link" href={unit.dossier}>Read the full dossier →</a>}
+  </>;
+}
+
+function FactionInfo({ faction }: { faction: ViewerFaction }) {
+  return <>
+    <header className="viewer-info-head"><span className="eyebrow">{faction.side} · Doctrine</span><h2>{faction.title}</h2></header>
+    <p className="viewer-lead">{faction.playstyle}</p>
+    <section className="viewer-block viewer-doctrine">
+      <p><Footprints size={15} aria-hidden="true" /><span><b>Strengths</b>{faction.strengths}</span></p>
+      <p><ShieldAlert size={15} aria-hidden="true" /><span><b>Counterplay</b>{faction.counterplay}</span></p>
+    </section>
+    <section className="viewer-block" aria-labelledby="viewer-campaigns"><h3 id="viewer-campaigns"><BookOpen size={15} aria-hidden="true" />Campaigns</h3>
+      {faction.campaigns.length ? faction.campaigns.map(c => <Campaign key={c.id} c={c} />) : <p className="viewer-empty">{`No campaign is written for ${faction.name} yet.`}</p>}
+      {faction.otherCampaigns.length > 0 && <>
+        <h4>{faction.campaigns.length ? "More campaigns" : "Campaigns in RTS AI"}</h4>
+        {faction.otherCampaigns.map(c => <Campaign key={c.id} c={c} other />)}
+      </>}
+    </section>
+  </>;
+}
+
+function Campaign({ c, other = false }: { c: ViewerCampaign; other?: boolean }) {
+  return <details className="viewer-campaign" open={!other}>
+    <summary><b>{c.title}</b><small>{other ? `Played as ${c.playedAs} · ` : ""}{c.missions.length} chapters</small></summary>
+    <p>{c.synopsis}</p>
+    <ol>{c.missions.map(m => <li key={m.id}><b>{m.title}</b><small>{m.location}</small></li>)}</ol>
+    {c.characters.length > 0 && <p className="viewer-cast"><Users size={14} aria-hidden="true" />{c.characters.map(p => p.name).join(", ")}</p>}
+  </details>;
+}

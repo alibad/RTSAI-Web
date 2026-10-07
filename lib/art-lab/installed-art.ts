@@ -18,6 +18,8 @@ import { slotOfKind, type Candidate, type UnitWorkspace } from "./review";
 
 export const PREVIEW_FILE_ROUTE = "/api/art-review/preview-file?path=";
 export const HISTORY_ROUTE = "/api/art-review/history";
+/** A file in the actor's archive, through the dev API's read-only RTSAI-Art file route. */
+export const historyFileUrl = (actor: string) => (file: string) => `/api/art-review/file?path=${encodeURIComponent(`history/${actor}/${file}`)}`;
 
 /** The overlay icon the preview copy installs for this actor (icons/<actor>.png), if any. */
 export function previewIconFile(actor: string, entry: PreviewActor | undefined): string | null {
@@ -92,6 +94,8 @@ export type HistoryEntry = {
   release?: boolean;
   /** Draw the release before the promotion (the synced manifest's drawing). */
   previous?: boolean;
+  /** An archived voxel model's files (every part archived together), drawable through archivedCandidate. */
+  archived?: { parts: { name: string; vxl: string; hva: string }[]; palette: string | null };
   generator: string | null;
   date: string | null;
   file: string | null;
@@ -100,9 +104,28 @@ export type HistoryEntry = {
 /** One archived file as RTSAI-Art/history/<actor>/manifest.json lists it (fields read leniently). */
 export type ArchivedArt = { file: string; url: string | null; slot: HistorySlot | null; label: string | null; generator: string | null; date: string | null; sha256: string | null;
   /** "generated", "procedural", ... as the provenance record has it. */
-  origin?: string | null };
+  origin?: string | null;
+  /** An archived VXL's render block: the HVA and palette archived beside it (RTSAI-Art 3b7aa8d). */
+  render?: { vxl: string; hva: string; palette: string | null } | null };
 
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : null);
+/** "20261005-94ce000fc9-r2qilin.vxl" -> "r2qilin.vxl": the archive's name for the file the game loaded. */
+export const cleanName = (file: string) => file.split("/").pop()!.replace(/^\d{8}-[0-9a-f]+-/i, "");
+
+/**
+ * An archived voxel model as a candidate the Studio can draw (stageItem): its parts under the names the game loaded
+ * them by, read from the archive (urlOf maps an archive file name to its dev-route URL).
+ */
+export function archivedCandidate(actor: string, entry: HistoryEntry, urlOf: (file: string) => string): Candidate | null {
+  if (!entry.archived) return null;
+  const urls: Record<string, string> = {};
+  for (const p of entry.archived.parts) { urls[p.name] = urlOf(p.vxl); urls[p.name.replace(/\.vxl$/i, ".hva")] = urlOf(p.hva); }
+  if (entry.archived.palette) urls["archive.pal"] = urlOf(entry.archived.palette);
+  return {
+    id: entry.key, actor, createdAt: entry.date ?? "", kind: "voxel", dir: `history/${actor}`, urls,
+    files: { vxl: entry.archived.parts.map(p => p.name), hva: entry.archived.parts.map(p => p.name.replace(/\.vxl$/i, ".hva")), pal: entry.archived.palette ? "archive.pal" : null },
+  };
+}
 /** Provenance records carry the source commit's date beside repo, path and commit. */
 const sourceDate = (s: AssetSource | undefined) => day((s?.source as { date?: string } | undefined)?.date);
 const newestFirst = (a: Candidate, b: Candidate) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : a.id < b.id ? 1 : -1);
@@ -155,19 +178,21 @@ export function historyFor(args: {
   // model's parts (body, turret, barrel) archived together are one version, shown by its body file.
   const order = (a: ArchivedArt) => /^(\d{8})-/.exec(a.file.split("/").pop()!)?.[1] ?? (a.date ?? "").replace(/-/g, "").slice(0, 8);
   const groups = new Map<string, ArchivedArt[]>();
-  for (const a of archive) {
-    const slot = a.slot ?? (/\.(png|jpe?g)$/i.test(a.file) ? "icon" : "model");
-    const key = slot === "icon" ? `icon|${a.file}` : `model|${order(a)}|${(a.label ?? "").replace(/,?\s*\b(body|turret|barrel)\b/gi, "")}`;
-    groups.set(key, [...(groups.get(key) ?? []), { ...a, slot }]);
-  }
-  const isBody = (a: ArchivedArt) => a.file.split("/").pop()!.toLowerCase().replace(/^\d{8}-[0-9a-f]+-/, "").replace(/\.(vxl|shp)$/, "") === args.actor.toLowerCase();
+  const slotOf = (a: ArchivedArt): HistorySlot => a.slot ?? (/\.(png|jpe?g)$/i.test(a.file) ? "icon" : "model");
+  const groupKey = (a: ArchivedArt) => (slotOf(a) === "icon" ? `icon|${a.file}` : `model|${order(a)}|${(a.label ?? "").replace(/,?\s*\b(body|turret|barrel)\b/gi, "")}`);
+  for (const a of archive) groups.set(groupKey(a), [...(groups.get(groupKey(a)) ?? []), { ...a, slot: slotOf(a) }]);
+  const isBody = (a: ArchivedArt) => cleanName(a.file).toLowerCase().replace(/\.(vxl|shp)$/, "") === args.actor.toLowerCase();
   const newer = (x: ArchivedArt, y: ArchivedArt) => { const a = `${order(x)}|${x.date ?? ""}`, b = `${order(y)}|${y.date ?? ""}`; return a < b ? 1 : a > b ? -1 : 0; };
   const picked = [...groups.values()].map(list => list.find(isBody) ?? list[0]).sort(newer);
   for (const a of picked) {
-    const slot = a.slot!;
+    const slot = slotOf(a);
     const name = slot === "icon" ? (a.origin === "generated" ? "painted icon" : a.label ?? "icon") : a.label ?? "game model";
+    // Every VXL archived with this version (body, turret, barrel), each with its HVA: drawable as a voxel model.
+    const parts = slot === "model" ? (groups.get(groupKey(a)) ?? []).filter(p => p.render?.hva && /\.vxl$/i.test(p.file)) : [];
+    const drawable = parts.length && parts.some(isBody)
+      ? { parts: parts.map(p => ({ name: cleanName(p.file), vxl: p.render!.vxl, hva: p.render!.hva })), palette: a.render?.palette ?? parts[0].render?.palette ?? null } : null;
     out.push({ key: `archive:${a.file}`, slot, origin: "archive", image: slot === "icon" ? a.url : null,
-      label: `Historical · ${name}`, generator: a.generator, date: day(a.date), file: a.file });
+      label: `Historical · ${name}`, generator: a.generator, date: day(a.date), file: a.file, ...(drawable ? { archived: drawable } : {}) });
   }
   const installed = new Set([entry?.model, entry?.icon].filter(Boolean));
   for (const c of [...(ws?.candidates ?? [])].sort(newestFirst)) {
@@ -204,9 +229,11 @@ export function parseArchive(json: unknown, urlOf: (file: string) => string): Ar
     seen.add(file);
     const slotText = [str(o.slot), str(o.what), str(o.kind), str(o.type)].filter(Boolean).join(" ");
     const slot: HistorySlot | null = /icon|cameo/i.test(slotText) ? "icon" : /model|voxel|sprite|vxl|shp/i.test(slotText) ? "model" : null;
-    const source = obj(o.source), first = obj(obj(o.installed).first);
+    const source = obj(o.source), first = obj(obj(o.installed).first), render = obj(o.render);
+    const safe = (v: unknown) => { const s = str(v); return s && !s.includes("..") && !/[\\/]/.test(s) ? s : null; };
     return [{ file, url: /\.(png|jpe?g)$/i.test(file) ? urlOf(file) : null, slot, label: str(o.label) ?? str(o.title) ?? str(o.what),
       generator: str(o.generator) ?? str(o.tool) ?? str(o.model) ?? str(source.generator),
-      date: str(o.date) ?? str(o.archivedAt) ?? str(o.createdAt) ?? str(source.date) ?? str(first.date), sha256: str(o.sha256), origin: str(o.origin) ?? str(source.origin) }];
+      date: str(o.date) ?? str(o.archivedAt) ?? str(o.createdAt) ?? str(source.date) ?? str(first.date), sha256: str(o.sha256), origin: str(o.origin) ?? str(source.origin),
+      render: safe(render.hva) ? { vxl: safe(render.vxl) ?? file, hva: safe(render.hva)!, palette: safe(render.palette) } : null }];
   });
 }

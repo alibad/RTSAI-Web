@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { candidatesForSlot, emptyEntry, needsDecision, slotIds, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type UnitWorkspace } from "../../../lib/art-lab/review";
+import { candidatesForSlot, emptyEntry, needsDecision, slotIds, voxelBaseSpec, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type UnitWorkspace } from "../../../lib/art-lab/review";
 import { kindTags, reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
 import { actionCoverage, candidateChecks, chainSteps, decisionState, defaultModelFocus, designFor, fromModel, glbOptions, isChainStep, meshCandidate, nativeCandidates, rosterCounts, type ChainStep, type PreviewAnimation, type PreviewStatus } from "../../../lib/art-lab/chain";
 import type { ModelLibrary } from "../../../lib/art-lab/models";
@@ -16,6 +16,7 @@ import { SourceLibrary } from "./review/Sources";
 import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
+import { studioEffects } from "./review/effects";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
 import { rememberView, setLab, useLab } from "./review/lab-store";
 import { ModelStage, useUnitRadius } from "./review/Stage";
@@ -80,7 +81,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   /** Authored-only: hides original RA2 units and references (for screenshots that may be shared). */
   const [authored, setAuthored] = useState(false);
   const [now, setNow] = useState(0);
-  const [frames] = useState(() => new FrameStore());
+  const [frames] = useState(() => new FrameStore(studioEffects));
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   // One WebGL context for the page, released on unmount (re-armed after a StrictMode remount).
@@ -203,7 +204,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }, [workspace, state]);
   // Every unit by id: our new units (page data) and the original RA2 units (dev API).
   const unitIndex = useMemo(() => {
-    const m = new Map<string, ReviewUnit>((mode === "ra2" ? units : []).map(u => [u.id, { ...u, origin: "new" as const }]));
+    const m = new Map<string, ReviewUnit>((mode === "ra2" ? units : []).map(u => [u.id, { ...u, origin: "new" as const, ...(u.spec.voxel ? {} : { voxelBase: voxelBaseSpec(u.spec) }) }]));
     for (const [id, s] of Object.entries(roster?.stock ?? {})) {
       const existing = m.get(id);
       const info = s.info;
@@ -211,7 +212,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       m.set(id, {
         ...existing, id, factionId: existing?.factionId ?? "", factionName: existing?.factionName ?? "", name: info?.name || id, category, role: roleText(info?.roles ?? [], category), catalog: null,
         queue: info?.queue ?? "", order: info?.order ?? 9999, spec: s.spec, sprite: s.sprite, origin: info?.origin ?? "original", files: s.files, fromModBits: s.fromModBits, sources: s.sources,
-        ...(existing?.spec.voxel && !s.spec.voxel ? { voxelBase: existing.spec } : {}),
+        ...(existing && !s.spec.voxel ? { voxelBase: existing.spec.voxel ? existing.spec : voxelBaseSpec(s.spec) } : {}),
         ...(existing ? { previousArt: { spec: existing.spec, sprite: existing.sprite } } : {}),
       });
     }
@@ -281,6 +282,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const boardFaction = boardFactions.some(f => f.id === factionId) ? factionId : boardFactions[0]?.id ?? factionId;
   const counts = useMemo(() => (mode === "ra2" && state ? rosterCounts(units.map(u => u.id), workspace, library, preview, state.review) : null), [mode, state, units, workspace, library, preview]);
   const selectedUnit = selected ? unitIndex.get(selected) : undefined;
+  // The public viewer's page for what is open here (catalog faction ids: saudi -> saudi-arabia).
+  const viewerLink = mode === "ra2" ? `/viewer/${factionId === "saudi" ? "saudi-arabia" : factionId}${selectedUnit?.origin === "new" ? `/${selectedUnit.id}` : ""}` : "/viewer";
   const current = selectedUnit && (!authored || selectedUnit.origin !== "original") ? rowFor(selectedUnit)
     : factionRows.find(r => r.needs) ?? factionRows.find(r => r.count > 0) ?? factionRows[0] ?? null;
   const currentUnit = current?.unit ?? null;
@@ -535,7 +538,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}${board ? " is-board" : ""}${authored ? " is-authored" : ""}`}>
       {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} />}
-      <StudioBar onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <StudioBar viewerHref={viewerLink} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
         tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
@@ -564,7 +567,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         </details>}
-        {unit && mode === "ra2" && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} />}
+        {unit && mode === "ra2" && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} showable={e => Boolean(e.release || e.candidate)} />}
         </aside>}
       </div>
     </div>

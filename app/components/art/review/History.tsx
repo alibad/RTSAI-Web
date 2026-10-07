@@ -3,13 +3,14 @@
 /* eslint-disable @next/next/no-img-element */
 import { memo, useEffect, useMemo, useState } from "react";
 import { Eye } from "lucide-react";
-import { HISTORY_ROUTE, historyFor, type ArchivedArt, type HistoryEntry } from "../../../../lib/art-lab/installed-art";
+import { archivedCandidate, HISTORY_ROUTE, historyFileUrl, historyFor, type ArchivedArt, type HistoryEntry } from "../../../../lib/art-lab/installed-art";
 import type { PreviewActor } from "../../../../lib/art-lab/chain";
 import type { UnitWorkspace } from "../../../../lib/art-lab/review";
 import type { MapTint } from "../viewSettings";
 import type { FrameStore } from "./frames";
 import { ModelThumb } from "./Filmstrip";
 import { stageItem, type ReviewUnit } from "./versions";
+import "./history.css";
 
 const archives = new Map<string, Promise<ArchivedArt[]>>();
 function archiveOf(actor: string): Promise<ArchivedArt[]> {
@@ -20,12 +21,12 @@ function archiveOf(actor: string): Promise<ArchivedArt[]> {
   return archives.get(actor)!;
 }
 
-function Entry({ e, unit, ws, frames, tints, onShow }: { e: HistoryEntry; unit: ReviewUnit; ws: UnitWorkspace | undefined; frames: FrameStore; tints: MapTint[]; onShow: (e: HistoryEntry) => void }) {
+function Entry({ e, unit, ws, frames, tints, onShow, showable }: { e: HistoryEntry; unit: ReviewUnit; ws: UnitWorkspace | undefined; frames: FrameStore; tints: MapTint[]; onShow: (e: HistoryEntry) => void; showable: (e: HistoryEntry) => boolean }) {
   // Models draw as the stage draws them (the same cached frames the filmstrip uses), not as contact sheets.
-  const candidate = e.slot === "model" && e.candidate ? ws?.candidates.find(c => c.id === e.candidate) ?? null : null;
+  const candidate = e.slot !== "model" ? null : e.candidate ? ws?.candidates.find(c => c.id === e.candidate) ?? null : archivedCandidate(unit.id, e, historyFileUrl(unit.id));
   const releaseModel = e.slot === "model" && (e.release || candidate) ? stageItem(unit, candidate)
     : e.previous && unit.previousArt ? stageItem({ ...unit, id: `${unit.id}:previous`, spec: unit.previousArt.spec, sprite: unit.previousArt.sprite }, null) : null;
-  const canShow = Boolean(e.release || e.candidate);
+  const canShow = Boolean(e.release || e.candidate || e.archived) && showable(e);
   return (
     <li className="history-entry">
       <span className="history-pic">
@@ -47,8 +48,11 @@ function Entry({ e, unit, ws, frames, tints, onShow }: { e: HistoryEntry; unit: 
  * Admin-only, tucked away under the inspector: every earlier picture and model of the unit, labelled Historical.
  * Nothing loads until it is opened; nothing here can be chosen or decided.
  */
-export const UnitHistory = memo(function UnitHistory({ unit, ws, entry, frames, tints, onShow }: {
+const any = () => true;
+export const UnitHistory = memo(function UnitHistory({ unit, ws, entry, frames, tints, onShow, showable = any }: {
   unit: ReviewUnit; ws: UnitWorkspace | undefined; entry: PreviewActor | undefined; frames: FrameStore; tints: MapTint[]; onShow: (e: HistoryEntry) => void;
+  /** Which entries the host can put on its stage (the viewer shows models only). */
+  showable?: (e: HistoryEntry) => boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [archive, setArchive] = useState<{ actor: string; list: ArchivedArt[] } | null>(null);
@@ -72,8 +76,8 @@ export const UnitHistory = memo(function UnitHistory({ unit, ws, entry, frames, 
           <p className="lab-hint">Earlier art for {unit.name}. Historical only: none of it is what the game plays.</p>
           {!entries.length && <p className="lab-hint">No earlier art recorded.</p>}
           {entry?.released && archive?.actor === unit.id && !archive.list.length && <p className="lab-hint">Promoted. The archive under RTSAI-Art/history/{unit.id}/ is empty so far, so the release it replaced comes from the last synced art manifest.</p>}
-          {icons.length > 0 && <><h4>Icons · {icons.length}</h4><ul>{icons.map(e => <Entry key={e.key} e={e} unit={unit} ws={ws} frames={frames} tints={tints} onShow={onShow} />)}</ul></>}
-          {models.length > 0 && <><h4>Game models · {models.length}</h4><ul>{models.map(e => <Entry key={e.key} e={e} unit={unit} ws={ws} frames={frames} tints={tints} onShow={onShow} />)}</ul></>}
+          {icons.length > 0 && <><h4>Icons · {icons.length}</h4><ul>{icons.map(e => <Entry key={e.key} e={e} unit={unit} ws={ws} frames={frames} tints={tints} onShow={onShow} showable={showable} />)}</ul></>}
+          {models.length > 0 && <><h4>Game models · {models.length}</h4><ul>{models.map(e => <Entry key={e.key} e={e} unit={unit} ws={ws} frames={frames} tints={tints} onShow={onShow} showable={showable} />)}</ul></>}
         </div>
       )}
     </details>

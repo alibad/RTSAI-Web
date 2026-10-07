@@ -97,7 +97,13 @@ export function toFrame(image: RasterImage, tint: readonly number[] | null): Fra
 /** Distance from the anchor to the farthest opaque corner: the unit's turning circle at 1x. */
 export const frameRadius = (f: Frame) => Math.max(...[[f.left, f.top], [f.right, f.top], [f.left, f.bottom], [f.right, f.bottom]].map(([x, y]) => Math.hypot(x, y)));
 
+/** Where a store gets effect art (muzzle flashes) named by a unit's rules: a sequence, its palette and, for combined
+ *  sequences, the files joined into one frame list. */
+export type EffectArt = { sequence: SpriteSequence; palette: PaletteSpec; combine?: { file: string; start: number; length: number | "*"; offset: [number, number] }[] };
+export type EffectSource = (query: { source: string; image: string; sequence: string; palette: string }) => Promise<EffectArt>;
+
 export class FrameStore {
+  constructor(private readonly effects: EffectSource | null = null) {}
   private frames = new Map<string, Frame>();
   private palettes = new Map<string, Slot<Palette>>();
   /** Muzzle flashes by rules source, image and sequence: original effect art from the private originals cache. */
@@ -297,9 +303,10 @@ export class FrameStore {
 
   private loadMuzzle(key: string, fire: FireRules, sequence: string, palette: string) {
     this.muzzles.set(key, "loading");
-    const query = new URLSearchParams({ mode: "ra2", source: fire.source, image: fire.image, sequence, palette });
-    fetch(`/api/art-review/visual?${query}`)
-      .then(r => (r.ok ? r.json() as Promise<{ sequence: SpriteSequence; palette: PaletteSpec; combine?: { file: string; start: number; length: number | "*"; offset: [number, number] }[] }> : Promise.reject(new Error(`HTTP ${r.status}`))))
+    // Effect art comes only from a source the owner of the store passes in (the local Studio's originals cache);
+    // without one, every flash is the authored placeholder and nothing is fetched.
+    if (!this.effects) { this.muzzles.set(key, "failed"); this.loaded(); return; }
+    this.effects({ source: fire.source, image: fire.image, sequence, palette })
       .then(async art => {
         // A combined sequence (one SHP per facing, e.g. machine-gun flashes) is joined into one frame list.
         const shpFor = art.combine?.length

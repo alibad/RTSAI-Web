@@ -18,7 +18,14 @@ async function render(pathname) {
 
 const noindex = /name="robots" content="noindex, nofollow"/;
 
-test("the Faction Art Lab renders and is never indexed", async () => {
+// The Art Lab shows provenance internals: admin builds only (RTSAI_ADMIN=1 npm test); players use the Faction viewer.
+const adminBuild = process.env.RTSAI_ADMIN === "1";
+
+test("public builds leave the Art Lab out: every page answers 404", { skip: adminBuild }, async () => {
+  for (const path of ["/art", "/art/china", "/art/iran/r2karrar", "/art/china/r2cnrifle"]) assert.equal((await render(path)).status, 404, path);
+});
+
+test("the Faction Art Lab renders and is never indexed", { skip: !adminBuild }, async () => {
   const pages = {
     "/art": [/Faction Art Lab/, /Five-faction comparison/, /href="\/art\/saudi"/],
     "/art/china": [/Qilin Battle Tank/, /Build-palette cameos/],
@@ -45,7 +52,9 @@ test("Review mode and its API do not exist in the production build", async () =>
   const chunks = readdirSync(new URL("../dist/client/_next/static/chunks/", import.meta.url));
   for (const chunk of chunks) {
     const source = readFileSync(new URL(`../dist/client/_next/static/chunks/${chunk}`, import.meta.url), "utf8");
-    assert.doesNotMatch(source, /Use this in game|Nothing ships until export|Note for the Forge|renderInGameAsync|\/api\/art-review/, `${chunk} carries no review code`);
+    // The renderer itself (the voxel engine) is player-facing: the public Faction viewer draws with it.
+    // Admin builds (the local app) add the viewer's History over the local dev API; the Review UI is out of every build.
+    assert.doesNotMatch(source, adminBuild ? /Use this in game|Nothing ships until export|Note for the Forge|Your call/ : /Use this in game|Nothing ships until export|Note for the Forge|Your call|\/api\/art-review/, `${chunk} carries no review code`);
     // The Studio's flags are local-only identification; the Hezbollah flag is non-free artwork (docs/studio-flags.md).
     assert.doesNotMatch(source, /52\.916664mm|flag-icons-/, `${chunk} carries no Studio flag artwork`);
   }
@@ -73,7 +82,10 @@ test("public faction and unit pages show the project's own art as images; three.
     if (chunk.startsWith("voxel-three")) continue;
     const source = readFileSync(new URL(chunk, chunks), "utf8");
     assert.doesNotMatch(source, /WebGLRenderer/, `${chunk} does not bundle three.js`);
-    for (const m of source.matchAll(/voxel-three-[\w-]+\.js/g)) {
+    // The voxel engine (the Faction viewer's renderer) may import three.js statically: it is itself only ever loaded
+    // on demand, which the same rule checks for every chunk that names it.
+    const lazy = chunk.startsWith("voxel-engine") ? /voxel-engine-[\w-]+\.js/g : /voxel-(?:three|engine)-[\w-]+\.js/g;
+    for (const m of source.matchAll(lazy)) {
       const before = source.slice(Math.max(0, m.index - 20), m.index);
       assert.ok(/(import\([`"]\.\/|_next\/static\/chunks\/)$/.test(before), `${chunk} loads three.js dynamically only`);
     }

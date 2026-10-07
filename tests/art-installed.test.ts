@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { ActorSources, AssetSource } from "../lib/art-lab/asset-source";
 import type { PreviewActor } from "../lib/art-lab/chain";
-import { candidateOrigin, historyFor, identityCameo, installedSources, parseArchive, previewIconFile } from "../lib/art-lab/installed-art";
+import { archivedCandidate, candidateOrigin, historyFor, identityCameo, installedSources, parseArchive, previewIconFile } from "../lib/art-lab/installed-art";
+import { candidateRenderSpec, voxelBaseSpec } from "../lib/art-lab/review";
+import { legacyArt, legacyRenderSpec } from "./legacy-art";
 import type { Candidate, UnitWorkspace } from "../lib/art-lab/review";
 
 const cand = (id: string, kind: string, createdAt: string, extra: Partial<Candidate> = {}): Candidate => ({
@@ -148,4 +150,26 @@ test("history: the real archive schema (history/<actor>/manifest.json) groups mo
   assert.equal(h[1].date, "2026-09-03");
   // Promoted: lists show the release's own icon.
   assert.equal(identityCameo("r2qilin", "/release.png", { ...entry, released: true }, "abc"), "/release.png");
+});
+
+test("history: an archived voxel model draws from the archive alone (render block: HVA and palette beside it)", () => {
+  const vox = (file: string, what: string, hva: string) => ({ sha256: file, what, file, render: { vxl: file, hva, palette: "20261005-e8bf39d1dd-china-glb.pal" } });
+  const list = parseArchive({ entries: [
+    vox("20261005-94ce000fc9-r2qilin.vxl", "GLB voxel route model, body (art preview)", "20261005-94ce000fc9-r2qilin.hva"),
+    vox("20261005-9a1773b78d-r2qilintur.vxl", "GLB voxel route model, turret (art preview)", "20261005-9a1773b78d-r2qilintur.hva"),
+    { sha256: "x", what: "GLB voxel route model, body", file: "20261006-aaaaaaaaaa-r2qilin.vxl", render: { hva: "../escape.hva" } },
+  ] }, f => `/f/${f}`);
+  assert.equal(list[2].render, null, "a render block pointing outside the archive is ignored");
+  const [glb] = historyFor({ actor: "r2qilin", ws: undefined, entry: { ...entry, released: true }, release: { cameo: null, hasModel: true }, archive: list.slice(0, 2) });
+  assert.deepEqual(glb.archived, { parts: [{ name: "r2qilin.vxl", vxl: "20261005-94ce000fc9-r2qilin.vxl", hva: "20261005-94ce000fc9-r2qilin.hva" }, { name: "r2qilintur.vxl", vxl: "20261005-9a1773b78d-r2qilintur.vxl", hva: "20261005-9a1773b78d-r2qilintur.hva" }], palette: "20261005-e8bf39d1dd-china-glb.pal" });
+  const c = archivedCandidate("r2qilin", glb, f => `/h/${f}`)!;
+  assert.deepEqual(c.files.vxl, ["r2qilin.vxl", "r2qilintur.vxl"], "parts keep the names the game loaded, so body and turret roles resolve");
+  assert.equal(c.urls["r2qilintur.hva"], "/h/20261005-9a1773b78d-r2qilintur.hva");
+  assert.equal(c.urls[c.files.pal!], "/h/20261005-e8bf39d1dd-china-glb.pal");
+  // Drawn on the modern voxel template once the release is a sprite: body plus turret on the declared pivot.
+  const sprite = legacyRenderSpec(legacyArt.actors.r2sang);
+  const spec = candidateRenderSpec(voxelBaseSpec({ ...sprite, id: "r2qilin", voxel: null, render: "sprite" }), c);
+  assert.deepEqual(spec?.voxel?.parts.map(p => p.label), ["body", "turret"]);
+  assert.equal(spec?.palette?.url, "/h/20261005-e8bf39d1dd-china-glb.pal");
+  assert.equal(spec?.voxel?.scale, 15.2);
 });

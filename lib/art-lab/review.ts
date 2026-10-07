@@ -375,6 +375,23 @@ export function candidateRenderSpec(current: RenderSpec, candidate: Candidate, p
 
 /** RA2's own voxel defaults (RenderVoxels), which "stock" candidates were authored for. */
 export const STOCK_VOXEL_LIGHT = { scale: 11.7, ambient: [-0.5, -0.5, -0.5] as Vec3, diffuse: [1.4, 1.4, 1.4] as Vec3 };
+
+/**
+ * What a voxel candidate (or an archived voxel model) draws with once the release itself is a prerendered sprite:
+ * the modern voxel template the units used before the promotion (RenderVoxels of the modern vehicle template), with
+ * no parts of its own. The candidate brings its parts and palette; a light it declares wins (candidateLight).
+ */
+export function voxelBaseSpec(spec: RenderSpec): RenderSpec {
+  if (spec.voxel) return spec;
+  return {
+    ...spec, render: "voxel", sprite: null,
+    palette: { name: "voxel", url: "", remap: Array.from({ length: 16 }, (_, i) => 16 + i), transparent: [0], shadow: [] },
+    voxel: {
+      scale: 15.2, cameraPitch: 85, lightPitch: 150, lightYaw: 800, ambient: [-0.3, -0.3, -0.3], diffuse: [0.75, 0.75, 0.75],
+      useClassicPerspectiveFudge: false, normals: "RedAlert2", altitude: spec.category === "aircraft" ? spec.airAltitude ?? null : null, parts: [],
+    },
+  };
+}
 /** The light and scale a voxel candidate declares; absent means it is drawn with the actor's current rules. */
 export function candidateLight(candidate: Pick<Candidate, "renderLight">): Partial<{ scale: number; ambient: Vec3; diffuse: Vec3 }> {
   const light = candidate.renderLight;
