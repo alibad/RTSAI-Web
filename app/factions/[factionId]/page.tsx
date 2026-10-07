@@ -7,6 +7,7 @@ import { SiteHeader, SiteFooter } from "../../components/SiteChrome";
 import { ModeNav, ReleaseCallout } from "../../components/ContentGuide";
 import { CompleteRoster } from "../../components/CompleteRoster";
 import { CampaignStrip } from "../../components/CampaignStrip";
+import { FactionNarrative } from "../../components/FactionNarrative";
 import { rosterCounts } from "../../components/FactionCard";
 import { CountChips, FactionEmblem, FactionFlag, LineupImage } from "../../components/FactionVisuals";
 import { factionById, resolveMode, rosterFactionById, rosters } from "../../../lib/game-content";
@@ -58,6 +59,7 @@ export default async function FactionPage({ params, searchParams }: Props) {
         <article><ShieldAlert size={20} aria-hidden="true" /><h2>Know the limits</h2><p>{faction.counterplay}</p></article>
       </section>}
       {faction && <p className="faction-story">{faction.story}</p>}
+      {faction && <FactionNarrative faction={faction} mode={mode} />}
       <CompleteRoster faction={roster} mode={mode} catalogFactionId={faction?.id} />
       <CampaignStrip factionId={roster.id} mode={mode} />
       {faction ? <ReleaseCallout faction={faction} mode={mode} /> : <aside className="catalog-release"><div><span className="section-number">Development roster</span><h2>Check the release before you play.</h2><p>This guide describes the current rules. Public download coverage is listed separately.</p></div><Link className="primary-action" href={`/download?faction=${id}&mode=${mode}`}>Release details →</Link></aside>}

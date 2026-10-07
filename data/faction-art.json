@@ -3762,6 +3762,11 @@
    "src": "/faction-art/flags/yemen.91e7526d47ae.svg",
    "width": 640,
    "height": 480
+  },
+  "hezbollah": {
+   "src": "/faction-art/flags/hezbollah.1b5a14ae4a8d.svg",
+   "width": 720,
+   "height": 480
   }
  }
 }

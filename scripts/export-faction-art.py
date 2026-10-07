@@ -16,7 +16,8 @@ Everything exported here is made by the project. No EA/RA2 file is ever opened.
                  OpenRA's PlayerColorRemap does.
   lineups        one composite per modern faction, built from that faction's unit renders.
   flags          national flags from lipis/flag-icons v7.3.2 (MIT), taken from the Studio's local copy in
-                 app/components/art/review/flags.ts. Non-state factions get no flag: the site draws an original emblem.
+                 app/components/art/review/flags.ts; plus the Hezbollah flag (non-free; owner decision 2026-10-07,
+                 risks in docs/faction-art.md), from the same copy with its editor metadata removed.
 
 Outputs are content-hashed (immutable caching). data/faction-art.json is the slim manifest the pages read;
 data/faction-art-provenance.json records every output's source files and SHA-256s. Neither is served.
@@ -54,8 +55,19 @@ REMAP = range(16, 32)               # PlayerColorPalette RemapIndex of every ove
 SHADOW_RGBA = (0, 0, 0, 140)        # OpenRA ShadowIndex alpha
 RENDER_WIDTHS = (480, 240)
 LINEUP_WIDTHS = (1440, 720)
-# Non-state factions never get a flag (docs/faction-art.md). The Studio's local copy also holds non-free artwork.
-NO_FLAG = {"hezbollah"}
+# Factions whose flag is never published. Empty since the owner's decision of 2026-10-07 (docs/faction-art.md).
+NO_FLAG: set[str] = set()
+# Flags that are not national flags from flag-icons: published by owner decision, with their own source and licence
+# record. The Studio's copy (app/components/art/review/flags.ts) is the source; see docs/faction-art.md for the risks.
+ORGANISATION_FLAGS = {
+    "hezbollah": {
+        "licence": "Non-free: the organisation's own emblem. Wikipedia lists the file as a non-free logo (fair use, "
+                   "copyright held by a sanctioned organisation); no free licence applies. Published by owner decision "
+                   "of 2026-10-07; risks in docs/faction-art.md.",
+        "source": "https://en.wikipedia.org/wiki/File:Flag_of_Hezbollah.svg "
+                  "(https://upload.wikimedia.org/wikipedia/en/0/08/Flag_of_Hezbollah.svg, downloaded 2026-10-04)",
+    },
+}
 
 # Hero lineup per faction: back to front. Slots place each unit's trimmed render on the lineup canvas.
 LINEUPS = {
@@ -444,16 +456,39 @@ def lineup(picks: dict, renders: dict) -> Image.Image:
 # ---------------------------------------------------------------- flags
 
 
-def national_flags() -> dict[str, str]:
+def clean_svg(svg: str) -> str:
+    """Editor metadata out (XML prolog, comments, Inkscape/Sodipodi data, ids, fixed mm size); drawing unchanged."""
+    t = re.sub(r"<\?xml[^>]*\?>\s*", "", svg)
+    t = re.sub(r"<!--.*?-->\s*", "", t, flags=re.S)
+    t = re.sub(r"<sodipodi:namedview[^>]*/>\s*", "", t, flags=re.S)
+    t = re.sub(r"\s+(?:inkscape|sodipodi):[\w-]+=\"[^\"]*\"", "", t)
+    t = re.sub(r"\s+xmlns:(?:inkscape|sodipodi|svg)=\"[^\"]*\"", "", t)
+    t = re.sub(r"\s+id=\"[^\"]*\"", "", t)
+    t = re.sub(r"<svg\s+width=\"[^\"]*\"\s+height=\"[^\"]*\"", "<svg", t)
+    t = re.sub(r"<defs\s*/>\s*", "", t)
+    t = re.sub(r"\s+", " ", t).replace("> <", "><").strip()
+    if not t.startswith("<svg ") or any(ord(c) < 32 for c in t):
+        raise SystemExit("flag SVG cleanup produced an invalid document")
+    if re.search(r"<script|href=|url\(|<image|<foreignObject", t, re.I):
+        raise SystemExit("flag SVG references external content or scripts; refusing to publish it")
+    return t
+
+
+def studio_flags() -> dict[str, tuple[str, str]]:
+    """{faction: (svg, kind)} for every flag the site may publish: flag-icons national flags (MIT) and the
+    organisation flags the owner approved (ORGANISATION_FLAGS)."""
     line = FLAG_SOURCE.read_text(encoding="utf8").splitlines()[1]
     svgs = json.loads(line[line.index("{"):line.rindex("}") + 1])
     out = {}
     for fid, svg in svgs.items():
         if fid in NO_FLAG:
             continue
+        if fid in ORGANISATION_FLAGS:
+            out[fid] = (clean_svg(svg), "organisation")
+            continue
         if not re.search(r'id="flag-icons-[a-z]{2}"', svg):
-            raise SystemExit(f"flag {fid} is not a flag-icons SVG; refusing to publish it")
-        out[fid] = re.sub(r'\s+id="flag-icons-[a-z]{2}"', "", svg, count=1)
+            raise SystemExit(f"flag {fid} is neither a flag-icons SVG nor an approved organisation flag; refusing to publish it")
+        out[fid] = (re.sub(r'\s+id="flag-icons-[a-z]{2}"', "", svg, count=1), "national")
     return out
 
 
@@ -509,16 +544,25 @@ def build() -> tuple[dict[str, bytes], dict, dict]:
     w.files["flags/LICENSE.txt"] = licence
     w.records.append({"path": "public/faction-art/flags/LICENSE.txt", "bytes": len(licence), "sha256": sha256(licence), "kind": "licence",
                       "derivedFrom": [source(FLAG_LICENSE, "flag-icons MIT licence")], "method": "copied unchanged"})
-    for fid, svg in national_flags().items():
+    for fid, (svg, kind) in studio_flags().items():
         data = svg.encode("utf8")
-        manifest["flags"][fid] = {"src": w.add("flags", fid, "svg", data, {
-            "kind": "national flag", "faction": fid, "licence": "MIT (lipis/flag-icons v7.3.2, flags/LICENSE.txt)",
-            "derivedFrom": [{"role": "flag-icons v7.3.2 4x3 SVG, as embedded in the Studio", "path": rel(FLAG_SOURCE)}],
-            "method": "root id attribute removed; drawing unchanged"}), "width": 640, "height": 480}
+        if kind == "national":
+            record = {"kind": "national flag", "faction": fid, "licence": "MIT (lipis/flag-icons v7.3.2, flags/LICENSE.txt)",
+                      "derivedFrom": [{"role": "flag-icons v7.3.2 4x3 SVG, as embedded in the Studio", "path": rel(FLAG_SOURCE)}],
+                      "method": "root id attribute removed; drawing unchanged"}
+            size = (640, 480)
+        else:
+            org = ORGANISATION_FLAGS[fid]
+            record = {"kind": "organisation flag", "faction": fid, "licence": org["licence"],
+                      "derivedFrom": [{"role": f"organisation flag, as embedded in the Studio; source {org['source']}", "path": rel(FLAG_SOURCE)}],
+                      "method": "editor metadata removed (prolog, comments, Inkscape data, ids, mm size); drawing unchanged"}
+            vb = [float(v) for v in re.search(r'viewBox="([^"]+)"', svg).group(1).split()]
+            size = (round(480 * vb[2] / vb[3]), 480)
+        manifest["flags"][fid] = {"src": w.add("flags", fid, "svg", data, record), "width": size[0], "height": size[1]}
     provenance = {
         "schemaVersion": 1,
         "generatedBy": "scripts/export-faction-art.py",
-        "policy": "Only project-made images and MIT national flags. No EA/RA2 file is opened or exported. Non-state factions get no flag.",
+        "policy": "Only project-made images, MIT national flags and the organisation flags the owner approved (docs/faction-art.md). No EA/RA2 file is opened or exported.",
         "sources": {"RTSAI-Art": git_head(ART), "art-preview overlay": git_head(OVERLAY_REPO),
                     "flag-icons": {"version": "7.3.2", "licence": "MIT", "url": "https://github.com/lipis/flag-icons/tree/v7.3.2/flags/4x3"}},
         "files": sorted(w.records, key=lambda r: r["path"]),

@@ -49,8 +49,8 @@ test("new faction dossiers show their art, complete rosters and honest release s
     assert.ok((html.match(/class="roster-card"/g) ?? []).length >= 16, `${faction}/${mode} shows its own units as cards`);
     assert.match(html, faction === "israel" ? /Coordination Relay/ : /Signal Post/);
     if (faction === "israel") assert.match(html, /src="\/faction-art\/flags\/israel\.[0-9a-f]{12}\.svg"/);
-    // Non-state faction: an original emblem, never a flag.
-    else { assert.doesNotMatch(html, /\/faction-art\/flags\/hezbollah/); assert.match(html, /Hezbollah faction emblem/); }
+    // Owner decision (2026-10-07): Hezbollah shows its own flag like every other faction; its original emblem is retired.
+    else { assert.match(html, /src="\/faction-art\/flags\/hezbollah\.[0-9a-f]{12}\.svg"/); assert.doesNotMatch(html, /faction emblem|class="faction-emblem"/); }
   }
   const observer = await (await render('/units/ilobserver?mode=ra')).text();
   assert.match(observer, /light defensive weapon/);
@@ -249,8 +249,10 @@ test("privacy explains the hosted AI co-commander in plain language", async () =
 
 test("faction pages are visual and player-facing: flags, project art only, no admin material", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
-  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "america", "russia"]) assert.match(directory, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
-  assert.doesNotMatch(directory, /\/faction-art\/flags\/hezbollah/);
+  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah", "america", "russia"]) assert.match(directory, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
+  // Narrative sections stay hidden until the catalog carries the texts.
+  const china = await (await render("/factions/china?mode=ra2")).text();
+  if (!/"identity"/.test(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"))) assert.doesNotMatch(china, /faction-identity-title|faction-rivals-title/);
   assert.equal((directory.match(/\/faction-art\/lineups\/[a-z-]+-720\.[0-9a-f]{12}\.avif/g) ?? []).length >= 7, true, "every modern card shows its lineup");
   const american = await (await render("/factions/america?mode=ra2")).text();
   assert.doesNotMatch(american, /\/faction-art\/(units|cameos|sprites|lineups)\//, "original factions show flags and text only");

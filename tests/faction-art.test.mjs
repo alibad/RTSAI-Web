@@ -45,15 +45,27 @@ test("all modern units have a render and a cameo; every faction has a lineup", (
   for (const [id, lineup] of Object.entries(manifest.lineups)) for (const actor of lineup.actors) assert.equal(manifest.units[actor].faction, id, `${id} lineup uses its own units`);
 });
 
-test("national flags are flag-icons (MIT); the non-state faction has no flag", () => {
+test("national flags are flag-icons (MIT); Hezbollah's own flag ships by owner decision with its licence recorded", () => {
   const licence = read("public/faction-art/flags/LICENSE.txt").toString("utf8");
   assert.match(licence, /The MIT License/);
   assert.match(licence, /Panayiotis Lipiridis/);
-  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "america", "russia", "england", "ukraine"]) assert.ok(manifest.flags[id], id);
-  assert.equal(manifest.flags.hezbollah, undefined);
-  for (const flag of Object.values(manifest.flags)) {
-    const svg = read(join("public", flag.src)).toString("utf8");
-    assert.match(svg, /^<svg[^>]+viewBox="0 0 640 480"/);
-    assert.doesNotMatch(svg, /52\.916664mm|flag-icons-|<script|href="http/i, flag.src);
+  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah", "america", "russia", "england", "ukraine"]) assert.ok(manifest.flags[id], id);
+  const records = new Map(provenance.files.map(f => [f.path, f]));
+  for (const [id, flag] of Object.entries(manifest.flags)) {
+    const svg = read(join("public", flag.src)).toString("utf8"), record = records.get(`public${flag.src}`);
+    // In-document references (#id) are fine; nothing external, no scripts, no editor metadata.
+    assert.doesNotMatch(svg, /flag-icons-|<script|href="(?!#)|url\((?!#)|<image|inkscape|sodipodi/i, flag.src);
+    assert.match(svg, /^<svg [^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"[\s\S]*<\/svg>\s*$/, `${flag.src} is a complete SVG document`);
+    assert.ok([...svg].every(c => c.charCodeAt(0) >= 32 || c === "\n" || c === "\r" || c === "\t"), `${flag.src} has no control characters`);
+    if (id === "hezbollah") {
+      // Not a national flag and not MIT: an organisation flag, published by the owner's decision (docs/faction-art.md).
+      assert.equal(record.kind, "organisation flag");
+      assert.match(record.licence, /Non-free/);
+      assert.match(read("docs/faction-art.md").toString("utf8"), /Hezbollah flag[\s\S]*owner/i);
+    } else {
+      assert.match(svg, /^<svg[^>]+viewBox="0 0 640 480"/);
+      assert.equal(record.kind, "national flag");
+      assert.match(record.licence, /^MIT/);
+    }
   }
 });

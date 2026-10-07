@@ -1,10 +1,10 @@
 {
  "schemaVersion": 1,
  "generatedBy": "scripts/export-faction-art.py",
- "policy": "Only project-made images and MIT national flags. No EA/RA2 file is opened or exported. Non-state factions get no flag.",
+ "policy": "Only project-made images, MIT national flags and the organisation flags the owner approved (docs/faction-art.md). No EA/RA2 file is opened or exported.",
  "sources": {
   "RTSAI-Art": {
-   "commit": "b873351d1653b5e226045748f0dca72fe8920cd9",
+   "commit": "222e1172d673ef1a0092e158c812591fb70bad7e",
    "branch": "main"
   },
   "art-preview overlay": {
@@ -1951,6 +1951,21 @@
     }
    ],
    "method": "root id attribute removed; drawing unchanged"
+  },
+  {
+   "path": "public/faction-art/flags/hezbollah.1b5a14ae4a8d.svg",
+   "bytes": 73390,
+   "sha256": "1b5a14ae4a8def7b05ab0fb609a848bd17e0b28218eab47a1f3564b803e95f43",
+   "kind": "organisation flag",
+   "faction": "hezbollah",
+   "licence": "Non-free: the organisation's own emblem. Wikipedia lists the file as a non-free logo (fair use, copyright held by a sanctioned organisation); no free licence applies. Published by owner decision of 2026-10-07; risks in docs/faction-art.md.",
+   "derivedFrom": [
+    {
+     "role": "organisation flag, as embedded in the Studio; source https://en.wikipedia.org/wiki/File:Flag_of_Hezbollah.svg (https://upload.wikimedia.org/wikipedia/en/0/08/Flag_of_Hezbollah.svg, downloaded 2026-10-04)",
+     "path": "RTSAI-Web/app/components/art/review/flags.ts"
+    }
+   ],
+   "method": "editor metadata removed (prolog, comments, Inkscape data, ids, mm size); drawing unchanged"
   },
   {
    "path": "public/faction-art/flags/iran.2049ff18bb4f.svg",

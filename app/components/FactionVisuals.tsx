@@ -27,13 +27,16 @@ const emblemGlyphs: Record<string, ReactNode> = {
   yemen: <><path d="M12 44l10-12 8 7 12-17 10 22Z" fill="none" strokeWidth="3" strokeLinejoin="round" /><circle cx="44" cy="15" r="4" /></>,
   // Precision support: a reticle inside the formation.
   israel: <><path d="M32 12 52 32 32 52 12 32Z" fill="none" strokeWidth="3" /><circle cx="32" cy="32" r="7" fill="none" strokeWidth="3" /><path d="M32 18v8M32 38v8M18 32h8M38 32h8" strokeWidth="2.5" /></>,
-  // Concealed defense: a ridge line with a firing slit beneath. Original mark; never the organisation's flag or emblem.
+  // Concealed defense: a ridge line with a firing slit beneath. Original mark, kept but not shown (retiredEmblems).
   hezbollah: <><path d="M10 38 22 22l8 9 8-13 16 20" fill="none" strokeWidth="3.5" strokeLinejoin="round" /><path d="M14 46h36" strokeWidth="3" /><path d="M24 46h16" strokeWidth="6" /></>,
 };
 
-export function FactionEmblem({ factionId, accent, size = 56, label }: { factionId: string; accent: string; size?: number; label?: string }) {
+/** Emblems kept in the repo but not shown: on 2026-10-07 the owner chose Hezbollah's real flag (docs/faction-art.md). */
+const retiredEmblems = new Set(["hezbollah"]);
+
+export function FactionEmblem({ factionId, accent, size = 56, label, includeRetired = false }: { factionId: string; accent: string; size?: number; label?: string; includeRetired?: boolean }) {
   const glyph = emblemGlyphs[factionId];
-  if (!glyph) return null;
+  if (!glyph || (retiredEmblems.has(factionId) && !includeRetired)) return null;
   const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true };
   return <svg className="faction-emblem" viewBox="0 0 64 64" width={size} height={size} {...a11y} style={{ color: accent }}>
     <path d="M12 4h40l8 8v40l-8 8H12l-8-8V12Z" fill="#141814" stroke="currentColor" strokeOpacity=".55" strokeWidth="2" />
@@ -41,7 +44,7 @@ export function FactionEmblem({ factionId, accent, size = 56, label }: { faction
   </svg>;
 }
 
-/** The faction's national flag (flag-icons, MIT), or its original emblem when it is not a state. */
+/** The faction's flag (national flags: flag-icons, MIT; Hezbollah: its own flag, docs/faction-art.md), else an emblem. */
 export function FactionFlag({ factionId, name, accent, size = "md", eager = false }: { factionId: string; name: string; accent: string; size?: "sm" | "md" | "lg"; eager?: boolean }) {
   const src = flagSrc(factionId);
   const px = { sm: 32, md: 48, lg: 96 }[size];
