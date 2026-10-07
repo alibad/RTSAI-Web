@@ -1999,12 +1999,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8",
-        "snapshotSha256": "ff091ecd7cd04443a4fce0f52c4e5ac9f306f4c0fe41e24437b08c0e15977d3e"
+        "commit": "bce96486d05a1e352979f4bfea4bfae587792042",
+        "snapshotSha256": "3d37ca8117e2455b34aabfdd45371800d36633147577d7d87009e31246aa53e8"
       },
       "ra": {
         "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "d5247646319f633c9ca72eb98ee257374f05a3bed41a3c0ad9c2ec3b01e445c0"
+        "snapshotSha256": "c787f14ab0c5de82a291766b50f7f179e44c42545d42f6c697a537da5bf95603"
       }
     },
     "factions": [
