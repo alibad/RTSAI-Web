@@ -1765,12 +1765,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "1a08285d6b1128eff80678b62ea8919b95a8e651",
-        "snapshotSha256": "6626d3b0e82fd3632dbd8bfc952c7f1bbd618b70dd0806212b9c445aa6f2ce83"
+        "commit": "34f24804f5ca38bd23cccafff3c0358c9a830624",
+        "snapshotSha256": "c404d18242425213b0059455b3eb5319ba51200c5f3480cbb1939c5c31bd31eb"
       },
       "ra": {
         "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "921b0e875fec6fdaf7857bd52b973abf3b56d3a32bbfe8b4e02d875cc8cd5d9f"
+        "snapshotSha256": "a1b8e0728ee523d27db4352bebeab091f9e92da0588748615de33f77c1676388"
       }
     },
     "factions": [
@@ -9829,7 +9829,7 @@
               "range": 6,
               "minRange": 0.0009765625,
               "reload": 28,
-              "burst": 2,
+              "burst": 3,
               "targets": [
                 "Ground",
                 "Water"
@@ -9985,9 +9985,9 @@
           "weapons": [
             {
               "id": "R2BozkirGun",
-              "range": 5,
+              "range": 5.75,
               "minRange": 0,
-              "reload": 70,
+              "reload": 60,
               "burst": 1,
               "targets": [
                 "Ground",
@@ -10419,7 +10419,7 @@
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 35,
+              "damage": 60,
               "versus": {
                 "Concrete": 75
               },
@@ -10682,7 +10682,7 @@
           "weapons": [
             {
               "id": "R2ChinaPortableAT",
-              "range": 6,
+              "range": 7,
               "minRange": 1,
               "reload": 110,
               "burst": 1,
@@ -10691,7 +10691,7 @@
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 65,
+              "damage": 80,
               "versus": {
                 "Concrete": 40,
                 "None": 12,
@@ -13065,7 +13065,7 @@
         "mode": "ra2",
         "name": "Ridge Missile Team",
         "category": "infantry",
-        "cost": 300,
+        "cost": 350,
         "roles": [
           "anti-armor"
         ],
@@ -13947,7 +13947,7 @@
         "mode": "ra2",
         "name": "Line Fighter",
         "category": "infantry",
-        "cost": 135,
+        "cost": 150,
         "roles": [
           "line-infantry"
         ],
@@ -14400,7 +14400,7 @@
           "weapons": [
             {
               "id": "R2HZUSVCharge",
-              "range": 0.75,
+              "range": 1.5,
               "minRange": 0,
               "reload": 1000,
               "burst": 1,
@@ -17639,7 +17639,7 @@
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 35,
+              "damage": 60,
               "versus": {
                 "Concrete": 75
               },
@@ -18582,7 +18582,7 @@
         "mode": "ra2",
         "name": "Merkava Battle Tank",
         "category": "vehicle",
-        "cost": 1450,
+        "cost": 1250,
         "roles": [
           "main-battle-tank"
         ],
@@ -18740,7 +18740,7 @@
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 35,
+              "damage": 60,
               "versus": {
                 "Concrete": 75
               },
@@ -19327,8 +19327,8 @@
                 "Flak": 70,
                 "Plate": 70,
                 "Light": 100,
-                "Medium": 75,
-                "Heavy": 60,
+                "Medium": 90,
+                "Heavy": 80,
                 "Wood": 100,
                 "Steel": 90
               },
@@ -19577,7 +19577,7 @@
           "weapons": [
             {
               "id": "R2QilinGun",
-              "range": 5,
+              "range": 5.75,
               "minRange": 0,
               "reload": 65,
               "burst": 1,
@@ -20647,7 +20647,7 @@
           "weapons": [
             {
               "id": "R2USVCharge",
-              "range": 0.75,
+              "range": 1.5,
               "minRange": 0,
               "reload": 1000,
               "burst": 1,
@@ -22511,7 +22511,7 @@
           "weapons": [
             {
               "id": "R2PortableAT",
-              "range": 6,
+              "range": 7,
               "minRange": 1,
               "reload": 100,
               "burst": 1,
@@ -22520,7 +22520,7 @@
                 "Water"
               ],
               "projectile": "Missile",
-              "damage": 60,
+              "damage": 75,
               "versus": {
                 "Concrete": 40,
                 "None": 15,
@@ -23672,7 +23672,7 @@
         "mode": "ra2",
         "name": "Mountain Rifleman",
         "category": "infantry",
-        "cost": 135,
+        "cost": 150,
         "roles": [
           "line-infantry"
         ],
@@ -23811,7 +23811,7 @@
         "mode": "ra2",
         "name": "RPG Hunter",
         "category": "infantry",
-        "cost": 300,
+        "cost": 350,
         "roles": [
           "anti-armor"
         ],
@@ -24449,8 +24449,8 @@
               "id": "R2ChinaIFVCannon",
               "range": 6,
               "minRange": 0.0009765625,
-              "reload": 40,
-              "burst": 2,
+              "reload": 30,
+              "burst": 3,
               "targets": [
                 "Ground",
                 "Water"
