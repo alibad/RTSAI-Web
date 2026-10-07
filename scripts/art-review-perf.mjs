@@ -129,43 +129,55 @@ async function run(page, client, label, url, rail = false, chain = null) {
     await step("explode", async () => { await page.getByRole("button", { name: "Explode", exact: true }).click(); await page.waitForTimeout(400); return { labels: await page.locator(".lab-part-label").count() }; });
     await step("3D off", async () => { await page.getByRole("button", { name: "3D", exact: true }).click(); await page.waitForTimeout(300); });
   }
+  const openList = () => page.locator("[data-slot=select-content][data-open], [data-slot=combobox-content][data-open]").last();
   const anim = page.getByRole("combobox", { name: "Animation" });
+  // UI-kit selects: open the field, then pick the option by its name in the open list (the version strip has options too).
+  const optionsOf = async field => { await field.click(); const names = await openList().getByRole("option").allTextContents(); await page.keyboard.press("Escape"); return names.map(n => n.trim()); };
+  // A choice must close the list (a stage that swallows the portalled pointer events would leave it open). Focus then
+  // stays on the field, which keeps its keys as a native <select> did; blur it so the next shortcut reaches the Studio.
+  const closed = async (field, name) => {
+    if (!(await page.waitForFunction(el => el.getAttribute("aria-expanded") !== "true", await field.elementHandle(), { timeout: 5000 }).then(() => true, () => false))) throw Error(`choosing "${name}" left its list open`);
+    const handle = await field.elementHandle();
+    await page.waitForFunction(el => document.activeElement === el, handle, { timeout: 2000 }).catch(() => undefined); // focus returns after the close animation
+    await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+  };
+  const pick = async (field, name) => { await field.click(); await openList().getByRole("option", { name, exact: true }).click(); await closed(field, name); };
   if (await anim.count()) {
     // Infantry walk; otherwise the second action the version has (a defence's build-up or fire).
-    const labels = await anim.locator("option").allTextContents();
+    const labels = await optionsOf(anim);
     const play = labels.includes("Walk") ? "Walk" : labels[1] ?? labels[0];
     const rest = labels[0];
-    await step(`animation: ${play}`, async () => { await anim.selectOption({ label: play }); await page.waitForTimeout(800); });
+    await step(`animation: ${play}`, async () => { await pick(anim, play); await page.waitForTimeout(800); });
     await step("playing (2 s)", async () => {
       const m0 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
       await page.waitForTimeout(2000);
       const m1 = Object.fromEntries((await client.send("Performance.getMetrics")).metrics.map(m => [m.name, m.value]));
       return { cpuPct: Math.round(((m1.TaskDuration - m0.TaskDuration) / 2) * 1000) / 10 };
     }, { record: false });
-    await step(`animation: ${rest}`, async () => { await anim.selectOption({ label: rest }); await page.waitForTimeout(300); });
+    await step(`animation: ${rest}`, async () => { await pick(anim, rest); await page.waitForTimeout(300); });
   }
   if (rail) {
     await step("rail: picker → Türkiye → China", async () => {
+      // The faction field is a searchable list: open it, type the name, Enter picks the first match.
       for (const target of ["Türkiye", "China"]) {
-        await page.locator(".lab-picker-btn").focus();
-        await page.keyboard.press("ArrowDown");
+        await page.getByRole("combobox", { name: "Faction" }).click();
         await page.waitForTimeout(150);
-        for (let i = 0; i < 16; i++) {
-          const name = await page.evaluate(() => document.activeElement?.querySelector("b")?.textContent ?? "");
-          if (name === target) break;
-          await page.keyboard.press("ArrowDown");
-        }
+        await page.keyboard.type(target);
         await page.keyboard.press("Enter");
         await page.waitForTimeout(500);
       }
+      await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
       return { units: await page.locator(".lab-rail li").count() };
     });
     await step("rail: roster filters", async () => {
       const seen = {};
       const select = page.getByRole("combobox", { name: "Roster filter" });
-      for (const value of ["original", "new", "candidates", "needs", "all"]) {
-        if (await select.locator(`option[value="${value}"]`).isDisabled()) continue;
-        await select.selectOption(value);
+      for (const value of ["Original", "New", "Has candidates", "Needs decision", "All artwork"]) {
+        await select.click();
+        const option = openList().getByRole("option", { name: new RegExp(`^${value} ·`) });
+        if (!(await option.count()) || (await option.getAttribute("aria-disabled")) === "true" || (await option.getAttribute("data-disabled")) !== null) { await page.keyboard.press("Escape"); continue; }
+        await option.click();
+        await closed(select, value);
         await page.waitForTimeout(200);
         seen[value] = await page.locator(".lab-rail li").count();
       }

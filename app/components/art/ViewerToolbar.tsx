@@ -5,6 +5,7 @@ import { houseColors } from "../../../lib/art-lab/remap";
 import { facingLabel } from "../../../lib/art-lab/voxel-math";
 import { backdrops, type Backdrop } from "./PixelCanvas";
 import type { MapTint, ViewMode, ViewSettings } from "./viewSettings";
+import { OptionSelect } from "../ui/fields";
 
 export type ToolbarFeatures = {
   modes?: boolean;
@@ -61,9 +62,7 @@ export function ViewerToolbar({ settings, update, tints, features = {}, extra, c
       {!!features.animations?.length && (
         <div className="art-control" role="group" aria-label="Animation">
           <span>Animation</span>
-          <select value={settings.animation} onChange={e => update({ animation: e.target.value })} aria-label="Sprite animation">
-            {features.animations.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
-          </select>
+          <OptionSelect aria-label="Sprite animation" size="sm" value={settings.animation} onValueChange={animation => update({ animation })} options={features.animations.map(a => ({ value: a.id, label: a.label }))} />
         </div>
       )}
       {(features.frames || !!features.animations?.length) && (
@@ -80,19 +79,14 @@ export function ViewerToolbar({ settings, update, tints, features = {}, extra, c
         <span>Scale</span>
         {([1, 2, 4] as const).map(z => <button key={z} type="button" aria-pressed={settings.zoom === z} onClick={() => update({ zoom: z })}>{z}×</button>)}
       </div>
-      <label className="art-control">
+      <div className="art-control" role="group" aria-label="Ground">
         <span>Ground</span>
-        <select value={settings.backdrop} onChange={e => update({ backdrop: e.target.value as Backdrop })}>
-          {backdrops.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
-        </select>
-      </label>
-      <label className="art-control">
+        <OptionSelect<Backdrop> aria-label="Ground" size="sm" value={settings.backdrop} onValueChange={backdrop => update({ backdrop })} options={backdrops.map(b => ({ value: b.id, label: b.label }))} />
+      </div>
+      <div className="art-control" role="group" aria-label="Map light">
         <span>Map light</span>
-        <select value={settings.tintMap} onChange={e => update({ tintMap: e.target.value })}>
-          <option value="">Neutral</option>
-          {tints.map(t => <option key={t.map} value={t.map}>{t.title}</option>)}
-        </select>
-      </label>
+        <OptionSelect aria-label="Map light" size="sm" contentClassName="w-auto max-w-80" value={settings.tintMap} onValueChange={tintMap => update({ tintMap })} options={[{ value: "", label: "Neutral" }, ...tints.map(t => ({ value: t.map, label: t.title }))]} />
+      </div>
       {features.shadow && <label className="art-check"><input type="checkbox" checked={settings.shadow} onChange={e => update({ shadow: e.target.checked })} /> Shadow</label>}
       {features.airborne && <label className="art-check"><input type="checkbox" checked={settings.airborne} onChange={e => update({ airborne: e.target.checked })} /> At cruise altitude</label>}
       {features.link && settings.mode !== "ingame" && (

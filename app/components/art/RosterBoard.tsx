@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RenderSpec } from "../../../lib/art-lab/spec";
 import type { SpriteArt } from "../../../lib/art-lab/types";
 import { PixelCanvas } from "./PixelCanvas";
+import { isFieldKey } from "./review/keys";
 import { UnitViewer } from "./UnitViewer";
 import { useInGameRenders, useNearViewport } from "./useInGameRenders";
 import { ViewerToolbar } from "./ViewerToolbar";
@@ -57,7 +58,7 @@ export function QuickView({ tile, tints, onClose }: { tile: RosterTile; tints: M
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     closeRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !isFieldKey(event)) onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);

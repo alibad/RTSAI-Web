@@ -2,9 +2,11 @@
 
 /* Cameos are tiny local files drawn pixel-exact; next/image would resample them. */
 /* eslint-disable @next/next/no-img-element */
-import { Check, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X , Volume2 } from "lucide-react";
-import { memo, useEffect, useRef, useState } from "react";
+import { Check, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X, Volume2 } from "lucide-react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { sourceLabel } from "../../../../lib/art-lab/asset-source";
+import { OptionSelect, SearchSelect } from "../../ui/fields";
+import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { houseColors } from "../../../../lib/art-lab/remap";
 import type { SlotId } from "../../../../lib/art-lab/review";
 import { backdrops } from "../PixelCanvas";
@@ -15,84 +17,57 @@ import type { ReviewUnit } from "./versions";
 
 export const slotNames: Record<SlotId, string> = { model: "Model", icon: "Icon", concept: "Concept" };
 
-function usePopover() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("pointerdown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("keydown", onKey); };
-  }, [open]);
-  return { open, setOpen, ref };
-}
-
 export const shortcuts: [string, string][] = [
-  ["J / K", "Next / previous unit"], ["1 – 7", "Asset chain step"], ["← / →", "Previous / next version"], ["I", "Build icon"],
+  ["J / K", "Next / previous unit"], ["1 – 8", "Asset chain step"], ["← / →", "Previous / next version"], ["I", "Build icon"],
   ["U", "Use this in game"], ["N", "Keep current"], ["R", "Reject"], ["C", "Write a note"],
   ["Space", "Spin"], ["Drag", "Turn the unit"], ["Shift+drag", "Turn the turret"], ["Wheel", "Zoom"], ["0", "True size (1×)"], ["P", "Next player colour"], ["?", "This help"],
 ];
 
+/** View settings (ground, map light, house colour, shadow) in the UI kit's popover. */
 function ViewPopover({ tints }: { tints: MapTint[] }) {
-  const { open, setOpen, ref } = usePopover();
   const ground = useLab(s => s.ground);
   const tintMap = useLab(s => s.tintMap);
   const color = useLab(s => s.color);
   const shadow = useLab(s => s.shadow);
   return (
-    <div className="lab-pop-wrap" ref={ref}>
-      <button type="button" className="lab-ghost" aria-expanded={open} onClick={() => setOpen(o => !o)}><Settings2 size={15} /> View</button>
-      {open && (
-        <div className="lab-pop" role="dialog" aria-label="View settings">
-          <div className="lab-field">
-            <span className="lab-label">Ground</span>
-            <div className="lab-seg">
-              {backdrops.map(b => <button key={b.id} type="button" aria-pressed={ground === b.id} onClick={() => setLab({ ground: b.id })}>{b.label}</button>)}
-            </div>
+    <Popover modal={false}>
+      <PopoverTrigger className="lab-ghost"><Settings2 size={15} /> View</PopoverTrigger>
+      <PopoverContent align="end" className="lab-tokens lab-pop" aria-label="View settings">
+        <div className="lab-field">
+          <span className="lab-label">Ground</span>
+          <div className="lab-seg">
+            {backdrops.map(b => <button key={b.id} type="button" aria-pressed={ground === b.id} onClick={() => setLab({ ground: b.id })}>{b.label}</button>)}
           </div>
-          <label className="lab-field">
-            <span className="lab-label">Map light</span>
-            <select value={tintMap} onChange={e => setLab({ tintMap: e.target.value })}>
-              <option value="">Neutral</option>
-              {tints.map(t => <option key={t.map} value={t.map}>{t.title}</option>)}
-            </select>
-          </label>
-          <div className="lab-field">
-            <span className="lab-label">House colour</span>
-            <div className="lab-swatches">
-              {houseColors.map(c => <button key={c.id} type="button" className="lab-swatch" style={{ background: `#${c.hex}` }} aria-pressed={color === c.hex} aria-label={c.name} title={c.name} onClick={() => setLab({ color: c.hex })} />)}
-              <button type="button" className="lab-swatch is-raw" aria-pressed={color === null} aria-label="As shipped (no remap)" title="As shipped" onClick={() => setLab({ color: null })}>∅</button>
-            </div>
-          </div>
-          <label className="lab-field is-row">
-            <span className="lab-label">Shadow</span>
-            <input type="checkbox" checked={shadow} onChange={e => setLab({ shadow: e.target.checked })} />
-          </label>
         </div>
-      )}
-    </div>
+        <div className="lab-field">
+          <span className="lab-label">Map light</span>
+          <OptionSelect aria-label="Map light" size="sm" contentClassName="w-auto max-w-80" value={tintMap} onValueChange={tintMap => setLab({ tintMap })} options={[{ value: "", label: "Neutral" }, ...tints.map(t => ({ value: t.map, label: t.title }))]} />
+        </div>
+        <div className="lab-field">
+          <span className="lab-label">House colour</span>
+          <div className="lab-swatches">
+            {houseColors.map(c => <button key={c.id} type="button" className="lab-swatch" style={{ background: `#${c.hex}` }} aria-pressed={color === c.hex} aria-label={c.name} title={c.name} onClick={() => setLab({ color: c.hex })} />)}
+            <button type="button" className="lab-swatch is-raw" aria-pressed={color === null} aria-label="As shipped (no remap)" title="As shipped" onClick={() => setLab({ color: null })}>∅</button>
+          </div>
+        </div>
+        <label className="lab-field is-row">
+          <span className="lab-label">Shadow</span>
+          <input type="checkbox" checked={shadow} onChange={e => setLab({ shadow: e.target.checked })} />
+        </label>
+      </PopoverContent>
+    </Popover>
   );
 }
 
+/** Keyboard shortcuts, in the UI kit's popover; "?" toggles it. */
 export function HelpPopover({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) onOpenChange(false); };
-    window.addEventListener("pointerdown", onDown);
-    return () => window.removeEventListener("pointerdown", onDown);
-  }, [open, onOpenChange]);
   return (
-    <div className="lab-pop-wrap" ref={ref}>
-      <button type="button" className="lab-icon-btn" aria-expanded={open} aria-label="Keyboard shortcuts" title="Shortcuts (?)" onClick={() => onOpenChange(!open)}><CircleHelp size={16} /></button>
-      {open && (
-        <div className="lab-pop is-help" role="dialog" aria-label="Keyboard shortcuts">
-          <table><tbody>{shortcuts.map(([k, v]) => <tr key={k}><td><kbd>{k}</kbd></td><td>{v}</td></tr>)}</tbody></table>
-        </div>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
+      <PopoverTrigger className="lab-icon-btn" aria-label="Keyboard shortcuts" title="Shortcuts (?)"><CircleHelp size={16} /></PopoverTrigger>
+      <PopoverContent align="end" className="lab-tokens lab-pop is-help" aria-label="Keyboard shortcuts">
+        <table><tbody>{shortcuts.map(([k, v]) => <tr key={k}><td><kbd>{k}</kbd></td><td>{v}</td></tr>)}</tbody></table>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -152,72 +127,29 @@ export function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" })
   return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size} is-code`} aria-hidden="true">{({america:"US",england:"GB",france:"FR",germany:"DE",korea:"KR",russia:"RU",ukraine:"UA",cuba:"CU",libya:"LY",iraq:"IQ"} as Record<string,string>)[id] ?? id.slice(0,2).toUpperCase()}</span>;
 }
 
-function Progress({ done, total }: { done: number; total: number }) {
-  if (!total) return null;
-  return (
-    <span className="lab-fprog" title={`${done} of ${total} units with candidates decided`}>
-      <i style={{ ["--done" as string]: done / total }} aria-hidden="true" />{done}/{total}
-    </span>
-  );
-}
-
-/** The faction switch: flag, name, roster size and decided progress. A keyboard listbox (arrows, Enter, Esc). */
+/**
+ * The faction switch: flag, name, roster size and decided progress, as the UI kit's searchable list (type a name,
+ * arrows, Enter, Esc). Collapsed, the rail shows the flag alone.
+ */
 function FactionPicker({ factions, faction, onFaction, compact }: { factions: FactionSummary[]; faction: string; onFaction: (id: string) => void; compact: boolean }) {
-  const [open, setOpen] = useState<{ top: number; left: number } | null>(null);
   // Rasterise every faction flag once in idle time, so the picker's first opening has nothing heavy to paint.
   const ids = factions.map(f => f.id).join(",");
   useEffect(() => { if (ids) prewarmFlags(ids.split(",")); }, [ids]);
-  const wrap = useRef<HTMLDivElement>(null);
-  const button = useRef<HTMLButtonElement>(null);
-  const options = useRef<(HTMLButtonElement | null)[]>([]);
-  const current = factions.find(f => f.id === faction) ?? factions[0];
-  useEffect(() => {
-    if (!open) return;
-    const at = Math.max(0, factions.findIndex(f => f.id === faction));
-    options.current[at]?.focus();
-    const onDown = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(null); };
-    const reposition = () => {
-      const r = button.current?.getBoundingClientRect();
-      if (r) setOpen({ top: Math.min(r.bottom + 8, Math.max(8, window.innerHeight - 170)), left: Math.max(8, Math.min(r.left, window.innerWidth - 368)) });
-    };
-    window.addEventListener("pointerdown", onDown);
-    window.addEventListener("resize", reposition);
-    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("resize", reposition); };
-  }, [open, factions, faction]);
-  // Fixed to the viewport so the rail's scroll box never clips it.
-  const show = () => { const r = button.current?.getBoundingClientRect(); if (r) setOpen({ top: r.bottom + 8, left: r.left }); };
-  const toggle = () => (open ? setOpen(null) : show());
-  const choose = (id: string) => { onFaction(id); setOpen(null); button.current?.focus(); };
-  const onKey = (e: React.KeyboardEvent, i: number) => {
-    const move = (to: number) => { e.preventDefault(); options.current[(to + factions.length) % factions.length]?.focus(); };
-    if (e.key === "ArrowDown") move(i + 1);
-    else if (e.key === "ArrowUp") move(i - 1);
-    else if (e.key === "Home") move(0);
-    else if (e.key === "End") move(factions.length - 1);
-    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setOpen(null); button.current?.focus(); }
-    else if (e.key === "Tab") setOpen(null);
+  const options = useMemo(() => factions.map(f => ({
+    value: f.id, label: f.name, leading: <Flag id={f.id} size="m" />,
+    description: `${f.units} actors${f.withCandidates ? ` · ${f.decided}/${f.withCandidates} decided` : ""}`,
+  })), [factions]);
+  // After a choice the kit hands focus back to the field, whose typeahead would take the next J/K ("K" is Korea).
+  // Let it go instead, so the Studio's unit shortcuts work straight away, as they did with the old picker.
+  const chose = useRef(0);
+  const release = (e: React.FocusEvent) => {
+    const el = e.target as HTMLElement;
+    if (performance.now() - chose.current < 1500 && el.matches("[data-slot=combobox-trigger]")) { chose.current = 0; el.blur(); }
   };
-  if (!current) return null;
+  if (!factions.length) return null;
   return (
-    <div className="lab-picker" ref={wrap}>
-      <button ref={button} type="button" className="lab-picker-btn" aria-haspopup="listbox" aria-expanded={Boolean(open)} title={`${current.name}: change faction`}
-        onClick={toggle} onKeyDown={e => { if (e.key === "ArrowDown" && !open) { e.preventDefault(); show(); } }}>
-        <Flag id={current.id} size="m" />
-        {!compact && <><b>{current.name}</b><ChevronDown size={16} aria-hidden="true" /></>}
-      </button>
-      {open && (
-        <div className="lab-picker-pop" role="listbox" aria-label="Faction" style={{ top: open.top, left: open.left }}>
-          {factions.map((f, i) => (
-            <button key={f.id} id={`faction-${f.id}`} ref={el => { options.current[i] = el; }} type="button" role="option" aria-selected={f.id === faction}
-              className="lab-picker-opt" onClick={() => choose(f.id)} onKeyDown={e => onKey(e, i)}>
-              <Flag id={f.id} size="l" />
-              <span className="lab-picker-name"><b>{f.name}</b><small>{f.units} actors</small></span>
-              <Progress done={f.decided} total={f.withCandidates} />
-              {f.id === faction && <Check size={16} className="lab-picker-check" aria-hidden="true" />}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className={`lab-picker${compact ? " is-compact" : ""}`} onFocus={release}>
+      <SearchSelect aria-label="Faction" value={faction} onValueChange={id => { chose.current = performance.now(); onFaction(id); }} options={options} placeholder="Find a faction…" contentClassName="lab-picker-pop" />
     </div>
   );
 }
@@ -277,9 +209,9 @@ export const UnitRail = memo(function UnitRail({ rows, selected, faction, factio
             {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
           </button>
         </div>
-        {!collapsed && <div className="studio-rail-tools"><input aria-label="Find an actor" placeholder="Find an actor…" value={search} onChange={e => setSearch(e.target.value)} /><select aria-label="Actor category" value={domain} onChange={e => setDomain(e.target.value)}><option value="all">Everything</option><option value="buildings">Buildings & defenses</option>{groupOrder.filter(c => c !== "structure" && c !== "defense").map(c => <option key={c} value={c}>{groupNames[c]}</option>)}</select></div>}
+        {!collapsed && <div className="studio-rail-tools"><input aria-label="Find an actor" placeholder="Find an actor…" value={search} onChange={e => setSearch(e.target.value)} /><OptionSelect aria-label="Actor category" size="sm" value={domain} onValueChange={setDomain} options={[{ value: "all", label: "Everything" }, { value: "buildings", label: "Buildings & defenses" }, ...groupOrder.filter(c => c !== "structure" && c !== "defense").map(c => ({ value: c, label: groupNames[c] }))]} /></div>}
         {!collapsed && (
-          <select className="studio-roster-filter" aria-label="Roster filter" value={filter} onChange={e => onFilter(e.target.value as RailFilter)}>{railFilters.map(f => <option key={f.id} value={f.id} disabled={!counts[f.id] && f.id !== "all"}>{f.id === "all" ? "All artwork" : f.label} · {counts[f.id]}</option>)}</select>
+          <OptionSelect<RailFilter> className="studio-roster-filter" size="sm" aria-label="Roster filter" value={filter} onValueChange={onFilter} options={railFilters.map(f => ({ value: f.id, label: `${f.id === "all" ? "All artwork" : f.label} · ${counts[f.id]}`, disabled: !counts[f.id] && f.id !== "all" }))} />
         )}
       </div>
       {groups.map(g => {

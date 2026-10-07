@@ -12,6 +12,7 @@ import type { RosterPayload } from "../../../lib/art-lab/originals";
 import { railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
 import { ActionRow, ActionShelf, BehaviorPanel, ChecksPanel, StudioBar } from "./review/Studio";
+import { isFieldKey } from "./review/keys";
 import { SourceLibrary } from "./review/Sources";
 import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
@@ -509,8 +510,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   useEffect(() => {
     if (surface !== "art") return;
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select") || target?.isContentEditable) return;
+      if (isFieldKey(event)) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const k = keys.current;
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;

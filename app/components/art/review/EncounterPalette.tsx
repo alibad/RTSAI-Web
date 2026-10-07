@@ -1,20 +1,19 @@
 "use client";
 /* Native cameos stay local; preserve their pixels. */
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search, Plus, GripVertical } from "lucide-react";
 import type { RosterPayload } from "../../../../lib/art-lab/originals";
 import { sourceLabel } from "../../../../lib/art-lab/asset-source";
 import { ENCOUNTER_DRAG } from "../../../../lib/art-lab/encounter";
 import { flagImage as flagSrc } from "./flag-bitmaps";
 import type { ReviewUnit } from "./versions";
+import { SearchSelect } from "../../ui/fields";
 
+/** The Encounter's faction for one side: a searchable list with flags (the UI kit's SearchSelect). */
 export function EncounterFaction({roster,value,onChange,label,disabled}:{roster:RosterPayload|null;value:string;onChange:(id:string)=>void;label:string;disabled:boolean}){
-  const [open,setOpen]=useState(false),[query,setQuery]=useState("");
-  const search=useRef<HTMLInputElement>(null),root=useRef<HTMLDivElement>(null);
-  useEffect(()=>{if(!open)return;search.current?.focus();const close=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))setOpen(false);};const escape=(e:KeyboardEvent)=>{if(e.key==="Escape"){setOpen(false);root.current?.querySelector<HTMLButtonElement>("button")?.focus();}};document.addEventListener("pointerdown",close);document.addEventListener("keydown",escape);return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape);};},[open]);
-  const faction=roster?.factions.find(f=>f.id===value),flag=flagSrc(value);
-  return <div ref={root} className="enc-faction"><button type="button" className="enc-faction-trigger" disabled={disabled} aria-label={label} aria-expanded={open} onClick={()=>setOpen(o=>!o)}>{flag&&<img src={flag} alt="" width={26} height={18}/>}<span>{faction?.name??"Choose faction"}</span></button>{open&&<div className="enc-faction-pop" role="dialog" aria-label="Choose faction"><input ref={search} aria-label={`Search ${label}`} placeholder="Find a faction…" value={query} onChange={e=>setQuery(e.target.value)}/><div role="listbox" aria-label={label}>{roster?.factions.filter(f=>f.name.toLowerCase().includes(query.toLowerCase())).map(f=><button type="button" role="option" aria-selected={f.id===value} key={f.id} onClick={()=>{onChange(f.id);setOpen(false);setQuery("");}}>{flagSrc(f.id)&&<img src={flagSrc(f.id)!} width={30} height={20} alt=""/>}{f.name}</button>)}</div></div>}</div>;
+  const options=useMemo(()=>(roster?.factions??[]).map(f=>{const flag=flagSrc(f.id);return {value:f.id,label:f.name,description:f.side,leading:flag?<img src={flag} alt="" width={22} height={15} className="enc-flag"/>:undefined};}),[roster]);
+  return <div className="enc-faction"><SearchSelect aria-label={label} value={value} onValueChange={onChange} options={options} disabled={disabled} placeholder="Find a faction…"/></div>;
 }
 
 export function EncounterPalette({units,roster,faction,side,disabled,onAdd}:{units:ReviewUnit[];roster:RosterPayload|null;faction:string;side:0|1;disabled:boolean;onAdd:(id:string)=>void}){

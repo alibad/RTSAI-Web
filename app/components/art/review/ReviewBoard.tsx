@@ -15,6 +15,7 @@ import type { FrameStore } from "./frames";
 import { ModelThumb } from "./Filmstrip";
 import { Flag } from "./Chrome";
 import { composePoster } from "./poster";
+import { isFieldKey } from "./keys";
 import { stageItem, type ReviewUnit } from "./versions";
 
 type Decide = (action: ReviewAction, message: string) => Promise<boolean>;
@@ -208,7 +209,7 @@ export function ReviewBoard({ factions, factionId, onFaction, unitsFor, allUnits
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select") || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isFieldKey(e) || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = keys.current;
       if (k.note || k.play) return;
       // Only the board's own keys, and only while the board (a tile) has the keyboard.

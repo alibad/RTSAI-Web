@@ -16,6 +16,7 @@ import { CompareToggle } from "./ImageStages";
 import { setLab, useLab, type Compare, type LabView } from "./lab-store";
 import { comparePair, type Version } from "./versions";
 import { AnimationTransport } from "./AnimationTransport";
+import { OptionSelect } from "../../ui/fields";
 
 export const DEFAULT_FACING = 896;
 /** Screen pixels (1x) a flying aircraft is drawn above its ground point: OpenRA's 1448 world units per 30 px cell height. */
@@ -474,6 +475,8 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
   const drag = useRef<{ x: number; facing: number; turret: number; turn: "body" | "turret" | "swipe"; moved: boolean; id: number } | null>(null);
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
+    // Kit lists (the Animation select) portal to <body> but their React events still bubble here: only the stage's own DOM turns the unit.
+    if (!e.currentTarget.contains(target)) return;
     if (is3d || target.closest(".lab-corner, .lab-animation-row, button, input, select") || (e.button !== 0 && e.button !== 2)) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -546,9 +549,7 @@ export function ModelStage({ versions, focus, allowCompare, frames, tints, unitI
         <PlayerColours />
         {playable && (
           <div className="lab-seg">
-            <select aria-label="Animation" value={animations.some(a => a.id === animation) ? animation : animations[0]?.id} onChange={e => setLab({ animation: e.target.value, playing: true })}>
-              {animations.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
-            </select>
+            <OptionSelect aria-label="Animation" size="sm" value={animations.some(a => a.id === animation) ? animation : animations[0]?.id ?? ""} onValueChange={id => setLab({ animation: id, playing: true })} options={animations.map(a => ({ value: a.id, label: a.label }))} />
           </div>
         )}
         {isVoxel && compare === "single" && (
