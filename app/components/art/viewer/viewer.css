@@ -93,6 +93,9 @@
 .viewer-hero-copy { padding: 8px 28px 28px; }
 .viewer-hero-copy h1 { margin: 8px 0 10px; font-size: clamp(24px, 2.6vw, 36px); line-height: 1.1; }
 .viewer-hero-copy p { max-width: 720px; margin: 0; color: #c9cac1; line-height: 1.55; }
+.viewer-motto { max-width: 720px; margin: 0 0 12px; padding-left: 12px; box-shadow: inset 2px 0 0 var(--accent); color: var(--paper); font-size: 16px; font-style: italic; line-height: 1.45; }
+.viewer-keywords { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+.viewer-keywords li { padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--paper); font: 600 11px/1.4 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
 .viewer-hero-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
 .viewer-hero-pick a { display: block; border-radius: 3px; box-shadow: 0 0 0 1px var(--line); }
 .viewer-hero-pick a:hover { box-shadow: 0 0 0 2px var(--accent); }
@@ -191,3 +194,15 @@ body:has(.viewer) .feedback-launcher { backdrop-filter: none; box-shadow: none; 
 .viewer-clip span small { color: var(--muted); font-size: 12px; line-height: 1.3; }
 .viewer-note { margin: 10px 0 0; color: var(--faint); font-size: 11px; line-height: 1.45; }
 @media (max-width: 900px) { .viewer .studio-sound { order: 2; } }
+
+/* The faction in its own voice, and its rivals' in-world views (propaganda or grievances, with the framing note). */
+.viewer-voice p { margin: 0; color: #c9cac1; font-size: 13px; line-height: 1.6; }
+.viewer-rivals { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.viewer-rivals li { padding: 10px 12px; border-radius: 8px; background: var(--surface); box-shadow: inset 2px 0 0 var(--rival-accent, var(--line)), inset 0 0 0 1px var(--line); }
+.viewer-rivals a { display: flex; align-items: center; gap: 8px; color: var(--paper); font-size: 13px; text-decoration: none; }
+.viewer-rivals a:hover b { text-decoration: underline; }
+.viewer-rivals img { width: 20px; height: 15px; object-fit: cover; border-radius: 2px; }
+.viewer-rivals small { color: var(--muted); font-size: 11px; }
+.viewer-rivals small::before { content: "· "; }
+.viewer-rivals blockquote { margin: 6px 0 0; color: #c9cac1; font-size: 13px; font-style: italic; line-height: 1.5; }
+.viewer-rivals blockquote p { margin: 0; }

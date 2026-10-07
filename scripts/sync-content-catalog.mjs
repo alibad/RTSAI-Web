@@ -9,8 +9,9 @@ execFileSync(python, [resolve(product, "scripts/content_catalog.py"), "--engine"
 // Hash LF-normalized text so Windows autocrlf checkouts produce the same snapshot.
 const source = (await readFile(resolve(product, "catalog/factions.json"), "utf8")).replace(/\r\n/g, "\n");
 const catalog = JSON.parse(source);
-// Voice ideas are notes for the audio team, not game text: they stay out of the website snapshot (and every bundle).
-for (const faction of catalog.factions) if (faction.flavour) delete faction.flavour.voiceIdeas;
+// faction.flavour is for the game, never the website: loading-screen lines, and voice ideas (notes for the audio team,
+// not game text). The snapshot is bundled into client code, so the whole block stays out of it (and every bundle).
+for (const faction of catalog.factions) delete faction.flavour;
 // The curated dossiers live in the shared catalog. Complete build rosters come
 // from the Art Lab's rule export: JSON facts only, never commercial image data.
 const rosterPath = resolve("../RTSAI-Art/rebuild/catalog.json");

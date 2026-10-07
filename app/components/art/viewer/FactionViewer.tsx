@@ -2,7 +2,7 @@
 /* Cameos are 60x48 pixel art, drawn at whole scales; next/image would resample them. */
 /* eslint-disable @next/next/no-img-element */
 
-import { ArrowLeft, BookOpen, Crosshair, Footprints, Pause, Play, ShieldAlert, Swords, Users, Volume2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Crosshair, Eye, Footprints, Pause, Play, Quote, ShieldAlert, Swords, Users, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ADMIN_BUILD } from "../../../../lib/admin";
 import type { ViewerCampaign, ViewerFaction, ViewerFactionLink, ViewerUnit } from "../../../../lib/viewer";
@@ -74,6 +74,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   useEffect(() => { document.title = `${unit ? `${unit.name} · ` : ""}${faction.name} · Faction viewer | RTS AI`; }, [unit, faction.name]);
 
   const project = units.filter(u => u.art), shared = units.filter(u => !u.art);
+  const identity = faction.narrative?.identity ?? null;
   const link = (u: ViewerUnit) => (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); select(u.id); };
 
   return (
@@ -123,7 +124,10 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
           {!unit && (
             <div className="viewer-hero">
               <div className="viewer-hero-art">{lineup}</div>
-              <div className="viewer-hero-copy"><span className="eyebrow">{faction.title}</span><h1>{faction.tagline}</h1><p>{faction.story}</p>
+              <div className="viewer-hero-copy"><span className="eyebrow">{faction.title}</span><h1>{faction.tagline}</h1>
+                {identity?.motto && <blockquote className="viewer-motto">“{identity.motto}”</blockquote>}
+                {identity && identity.keywords.length > 0 && <ul className="viewer-keywords" aria-label="In three words">{identity.keywords.map(k => <li key={k}>{k}</li>)}</ul>}
+                <p>{faction.story}</p>
                 <div className="viewer-hero-pick">{project.slice(0, 12).map(u => <a key={u.id} href={hrefFor(faction.id, u.id)} onClick={link(u)} title={u.name}>{u.cameo && <img src={u.cameo} width={60} height={48} alt={u.name} loading="lazy" decoding="async" />}</a>)}</div>
               </div>
             </div>
@@ -197,6 +201,7 @@ function UnitInfo({ unit }: { unit: ViewerUnit }) {
 }
 
 function FactionInfo({ faction }: { faction: ViewerFaction }) {
+  const n = faction.narrative;
   return <>
     <header className="viewer-info-head"><span className="eyebrow">{faction.side} · Doctrine</span><h2>{faction.title}</h2></header>
     <p className="viewer-lead">{faction.playstyle}</p>
@@ -204,6 +209,18 @@ function FactionInfo({ faction }: { faction: ViewerFaction }) {
       <p><Footprints size={15} aria-hidden="true" /><span><b>Strengths</b>{faction.strengths}</span></p>
       <p><ShieldAlert size={15} aria-hidden="true" /><span><b>Counterplay</b>{faction.counterplay}</span></p>
     </section>
+    {n?.identity && n.identity.story.length > 0 && <section className="viewer-block viewer-voice" aria-labelledby="viewer-identity">
+      <h3 id="viewer-identity"><Quote size={15} aria-hidden="true" />In their own words</h3>
+      {n.identity.story.map((p, i) => <p key={i}>{p}</p>)}
+    </section>}
+    {n && n.rivalViews.length > 0 && <section className="viewer-block" aria-labelledby="viewer-rivals">
+      <h3 id="viewer-rivals"><Eye size={15} aria-hidden="true" />Through their rivals’ eyes</h3>
+      <ul className="viewer-rivals">{n.rivalViews.map(v => <li key={v.rival.id} style={{ "--rival-accent": v.rival.accent } as CSSProperties}>
+        <a href={hrefFor(v.rival.id, null)}>{v.rival.flag && <img src={v.rival.flag} width={20} height={15} alt="" />}<b>{v.rival.name}</b>{v.kind && <small>{v.kind}</small>}</a>
+        {v.text.map((p, i) => <blockquote key={i}><p>{p}</p></blockquote>)}
+      </li>)}</ul>
+      {n.framing && <p className="viewer-note">{n.framing}</p>}
+    </section>}
     <section className="viewer-block" aria-labelledby="viewer-campaigns"><h3 id="viewer-campaigns"><BookOpen size={15} aria-hidden="true" />Campaigns</h3>
       {faction.campaigns.length ? faction.campaigns.map(c => <Campaign key={c.id} c={c} />) : <p className="viewer-empty">{`No campaign is written for ${faction.name} yet.`}</p>}
       {faction.otherCampaigns.length > 0 && <>

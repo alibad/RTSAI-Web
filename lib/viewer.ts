@@ -3,13 +3,14 @@
  *
  * Players see what the game ships: the project's committed art (data/art-lab.json and public/art-lab, synced from the
  * mod by `npm run sync:art`), the approved build-menu cameos (public/faction-art), rules-derived stats, the faction's
- * doctrine and its campaigns. Nothing here reads the art workspace, candidates, checks, decisions or provenance, and
+ * doctrine, its narrative (identity and rivals' views, never the game-only flavour lines) and its campaigns. Nothing here reads the art workspace, candidates, checks, decisions or provenance, and
  * original EA units carry text only: their art is never published.
  */
 import { artFactionByCatalogId, artLab, renderSpec, spriteWithUrls } from "./art-lab/manifest";
 import type { RenderSpec } from "./art-lab/spec";
 import type { SpriteArt } from "./art-lab/types";
 import { allCampaigns, campaignsForFaction, type Campaign } from "./faction-campaigns";
+import { factionNarrative, type FactionIdentity } from "./faction-narrative";
 import { roleLabel } from "./art-lab/labels";
 import { unitArt, unitStats, flagSrc, type UnitStat } from "./faction-art";
 import { unitSounds, type PublicSoundGroup } from "./faction-audio";
@@ -50,8 +51,13 @@ export type ViewerFaction = {
   /** Campaigns played as this faction, then the others (read-only, from the Campaign Studio's data). */
   campaigns: ViewerCampaign[];
   otherCampaigns: ViewerCampaign[];
+  narrative: ViewerNarrative | null;
 };
 export type ViewerFactionLink = { id: string; name: string; accent: string; flag: string | null };
+/** A rival's in-world view of this faction: propaganda or a grievance, voiced by the rival, never a factual claim. */
+export type ViewerRivalView = { rival: ViewerFactionLink; kind: "propaganda" | "grievance" | null; text: string[] };
+/** The faction in its own voice and through its rivals' eyes (lib/faction-narrative.ts); framing is the in-world disclaimer. */
+export type ViewerNarrative = { identity: FactionIdentity | null; rivalViews: ViewerRivalView[]; framing: string | null };
 
 const ORDER = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
 
@@ -96,6 +102,16 @@ export function viewerFaction(catalogId: string): ViewerFaction | null {
     units: list,
     campaigns: campaignsForFaction(catalogId, "ra2").map(slimCampaign),
     otherCampaigns: allCampaigns("ra2").filter(c => !campaignsForFaction(catalogId, "ra2").includes(c)).map(slimCampaign),
+    narrative: viewerNarrative(catalogId),
+  };
+}
+
+function viewerNarrative(catalogId: string): ViewerNarrative | null {
+  const n = factionNarrative(factionById(catalogId));
+  if (!n) return null;
+  return {
+    identity: n.identity, framing: n.framing,
+    rivalViews: n.rivalViews.map(v => ({ rival: { ...v.rival, flag: flagSrc(v.rival.id) }, kind: v.kind, text: v.text })),
   };
 }
 

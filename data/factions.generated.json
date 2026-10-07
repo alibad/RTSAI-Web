@@ -131,20 +131,7 @@
             "kind": "grievance",
             "text": "Distant fleets sail into our waters and call it protecting trade. Whose trade, and whose waters? A network that watches everything still does not understand the people on the shore."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "The network is awake. What one unit sees, every unit sees."
-            },
-            {
-              "perspective": "rival",
-              "rival": "turkey",
-              "text": "Every Haitan pier is long enough for a carrier. Ask yourself why."
-            }
-          ]
-        }
+        ]
       },
       {
         "id": "iran",
@@ -202,20 +189,7 @@
             "kind": "propaganda",
             "text": "An old rival wearing new slogans. They would rather ring a region with fortresses than trade with it openly, and their layered defenses are built to keep out change as much as enemies."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "Every pass guarded, every coast contested. Let the enemy choose a road."
-            },
-            {
-              "perspective": "rival",
-              "rival": "saudi-arabia",
-              "text": "Their talk is of brotherhood. Their missile ranges grow every year."
-            }
-          ]
-        }
+        ]
       },
       {
         "id": "turkey",
@@ -273,20 +247,7 @@
             "kind": "grievance",
             "text": "They speak for the region in every forum, then send armor across their neighbours' borders and call it security. The Anatolian Guard moves fast, and it rarely asks permission."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "A bridge between continents must be guarded from both sides."
-            },
-            {
-              "perspective": "rival",
-              "rival": "iran",
-              "text": "One foot in a distant alliance, the other on our border."
-            }
-          ]
-        }
+        ]
       },
       {
         "id": "saudi-arabia",
@@ -344,20 +305,7 @@
             "kind": "grievance",
             "text": "Their money moves faster than their armies, and it always seems to arrive on the far side of our fight. They lecture the region about stability while choosing partners by what they can sell."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "The corridor carries a nation's future. Hold it."
-            },
-            {
-              "perspective": "rival",
-              "rival": "yemen",
-              "text": "Wealth buys armor. It cannot buy consent."
-            }
-          ]
-        }
+        ]
       },
       {
         "id": "yemen",
@@ -415,20 +363,7 @@
             "kind": "propaganda",
             "text": "Harassing a shipping lane does not make anyone a navy. Every container they delay raises the price of bread in ports that have nothing to do with their war."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "We have little steel, so we bring patience. And speed."
-            },
-            {
-              "perspective": "rival",
-              "rival": "china",
-              "text": "Every container they delay raises the price of bread somewhere far away."
-            }
-          ]
-        }
+        ]
       },
       {
         "id": "israel",
@@ -502,20 +437,7 @@
             "kind": "grievance",
             "text": "They trust machines more than neighbours, and every wall they build makes the region smaller. Their formations are protected so carefully that they forget who is standing outside them."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "Nobody moves alone. The observer, the tank and the shield cover each other."
-            },
-            {
-              "perspective": "rival",
-              "rival": "hezbollah",
-              "text": "They fly over our hills as if the sky belonged to them."
-            }
-          ]
-        }
+        ]
       },
       {
         "id": "hezbollah",
@@ -590,20 +512,7 @@
             "kind": "grievance",
             "text": "Wars without front lines are poison for every port and partner. Their cheap rockets and swarms of tiny drones make the whole coast too dangerous to trade with, and they call that deterrence."
           }
-        ],
-        "flavour": {
-          "loading": [
-            {
-              "perspective": "self",
-              "text": "Simple rockets. Small wings. Fighters who know every ridge."
-            },
-            {
-              "perspective": "rival",
-              "rival": "israel",
-              "text": "An armed movement that decides when a whole country goes to war."
-            }
-          ]
-        }
+        ]
       }
     ],
     "units": [

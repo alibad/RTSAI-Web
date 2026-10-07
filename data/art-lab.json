@@ -3,9 +3,9 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8",
+  "commit": "bce96486d05a1e352979f4bfea4bfae587792042",
   "provenanceGeneratedBy": "tools/art-provenance.py",
-  "provenanceSha256": "14c2ccd60f9e6876f608a85cd389f505395d7572fb79f96f6ffc84e55138f9bf",
+  "provenanceSha256": "04059c7ce7b554f4363770f0b963425ea9a4b6535931201d08768a25f86c4476",
   "commercialRa2Data": "None found. Every unit sprite and cameo is a render of the project's own 3D model (a GLB generated locally from the project's concept picture), installed from a committed RTSAI-Art candidate with the same bytes; original RA2 files were read only locally to measure target statistics, never as input pixels; the flags are drawn from code. See docs/art-provenance.md.",
   "levantBinding": {
    "generatedBy": "scripts/bind-levant-provenance.mjs",

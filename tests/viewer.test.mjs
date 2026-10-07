@@ -35,6 +35,19 @@ test("the Faction viewer: every modern faction, its units drawn from the game's 
   assert.match(china, /<link rel="canonical" href="https:\/\/rtsai\.net\/viewer\/china"/);
 });
 
+test("the Faction viewer carries each faction's narrative: its own voice, its rivals' views with the framing, no flavour", async () => {
+  const html = (await (await render("/viewer/hezbollah")).text()).replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"');
+  assert.match(html, /Patience is our armor\./, "the motto, in the faction's voice");
+  assert.match(html, /In their own words/);
+  assert.match(html, /Through their rivals’ eyes/);
+  assert.match(html, /href="\/viewer\/israel"/, "each rival links to its own viewer");
+  assert.match(html, /In-world perspectives in a fictional game conflict/, "the framing note sits with the rival views");
+  // Loading lines and audio-team notes are game-only: neither in the page nor in any client chunk.
+  assert.doesNotMatch(html, /voiceIdeas|"loading":/);
+  const dir = new URL("../dist/client/_next/static/chunks/", import.meta.url);
+  for (const chunk of readdirSync(dir)) assert.doesNotMatch(readFileSync(new URL(chunk, dir), "utf8"), /voiceIdeas/, `${chunk} carries no flavour`);
+});
+
 test("a unit in the viewer: stats, weapons and doctrine; original units are text only", async () => {
   const response = await render("/viewer/china/r2qilin");
   assert.equal(response.status, 200);

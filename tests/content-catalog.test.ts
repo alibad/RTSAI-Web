@@ -90,6 +90,8 @@ test("snapshot carries provenance and archive no longer offers fake modes", asyn
   const snapshot = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
   assert.match(snapshot.sha256, /^[a-f0-9]{64}$/);
   assert.equal(snapshot.source, "OpenRA-AI/catalog/factions.json");
+  // Loading lines and audio-team notes stay in the game's catalog; the website snapshot (bundled into client code) omits them.
+  for (const faction of snapshot.catalog.factions) assert.equal(faction.flavour, undefined, `${faction.id} has no flavour in the web snapshot`);
   const archive = await readFile(new URL("../app/components/FactionArchive.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(archive, /world-war-iii|classic-red-alert/);
 });
