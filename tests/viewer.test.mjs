@@ -61,7 +61,8 @@ test("a unit in the viewer: stats, weapons and doctrine; original units are text
   assert.match(html, /装甲平台在线/, "with what they say");
   if (!adminBuild) assert.doesNotMatch(html, adminOnly);
   const engineer = await (await render("/viewer/china/engineer")).text();
-  assert.match(engineer, /An original Red Alert 2 unit/);
+  assert.match(engineer, /A (<!-- -->)?Classic add-on(<!-- -->)? unit/, "original units carry the public Classic add-on name");
+  assert.doesNotMatch(engineer.replace(/<script[\s\S]*?<\/script>/g, ""), /Red Alert 2 unit|Red Alert 2 sounds/, "no Red Alert 2 framing in the visible text");
   assert.doesNotMatch(engineer, /\/api\/art-review|ra2\/[a-z]+\.shp/, "no original art is fetched or named");
   for (const path of ["/viewer/china/r2nope", "/viewer/narnia", "/viewer/china/r2karrar"]) assert.equal((await render(path)).status, 404, path);
   const index = await render("/viewer");

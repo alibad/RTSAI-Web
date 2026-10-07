@@ -102,7 +102,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
             </ul></section>;
           })}
           {shared.length > 0 && <section className="viewer-shared"><h2>Shared units<small>{shared.length}</small></h2>
-            <p>Original Red Alert 2 units the faction also builds. Their art comes from your own copy of the game.</p>
+            <p>{faction.classicLabel} units the faction also builds. Their art comes from your own game files, so it is not shown here.</p>
             <ul>{shared.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}><span><b>{u.name}</b><small>{groups.find(g => g[0] === u.category)?.[1] ?? u.category}</small></span></a></li>)}</ul>
           </section>}
         </aside>
@@ -119,7 +119,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
             </div>
           )}
           {unit && !item && (
-            <div className="viewer-stock"><Swords size={34} aria-hidden="true" /><h1>{unit.name}</h1><p>An original Red Alert 2 unit. Its art comes from your own copy of the game, so it is not shown here.</p></div>
+            <div className="viewer-stock"><Swords size={34} aria-hidden="true" /><h1>{unit.name}</h1><p>A {faction.classicLabel} unit. Its art comes from your own game files, so it is not shown here.</p></div>
           )}
           {!unit && (
             <div className="viewer-hero">
@@ -135,7 +135,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
         </main>
 
         <aside className="viewer-info" aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
-          {infoUnit ? <UnitInfo unit={infoUnit} /> : <FactionInfo faction={faction} />}
+          {infoUnit ? <UnitInfo unit={infoUnit} classicLabel={faction.classicLabel} /> : <FactionInfo faction={faction} />}
           {ADMIN_BUILD && infoUnit?.art && <ViewerAdmin key={infoUnit.id} unit={infoUnit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
         </aside>
       </div>
@@ -178,7 +178,7 @@ function Stats({ unit }: { unit: ViewerUnit }) {
   return <dl className="viewer-stats">{unit.stats.map(s => <div key={s.id}><dt>{s.label}</dt><dd><i style={{ "--value": s.value } as CSSProperties} aria-hidden="true" /><span>{s.display}</span></dd></div>)}</dl>;
 }
 
-function UnitInfo({ unit }: { unit: ViewerUnit }) {
+function UnitInfo({ unit, classicLabel }: { unit: ViewerUnit; classicLabel: string }) {
   return <>
     <header className="viewer-info-head"><span className="eyebrow">{unit.role || groups.find(g => g[0] === unit.category)?.[1]}</span><h2>{unit.name}</h2>
       {unit.cost != null && <span className="viewer-cost">${unit.cost.toLocaleString("en")}</span>}</header>
@@ -194,7 +194,7 @@ function UnitInfo({ unit }: { unit: ViewerUnit }) {
     {unit.sounds.length > 0 && <section className="viewer-block"><h3><Volume2 size={15} aria-hidden="true" />Voice and sound</h3>
       <ul className="viewer-sounds">{unit.sounds.filter(g => g.kind === "voice").slice(0, 4).map(g => <li key={g.id}><small>{g.label}</small>{g.clips.map(c => <ClipButton key={c.src} clip={c} />)}</li>)}
         {unit.sounds.filter(g => g.kind !== "voice").map(g => <li key={g.id}><small>{g.label}</small>{g.clips.map(c => <ClipButton key={c.src} clip={c} />)}</li>)}</ul>
-      <p className="viewer-note">Synthetic voices and sounds made for this project ({[...new Set(unit.sounds.flatMap(g => g.clips.map(c => c.license.split(" ")[0])))].join(", ")}). Original Red Alert 2 sounds are not published.</p>
+      <p className="viewer-note">Synthetic voices and sounds made for this project ({[...new Set(unit.sounds.flatMap(g => g.clips.map(c => c.license.split(" ")[0])))].join(", ")}). {classicLabel} sounds are not published.</p>
     </section>}
     {unit.dossier && <a className="viewer-link" href={unit.dossier}>Read the full dossier →</a>}
   </>;

@@ -14,7 +14,7 @@ import { factionNarrative, type FactionIdentity } from "./faction-narrative";
 import { roleLabel } from "./art-lab/labels";
 import { unitArt, unitStats, flagSrc, type UnitStat } from "./faction-art";
 import { unitSounds, type PublicSoundGroup } from "./faction-audio";
-import { factionById, rosterActors, rosterFactionById, units as catalogUnits, unitLabel } from "./game-content";
+import { CLASSIC_ADDON, factionById, rosterActors, rosterFactionById, units as catalogUnits, unitLabel } from "./game-content";
 
 export type ViewerWeapon = { projectile: string; range: number | null; reloadSeconds: number | null; damage: number | null; targets: string[] };
 export type ViewerUnit = {
@@ -52,6 +52,8 @@ export type ViewerFaction = {
   campaigns: ViewerCampaign[];
   otherCampaigns: ViewerCampaign[];
   narrative: ViewerNarrative | null;
+  /** The public name for the original units ("Classic add-on"), passed as data so the client never bundles the catalog. */
+  classicLabel: string;
 };
 export type ViewerFactionLink = { id: string; name: string; accent: string; flag: string | null };
 /** A rival's in-world view of this faction: propaganda or a grievance, voiced by the rival, never a factual claim. */
@@ -103,6 +105,7 @@ export function viewerFaction(catalogId: string): ViewerFaction | null {
     campaigns: campaignsForFaction(catalogId, "ra2").map(slimCampaign),
     otherCampaigns: allCampaigns("ra2").filter(c => !campaignsForFaction(catalogId, "ra2").includes(c)).map(slimCampaign),
     narrative: viewerNarrative(catalogId),
+    classicLabel: CLASSIC_ADDON,
   };
 }
 
