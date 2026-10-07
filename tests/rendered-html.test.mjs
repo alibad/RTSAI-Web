@@ -250,9 +250,20 @@ test("privacy explains the hosted AI co-commander in plain language", async () =
 test("faction pages are visual and player-facing: flags, project art only, no admin material", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
   for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah", "america", "russia"]) assert.match(directory, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
-  // Narrative sections stay hidden until the catalog carries the texts.
-  const china = await (await render("/factions/china?mode=ra2")).text();
-  if (!/"identity"/.test(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"))) assert.doesNotMatch(china, /faction-identity-title|faction-rivals-title/);
+  // Identity and Rivals' view come from the catalog (approved 2026-10-07); flavour lines and voice ideas never ship.
+  const { catalog } = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
+  const escape = text => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("'", "&#x27;").replaceAll('"', "&quot;");
+  for (const f of catalog.factions) {
+    const html = await (await render(`/factions/${f.id}?mode=ra2`)).text();
+    if (!f.identity) { assert.doesNotMatch(html, /faction-identity-title|faction-rivals-title/, `${f.id} hides empty sections`); continue; }
+    assert.ok(html.includes(escape(f.identity.motto)), `${f.id} motto`);
+    assert.match(html, /Through their enemies’ eyes/);
+    for (const view of f.rivalViews) assert.ok(html.includes(escape(view.text)), `${f.id} view by ${view.rival}`);
+    assert.ok(html.includes(escape(catalog.narrative.framing)), `${f.id} framing note`);
+    // Loading-screen lines are not shown as such (some quote a rival view, which is shown in its own card).
+    assert.doesNotMatch(html, /loading-line|voiceIdeas/);
+    assert.equal(f.flavour?.voiceIdeas, undefined, `${f.id}: the snapshot drops the audio team's voice ideas`);
+  }
   assert.equal((directory.match(/\/faction-art\/lineups\/[a-z-]+-720\.[0-9a-f]{12}\.avif/g) ?? []).length >= 7, true, "every modern card shows its lineup");
   const american = await (await render("/factions/america?mode=ra2")).text();
   assert.doesNotMatch(american, /\/faction-art\/(units|cameos|sprites|lineups)\//, "original factions show flags and text only");

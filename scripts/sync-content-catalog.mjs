@@ -9,6 +9,8 @@ execFileSync(python, [resolve(product, "scripts/content_catalog.py"), "--engine"
 // Hash LF-normalized text so Windows autocrlf checkouts produce the same snapshot.
 const source = (await readFile(resolve(product, "catalog/factions.json"), "utf8")).replace(/\r\n/g, "\n");
 const catalog = JSON.parse(source);
+// Voice ideas are notes for the audio team, not game text: they stay out of the website snapshot (and every bundle).
+for (const faction of catalog.factions) if (faction.flavour) delete faction.flavour.voiceIdeas;
 // The curated dossiers live in the shared catalog. Complete build rosters come
 // from the Art Lab's rule export: JSON facts only, never commercial image data.
 const rosterPath = resolve("../RTSAI-Art/rebuild/catalog.json");
@@ -16,10 +18,10 @@ const rosterSource = JSON.parse(await readFile(rosterPath, "utf8"));
 for (const [mode, repo, rules] of [["ra2", resolve("../RTSAI-Mod"), ["mods/rtsai"]], ["classic", engine, ["mods/ra", "mods/common"]]]) {
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf8" }).trim();
   // The roster export is still current when no rule, sequence or text file changed since its commit (an art-only
-  // commit, e.g. a padded flag sheet, does not change who builds what).
+  // commit, e.g. a padded flag sheet, does not change who builds what). ART-PROVENANCE.json records art bytes, not rules.
   if (head !== rosterSource.modes[mode].sourceCommit) {
     const changed = execFileSync("git", ["diff", "--name-only", rosterSource.modes[mode].sourceCommit, head, "--", ...rules], { cwd: repo, encoding: "utf8" })
-      .split(/\r?\n/).filter(f => /\.(yaml|ftl|lua|json)$/i.test(f));
+      .split(/\r?\n/).filter(f => /\.(yaml|ftl|lua|json)$/i.test(f) && !/(^|\/)ART-PROVENANCE\.json$/i.test(f));
     if (changed.length) throw new Error(`${mode} roster is stale (${changed.length} rule files changed); refresh the Art Lab rule export first`);
   }
   if (execFileSync("git", ["status", "--porcelain", "--", ...rules], { cwd: repo, encoding: "utf8" }).trim()) throw new Error(`${mode} rules have uncommitted changes; refresh and commit the rule export before syncing`);
