@@ -17,10 +17,10 @@ import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
 import { studioEffects } from "./review/effects";
-import { SoundsPanel, soundSummary, type ActorSoundsData } from "./review/SoundsPanel";
+import { UnitSoundsPanel } from "./review/SoundsPanel";
+import { soundKey } from "./review/sound-data";
+import { UnitSounds } from "./review/UnitSounds";
 import { FactionSounds, type SoundFaction } from "./review/FactionSounds";
-import { selectUrls, useMotionSounds } from "./review/useMotionSounds";
-import { soundEngine } from "./review/sound";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
 import { rememberView, setLab, useLab } from "./review/lab-store";
 import { ModelStage, useUnitRadius } from "./review/Stage";
@@ -360,8 +360,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate, play, candidateFire(fire, gameCandidate)) : null), [unit, gameCandidate, play, fire]);
   const modelActor = library?.actors.find(a => a.actor === unit?.id);
   const glb = useMemo(() => glbOptions(modelActor, meshSource), [modelActor, meshSource]);
-  // Sounds from RTSAI-Mod main's rules (dev API), per actor; the current faction picks prefixed voice sets.
-  const [sounds, setSounds] = useState<Record<string, ActorSoundsData | "error">>({});
+  // Sounds live in a small store (review/sound-data.ts); only the parts that show or play them subscribe.
   const [soundsOpen, setSoundsOpen] = useState(false);
   const openSounds = useCallback(() => setSoundsOpen(true), []);
   // Every roster faction (modern first, then the original ones for comparison) with its units' names.
@@ -369,25 +368,10 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const list = (roster?.factions ?? []).map(f => ({ id: f.id, name: f.name, units: f.units.map(u => ({ id: u.id, name: unitIndex.get(u.id)?.name ?? u.name })), modern: units.some(u => u.factionId === f.id) }));
     return [...list.filter(f => f.modern), ...list.filter(f => !f.modern)];
   }, [roster, unitIndex, units]);
-  const soundKey = unit && mode === "ra2" ? `${unit.id}:${factionId}` : null;
-  useEffect(() => {
-    if (!soundKey || sounds[soundKey]) return;
-    const [actor, f] = soundKey.split(":");
-    let live = true;
-    fetch(`${API}/sounds?mode=ra2&actor=${encodeURIComponent(actor)}&faction=${encodeURIComponent(f)}`, { cache: "no-store" })
-      .then(r => (r.ok ? r.json() as Promise<ActorSoundsData> : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then(d => { if (live) setSounds(m => ({ ...m, [soundKey]: d })); }, () => { if (live) setSounds(m => ({ ...m, [soundKey]: "error" })); });
-    return () => { live = false; };
-  }, [soundKey, sounds]);
-  const unitSounds = soundKey && sounds[soundKey] && sounds[soundKey] !== "error" ? sounds[soundKey] as ActorSoundsData : null;
-  useMotionSounds(frames, focused?.item ?? null, unitSounds);
-  // Selecting a unit by hand plays one of its select lines (once its sounds are known).
+  const unitSoundKey = unit && mode === "ra2" ? soundKey(unit.id, factionId) : null;
+  // Selecting a unit by hand plays one of its select lines (UnitSounds plays it once the sounds are known).
   const selectSound = useRef<string | null>(null);
-  useEffect(() => {
-    if (!unitSounds || selectSound.current !== unitSounds.actor) return;
-    selectSound.current = null;
-    void soundEngine.playAny(selectUrls(unitSounds));
-  }, [unitSounds]);
+  const takeSelect = useCallback((actor: string) => { if (selectSound.current !== actor) return false; selectSound.current = null; return true; }, []);
 
   const chain: ChainData | null = unit && isNew ? {
     current: { item: currentItem, tag: unit.spec.voxel ? "VXL" : "SHP" },
@@ -403,7 +387,6 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     actions: actionCoverage(unit.category, (gameItem ?? currentItem)?.spec, (gameItem ?? currentItem)?.sprite, { spec: currentItem?.spec, sprite: currentItem?.sprite }),
     checks: candidateChecks(gameCandidate),
     decision: decisionState(entry.slots.model, gameCandidate),
-    sounds: { summary: soundSummary(unitSounds), error: Boolean(soundKey && sounds[soundKey] === "error") },
   } : null;
 
   // Keep the address bar in step for deep links.
@@ -573,6 +556,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}${board ? " is-board" : ""}${authored ? " is-authored" : ""}`}>
       {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
+      {unit && <UnitSounds soundsKey={unitSoundKey} frames={frames} item={focused?.item ?? null} takeSelect={takeSelect} />}
       {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
       <StudioBar viewerHref={viewerLink} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
@@ -581,7 +565,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
         {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
           filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" ? openSounds : undefined} />}
         <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface === "art" ? " has-chain" : ""}`} id="main-content">
-          {chain && surface === "art" && state && <AssetChain data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
+          {chain && surface === "art" && state && <AssetChain soundsKey={unitSoundKey} data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
             : !unit ? <p className="lab-empty">No units.</p>
@@ -592,7 +576,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} released={Boolean(unit && preview?.actors[unit.id]?.released)} />
           )}
-          {showShelf && unit && chain && chainStep === "sounds" && <SoundsPanel data={unitSounds} name={unit.name} error={soundKey && sounds[soundKey] === "error" ? "Could not read this unit's sounds from the mod's rules." : null} />}
+          {showShelf && unit && chain && chainStep === "sounds" && <UnitSoundsPanel soundsKey={unitSoundKey} name={unit.name} />}
           {showShelf && unit && !(chain && chainStep === "sounds") && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
             : <ActionShelf unit={unit} version={focused} mode={mode} fireUnknown={Boolean(fireActor && !fireRules[fireActor])} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
           {toast && <p className="lab-toast" role="status">{toast}</p>}

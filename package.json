@@ -21,6 +21,8 @@
     "sync:faction-art": "node scripts/export-faction-art.mjs",
     "check:faction-art": "node scripts/export-faction-art.mjs --check",
     "check:sounds": "node scripts/check-sounds.mjs",
+    "sync:audio": "node scripts/sync-faction-audio.mjs",
+    "check:audio": "node scripts/sync-faction-audio.mjs --check",
     "thumbs:glb": "node scripts/render-glb-thumbs.mjs",
     "sync:release": "node scripts/sync-release-manifest.mjs",
     "sync:mod-release": "node scripts/sync-mod-release.mjs",

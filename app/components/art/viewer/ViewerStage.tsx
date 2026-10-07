@@ -48,8 +48,10 @@ function put(ctx: CanvasRenderingContext2D, dpr: number, p: Picture, cx: number,
  * keys) turns it, the wheel zooms, Space spins; actions play the game's own sequences. Draws only when something
  * changes; nothing loops while it is still.
  */
-export function ViewerStage({ frames, item, color, onColor, tag, children }: {
+export function ViewerStage({ frames, item, color, onColor, tag, children, onAction }: {
   frames: FrameStore; item: StageItem; color: string; onColor: (hex: string) => void;
+  /** Called when the player starts an action (its sound plays with it). */
+  onAction?: (id: string) => void;
   /** A label over the art (admin History shows earlier versions here, never as current). */
   tag?: React.ReactNode;
   children?: React.ReactNode;
@@ -156,7 +158,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children }: {
 
   const drag = useRef<{ x: number; facing: number } | null>(null);
   const canTurn = turns(item);
-  const choose = (id: string) => { setAnimation(id); view.current.time = 0; setPlaying(true); };
+  const choose = (id: string) => { setAnimation(id); view.current.time = 0; setPlaying(true); onAction?.(id); };
 
   return (
     <div className="viewer-stage">

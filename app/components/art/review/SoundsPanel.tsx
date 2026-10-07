@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { AlertTriangle, Check, Pause, Play } from "lucide-react";
 import type { SoundClip, SoundGroupPayload } from "../../../../lib/art-lab/sounds-server";
 import { soundEngine } from "./sound";
+import { useActorSounds } from "./sound-data";
 
 export type ActorSoundsData = { actor: string; faction: string | null; voiceSet: string | null; groups: SoundGroupPayload[] };
 
@@ -57,6 +58,12 @@ export const ClipRow = memo(function ClipRow({ clip }: { clip: SoundClip }) {
     </li>
   );
 });
+
+/** The Sounds step for the open unit, reading its sounds from the store. */
+export function UnitSoundsPanel({ soundsKey, name }: { soundsKey: string | null; name: string }) {
+  const sounds = useActorSounds(soundsKey);
+  return <SoundsPanel data={sounds && sounds !== "error" ? sounds : null} name={name} error={sounds === "error" ? "Could not read this unit's sounds from the mod's rules." : null} />;
+}
 
 /** The Sounds step: every sound the actor plays, grouped by when the game plays it. */
 export function SoundsPanel({ data, name, error }: { data: ActorSoundsData | null; name: string; error: string | null }) {

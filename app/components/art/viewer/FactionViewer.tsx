@@ -2,13 +2,16 @@
 /* Cameos are 60x48 pixel art, drawn at whole scales; next/image would resample them. */
 /* eslint-disable @next/next/no-img-element */
 
-import { ArrowLeft, BookOpen, Crosshair, Footprints, ShieldAlert, Swords, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, Crosshair, Footprints, Pause, Play, ShieldAlert, Swords, Users, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ADMIN_BUILD } from "../../../../lib/admin";
 import type { ViewerCampaign, ViewerFaction, ViewerFactionLink, ViewerUnit } from "../../../../lib/viewer";
 import { FrameStore, type StageItem } from "../review/frames";
 import { ViewerStage } from "./ViewerStage";
 import { ViewerAdmin, type ShownVersion } from "./ViewerAdmin";
+import { soundEngine } from "../review/sound";
+import { SoundControls } from "../review/SoundControls";
+import type { PublicClip } from "../../../../lib/faction-audio";
 import "./viewer.css";
 
 const groups: [string, string][] = [["infantry", "Infantry"], ["vehicle", "Vehicles"], ["aircraft", "Aircraft"], ["ship", "Naval"], ["defense", "Defenses"], ["structure", "Buildings"]];
@@ -56,10 +59,13 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   // Selection is client-side (the stage keeps its loaded art); the address follows it, and Back works.
   const select = useCallback((id: string | null) => {
     setSelected(id); setShown(null);
+    // Picking a unit plays one of its select lines, as in game (after a click, never on page load).
+    const picked = id ? units.find(u => u.id === id) : null;
+    if (picked) void soundEngine.playAny(groupSrcs(picked, "voice:Select"));
     const href = hrefFor(faction.id, id);
     if (window.location.pathname !== href) window.history.pushState({ unit: id }, "", href);
     window.scrollTo({ top: 0 });
-  }, [faction.id]);
+  }, [faction.id, units]);
   useEffect(() => {
     const onPop = () => { const m = /^\/viewer\/[^/]+\/([^/?#]+)/.exec(window.location.pathname); setSelected(m ? decodeURIComponent(m[1]) : null); setShown(null); };
     window.addEventListener("popstate", onPop);
@@ -77,6 +83,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
         <nav className="viewer-factions" aria-label="Factions">
           {factions.map(f => <a key={f.id} href={hrefFor(f.id, null)} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>)}
         </nav>
+        <SoundControls />
         <span className="viewer-title">Faction viewer</span>
       </header>
       <div className="viewer-body">
@@ -104,7 +111,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
               come back without a new compositor layer. */}
           {stageItem && (
             <div className="viewer-stage-slot" hidden={!(unit && item)}>
-              <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor}
+              <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor} onAction={id => { if (unit) playAction(unit, id); }}
                 tag={shown ? <span className="viewer-historical"><b>{shown.label}</b><button type="button" onClick={() => setShown(null)}>Back to the game’s art</button></span> : undefined}>
                 {unit && item && <div className="viewer-stage-name"><h1>{unit.name}</h1><span>{unit.role}</span></div>}
               </ViewerStage>
@@ -130,6 +137,25 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
       </div>
     </div>
   );
+}
+
+const groupSrcs = (unit: ViewerUnit, ...ids: string[]) => {
+  for (const id of ids) { const g = unit.sounds.find(x => x.id === id); if (g?.clips.length) return g.clips.map(c => c.src); }
+  return [];
+};
+/** An action's sound: a weapon report when it fires, the death sound when it dies (the project's own clips only). */
+function playAction(unit: ViewerUnit, action: string) {
+  if (/^die/.test(action)) void soundEngine.playAny(groupSrcs(unit, "voice:Die", "death:explosion", "damage:destroyed"));
+  else if (/^(attack|fire|shoot|prone-shoot)$/.test(action)) void soundEngine.playAny(groupSrcs(unit, "weapon:report"));
+}
+
+function ClipButton({ clip }: { clip: PublicClip }) {
+  const [playing, setPlaying] = useState(false);
+  const play = async () => { setPlaying(true); const s = await soundEngine.play(clip.src); window.setTimeout(() => setPlaying(false), (s ?? 0) * 1000); };
+  return <button type="button" className="viewer-clip" onClick={play} aria-label={`Play${clip.text ? `: ${clip.english ?? clip.text}` : " sound"}`}>
+    {playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
+    {clip.text ? <span><b dir="auto" lang={clip.language ?? undefined}>{clip.text}</b>{clip.english && clip.english !== clip.text && <small>{clip.english}</small>}</span> : <span><b>Play</b></span>}
+  </button>;
 }
 
 /** `value`, updated only after the frame that shows the change to everything else has painted. */
@@ -160,6 +186,11 @@ function UnitInfo({ unit }: { unit: ViewerUnit }) {
     {(unit.strengths || unit.counterplay) && <section className="viewer-block viewer-doctrine">
       {unit.strengths && <p><Footprints size={15} aria-hidden="true" /><span><b>Use it to</b>{unit.strengths}</span></p>}
       {unit.counterplay && <p><ShieldAlert size={15} aria-hidden="true" /><span><b>Watch for</b>{unit.counterplay}</span></p>}
+    </section>}
+    {unit.sounds.length > 0 && <section className="viewer-block"><h3><Volume2 size={15} aria-hidden="true" />Voice and sound</h3>
+      <ul className="viewer-sounds">{unit.sounds.filter(g => g.kind === "voice").slice(0, 4).map(g => <li key={g.id}><small>{g.label}</small>{g.clips.map(c => <ClipButton key={c.src} clip={c} />)}</li>)}
+        {unit.sounds.filter(g => g.kind !== "voice").map(g => <li key={g.id}><small>{g.label}</small>{g.clips.map(c => <ClipButton key={c.src} clip={c} />)}</li>)}</ul>
+      <p className="viewer-note">Synthetic voices and sounds made for this project ({[...new Set(unit.sounds.flatMap(g => g.clips.map(c => c.license.split(" ")[0])))].join(", ")}). Original Red Alert 2 sounds are not published.</p>
     </section>}
     {unit.dossier && <a className="viewer-link" href={unit.dossier}>Read the full dossier →</a>}
   </>;

@@ -43,6 +43,9 @@ test("a unit in the viewer: stats, weapons and doctrine; original units are text
   assert.match(html, /Weapons/);
   assert.match(html, /HP · Heavy/);
   assert.match(html, /Read the full dossier/);
+  assert.match(html, /Voice and sound/);
+  assert.match(html, /\/faction-audio\/rcn-vehicle-select-zh\.[0-9a-f]{12}\.mp3/, "the unit's own voice lines are published");
+  assert.match(html, /装甲平台在线/, "with what they say");
   if (!adminBuild) assert.doesNotMatch(html, adminOnly);
   const engineer = await (await render("/viewer/china/engineer")).text();
   assert.match(engineer, /An original Red Alert 2 unit/);

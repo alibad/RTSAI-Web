@@ -12,6 +12,7 @@ import type { SpriteArt } from "./art-lab/types";
 import { allCampaigns, campaignsForFaction, type Campaign } from "./faction-campaigns";
 import { roleLabel } from "./art-lab/labels";
 import { unitArt, unitStats, flagSrc, type UnitStat } from "./faction-art";
+import { unitSounds, type PublicSoundGroup } from "./faction-audio";
 import { factionById, rosterActors, rosterFactionById, units as catalogUnits, unitLabel } from "./game-content";
 
 export type ViewerWeapon = { projectile: string; range: number | null; reloadSeconds: number | null; damage: number | null; targets: string[] };
@@ -32,6 +33,8 @@ export type ViewerUnit = {
   cameo: string | null;
   /** The game's own drawing data; null for original EA units, which the viewer shows as text only. */
   art: { spec: RenderSpec; sprite: SpriteArt | null } | null;
+  /** The unit's own, licensed sounds (voice lines, its weapon and death sounds where the project made them). */
+  sounds: PublicSoundGroup[];
 };
 export type ViewerCampaign = {
   id: string; title: string; synopsis: string; setting: string;
@@ -80,6 +83,7 @@ export function viewerFaction(catalogId: string): ViewerFaction | null {
       weapons: b.weapons.map(w => ({ projectile: w.projectile ?? "Weapon", range: w.range ?? null, reloadSeconds: w.reload ? Math.round((w.reload * 40) / 100) / 10 : null, damage: w.damage ?? null, targets: w.targets ?? [] })),
       cameo: own ? unitArt(id)?.cameo.src ?? null : null,
       art: own ? { spec: renderSpec(own), sprite: spriteWithUrls(own) } : null,
+      sounds: own ? unitSounds(id) : [],
     };
   });
   // Project units first in build-tab order; the shared original units after them.

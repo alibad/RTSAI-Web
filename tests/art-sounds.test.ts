@@ -143,3 +143,17 @@ test("sound routes: clips as PCM, never outside the mod; verdicts go to the art 
     assert.equal((await call(prod, "GET", "/api/art-review/sound?path=mods%2Frtsai%2Faudio%2Ffire.wav")).status, 404, "no sound route in production");
   } finally { rmSync(root, { recursive: true, force: true }); rmSync(art, { recursive: true, force: true }); }
 });
+
+test("public faction audio: only the project's own, licensed clips, every one published", async () => {
+  const { default: manifest } = await import("../data/faction-audio.json", { with: { type: "json" } }) as { default: { clips: Record<string, { src: string; license: string; sourceSha256: string }>; units: Record<string, { clips: string[] }[]>; policy: string } };
+  const clips = Object.entries(manifest.clips);
+  assert.ok(clips.length > 100, "the factions' voice lines are published");
+  for (const [file, clip] of clips) {
+    assert.match(file, /^mods\/rtsai\/(modern-factions\/audio|audio\/sfx)\/[\w-]+\.wav$/, `${file} is the project's own clip`);
+    assert.ok(clip.license, `${file} carries its licence`);
+    assert.match(clip.src, /^\/faction-audio\/[\w-]+\.[0-9a-f]{12}\.mp3$/);
+    assert.ok(existsSync(join("public", clip.src)), `${clip.src} is published`);
+  }
+  for (const groups of Object.values(manifest.units)) for (const g of groups) for (const f of g.clips) assert.ok(manifest.clips[f], `${f} is listed`);
+  assert.match(manifest.policy, /never published/);
+});

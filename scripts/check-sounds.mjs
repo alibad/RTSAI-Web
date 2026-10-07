@@ -98,24 +98,36 @@ if (browserCheck) {
   const pageErrors = []; studio.on("pageerror", e => pageErrors.push(e.message));
   await studio.addInitScript(() => {
     try { localStorage.setItem("rtsai-art-review-coach-v3", "1"); localStorage.removeItem("rtsai-studio-sound"); } catch { /* storage unavailable */ }
-    window.__started = 0; const start = AudioBufferSourceNode.prototype.start;
-    AudioBufferSourceNode.prototype.start = function (...a) { window.__started++; return start.apply(this, a); };
+    // Count clips that actually start (the Studio plays through media elements), without hearing them.
+    window.__started = 0; const play = HTMLMediaElement.prototype.play;
+    window.__playErrors = [];
+    HTMLMediaElement.prototype.play = function (...a) { this.muted = true; return play.apply(this, a).then(v => { window.__started++; return v; }, e => { window.__playErrors.push(`${e.name}: ${e.message}`); throw e; }); };
   });
   const motionActor = args.includes("--motion-actor") ? args[args.indexOf("--motion-actor") + 1] : "r2cnrifle";
   await studio.goto(`${base}/art/review?mode=ra2&authored=1&faction=${artLab.actors[motionActor].factionId}&unit=${motionActor}&step=sounds`);
   await studio.locator(".sounds-panel .sound-clip").first().waitFor({ timeout: 60000 });
   await studio.waitForTimeout(1500);
   const started = () => studio.evaluate(() => window.__started);
+  /** Clips started since `from`, once the count holds still (a first clip may wait behind the page's own loads). */
+  const settle = async from => {
+    // Wait for the first clip (a cold page's first one can queue behind its own loads), then until the count holds.
+    let now = await started();
+    for (const end = Date.now() + 15000; Date.now() < end && now === from; ) { await studio.waitForTimeout(250); now = await started(); }
+    for (let last = -1, end = Date.now() + 8000; Date.now() < end && now !== last; ) { last = now; await studio.waitForTimeout(1200); now = await started(); }
+    return now - from;
+  };
   const motion = { beforeGesture: await started() };
   assert.equal(motion.beforeGesture, 0, "no sound before a user gesture");
-  let n = await started(); await studio.locator(".sound-play").first().click(); await studio.waitForTimeout(1500); motion.play = (await started()) - n;
+  let n = await started(); await studio.locator(".sound-play").first().click(); await studio.waitForTimeout(300); motion.play = await settle(n);
   await studio.locator(".chain-step").nth(4).click(); await studio.waitForTimeout(800);
   for (const label of ["Fire", "Die"]) {
     const button = studio.locator(".studio-action-list button").filter({ hasText: new RegExp(`^${label}$`) });
-    n = await started(); await button.first().click(); await studio.waitForTimeout(2500); motion[label.toLowerCase()] = (await started()) - n;
+    n = await started(); await button.first().click(); await studio.waitForTimeout(2500); motion[label.toLowerCase()] = await settle(n);
+    await studio.getByRole("button", { name: "Pause animation", exact: true }).click().catch(() => {});
   }
-  n = await started(); await studio.locator(".lab-rail li button").nth(1).click(); await studio.waitForTimeout(2500); motion.select = (await started()) - n;
-  assert.ok(motion.play >= 1 && motion.fire >= 2 && motion.die === 1 && motion.select === 1, `sound with motion: ${JSON.stringify(motion)}`);
+  n = await started(); await studio.locator(".lab-rail li button").nth(1).click(); await studio.waitForTimeout(300); motion.select = await settle(n);
+  const playErrors = await studio.evaluate(() => window.__playErrors);
+  assert.ok(motion.play >= 1 && motion.fire >= 2 && motion.die === 1 && motion.select === 1, `sound with motion: ${JSON.stringify(motion)} ${JSON.stringify(playErrors.slice(0, 3))}`);
   assert.deepEqual(pageErrors, [], "no page errors");
   await b.close();
   browser = { decoded: result.decoded, seconds: result.seconds, motion: { actor: motionActor, ...motion } };

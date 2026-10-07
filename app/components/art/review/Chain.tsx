@@ -12,6 +12,7 @@ import type { FrameStore, StageItem } from "./frames";
 import { ModelThumb } from "./Filmstrip";
 import { glbSnapshot, useGlbSnapshots } from "./GlbStage";
 import { soundSummary } from "./SoundsPanel";
+import { useActorSounds } from "./sound-data";
 
 export type ChainData = {
   current: { item: StageItem | null; tag: string };
@@ -21,8 +22,6 @@ export type ChainData = {
   actions: ActionCheck[];
   checks: MeasuredGroup[];
   decision: DecisionState;
-  /** What the rules make the actor say and sound like (loaded from the dev API; null while loading). */
-  sounds: { summary: ReturnType<typeof soundSummary>; error: boolean };
 };
 
 const THUMB_W = 96, THUMB_H = 52;
@@ -33,10 +32,14 @@ function Missing() { return <span className="chain-missing" aria-hidden="true" /
  * The actor's whole art chain in one row: what the game draws today, the design, the 3D model, the native game
  * model made from it, its animations, the measured checks and your decision. Each step opens on the stage.
  */
-export const AssetChain = memo(function AssetChain({ data, step, onStep, frames, tints, zoom, radius }: {
+export const AssetChain = memo(function AssetChain({ data, step, onStep, frames, tints, zoom, radius, soundsKey = null }: {
+  /** The open unit's sounds in the sound store (the Sounds step's caption). */
+  soundsKey?: string | null;
   data: ChainData; step: ChainStep | null; onStep: (step: ChainStep) => void; frames: FrameStore; tints: MapTint[]; zoom: number; radius: number | null;
 }) {
   useGlbSnapshots();
+  const soundData = useActorSounds(soundsKey);
+  const sounds = { summary: soundSummary(soundData && soundData !== "error" ? soundData : null), error: soundData === "error" };
   const listRef = useRef<HTMLOListElement>(null);
   // Narrow layouts scroll the row rather than squeezing steps below a readable width; keep the open step in view.
   useEffect(() => {
@@ -77,10 +80,10 @@ export const AssetChain = memo(function AssetChain({ data, step, onStep, frames,
       status: !data.actions.length ? "missing" : present === data.actions.length ? "ok" : "open",
     },
     sounds: {
-      thumb: data.sounds.summary ? <span className="chain-figure chain-sound"><Volume2 size={16} aria-hidden="true" />{data.sounds.summary.clips}</span> : <Missing />,
-      state: data.sounds.error ? "Unavailable" : !data.sounds.summary ? "Reading rules…" : !data.sounds.summary.clips ? "No sounds"
-        : [data.sounds.summary.lines ? `${data.sounds.summary.lines} lines` : null, data.sounds.summary.languages.length ? data.sounds.summary.languages.join(" · ") : null, data.sounds.summary.flagged ? `${data.sounds.summary.flagged} flagged` : null, data.sounds.summary.missing ? `${data.sounds.summary.missing} missing` : null].filter(Boolean).join(" · ") || `${data.sounds.summary.clips} sounds`,
-      status: data.sounds.error || data.sounds.summary?.missing ? "bad" : !data.sounds.summary ? "missing" : data.sounds.summary.flagged ? "open" : "ok",
+      thumb: sounds.summary ? <span className="chain-figure chain-sound"><Volume2 size={16} aria-hidden="true" />{sounds.summary.clips}</span> : <Missing />,
+      state: sounds.error ? "Unavailable" : !sounds.summary ? "Reading rules…" : !sounds.summary.clips ? "No sounds"
+        : [sounds.summary.lines ? `${sounds.summary.lines} lines` : null, sounds.summary.languages.length ? sounds.summary.languages.join(" · ") : null, sounds.summary.flagged ? `${sounds.summary.flagged} flagged` : null, sounds.summary.missing ? `${sounds.summary.missing} missing` : null].filter(Boolean).join(" · ") || `${sounds.summary.clips} sounds`,
+      status: sounds.error || sounds.summary?.missing ? "bad" : !sounds.summary ? "missing" : sounds.summary.flagged ? "open" : "ok",
     },
     checks: {
       thumb: checks.state === "none" ? <Missing /> : <span className={`chain-figure${checks.state === "fail" ? " is-bad" : checks.state === "pass" ? " is-good" : ""}`}>{checks.total ? <>{checks.passed}<small>/{checks.total}</small></> : checks.state === "fail" ? "✕" : checks.state === "pass" ? "✓" : "–"}</span>,
