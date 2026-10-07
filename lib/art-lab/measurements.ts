@@ -53,6 +53,8 @@ const PLAIN: Record<string, string> = {
   remap_luma: "Player-colour brightness", remap_y: "Player-colour placement", local_contrast: "Local contrast", flat_share: "Flat areas",
   hard_step_share: "Hard value steps", pal_indices: "Palette colours used", rgb_colours: "Colours used", shadow_px: "Shadow size",
   vs_terrain_luma: "Brightness against terrain", vs_terrain_rgb: "Colour against terrain", edge_readable_share: "Readable outline",
+  // Pre-lit sprites are gated on the lit picture: art_metrics GATE_SUBSTITUTE swaps albedo_hf and block_px for these.
+  lit_hf: "Fine surface noise (lit)", block_px_lit: "Pixel block size (lit)", fragments: "Detached pieces",
 };
 export const plainMetric = (metric: string) => PLAIN[metric] ?? (metric.charAt(0).toUpperCase() + metric.slice(1)).replace(/_/g, " ");
 export const plainCheck = (name: string) => {
