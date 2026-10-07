@@ -20,7 +20,7 @@ $State = Join-Path $App ".cache\local-app"
 New-Item -ItemType Directory -Force $State | Out-Null
 Start-Transcript -Path (Join-Path $State "start.log") -Force | Out-Null
 
-$AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462
+$AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462; $WebGamePort = 3490
 $Python = Join-Path $Games "OpenRA-AI\.venv\Scripts\python.exe"
 $Node = (Get-Command node).Source
 
@@ -92,6 +92,18 @@ try {
   else { Start-Server "runner" $Python @("`"$App\tools\native-eval-server.py`"") }
   if (Get-PortOwner $SitePort) { throw "Port $SitePort is already used by PID $(Get-PortOwner $SitePort)." }
   Start-Server "site" $Node @("`"$App\node_modules\vinext\dist\cli.js`"", "start", "-p", "$SitePort", "-H", "127.0.0.1")
+  # The browser game (RTSAI-WebGame), served on this origin under /play by the Studio gateway. It is its own checkout
+  # and keeps running across app restarts; it is started only when nothing answers its health check.
+  $WebGame = Join-Path $Games "RTSAI-WebGame"
+  $gameUp = $false
+  try { $gameUp = (Invoke-WebRequest "http://127.0.0.1:$WebGamePort/api/health" -UseBasicParsing -TimeoutSec 3).StatusCode -eq 200 } catch { $gameUp = $false }
+  if ($gameUp) { Write-Host "The browser game already answers on $WebGamePort." }
+  elseif (Test-Path (Join-Path $WebGame "server\serve.mjs")) {
+    $env:RTSAI_WEBGAME_PORT = "$WebGamePort"
+    $game = Start-Process -FilePath $Node -ArgumentList @("`"$WebGame\server\serve.mjs`"") -WorkingDirectory $WebGame -WindowStyle Hidden -PassThru `
+      -RedirectStandardOutput (Join-Path $State "webgame.log") -RedirectStandardError (Join-Path $State "webgame.err")
+    Write-Host "Started webgame (PID $($game.Id))"
+  } else { Write-Host "No RTSAI-WebGame checkout beside the app; /play stays unavailable." }
   Start-Server "studio" $Node @("--import", "tsx", "`"$App\scripts\art-lab-preview.ts`"")
 
   $deadline = (Get-Date).AddMinutes(4)

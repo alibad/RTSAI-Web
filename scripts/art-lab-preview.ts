@@ -8,6 +8,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createArtReviewMiddleware } from "../lib/art-lab/review-server";
 import { originalsConfig } from "../lib/art-lab/originals";
+import { isPlayPath, proxyTo } from "../lib/play-proxy";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
@@ -74,8 +75,13 @@ function toSite(req: IncomingMessage, res: ServerResponse, target: URL) {
   req.pipe(upstream);
 }
 
+// The browser game (RTSAI-WebGame, `node server/serve.mjs` on 127.0.0.1:3490) under /play on this origin.
+const toGame = proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0.0.1:${process.env.RTSAI_WEBGAME_PORT ?? 3490}`),
+  "The browser game is not running (RTSAI-WebGame on port 3490). Start it, or restart the local app.");
+
 createServer((req, res) => {
   if (req.url?.startsWith("/api/art-review/")) { void api(req, res); return; }
+  if (isPlayPath(req.url)) { toGame(req, res); return; }
   const path = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
   if (req.method === "GET") {
     // One manifest for the installed app, whichever page it is installed from.

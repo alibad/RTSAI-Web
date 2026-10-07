@@ -28,6 +28,7 @@ import { candidateFire, slotVersions, stageItem, type FireSources, type ReviewUn
 import { FIRE_ACTION, type FireRules } from "../../../lib/art-lab/fire";
 import { AssetChain, RosterTally, type ChainData } from "./review/Chain";
 import { identityCameo, installedSources, type HistoryEntry } from "../../../lib/art-lab/installed-art";
+import { encounterHref } from "../../../lib/art-lab/sandbox";
 import { UnitHistory } from "./review/History";
 import { GlbStage } from "./review/GlbStage";
 import { ReviewBoard } from "./review/ReviewBoard";
@@ -287,6 +288,12 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const counts = useMemo(() => (mode === "ra2" && state ? rosterCounts(units.map(u => u.id), workspace, library, preview, state.review) : null), [mode, state, units, workspace, library, preview]);
   const selectedUnit = selected ? unitIndex.get(selected) : undefined;
   // The public viewer's page for what is open here (catalog faction ids: saudi -> saudi-arabia).
+  // RA2: the Encounter is the browser game's sandbox with this unit placed (Classic keeps the native Encounter).
+  const encounterLink = mode === "ra2" && selectedUnit ? encounterHref(selectedUnit.id, factionId) : undefined;
+  const openEncounter = useCallback(() => {
+    if (encounterLink) window.open(selectedUnit ? encounterHref(selectedUnit.id, factionId, { autorun: true }) : encounterLink, "_blank", "noreferrer");
+    else { setSurface("arena"); setLab({ spin: false, playing: false }); }
+  }, [encounterLink, selectedUnit, factionId]);
   const viewerLink = mode === "ra2" ? `/viewer/${factionId === "saudi" ? "saudi-arabia" : factionId}${selectedUnit?.origin === "new" ? `/${selectedUnit.id}` : ""}` : "/viewer";
   const current = selectedUnit && (!authored || selectedUnit.origin !== "original") ? rowFor(selectedUnit)
     : factionRows.find(r => r.needs) ?? factionRows.find(r => r.count > 0) ?? factionRows[0] ?? null;
@@ -558,7 +565,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
       {unit && <UnitSounds soundsKey={unitSoundKey} frames={frames} item={focused?.item ?? null} takeSelect={takeSelect} />}
       {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
-      <StudioBar viewerHref={viewerLink} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <StudioBar viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
         tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
@@ -571,14 +578,16 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             : !unit ? <p className="lab-empty">No units.</p>
             : board ? <ReviewBoard factions={boardFactions} factionId={boardFaction} onFaction={changeFaction} unitsFor={boardUnitsFor} allUnits={boardUnits} workspace={workspace} review={state.review} preview={preview}
                 frames={frames} tints={tints} decide={send} onOpen={id => { selectUnit(id); setSurface("art"); }} />
-            : surface === "arena" ? <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} /> : stage}
+            : surface === "arena" ? (encounterLink
+              ? <p className="lab-empty">The Encounter is the browser game’s battle sandbox now: the game’s own simulation, with results, a replay and a native check. <a href={encounterLink} target="_blank" rel="noreferrer">Open it with {unit.name} →</a></p>
+              : <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} />) : stage}
           {showFilm && focused && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} released={Boolean(unit && preview?.actors[unit.id]?.released)} />
           )}
           {showShelf && unit && chain && chainStep === "sounds" && <UnitSoundsPanel soundsKey={unitSoundKey} name={unit.name} />}
-          {showShelf && unit && !(chain && chainStep === "sounds") && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
-            : <ActionShelf unit={unit} version={focused} mode={mode} fireUnknown={Boolean(fireActor && !fireRules[fireActor])} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
+          {showShelf && unit && !(chain && chainStep === "sounds") && (chain ? <ActionRow unit={unit} version={focused} onEncounter={openEncounter} />
+            : <ActionShelf unit={unit} version={focused} mode={mode} fireUnknown={Boolean(fireActor && !fireRules[fireActor])} onEncounter={openEncounter} />)}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
         {surface === "art" && <aside className="studio-inspector" aria-label="Actor details">
