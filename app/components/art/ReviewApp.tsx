@@ -270,7 +270,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const list = rostersById.get(id) ?? [];
     const withCandidates = list.filter(r => r.count > 0);
     const name = roster?.factions.find(f => f.id === id)?.name ?? units.find(u => u.factionId === id)?.factionName ?? id;
-    return { id, name, units: list.length, withCandidates: withCandidates.length, decided: withCandidates.filter(r => !r.needs).length };
+    return { id, name, units: list.length, added: list.filter(r => r.origin === "new").length, withCandidates: withCandidates.length, decided: withCandidates.filter(r => !r.needs).length };
   }), [factionIds, rostersById, roster, units]);
   const factionId = faction && factionIds.includes(faction) ? faction
     : factionSummaries.find(f => (rostersById.get(f.id) ?? []).some(r => r.needs))?.id ?? factionIds[0] ?? "china";

@@ -107,7 +107,8 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
 export type Origin = "new" | "original" | "modified";
 export type RailRow = { unit: ReviewUnit; origin: Origin; count: number; needs: boolean };
 export type RailFilter = "all" | "original" | "new" | "candidates" | "needs";
-export type FactionSummary = { id: string; name: string; units: number; withCandidates: number; decided: number };
+/** added: how many of its actors are the project's own (new) units; 0 for an original country. */
+export type FactionSummary = { id: string; name: string; units: number; added: number; withCandidates: number; decided: number };
 
 export const railFilters: { id: RailFilter; label: string; test: (r: RailRow) => boolean }[] = [
   { id: "all", label: "All", test: () => true },
@@ -135,10 +136,15 @@ function FactionPicker({ factions, faction, onFaction, compact }: { factions: Fa
   // Rasterise every faction flag once in idle time, so the picker's first opening has nothing heavy to paint.
   const ids = factions.map(f => f.id).join(",");
   useEffect(() => { if (ids) prewarmFlags(ids.split(",")); }, [ids]);
-  const options = useMemo(() => factions.map(f => ({
-    value: f.id, label: f.name, leading: <Flag id={f.id} size="m" />,
-    description: `${f.units} actors${f.withCandidates ? ` · ${f.decided}/${f.withCandidates} decided` : ""}`,
-  })), [factions]);
+  // The project's factions first, then the original countries, so the list opens on the ones being reviewed.
+  const options = useMemo(() => {
+    const mixed = factions.some(f => f.added) && factions.some(f => !f.added);
+    return [...factions].sort((a, b) => Number(!a.added) - Number(!b.added)).map(f => ({
+      value: f.id, label: f.name, leading: <Flag id={f.id} size="m" />,
+      description: `${f.units} actors${f.withCandidates ? ` · ${f.decided}/${f.withCandidates} decided` : ""}`,
+      group: mixed ? (f.added ? "RTS AI factions" : "Original countries") : undefined,
+    }));
+  }, [factions]);
   // After a choice the kit hands focus back to the field, whose typeahead would take the next J/K ("K" is Korea).
   // Let it go instead, so the Studio's unit shortcuts work straight away, as they did with the old picker.
   const chose = useRef(0);
