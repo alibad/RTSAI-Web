@@ -392,7 +392,11 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     const spec = buildRenderSpec(owned, url, name => paletteSpec(paletteRefs[name ?? "player"] ?? null), cameoUrl);
     const sourceOf = (file: string) => localAssetSource(file, cfg.mode ?? "ra2", ownedPaths.get(file), () => bytes(file), provenance);
     const files = art.files.map(sourceOf);
-    const model = combineSources(art.files.filter(f => /\.(vxl|hva|shp)$/.test(f) && f !== art.cameo.file).map(sourceOf), "Current model");
+    // The model is the unit's own files: shared effects drawn over it (muzzle flashes, the mind-control overlay) are
+    // credited in the file list, not to the model, once the actor has art of its own.
+    const modelFiles = art.files.filter(f => /\.(vxl|hva|shp)$/.test(f) && f !== art.cameo.file);
+    const own = modelFiles.filter(f => ownedPaths.has(f));
+    const model = combineSources((own.length ? own : modelFiles).map(sourceOf), "Current model");
     const icon = art.cameo.file ? sourceOf(art.cameo.file) : combineSources([], "Current icon");
     stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id), ruleKey: data.ruleKeys.get(id), sources: { model, icon, files, rules: cfg.mode === "classic" ? "RTS AI Classic · OpenRA fork" : "RTS AI · RTSAI-Mod" } };
   }

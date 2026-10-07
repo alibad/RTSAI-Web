@@ -14,6 +14,13 @@
  *   GET  /preview-file?path=    a cameo PNG the preview overlay installs (read-only, path-checked)
  *   GET  /history?actor=        superseded art archived under RTSAI-Art/history/<actor>/ (read-only)
  *   GET  /unit?actor=           one actor's workspace (candidates), for the admin Faction viewer (read-only)
+ *   GET  /sounds?actor=&faction=          an actor's sounds from RTSAI-Mod main's rules (voices, weapons, death, deploy)
+ *   GET  /sounds/faction?faction=&actors= announcer lines, voice sets and music for a faction
+ *   GET  /sounds/weapons?names=           report and impact sounds per weapon (Encounter replay)
+ *   GET  /sound?path= | ?original=        a clip as PCM WAV: the mod's own licensed audio in place, or an original RA2
+ *                                         sound from the private originals cache (extracted on demand, never published)
+ *   GET  /voice-review, POST /voice-review, GET /voice-review/export
+ *                                         the voice sheet with native-speaker verdicts (RTSAI-Art/voice-review.json)
  *
  * RTSAI-Art files are read in place; nothing is copied into public/.
  */
@@ -31,6 +38,8 @@ import { readModelLibrary } from "./model-library-server";
 import type { ModelLibrary } from "./models";
 import { readPreviewStatus, withReleased, workspaceStamp } from "./preview-server";
 import { parseArchive } from "./installed-art";
+import { actorSoundsPayload, factionSoundsPayload, soundBytes, voiceReviewPayload, weaponSoundsPayload } from "./sounds-server";
+import { applyNativeVerdict, emptyNativeReview, exportVoiceSheet, type NativeReviewFile } from "./voice-review";
 import { MEASUREMENT_FILES, measuredGroups } from "./measurements";
 
 const TYPES: Record<string, string> = {
@@ -319,6 +328,59 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         const target = preview && /\.png$/i.test(rel) ? safeResolve(join(preview, "mods", "rtsai", "art-preview"), rel) : null;
         if (!target || !existsSync(target) || !statSync(target).isFile()) return send(res, 404, { error: "No such preview file" });
         return send(res, 200, readFileSync(target), "image/png");
+      }
+      // Sounds (dev only, read-only except the native-speaker verdicts, which go to RTSAI-Art/voice-review.json).
+      const modRoot = originals?.modRoot ?? resolve(web, "../RTSAI-Mod");
+      if (req.method === "GET" && path === "/sounds") {
+        const actor = url.searchParams.get("actor") ?? "", faction = url.searchParams.get("faction");
+        if (reviewMode !== "ra2" || !SAFE_NAME.test(actor) || (faction && !SAFE_NAME.test(faction))) return send(res, 400, { error: "Bad actor" });
+        try { return send(res, 200, actorSoundsPayload(modRoot, actor, faction)); } catch (error) { return send(res, 500, { error: error instanceof Error ? error.message : "Sounds unavailable" }); }
+      }
+      if (req.method === "GET" && path === "/sounds/faction") {
+        const faction = url.searchParams.get("faction") ?? "", actors = (url.searchParams.get("actors") ?? "").split(",").filter(a => SAFE_NAME.test(a));
+        if (reviewMode !== "ra2" || !SAFE_NAME.test(faction)) return send(res, 400, { error: "Bad faction" });
+        try { return send(res, 200, factionSoundsPayload(modRoot, faction, actors)); } catch (error) { return send(res, 500, { error: error instanceof Error ? error.message : "Sounds unavailable" }); }
+      }
+      if (req.method === "GET" && path === "/sounds/weapons") {
+        const names = (url.searchParams.get("names") ?? "").split(",").filter(n => /^[\w.-]{1,64}$/.test(n));
+        try { return send(res, 200, weaponSoundsPayload(modRoot, names)); } catch (error) { return send(res, 500, { error: error instanceof Error ? error.message : "Sounds unavailable" }); }
+      }
+      if (req.method === "GET" && path === "/sound") {
+        try {
+          const bytes = await soundBytes(modRoot, originals, { path: url.searchParams.get("path"), original: url.searchParams.get("original") });
+          if (!bytes) return send(res, 404, { error: "No such sound" });
+          res.statusCode = 200; res.setHeader("Content-Type", "audio/wav"); res.setHeader("Cache-Control", "private, max-age=3600");
+          return res.end(bytes);
+        } catch (error) { return send(res, 404, { error: error instanceof Error ? error.message : "Unreadable sound" }); }
+      }
+      if (path === "/voice-review" || path === "/voice-review/export") {
+        const file = join(workspace, "voice-review.json");
+        const native = readJson<NativeReviewFile>(file) ?? emptyNativeReview();
+        if (req.method === "GET" && path === "/voice-review") return send(res, 200, { file: "RTSAI-Art/voice-review.json", exists: existsSync(file), lines: voiceReviewPayload(modRoot, native) });
+        if (req.method === "GET" && path === "/voice-review/export") {
+          let sheet = "";
+          try { sheet = readFileSync(join(modRoot, "docs", "voice-review.csv"), "utf8"); } catch { return send(res, 404, { error: "No voice-review.csv in the mod checkout" }); }
+          res.setHeader("Content-Disposition", 'attachment; filename="voice-review-native.csv"');
+          return send(res, 200, exportVoiceSheet(sheet, native), "text/csv; charset=utf-8");
+        }
+        if (req.method === "POST" && path === "/voice-review") {
+          if (!/^application\/json\b/i.test(req.headers["content-type"] ?? "")) return send(res, 415, { error: "Send application/json" });
+          const chunks: Buffer[] = [];
+          let size = 0;
+          for await (const chunk of req) { size += (chunk as Buffer).length; if (size > 16 * 1024) return send(res, 413, { error: "Too large" }); chunks.push(chunk as Buffer); }
+          let body: { clip?: unknown; verdict?: unknown; note?: unknown; reviewer?: unknown };
+          try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { return send(res, 400, { error: "Bad JSON" }); }
+          if (!existsSync(workspace)) return send(res, 409, { error: `No RTSAI-Art workspace at ${workspace}` });
+          const verdict = body.verdict === "ok" || body.verdict === "wrong" ? body.verdict : body.verdict === null ? null : undefined;
+          if (verdict === undefined || typeof body.clip !== "string") return send(res, 400, { error: "Send clip and verdict (ok, wrong or null)" });
+          try {
+            const next = applyNativeVerdict(native, body.clip, verdict, typeof body.note === "string" ? body.note : "", typeof body.reviewer === "string" ? body.reviewer : null, new Date().toISOString());
+            const temp = `${file}.${process.pid}.tmp`;
+            writeFileSync(temp, JSON.stringify(next, null, 2) + "\n");
+            renameSync(temp, file);
+            return send(res, 200, { review: next.reviews[body.clip] ?? null });
+          } catch (error) { return send(res, 400, { error: error instanceof Error ? error.message : "Not saved" }); }
+        }
       }
       if (req.method === "GET" && path === "/unit") {
         // One actor's workspace (its candidates), for the admin Faction viewer's History; read-only.

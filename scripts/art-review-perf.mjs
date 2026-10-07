@@ -180,7 +180,7 @@ async function run(page, client, label, url, rail = false, chain = null) {
     });
   }
   if (chain) {
-    await step("chain steps 2 4 5 6 7 1 4", async () => { for (const k of ["2", "4", "5", "6", "7", "1", "4"]) { await page.keyboard.press(k); await page.waitForTimeout(400); } return { steps: await page.locator(".chain-step").count() }; });
+    await step("chain steps 2 4 5 6 7 8 1 4", async () => { for (const k of ["2", "4", "5", "6", "7", "8", "1", "4"]) { await page.keyboard.press(k); await page.waitForTimeout(400); } return { steps: await page.locator(".chain-step").count() }; });
     if (chain.anim) {
       await step(`animations step: ${chain.anim}`, async () => {
         await page.keyboard.press("5"); await page.waitForTimeout(400);

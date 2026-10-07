@@ -2,7 +2,7 @@
 
 /* Cameos are tiny local files drawn pixel-exact; next/image would resample them. */
 /* eslint-disable @next/next/no-img-element */
-import { Check, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, CircleHelp, Settings2, X , Volume2 } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { sourceLabel } from "../../../../lib/art-lab/asset-source";
 import { houseColors } from "../../../../lib/art-lab/remap";
@@ -247,7 +247,9 @@ const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: {
  * The faction's whole build roster, grouped like the build palette (base buildings last, folded): every unit
  * shows its static cameo (lazy-loaded), whether its art is New or Original RA2, and how many candidates wait.
  */
-export const UnitRail = memo(function UnitRail({ rows, selected, faction, factions, onFaction, filter, onFilter, onSelect, collapsed, onCollapse }: {
+export const UnitRail = memo(function UnitRail({ rows, selected, faction, factions, onFaction, filter, onFilter, onSelect, collapsed, onCollapse, onSounds }: {
+  /** Opens the faction's sounds (announcer, voices, music); absent where there are none (Classic). */
+  onSounds?: () => void;
   rows: RailRow[];
   selected: string | null;
   faction: string;
@@ -270,6 +272,7 @@ export const UnitRail = memo(function UnitRail({ rows, selected, faction, factio
       <div className="lab-rail-head">
         <div className="lab-rail-top">
           <FactionPicker factions={factions} faction={faction} onFaction={onFaction} compact={collapsed} />
+          {onSounds && !collapsed && <button type="button" className="lab-icon-btn" onClick={onSounds} aria-label="Faction sounds" title="The faction’s announcer, voices and music"><Volume2 size={16} /></button>}
           <button type="button" className="lab-icon-btn" onClick={() => onCollapse(!collapsed)} aria-label={collapsed ? "Expand the unit list" : "Collapse the unit list"} title={collapsed ? "Expand" : "Collapse"}>
             {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
           </button>

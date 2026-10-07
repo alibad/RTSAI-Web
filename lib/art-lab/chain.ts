@@ -16,13 +16,14 @@ import { measuredGroups, type MeasuredGroup } from "./measurements";
 import { barrelSequence, spriteAnimations, spriteSpins } from "./sprite-anim";
 import { spinKind, spinLabel, type SpinKind } from "./action-labels";
 
-export type ChainStep = "now" | "design" | "glb" | "game" | "anim" | "checks" | "call";
+export type ChainStep = "now" | "design" | "glb" | "game" | "anim" | "sounds" | "checks" | "call";
 export const chainSteps: { id: ChainStep; label: string }[] = [
   { id: "now", label: "In game now" },
   { id: "design", label: "Design" },
   { id: "glb", label: "3D model" },
   { id: "game", label: "Game model" },
   { id: "anim", label: "Animations" },
+  { id: "sounds", label: "Sounds" },
   { id: "checks", label: "Checks" },
   { id: "call", label: "Your call" },
 ];

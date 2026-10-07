@@ -10,6 +10,7 @@ import { angleDelta, eventActor, facingToward, replayBounds, replaySample, sampl
 import type { Frame } from "./frames";
 import { EncounterFaction, EncounterPalette } from "./EncounterPalette";
 import { NativeVisuals } from "./NativeVisuals";
+import { useReplaySounds } from "./useReplaySounds";
 import { ENCOUNTER_DRAG, placementActor, projectEncounter as projectWorld, screenCell, setupSample, visualAt } from "../../../../lib/art-lab/encounter";
 export function Arena({ mode, units, selected, roster, frames, onSelect }: { mode: "ra2" | "classic"; units: ReviewUnit[]; selected: ReviewUnit; roster: RosterPayload | null; frames: FrameStore; onSelect: (id: string) => void }) {
   const eligible = useMemo(() => units.filter(u => roster?.stock[u.id]?.behavior.health).sort((a, b) => a.name.localeCompare(b.name)), [units, roster]);
@@ -33,6 +34,7 @@ export function Arena({ mode, units, selected, roster, frames, onSelect }: { mod
   const nativeVisuals=useMemo(()=>new NativeVisuals(mode,()=>redraw.current()),[mode]);
   useEffect(()=>()=>nativeVisuals.dispose(),[nativeVisuals]);
   const playhead = useRef(0), lastFrames = useRef(new Map<string, Frame>());
+  useReplaySounds(result, playhead, playing, factions);
   useEffect(() => { drawState.current = { result, index, a, b, ranges, camera, placements, focus }; });
   useEffect(() => { aborted.current = false; return () => { aborted.current = true; }; }, []);
   const restore = useCallback((r: DuelResult) => {

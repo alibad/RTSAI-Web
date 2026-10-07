@@ -17,6 +17,10 @@ import { Arena } from "./review/Arena";
 import { Filmstrip } from "./review/Filmstrip";
 import { FrameStore } from "./review/frames";
 import { studioEffects } from "./review/effects";
+import { SoundsPanel, soundSummary, type ActorSoundsData } from "./review/SoundsPanel";
+import { FactionSounds, type SoundFaction } from "./review/FactionSounds";
+import { selectUrls, useMotionSounds } from "./review/useMotionSounds";
+import { soundEngine } from "./review/sound";
 import { ConceptStage, IconStage, preloadImages } from "./review/ImageStages";
 import { rememberView, setLab, useLab } from "./review/lab-store";
 import { ModelStage, useUnitRadius } from "./review/Stage";
@@ -356,6 +360,35 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const gameItem = useMemo(() => (unit && gameCandidate ? stageItem(unit, gameCandidate, play, candidateFire(fire, gameCandidate)) : null), [unit, gameCandidate, play, fire]);
   const modelActor = library?.actors.find(a => a.actor === unit?.id);
   const glb = useMemo(() => glbOptions(modelActor, meshSource), [modelActor, meshSource]);
+  // Sounds from RTSAI-Mod main's rules (dev API), per actor; the current faction picks prefixed voice sets.
+  const [sounds, setSounds] = useState<Record<string, ActorSoundsData | "error">>({});
+  const [soundsOpen, setSoundsOpen] = useState(false);
+  const openSounds = useCallback(() => setSoundsOpen(true), []);
+  // Every roster faction (modern first, then the original ones for comparison) with its units' names.
+  const soundFactions: SoundFaction[] = useMemo(() => {
+    const list = (roster?.factions ?? []).map(f => ({ id: f.id, name: f.name, units: f.units.map(u => ({ id: u.id, name: unitIndex.get(u.id)?.name ?? u.name })), modern: units.some(u => u.factionId === f.id) }));
+    return [...list.filter(f => f.modern), ...list.filter(f => !f.modern)];
+  }, [roster, unitIndex, units]);
+  const soundKey = unit && mode === "ra2" ? `${unit.id}:${factionId}` : null;
+  useEffect(() => {
+    if (!soundKey || sounds[soundKey]) return;
+    const [actor, f] = soundKey.split(":");
+    let live = true;
+    fetch(`${API}/sounds?mode=ra2&actor=${encodeURIComponent(actor)}&faction=${encodeURIComponent(f)}`, { cache: "no-store" })
+      .then(r => (r.ok ? r.json() as Promise<ActorSoundsData> : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(d => { if (live) setSounds(m => ({ ...m, [soundKey]: d })); }, () => { if (live) setSounds(m => ({ ...m, [soundKey]: "error" })); });
+    return () => { live = false; };
+  }, [soundKey, sounds]);
+  const unitSounds = soundKey && sounds[soundKey] && sounds[soundKey] !== "error" ? sounds[soundKey] as ActorSoundsData : null;
+  useMotionSounds(frames, focused?.item ?? null, unitSounds);
+  // Selecting a unit by hand plays one of its select lines (once its sounds are known).
+  const selectSound = useRef<string | null>(null);
+  useEffect(() => {
+    if (!unitSounds || selectSound.current !== unitSounds.actor) return;
+    selectSound.current = null;
+    void soundEngine.playAny(selectUrls(unitSounds));
+  }, [unitSounds]);
+
   const chain: ChainData | null = unit && isNew ? {
     current: { item: currentItem, tag: unit.spec.voxel ? "VXL" : "SHP" },
     design,
@@ -370,6 +403,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     actions: actionCoverage(unit.category, (gameItem ?? currentItem)?.spec, (gameItem ?? currentItem)?.sprite, { spec: currentItem?.spec, sprite: currentItem?.sprite }),
     checks: candidateChecks(gameCandidate),
     decision: decisionState(entry.slots.model, gameCandidate),
+    sounds: { summary: soundSummary(unitSounds), error: Boolean(soundKey && sounds[soundKey] === "error") },
   } : null;
 
   // Keep the address bar in step for deep links.
@@ -398,7 +432,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }, [stepKey]);
 
   // Aircraft fly at cruise altitude in the Animations step; the other steps compare them landed, at a readable size.
-  useEffect(() => { setLab({ flying: chainStep === "anim" && !iconMode }); }, [chainStep, iconMode]);
+  useEffect(() => { setLab({ flying: (chainStep === "anim" || chainStep === "sounds") && !iconMode }); }, [chainStep, iconMode]);
 
   // Preload the neighbours of the focused version (models warm in the stage's frame cache).
   useEffect(() => {
@@ -420,7 +454,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const selectUnit = useCallback((id: string) => { setSelected(id); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
+  const selectUnit = useCallback((id: string) => { selectSound.current = id; setSelected(id); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, []);
   // A faction switch repaints everything: let that paint present before the new unit's frames render.
   const changeFaction = useCallback((id: string) => { frames.hold(SWITCH_HOLD_MS); frames.clearQueue(); setFaction(id); setSelected(null); setFocusKey(AUTO); setStep(AUTO); setLab({ zoom: null, spin: false, animation: "stand", turret: 0 }); }, [frames]);
   const changeSlot = useCallback((s: SlotId) => { setIconMode(s === "icon"); if (s === "concept") setStep("design"); else if (s === "model" && step === "design") setStep(AUTO); setFocusKey(AUTO); setLab({ zoom: null }); }, [step]);
@@ -442,6 +476,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     else if (s === "design") setFocusKey(AUTO);
     else if (focusKey === "current" || focusKey.startsWith("ref:") || step === "design") setFocusKey(AUTO);
     if (s === "anim") setLab({ playing: true, view3d: "off" });
+    else if (s === "sounds") setLab({ view3d: "off" });
     else setLab({ view3d: "off" });
   }, [focusKey, step]);
 
@@ -502,7 +537,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
       else if (key === "k") { goUnit(-1); handled(); }
       else if (key === "ArrowRight") { const v = k.versions[Math.min(k.versions.length - 1, k.focus + 1)]; if (v) setFocusKey(v.key); handled(); }
       else if (key === "ArrowLeft") { const v = k.versions[Math.max(0, k.focus - 1)]; if (v) setFocusKey(v.key); handled(); }
-      else if (/^[1-7]$/.test(key)) { if (k.chainOn) openStep(chainSteps[Number(key) - 1].id); else if (Number(key) <= 3) changeSlot(slotIds[Number(key) - 1]); handled(); }
+      else if (/^[1-8]$/.test(key)) { if (k.chainOn) openStep(chainSteps[Number(key) - 1].id); else if (Number(key) <= 3) changeSlot(slotIds[Number(key) - 1]); handled(); }
       else if (key === "i") { changeSlot(k.slot === "icon" ? "model" : "icon"); handled(); }
       else if (key === "0") { setLab({ zoom: 1 }); handled(); }
       else if (key === "p") { setLab(s => { const i = houseColors.findIndex(c => c.hex === s.color); return { color: houseColors[(i + 1) % houseColors.length].hex }; }); handled(); }
@@ -531,19 +566,20 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   }
   // The game-model and in-game steps choose between versions; the other steps work on the chosen one.
   const showFilm = Boolean(unit && focused && surface === "art" && !lineupOnly && !(slot === "model" && chain && (versions.length <= 2 || !["now", "game"].includes(chainStep))));
-  const showShelf = Boolean(unit && surface === "art" && slot === "model" && (!chain || chainStep === "anim"));
+  const showShelf = Boolean(unit && surface === "art" && slot === "model" && (!chain || chainStep === "anim" || chainStep === "sounds"));
   const inspector = chain && !iconMode && chainStep === "checks" ? "checks" : "facts";
   const board = surface === "board" && mode === "ra2";
 
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}${board ? " is-board" : ""}${authored ? " is-authored" : ""}`}>
-      {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} />}
+      {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
+      {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
       <StudioBar viewerHref={viewerLink} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
         tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
-          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} />}
+          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" ? openSounds : undefined} />}
         <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface === "art" ? " has-chain" : ""}`} id="main-content">
           {chain && surface === "art" && state && <AssetChain data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>
@@ -556,7 +592,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
               imageFit={slot === "icon" ? "pixel" : "cover"} onFocus={focusIndex} inPreview={slot === "model" && unit ? preview?.actors[unit.id]?.model ?? null : null} released={Boolean(unit && preview?.actors[unit.id]?.released)} />
           )}
-          {showShelf && unit && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
+          {showShelf && unit && chain && chainStep === "sounds" && <SoundsPanel data={unitSounds} name={unit.name} error={soundKey && sounds[soundKey] === "error" ? "Could not read this unit's sounds from the mod's rules." : null} />}
+          {showShelf && unit && !(chain && chainStep === "sounds") && (chain ? <ActionRow unit={unit} version={focused} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />
             : <ActionShelf unit={unit} version={focused} mode={mode} fireUnknown={Boolean(fireActor && !fireRules[fireActor])} onEncounter={() => { setSurface("arena"); setLab({ spin: false, playing: false }); }} />)}
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>

@@ -316,6 +316,11 @@
 
 /* Local faction studio: reuse the lab's controls, palette and spacing. */
 .studio-bar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 16px; background:#111711; border-bottom:1px solid var(--line-2); }
+.studio-sound { display:flex; align-items:center; gap:6px; margin-left:auto; }
+.studio-sound button { padding:6px; }
+.studio-sound button[aria-pressed="false"] { color:var(--faint); }
+.studio-sound input { width:76px; accent-color:var(--gold); }
+.studio-sound input:disabled { opacity:.4; }
 .studio-title { display:flex; gap:10px; align-items:center; color:var(--gold); }
 .studio-title span { font-size:10px; letter-spacing:.12em; color:var(--muted); border:1px solid var(--line-2); border-radius:4px; padding:3px 5px; }
 .studio-rail-tools { display:grid; gap:8px; margin-top:12px; }
@@ -399,7 +404,9 @@
 .studio-admin { display:flex; align-items:stretch; gap:16px; }
 .studio-admin small { align-self:center; color:var(--faint); font:600 10px/1 var(--font-mono), monospace; letter-spacing:.1em; text-transform:uppercase; }
 .studio-admin a { font-size:13px; }
-@media (max-width: 1500px) { .studio-navigation { gap:16px; } .studio-admin small { display:none; } }
+/* The site and admin links fold to icons first (their names stay as titles); the workspaces keep their names. */
+@media (max-width: 1760px) { .studio-navigation { gap:16px; } .studio-admin small { display:none; } .studio-navigation a > span { display:none; } .studio-navigation a { padding:0 6px; } }
+.studio-title b { white-space:nowrap; }
 .studio-mode, .studio-art-select select, .studio-roster-filter { background:var(--raised); border:1px solid var(--line-2); border-radius:6px; padding:7px 10px; min-width:0; }
 .studio-art-select { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; }
 .lab-top { grid-template-columns:minmax(0,1fr) auto auto; gap:12px; }
@@ -818,3 +825,71 @@
 .board-facts li.is-bad::before { content: "✕"; color: #f5a291; }
 /* The Fire action shows a magenta-ringed stand-in where an original muzzle flash cannot be shown. */
 .lab-fire-note { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #f0a6ec; background: rgba(232, 40, 220, 0.14); }
+
+/* Sounds step: every sound the rules give the actor, grouped by when the game plays it. Flat surfaces only. */
+.chain-sound { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; }
+.chain-sound svg { color: var(--muted); }
+.sounds-panel { display: grid; gap: 8px; max-height: 44vh; overflow-y: auto; padding: 10px 12px; border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; }
+.sounds-panel > header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sounds-panel > header small { color: var(--faint); font-size: 11px; }
+.sounds-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px 14px; }
+.sounds-group h4 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 4px 0; font-size: 12px; }
+.sounds-group h4 small { color: var(--faint); font: 500 10px/1.2 var(--font-mono), monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sounds-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sound-clip { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 2px 8px; align-items: start; padding: 5px 6px; border-radius: 6px; background: var(--raised); }
+.sound-clip.is-missing { opacity: 0.6; }
+.sound-play { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 999px; background: var(--raised-2); color: var(--text); }
+.sound-play:hover:not(:disabled) { background: var(--gold); color: #111; }
+.sound-clip-body { display: grid; gap: 1px; min-width: 0; }
+.sound-clip-body b { font-size: 13px; font-weight: 600; }
+.sound-clip-body b.sound-file { font: 500 12px/1.4 var(--font-mono), monospace; color: var(--muted); }
+.sound-clip-body small { color: var(--muted); font-size: 11px; }
+.sound-clip-body .sound-heard { color: var(--faint); }
+.sound-error { color: #f5a291 !important; }
+.sound-tags { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px; }
+.sound-tag { display: inline-flex; align-items: center; gap: 3px; height: 18px; padding: 0 6px; border-radius: 4px; background: var(--raised-2); color: var(--muted); font-size: 10px; white-space: nowrap; }
+.sound-tag.is-ok { color: var(--green); }
+.sound-tag.is-flag { color: var(--gold); }
+.sound-tag.is-original { color: #c6b8f2; }
+.sounds-unused summary { cursor: pointer; color: var(--faint); font-size: 11px; }
+.sounds-unused { display: grid; gap: 6px; }
+.source-sounds { margin: 0 0 12px; }
+.sounds-dialog { width: min(1100px, 94vw); }
+.sounds-dialog > header { display: flex; align-items: center; gap: 10px; }
+.sounds-dialog > header > div { margin-right: auto; }
+.sounds-factions { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.sounds-factions button { height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); font-size: 12px; white-space: nowrap; }
+.sounds-factions button.is-original { color: var(--faint); }
+.sounds-factions button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 0 0 1px var(--gold); }
+.sounds-tabs { display: flex; gap: 4px; margin: 4px 0 10px; box-shadow: inset 0 -1px 0 var(--line); }
+.sounds-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 0; background: none; color: var(--muted); font-size: 13px; white-space: nowrap; box-shadow: inset 0 -2px 0 transparent; }
+.sounds-tabs button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--gold); }
+.sounds-dialog-body { display: grid; gap: 8px; }
+.sounds-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px 14px; }
+.sounds-list > li h4, .sounds-set h3 { margin: 4px 0; font-size: 12px; }
+.sounds-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+div.sounds-list { grid-template-columns: 1fr; }
+.sounds-set h3 { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.sounds-set h3 small { color: var(--faint); font-size: 11px; font-weight: 500; }
+.voice-review { display: grid; gap: 8px; }
+.voice-review-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.voice-review-bar label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.voice-review-bar input:not([type="checkbox"]) { width: 140px; padding: 5px 8px; border: 0; border-radius: 6px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line-2); color: var(--text); }
+.voice-review-bar a { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.review-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.review-line { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(220px, 300px); gap: 10px; align-items: start; padding: 8px; border-radius: 8px; background: var(--raised); }
+.review-line.is-ok { box-shadow: inset 2px 0 0 var(--green); }
+.review-line.is-wrong { box-shadow: inset 2px 0 0 #ef5b3f; }
+.review-text { display: grid; gap: 2px; min-width: 0; }
+.review-text b { font-size: 15px; font-weight: 600; }
+.review-text small { color: var(--muted); font-size: 12px; }
+.review-text small.is-flag { color: var(--gold); }
+.review-text code { color: var(--faint); font-size: 10px; }
+.review-actions { display: grid; gap: 6px; justify-items: start; }
+.review-actions [role="group"] { display: flex; gap: 4px; }
+.review-actions button { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: var(--raised-2); color: var(--text); font-size: 12px; }
+.review-actions button[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--gold); color: var(--gold); }
+.review-actions form { display: flex; gap: 4px; width: 100%; }
+.review-actions input { flex: 1; min-width: 0; padding: 5px 8px; border: 0; border-radius: 6px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-2); color: var(--text); font-size: 12px; }
+.review-actions small { color: var(--faint); font-size: 11px; }
+@media (max-width: 900px) { .review-line { grid-template-columns: 28px minmax(0, 1fr); } .review-actions { grid-column: 2; } }
