@@ -14,5 +14,5 @@ export default async function CampaignPage({ searchParams }: { searchParams: Pro
   if (!ADMIN_BUILD) notFound();
   const mode = resolveMode((await searchParams).mode);
   const flags = Object.fromEntries(rosters.factions.flatMap(f => { const src = flagSrc(f.id); return src ? [[f.id, src]] : []; }));
-  return <><SiteHeader/><main id="main-content" className="workshop-page campaign-page"><header className="workshop-intro"><div><span className="eyebrow">THE WORKSHOP / CAMPAIGNS</span><h1>Give the next mission a story.</h1></div><p>Write the people. Shape the choices. Set the scene.<br/>A local campaign studio for Red Alert 2 and Classic.</p></header><CampaignStudio initialMode={mode} flags={flags}/></main><SiteFooter/></>;
+  return <><SiteHeader/><main id="main-content" className="workshop-page campaign-page"><header className="workshop-intro"><div><span className="eyebrow">THE WORKSHOP / CAMPAIGNS</span><h1>Give the next mission a story.</h1></div><p>Write the people. Shape the choices. Set the scene.<br/>A local campaign studio for RTS AI and the Classic add-on.</p></header><CampaignStudio initialMode={mode} flags={flags}/></main><SiteFooter/></>;
 }

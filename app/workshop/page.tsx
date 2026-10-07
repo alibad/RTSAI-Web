@@ -12,5 +12,5 @@ export default async function WorkshopPage({searchParams}:{searchParams:Promise<
   const params=await searchParams,mode=resolveMode(params.mode);
   // National flags for the faction picker (public/faction-art; the art manifest stays on the server).
   const flags=Object.fromEntries(rosters.factions.flatMap(f=>{const src=flagSrc(f.id);return src?[[f.id,src]]:[];}));
-  return <><SiteHeader/><main id="main-content" className="workshop-page"><header className="workshop-intro"><div><span className="eyebrow">THE WORKSHOP</span><h1>Build your battlefield.</h1></div><p>Shape the terrain. Place your forces. Play out an idea.<br/>A local experiment space for Red Alert 2 and Classic.</p></header><WorkshopNav mode={mode} active="map"/><MapWorkshop initialMode={mode} campaignPreview={params.campaign==="1"} flags={flags}/></main><SiteFooter/></>;
+  return <><SiteHeader/><main id="main-content" className="workshop-page"><header className="workshop-intro"><div><span className="eyebrow">THE WORKSHOP</span><h1>Build your battlefield.</h1></div><p>Shape the terrain. Place your forces. Play out an idea.<br/>A local experiment space for RTS AI and the Classic add-on.</p></header><WorkshopNav mode={mode} active="map"/><MapWorkshop initialMode={mode} campaignPreview={params.campaign==="1"} flags={flags}/></main><SiteFooter/></>;
 }

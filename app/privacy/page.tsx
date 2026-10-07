@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <section id="ai-co-commander">
         <h2>AI co-commander in the game</h2>
         <div className="privacy-detail">
-          <p>Hosted AI is planned for the first RA2 mod release and still needs live service verification. The previous Classic alpha uses its own local AI pack or an external provider you choose.</p>
+          <p>Hosted AI is planned for the first RTS AI release and still needs live service verification. The previous Classic alpha uses its own local AI pack or an external provider you choose.</p>
           <p>You choose how the co-commander thinks, and can change it at any time in the game&apos;s AI settings. <b>Hosted</b> is the default for new installs. <b>Local</b> runs everything on your PC. <b>External</b> sends requests to an AI service you choose, under that service&apos;s own terms. <b>AI Off</b> turns the co-commander off. Only Hosted involves rtsai.net.</p>
           <h3>What hosted mode sends</h3>
           <p>When the co-commander needs to think, the game sends rtsai.net a compact snapshot of the match state, up to two downscaled screenshots of your game view, and the text of the question you spoke or typed. rtsai.net checks your allowance and forwards these to Anthropic, whose Claude model writes the answer. They are used to answer that request; rtsai.net does not store them and does not write them to its logs.</p>

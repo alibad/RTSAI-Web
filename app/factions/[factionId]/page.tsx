@@ -10,7 +10,7 @@ import { CampaignStrip } from "../../components/CampaignStrip";
 import { FactionNarrative } from "../../components/FactionNarrative";
 import { rosterCounts } from "../../components/FactionCard";
 import { CountChips, FactionEmblem, FactionFlag, LineupImage } from "../../components/FactionVisuals";
-import { factionById, resolveMode, rosterFactionById, rosters } from "../../../lib/game-content";
+import { CLASSIC_ADDON, factionById, modeLabel, resolveMode, rosterFactionById, rosters, type GameMode } from "../../../lib/game-content";
 import { flagSrc, hasFlag, VIEWER_READY, viewerHref } from "../../../lib/faction-art";
 import "../factions.css";
 
@@ -43,7 +43,7 @@ export default async function FactionPage({ params, searchParams }: Props) {
       {!faction && flagSrc(id) && <img className="faction-hero-flagwash" src={flagSrc(id)!} width={640} height={480} alt="" aria-hidden="true" loading="lazy" decoding="async" />}
       <div className="faction-hero-copy">
         <div className="faction-hero-marks"><FactionFlag factionId={id} name={name} accent={accent} size="lg" eager />{faction && hasFlag(id) && <FactionEmblem factionId={faction.id} accent={accent} size={72} />}</div>
-        <span className="eyebrow">{faction?.title ?? `${side} · Original faction`}</span>
+        <span className="eyebrow">{faction?.title ?? `${CLASSIC_ADDON} · ${side}`}</span>
         <h1>{name}</h1>
         {faction ? <p className="faction-hero-tagline">{faction.tagline}</p> : <p className="faction-hero-tagline">The original {side === "Allies" ? "Allied" : "Soviet"} arsenal, as the game builds it.</p>}
         {roster && <CountChips counts={rosterCounts(roster)} />}
@@ -63,7 +63,7 @@ export default async function FactionPage({ params, searchParams }: Props) {
       <CompleteRoster faction={roster} mode={mode} catalogFactionId={faction?.id} />
       <CampaignStrip factionId={roster.id} mode={mode} />
       {faction ? <ReleaseCallout faction={faction} mode={mode} /> : <aside className="catalog-release"><div><span className="section-number">Development roster</span><h2>Check the release before you play.</h2><p>This guide describes the current rules. Public download coverage is listed separately.</p></div><Link className="primary-action" href={`/download?faction=${id}&mode=${mode}`}>Release details →</Link></aside>}
-      <details className="catalog-provenance"><summary>About this guide</summary><p>Names, categories, costs and stats are measured from the game rules. Modern faction strategies are editorial guidance, and balance is still being refined.</p><p>{mode === "ra2" ? "Red Alert 2" : "Classic"} rule revision: <code>{rosters.sources[mode].commit.slice(0, 12)}</code>. Unit pictures are rendered from the project’s own 3D models; original factions show their flag and names only. National flags: flag-icons (MIT).</p></details>
-    </> : <section className="catalog-unavailable"><h2>No roster in this mode.</h2><p>{name} is available in the {other!.mode === "ra" ? "Classic" : "Red Alert 2"} development roster.</p><Link href={`/factions/${id}?mode=${other!.mode}`}>View that roster →</Link></section>}
+      <details className="catalog-provenance"><summary>About this guide</summary><p>Names, categories, costs and stats are measured from the game rules. Modern faction strategies are editorial guidance, and balance is still being refined.</p><p>{modeLabel(mode)} rule revision: <code>{rosters.sources[mode].commit.slice(0, 12)}</code>. Unit pictures are rendered from the project’s own 3D models; original factions show their flag and names only. National flags: flag-icons (MIT).</p></details>
+    </> : <section className="catalog-unavailable"><h2>No roster in this mode.</h2><p>{name} is available in the {modeLabel(other!.mode as GameMode)} development roster.</p><Link href={`/factions/${id}?mode=${other!.mode}`}>View that roster →</Link></section>}
   </main><SiteFooter /></>;
 }

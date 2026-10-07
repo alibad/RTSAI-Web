@@ -26,7 +26,7 @@ export default async function UnitPage({ params, searchParams }: Props) {
   const mode = resolveMode((await searchParams).mode);
   const variant = unit.variants[mode];
   const label = unitLabel(unit, mode);
-  // The art is the unit's Red Alert 2 model in both modes; stats come from the selected mode's rules.
+  // The art is the unit's RTS AI model in both modes; stats come from the selected mode's rules.
   const artId = unit.variants.ra2?.actorId.toLowerCase() ?? "";
   const art = unitArt(artId);
   const actor = variant && rosters.actors.find(a => a.mode === mode && a.id.toLowerCase() === variant.actorId.toLowerCase());
@@ -61,8 +61,8 @@ export default async function UnitPage({ params, searchParams }: Props) {
         </div>
       </section>
       {siblings.length > 0 && <nav className="unit-siblings" aria-label={`More ${faction.name} units`}><span className="section-number">MORE FROM {faction.name.toUpperCase()}</span><ul>{siblings.map(s => <li key={s.actor}><Link href={s.href} title={s.name}><Cameo actorId={s.actor} alt={s.name} /></Link></li>)}</ul><Link className="text-action" href={`/factions/${faction.id}?mode=${mode}#complete-roster-title`}>Full faction roster →</Link></nav>}
-      <details className="catalog-provenance"><summary>Inspect the gameplay source</summary><p>Editorial ID: <code>{unit.id}</code> · actor: <code>{variant.actorId}</code></p><p><code>{variant.rulesPath}</code></p><p>Stats are read from this mode’s rules; bars compare units of the same kind. Pictures are rendered from the project’s own model of this unit{mode === "ra" ? " for Red Alert 2" : ""}.</p></details>
-    </> : <section className="catalog-unavailable"><h2>No Red Alert 2 variant.</h2><p>This unit belongs to the Classic roster only.</p><Link href={`/units/${unit.id}?mode=ra`}>View Classic implementation →</Link></section>}
+      <details className="catalog-provenance"><summary>Inspect the gameplay source</summary><p>Editorial ID: <code>{unit.id}</code> · actor: <code>{variant.actorId}</code></p><p><code>{variant.rulesPath}</code></p><p>Stats are read from this mode’s rules; bars compare units of the same kind. Pictures are rendered from the project’s own model of this unit{mode === "ra" ? " for RTS AI" : ""}.</p></details>
+    </> : <section className="catalog-unavailable"><h2>Not in RTS AI.</h2><p>This unit belongs to the Classic add-on roster only.</p><Link href={`/units/${unit.id}?mode=ra`}>View the Classic version →</Link></section>}
     <ReleaseCallout faction={faction} mode={mode} />
   </main><SiteFooter /></>;
 }

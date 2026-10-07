@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { categoryLabels, rosterActors, units, type GameMode, type RosterFaction } from "../../lib/game-content";
+import { categoryLabels, modeLabel, rosterActors, units, type GameMode, type RosterFaction } from "../../lib/game-content";
 import { artActorFor, categoryOrder, unitStats, viewerHref, VIEWER_READY } from "../../lib/faction-art";
 import { Cameo, CategoryIcon, StatBars, UnitRender } from "./FactionVisuals";
 
@@ -17,7 +17,7 @@ export function CompleteRoster({ faction, mode, catalogFactionId }: { faction: R
   const ownCount = [...own.values()].filter(Boolean).length;
   return <section className="faction-roster" aria-labelledby="complete-roster-title">
     <div className="roster-heading"><div><span className="section-number">THE FORCE</span><h2 id="complete-roster-title">Units, buildings & defenses</h2></div>
-      <p>{actors.length} entries in the {mode === "ra2" ? "Red Alert 2" : "Classic"} rules{ownCount ? `, ${ownCount} unique to ${faction.name}` : ""}.{mode === "ra" && ownCount ? " Pictured with the Red Alert 2 models." : ""}</p></div>
+      <p>{actors.length} entries in the {modeLabel(mode)} rules{ownCount ? `, ${ownCount} unique to ${faction.name}` : ""}.{mode === "ra" && ownCount ? " Pictured with the RTS AI models." : ""}</p></div>
     {categoryOrder.map(category => {
       const entries = actors.filter(a => a.category === category);
       if (!entries.length) return null;

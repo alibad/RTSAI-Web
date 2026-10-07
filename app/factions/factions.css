@@ -256,3 +256,19 @@
   .unit-title .unit-cameo { width: 90px; height: 72px; }
   .unit-siblings .text-action { margin-left: 0; }
 }
+
+/* Mode switch: RTS AI is the game; the Classic add-on is a quieter second choice. */
+.mode-nav a.is-addon b { color: #9da097; font-weight: 480; }
+.mode-nav a.is-addon[aria-current="page"] b { color: var(--paper); }
+
+/* Classic add-on: original factions, flags and names only, clearly secondary. */
+.faction-group.classic-addon { margin-top: 64px; padding-top: 28px; border-top: 1px dashed rgba(240, 238, 230, .18); }
+.faction-group.classic-addon h2 { font-size: 22px; color: #c9cbbf; }
+.faction-group.classic-addon .faction-group-heading p { max-width: 560px; color: #8f9388; font-size: 13px; }
+.classic-addon-side + .classic-addon-side { margin-top: 18px; }
+.classic-addon-side h3 { margin: 0 0 10px; color: #8f9388; font: 560 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+.classic-addon .faction-tile.is-original { opacity: .85; }
+.classic-addon .faction-tile.is-original:hover { opacity: 1; }
+
+.directory-stats li.is-addon { border-style: dashed; background: transparent; }
+.directory-stats li.is-addon b { color: #9da097; }

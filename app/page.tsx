@@ -1,129 +1,68 @@
-import { ArrowRight, BrainCircuit, Download, Flag, Mic, ShieldCheck, Swords, Zap } from "lucide-react";
+import type { CSSProperties } from "react";
+import { ArrowRight, BrainCircuit, Download, Flag, Globe, Mic, MonitorDown, PackageCheck, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "./components/CompanionDemo";
 import { HeroTrailer } from "./components/HeroTrailer";
-import { gameSource, SiteFooter, SiteHeader } from "./components/SiteChrome";
-import { getGameRelease } from "../lib/release";
-import { getModRelease, isPublished, RA2_REQUIREMENT, windowsInstaller } from "../lib/mod-release";
+import { SiteFooter, SiteHeader } from "./components/SiteChrome";
+import { FactionFlag } from "./components/FactionVisuals";
+import { FrontLine } from "./components/FrontLine";
+import { getModRelease, isPublished } from "../lib/mod-release";
 import { buildTrailer } from "../lib/trailer";
 import { factions, dossierForRoster, rosterFactions } from "../lib/game-content";
 import { FactionCard } from "./components/FactionCard";
+import "./home.css";
 
 const canonicalUrl = "https://rtsai.net";
-const listFormat = new Intl.ListFormat("en", { style: "long", type: "conjunction" });
+const description = "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander. Coming to your browser and Windows.";
 
 export default async function Home() {
-  const gameRelease = await getGameRelease();
-  const windowsRelease = gameRelease.windows;
-  const latestPublicVersion = gameRelease.macos?.version ?? windowsRelease.version;
-  const primaryWindowsUrl = windowsRelease.installerUrl ?? windowsRelease.url;
   const modRelease = getModRelease();
   const mod = isPublished(modRelease) ? modRelease : null;
-  const modInstaller = windowsInstaller(modRelease);
   const trailer = buildTrailer();
-  const inRa2 = factions.filter((faction) => faction.variants.ra2.status === "implemented");
-  const pillars = [
-    {
-      id: "factions",
-      icon: Flag,
-      status: `${inRa2.length} of ${factions.length} in RA2`,
-      title: "Modern factions",
-      description: `${listFormat.format(factions.map((faction) => faction.name))}, each with its own doctrine, signature units and counters.`,
-      href: "/factions",
-      action: "Meet the factions",
-    },
-    {
-      id: "companion",
-      icon: BrainCircuit,
-      status: "Classic alpha",
-      title: "An AI co-commander",
-      description: "It sees only what you can see, speaks up when it matters, answers spoken questions, and plays for you only when you switch AUTO on.",
-      href: "/companion",
-      action: "How it works",
-    },
-    {
-      id: "ra2",
-      icon: Swords,
-      status: mod ? "Alpha" : "In development",
-      title: "Red Alert 2 on OpenRA",
-      description: "Install the mod, point it at the Red Alert 2 you own on Steam, the EA app or disc, and play. Commercial game files are never bundled.",
-      href: "/download",
-      action: mod ? "Download the mod" : "Release status",
-    },
-  ];
+  const modern = factions.filter(f => f.variants.ra2.status === "implemented");
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": `${canonicalUrl}/#website`,
-        url: canonicalUrl,
-        name: "RTS AI",
-        description: "An OpenRA mod for Red Alert 2 with modern factions and an AI co-commander.",
-        inLanguage: "en",
-      },
-      mod && modInstaller
-        ? {
-          "@type": ["SoftwareApplication", "VideoGame"],
-          "@id": `${canonicalUrl}/#rtsai-mod`,
-          name: "RTS AI",
-          url: `${canonicalUrl}/download`,
-          description: `A Red Alert 2 mod for OpenRA with modern factions and an AI co-commander. ${RA2_REQUIREMENT}`,
-          applicationCategory: "GameApplication",
-          operatingSystem: "Windows 10, Windows 11",
-          softwareVersion: mod.version,
-          downloadUrl: modInstaller.url,
-          isAccessibleForFree: true,
-          image: `${canonicalUrl}/social-card.png`,
-          offers: { "@type": "Offer", price: "0", priceCurrency: "USD", url: `${canonicalUrl}/download` },
-        }
-        : {
-          "@type": ["SoftwareApplication", "VideoGame"],
-          "@id": `${canonicalUrl}/#openra-ai`,
-          name: "OpenRA AI",
-          url: canonicalUrl,
-          description: "The public OpenRA AI alpha: an interruptible AI companion, optional AUTO command, and the Red Sea 2026 theatre.",
-          applicationCategory: "GameApplication",
-          operatingSystem: gameRelease.macos ? "Windows 10, Windows 11, macOS" : "Windows 10, Windows 11",
-          softwareVersion: windowsRelease.version,
-          downloadUrl: primaryWindowsUrl,
-          isAccessibleForFree: true,
-          image: `${canonicalUrl}/social-card.png`,
-          sameAs: [gameSource],
-          offers: { "@type": "Offer", price: "0", priceCurrency: "USD", url: primaryWindowsUrl },
-        },
+      { "@type": "WebSite", "@id": `${canonicalUrl}/#website`, url: canonicalUrl, name: "RTS AI", description, inLanguage: "en" },
+      // Announced, not released: no offer, price or download until the owner publishes a build.
+      { "@type": ["SoftwareApplication", "VideoGame"], "@id": `${canonicalUrl}/#rtsai`, name: "RTS AI", url: canonicalUrl, description, genre: "Real-time strategy", applicationCategory: "GameApplication", gamePlatform: ["Web browser", "Windows"], image: `${canonicalUrl}/social-card.png` },
     ],
   };
+  const pillars = [
+    { id: "factions", icon: Flag, status: `${modern.length} factions`, title: "Real-world factions", description: "Each with its own doctrine, signature units, voice and counters. A fictional war, never a real one.", href: "/factions", action: "Choose your side" },
+    { id: "companion", icon: BrainCircuit, status: "AI co-commander", title: "A co-commander that talks back", description: "It sees only what you see, speaks up when it matters, answers by voice, and takes command only when you say so.", href: "/companion", action: "How it works" },
+    { id: "install", icon: PackageCheck, status: "Coming soon", title: "Nothing else to install", description: "Its own art, sound and maps. Play in your browser at rtsai.net/play, or download it for Windows.", href: "/download", action: "Release status" },
+  ];
 
   return (
     <>
       <SiteHeader />
       <main id="main-content">
-        <header className="hero" id="top">
-          <div className="hero-radar" aria-hidden="true"><i /><i /><i /><span /></div>
-          <div className="hero-copy">
-            <Link className="eyebrow hero-release-link" href="/factions"><span className="live-dot" /> A Red Alert 2 mod for OpenRA <ArrowRight size={13} /></Link>
-            <h1>Your battlefield.<br /><em>Now it talks back.</em></h1>
-            <p className="hero-lede">Modern factions on the Red Alert 2 battlefield, and an AI co-commander that watches your match, speaks when it matters, and takes command only when you hand it over.</p>
+        <header className="home-hero" id="top">
+          <div className="home-hero-copy">
+            <span className="eyebrow">RTS AI · Modern real-time strategy</span>
+            <h1>Seven real-world factions.<br /><em>One fictional war.</em></h1>
+            <p className="hero-lede">Command a modern army with an AI co-commander at your side. Its own art, sound and maps: nothing else to install.</p>
             <div className="hero-actions">
-              <Link className="primary-action" href="/factions"><Flag size={17} /> Meet the factions</Link>
-              <Link className="text-action" href="/download">{mod ? `Download RTS AI ${mod.version}` : "Classic alpha download"} <ArrowRight size={17} /></Link>
+              {mod ? <Link className="primary-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link> : <span className="soon-action" aria-disabled="true"><Globe size={17} /> Play in your browser <small>Coming soon</small></span>}
+              <Link className="text-action" href="/factions">Choose your side <ArrowRight size={17} /></Link>
             </div>
-            <div className="hero-proof">
-              <span><ShieldCheck size={15} /> Sees only what you see</span>
-              <span><Mic size={15} /> Ask by voice</span>
-              <span><Zap size={15} /> AUTO when you say so</span>
-            </div>
-            <p className="hero-release-note">{mod ? `RTS AI ${mod.version} for Windows` : "RA2 in development · Classic alpha available now"}</p>
+            <ul className="home-platforms" aria-label="Platforms">
+              <li><Globe size={15} /> Browser <small>coming soon</small></li>
+              <li><MonitorDown size={15} /> Windows <small>{mod ? mod.version : "coming soon"}</small></li>
+              <li><PackageCheck size={15} /> Nothing else to install</li>
+            </ul>
           </div>
-          {trailer ? <HeroTrailer video={trailer.video} poster={trailer.poster} /> : <CompanionDemo />}
+          <nav className="home-flags" aria-label="The seven factions">{modern.map(f =>
+            <Link key={f.id} href={`/factions/${f.id}`} style={{ "--faction-accent": f.accent } as CSSProperties}><FactionFlag factionId={f.id} name={f.name} accent={f.accent} size="md" eager /><span>{f.name}</span></Link>)}</nav>
+          <FrontLine priority={3} />
         </header>
 
         <section className="home-experiences" aria-labelledby="pillars-title">
           <div className="home-section-heading">
             <span className="section-number">WHAT YOU GET</span>
-            <h2 id="pillars-title">Distinct factions.<br />One co-commander.</h2>
-            <p>You bring your own copy of Red Alert 2. The mod brings the factions and the AI.</p>
+            <h2 id="pillars-title">Seven factions.<br />One co-commander.</h2>
+            <p>A standalone game in development. Browser and Windows releases are coming soon.</p>
           </div>
           <div className="home-experience-grid">
             {pillars.map((pillar, index) => (
@@ -138,41 +77,37 @@ export default async function Home() {
           </div>
         </section>
 
+        <section className="home-companion" aria-labelledby="companion-title">
+          <div>
+            <span className="section-number">THE AI CO-COMMANDER</span>
+            <h2 id="companion-title">Your battlefield.<br /><em>Now it talks back.</em></h2>
+            <ul className="hero-proof">
+              <li><ShieldCheck size={15} /> Sees only what you see</li>
+              <li><Mic size={15} /> Ask by voice</li>
+              <li><Zap size={15} /> AUTO when you say so</li>
+            </ul>
+            <Link className="text-action" href="/companion">How the co-commander works <ArrowRight size={17} /></Link>
+          </div>
+          {trailer ? <HeroTrailer video={trailer.video} poster={trailer.poster} /> : <CompanionDemo />}
+        </section>
+
         <section className="home-nations" aria-labelledby="faction-entry-title">
-          <div className="faction-group-heading"><div><span className="section-number">FACTIONS / RED ALERT 2</span><h2 id="faction-entry-title">Find your way to fight.</h2><p>Meet the modern factions, then explore every faction’s full force.</p></div><Link className="text-action" href="/factions">All factions <ArrowRight size={17} /></Link></div>
+          <div className="faction-group-heading"><div><span className="section-number">THE FACTIONS</span><h2 id="faction-entry-title">Choose your side.</h2></div><Link className="text-action" href="/factions">All factions <ArrowRight size={17} /></Link></div>
           <div className="faction-tile-grid">{rosterFactions("ra2").filter(f => dossierForRoster(f)).map(f => <FactionCard key={f.id} faction={f} compact />)}</div>
         </section>
 
         <section className="closing-section home-closing">
-          {mod ? (
-            <>
-              <div>
-                <span className="eyebrow">Free alpha for Windows</span>
-                <h2>Bring Red Alert 2. Command.</h2>
-              </div>
-              <div>
-                <p>RTS AI {mod.version} is out for Windows. {RA2_REQUIREMENT}</p>
-                <div className="hero-actions">
-                  <Link className="primary-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link>
-                  <Link className="text-action" href="/companion">How the companion works <ArrowRight size={17} /></Link>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <span className="eyebrow">Free playable alpha</span>
-                <h2>Play what exists today.</h2>
-              </div>
-              <div>
-                <p>The public alpha {windowsRelease.version} runs on OpenRA&apos;s classic Red Alert with the AI companion and the Red Sea 2026 theatre. The Red Alert 2 mod is the next release.</p>
-                <div className="hero-actions">
-                  <Link className="primary-action" href="/download"><Download size={17} /> Download {latestPublicVersion}</Link>
-                  <Link className="text-action" href="/companion">How the companion works <ArrowRight size={17} /></Link>
-                </div>
-              </div>
-            </>
-          )}
+          <div>
+            <span className="eyebrow">{mod ? `RTS AI ${mod.version}` : "Coming soon"}</span>
+            <h2>Play in your browser.<br />Or on Windows.</h2>
+          </div>
+          <div>
+            <p>{mod ? `RTS AI ${mod.version} is out for Windows. Browser play at rtsai.net/play is coming soon.` : "RTS AI is in development. Browser play at rtsai.net/play and the Windows download are coming soon."}</p>
+            <div className="hero-actions">
+              <Link className="primary-action" href="/download"><Download size={17} /> {mod ? `Download RTS AI ${mod.version}` : "Release status"}</Link>
+              <Link className="text-action" href="/factions">Meet the factions <ArrowRight size={17} /></Link>
+            </div>
+          </div>
         </section>
       </main>
       <SiteFooter />

@@ -10,7 +10,7 @@ function Brand({ footer = false }: { footer?: boolean }) {
   return (
     <Link className="brand" href="/" aria-label="RTS AI home">
       <Image className="brand-symbol" src="/brand/rtsai-mark-64.png" alt="" width={34} height={34} priority={!footer} />
-      <span className="brand-wordmark">RTS <b>AI</b>{!footer && <small>Red Alert 2 mod</small>}</span>
+      <span className="brand-wordmark">RTS <b>AI</b>{!footer && <small>Modern real-time strategy</small>}</span>
     </Link>
   );
 }

@@ -1,0 +1,48 @@
+/* Home: art first. The seven faction lineups form the front line under the promise. */
+.home-hero { position: relative; width: min(1320px, calc(100% - 48px)); margin: 0 auto; padding: 84px 0 0; overflow: hidden; }
+.home-hero-copy { position: relative; z-index: 2; max-width: 860px; }
+.home-hero-copy h1 { margin: 22px 0 22px; font-size: clamp(46px, 6.4vw, 96px); line-height: .95; letter-spacing: -.06em; font-weight: 650; }
+.home-hero-copy h1 em { color: var(--red); font-style: normal; font-weight: 450; }
+.home-hero-copy .hero-lede { max-width: 620px; }
+.soon-action { display: inline-flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px dashed rgba(241, 210, 139, .5); color: var(--gold); font-size: 13px; font-weight: 660; cursor: default; }
+.soon-action small { padding: 3px 7px; background: rgba(241, 210, 139, .12); font: 600 10px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.home-platforms { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 30px 0 0; padding: 0; list-style: none; color: #9a9e93; font: 520 11px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.home-platforms li { display: inline-flex; align-items: center; gap: 7px; }
+.home-platforms small { color: var(--gold); font: inherit; }
+.home-flags { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 40px; }
+.home-flags a { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 82px; padding: 8px 6px; border-bottom: 2px solid transparent; color: #a6ab9d; font-size: 11px; transition: border-color .15s, color .15s, transform .15s; }
+.home-flags a:hover, .home-flags a:focus-visible { border-color: var(--faction-accent); color: var(--paper); transform: translateY(-2px); }
+
+/* The front line: seven lineups, overlapping, alternating depth. */
+.home-frontline { position: relative; display: flex; align-items: flex-end; margin: 4px -6% 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.home-frontline::before { content: ""; position: absolute; inset: auto 0 0; height: 70%; background: radial-gradient(ellipse 60% 100% at 50% 100%, rgba(239, 91, 63, .2), transparent 70%); }
+.home-frontline-unit { position: relative; flex: 0 0 40%; margin-right: -30%; }
+.home-frontline-unit:last-child { margin-right: 0; }
+.home-frontline-unit:nth-child(odd) { z-index: 2; }
+.home-frontline-unit:nth-child(even) { z-index: 1; transform: translateY(-14%) scale(.84); filter: brightness(.74); }
+.home-frontline-unit .faction-lineup img { width: 100%; height: auto; }
+
+.home-companion { width: min(1320px, calc(100% - 48px)); margin: 0 auto; padding: 40px 0 110px; display: grid; grid-template-columns: .9fr 1.1fr; gap: 70px; align-items: center; border-top: 1px solid var(--line); padding-top: 100px; }
+.home-companion h2 { margin: 16px 0 26px; font-size: clamp(40px, 4.4vw, 66px); line-height: 1; letter-spacing: -.055em; font-weight: 600; }
+.home-companion h2 em { color: var(--red); font-style: normal; font-weight: 430; }
+.home-companion .hero-proof { margin: 0 0 30px; padding: 0; list-style: none; }
+.home-companion .hero-proof li { display: inline-flex; align-items: center; gap: 7px; }
+.home-companion .companion-demo, .home-companion .hero-trailer { justify-self: end; width: 100%; }
+
+@media (max-width: 1000px) {
+  .home-companion { grid-template-columns: 1fr; gap: 40px; padding-top: 70px; }
+  .home-frontline-unit { flex-basis: 52%; margin-right: -44%; }
+}
+@media (max-width: 700px) {
+  .home-hero { width: calc(100% - 32px); padding-top: 44px; }
+  .home-hero-copy .hero-actions { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .home-flags { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin-top: 28px; }
+  .home-flags a { min-width: 0; padding: 8px 2px; font-size: 10px; text-align: center; }
+  .home-frontline { margin: 6px -30% 0; }
+  .home-frontline-unit { flex-basis: 55%; margin-right: -40%; }
+  .home-frontline-unit:nth-child(n + 5) { display: none; }
+  .home-frontline-unit:nth-child(4) { margin-right: 0; }
+  .home-companion { width: calc(100% - 32px); }
+}
+
+.home-closing .eyebrow { color: var(--gold); }

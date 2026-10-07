@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
-import { Apple, BrainCircuit, CalendarDays, Cloud, Cpu, Disc3, Download, ExternalLink, FileArchive, HardDrive, Hourglass, MemoryStick, Mic, MonitorDown, PowerOff, ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
+import { Apple, BrainCircuit, CalendarDays, Cloud, Cpu, Download, ExternalLink, FileArchive, Globe, HardDrive, MemoryStick, Mic, MonitorDown, PackageCheck, PowerOff, ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getGameRelease } from "../../lib/release";
-import { getModRelease, isPublished, RA2_REQUIREMENT, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
-import { availability, factionById, resolveMode, rosterFactionById } from "../../lib/game-content";
+import { getModRelease, isPublished, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
+import { availability, CLASSIC_ADDON_NOTE, factionById, modeLabel, resolveMode, rosterFactionById } from "../../lib/game-content";
+import "./download.css";
+import { FrontLine } from "../components/FrontLine";
 
 export const metadata: Metadata = {
-  title: "Download RTS AI | Red Alert 2 mod for OpenRA",
-  description: "RTS AI is a Red Alert 2 mod for OpenRA with modern factions and an AI co-commander. You need your own Red Alert 2; the mod imports it on first launch.",
+  title: "Play RTS AI | Browser and Windows, coming soon",
+  description: "RTS AI is a modern real-time strategy game with seven real-world factions and an AI co-commander. Browser play and the Windows download are coming soon; nothing else to install.",
   alternates: { canonical: "/download" },
 };
 
@@ -33,7 +35,7 @@ const aiChoices = [
     title: "Hosted AI + local voice",
     badge: "Default",
     size: "Voice models about 270 MB",
-    description: "The co-commander thinks on rtsai.net with Claude (Anthropic). Speech recognition and the voice run on your PC, so your audio is never uploaded. A free daily allowance, no account needed.",
+    description: "The co-commander thinks on rtsai.net with Claude (Anthropic). Speech recognition and the voice run on your PC, so your audio is never uploaded. A daily allowance, no account needed.",
     note: "Needs an internet connection. Offline or over the allowance, it falls back to alert lines.",
   },
   {
@@ -51,17 +53,17 @@ const aiChoices = [
     title: "No AI",
     badge: "Smallest",
     size: "No model download",
-    description: "Play the mod without the co-commander. Nothing is downloaded for AI and nothing is sent to rtsai.net.",
+    description: "Play without the co-commander. Nothing is downloaded for AI and nothing is sent to rtsai.net.",
     note: "You can turn the co-commander on later in the game's settings.",
   },
 ] as const;
 
 const requirements = [
   { icon: MonitorDown, label: "System", value: "Windows 10 or 11, 64-bit" },
-  { icon: Disc3, label: "Game", value: "Your own Red Alert 2: Steam, EA app or disc" },
+  { icon: PackageCheck, label: "Game", value: "Nothing else: RTS AI brings its own art, sound and maps" },
   { icon: Cpu, label: "Processor", value: "4-core x64 CPU with AVX2 for local voice and local AI" },
   { icon: MemoryStick, label: "Memory", value: "8 GB; 16 GB recommended for Full local AI" },
-  { icon: HardDrive, label: "Storage", value: "About 5 GB free (6 GB with Full local AI), plus room for the Red Alert 2 files the mod imports" },
+  { icon: HardDrive, label: "Storage", value: "About 5 GB free (6 GB with Full local AI)" },
   { icon: Wifi, label: "Internet", value: "Needed for the download and for Hosted AI; skirmishes play offline" },
   { icon: Mic, label: "Microphone", value: "Optional, for push-to-talk questions" },
 ] as const;
@@ -87,72 +89,72 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
   const selectionHeading = !faction
     ? null
     : selectionStatus === "In public Windows release"
-      ? mode === "ra2" ? `${faction.name} is in RTS AI ${published?.version}` : `${faction.name} is in the previous Classic alpha`
+      ? mode === "ra2" ? `${faction.name} is in RTS AI ${published?.version}` : `${faction.name} is in the earlier Classic prototype`
       : selectionStatus === "Not in this mode"
-        ? `${faction.name} is not in ${mode === "ra2" ? "Red Alert 2" : "Classic"}`
-        : mode === "ra2" ? "RA2 release not yet certified" : "Not in the public Classic alpha";
+        ? `${faction.name} is not in ${modeLabel(mode)}`
+        : mode === "ra2" ? "Not released yet" : "Not in the earlier Classic prototype";
   const selectionBody = !faction
     ? null
     : selectionStatus === "Not in this mode"
       ? "There is no implementation of this faction in this mode, and no download on this page adds one."
       : mode === "ra2"
         ? selectionStatus === "In public Windows release"
-          ? "Download the Windows installer above. You still need your own Red Alert 2."
+          ? "Download the Windows installer above."
           : published
             ? `RTS AI ${published.version} is out, but ${faction.name} has not been verified in it yet.`
-            : "The Red Alert 2 mod has no public release yet. The previous Classic alpha further down runs classic Red Alert and does not include RA2 factions."
+            : "RTS AI has no public release yet. Browser play and the Windows download are coming soon."
         : selectionStatus === "In public Windows release"
-          ? `Your Classic faction is part of the previous Classic alpha ${windowsRelease.version} for Windows below. Mac faction parity has not been separately certified.`
-          : "This Classic faction is not certified in the public Classic alpha.";
+          ? `Your Classic faction is part of the earlier Classic prototype ${windowsRelease.version} for Windows below. Mac faction parity has not been separately certified.`
+          : "This Classic faction is not certified in the earlier Classic prototype.";
 
   return (
     <>
       <SiteHeader />
       <main id="main-content">
-        <header className="route-hero download-route-hero mod-download-hero">
-          <span className="eyebrow">RTS AI / RED ALERT 2 MOD FOR OPENRA / WINDOWS</span>
-          <h1>Bring Red Alert 2.<br /><em>We bring the rest.</em></h1>
-          <div className="ra2-requirement" role="note" aria-label="Red Alert 2 required">
-            <Disc3 size={22} aria-hidden="true" />
-            <div><b>Red Alert 2 required</b><p>{RA2_REQUIREMENT}</p></div>
+        <header className="route-hero download-route-hero play-hero">
+          <span className="eyebrow">RTS AI / BROWSER AND WINDOWS</span>
+          <h1>Play RTS AI.<br /><em>{published ? "Out now for Windows." : "Coming soon."}</em></h1>
+          <p>Seven real-world factions, one fictional war, and an AI co-commander. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
+          <div className="play-options">
+            <article className="play-option">
+              <Globe size={24} aria-hidden="true" />
+              <div><span className="platform-kicker">rtsai.net/play</span><h2>Play in your browser</h2><p>No install. Open the page and command.</p></div>
+              <span className="pending-download" aria-disabled="true">Coming soon</span>
+            </article>
+            <article className="play-option">
+              <MonitorDown size={24} aria-hidden="true" />
+              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>The standalone game, with an optional local co-commander.</p></div>
+              {published && installer
+                ? <a className="primary-action" href={installer.url} data-analytics-event="mod_download" data-platform="windows-x64-setup"><Download size={17} /> Download RTS AI {published.version}</a>
+                : <span className="pending-download" aria-disabled="true">Coming soon</span>}
+            </article>
           </div>
-          {published && installer ? (
-            <>
-              <a className="primary-action" href={installer.url} data-analytics-event="mod_download" data-platform="windows-x64-setup"><Download size={17} /> Download RTS AI {published.version} for Windows</a>
-              <div className="release-trust" aria-label="Release details">
-                <span><CalendarDays size={15} /> Released {formatDate(published.publishedAt)}</span>
-                <span>{published.signed ? <ShieldCheck size={15} /> : <ShieldAlert size={15} />} {published.signed ? "Authenticode signed" : "Unsigned alpha"}</span>
-                <span><FileArchive size={15} /> {formatBytes(installer.sizeBytes)} installer, SHA-256 below</span>
-                <a href={published.releaseUrl}><ExternalLink size={15} /> Release on GitHub</a>
-              </div>
-            </>
-          ) : (
-            <div className="mod-coming-soon" role="status">
-              <Hourglass size={20} aria-hidden="true" />
-              <div>
-                <b>Red Alert 2 is in development</b>
-                <p>The first public Windows build is not available yet. Its installer and verified checksums will appear here after release.</p>
-                <a className="text-action" href="#classic-alpha">See the previous Classic alpha</a>
-              </div>
+          {published && installer && (
+            <div className="release-trust" aria-label="Release details">
+              <span><CalendarDays size={15} /> Released {formatDate(published.publishedAt)}</span>
+              <span>{published.signed ? <ShieldCheck size={15} /> : <ShieldAlert size={15} />} {published.signed ? "Authenticode signed" : "Unsigned alpha"}</span>
+              <span><FileArchive size={15} /> {formatBytes(installer.sizeBytes)} installer, SHA-256 below</span>
+              <a href={published.releaseUrl}><ExternalLink size={15} /> Release on GitHub</a>
             </div>
           )}
+          <FrontLine />
         </header>
 
         {faction && (
           <aside className="release-selection" aria-label="Selected faction and release availability">
-            <span className="section-number">{`${faction.name} / ${mode === "ra" ? "Classic" : "Red Alert 2"}`}</span>
+            <span className="section-number">{`${faction.name} / ${modeLabel(mode)}`}</span>
             <h2>{selectionHeading}</h2>
             <p>{selectionBody}</p>
             <Link href={`/factions/${faction.id}?mode=${mode}`}>Back to the faction guide →</Link>
           </aside>
         )}
 
-        <details className="planned-setup" open={Boolean(published)}><summary>{published ? "Setup and system requirements" : "Planned RA2 setup and system requirements"}</summary>
+        <details className="planned-setup" open={Boolean(published)}><summary>{published ? "Setup and system requirements" : "Planned Windows setup and system requirements"}</summary>
         <section className="download-section mod-setup" aria-labelledby="ai-choice-title">
           <div className="download-intro">
             <span className="section-number">01 / THE INSTALLER ASKS ONE QUESTION</span>
             <h2 id="ai-choice-title">How should your co-commander think?</h2>
-            <p>{published ? "Pick one when you install." : "These choices are planned for the RA2 installer. Hosted AI still needs a live service acceptance test before release."} You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">what hosted AI sends</Link>.</p>
+            <p>{published ? "Pick one when you install." : "These choices are planned for the Windows installer. Hosted AI still needs a live service acceptance test before release."} You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">what hosted AI sends</Link>.</p>
           </div>
           <div className="ai-choices">
             {aiChoices.map((choice) => (
@@ -167,7 +169,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <div className="download-intro">
             <span className="section-number">02 / WINDOWS REQUIREMENTS</span>
             <h2>What your PC needs.</h2>
-            <p>Windows ships first; macOS follows the first public mod release. These are the documented targets; a clean-machine hardware matrix is still being validated, so we do not promise AI response times.</p>
+            <p>These are the documented targets for the Windows download; a clean-machine hardware matrix is still being validated, so we do not promise AI response times.</p>
           </div>
           <dl className="mod-requirements">
             {requirements.map((item) => (
@@ -186,7 +188,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
 
         <section className={`download-section mod-downloads ${published ? "" : "is-unpublished"}`} id="mod-downloads" aria-labelledby="mod-downloads-title">
           <div className="download-intro">
-            <span className="section-number">{published ? "DOWNLOADS" : "RED ALERT 2"}</span>
+            <span className="section-number">{published ? "DOWNLOADS" : "RTS AI"}</span>
             <h2 id="mod-downloads-title">{published ? `RTS AI ${published.version}` : "Release status"}</h2>
             <p>{published ? "Every file comes from the public GitHub release. Compare its SHA-256 before you run it." : "Explore the current factions while their art and gameplay are refined."}</p>
           </div>
@@ -201,27 +203,29 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             </ul>
           ) : (
             <div className="mod-pending">
-              <span className="pending-download" aria-disabled="true">Mod download not yet published</span>
+              <span className="pending-download" aria-disabled="true">Windows download not yet published</span>
               <Link className="text-action" href="/factions">Meet the factions</Link>
             </div>
           )}
         </section>
 
-        <section className="download-section classic-alpha" id="classic-alpha" aria-labelledby="classic-alpha-title">
-          <div className="download-intro">
-            <span className="section-number">{`PREVIOUS CLASSIC ALPHA / ${windowsRelease.version}`}</span>
-            <h2 id="classic-alpha-title">Previous Classic alpha</h2>
-            <p>OpenRA AI {windowsRelease.version} is the earlier public build. It runs on OpenRA&apos;s classic Red Alert, not Red Alert 2, with the co-commander and the Red Sea 2026 slice (Saudi Arabia and Yemen). It stays available as it is; it is not the RTS AI mod and needs no Red Alert 2.</p>
-          </div>
-          <div className="platform-downloads" aria-label="Previous Classic alpha downloads">
+        <p className="classic-addon-note">{CLASSIC_ADDON_NOTE}</p>
+
+        <details className="download-section classic-alpha" id="classic-alpha">
+          <summary className="download-intro">
+            <span className="section-number">{`EARLIER PROTOTYPE / ${windowsRelease.version}`}</span>
+            <h2 id="classic-alpha-title">Earlier Classic prototype</h2>
+            <p>OpenRA AI {windowsRelease.version} is the earlier public prototype, built on OpenRA&apos;s classic battlefield, with the co-commander and the Red Sea 2026 slice (Saudi Arabia and Yemen). It stays available as it is; it is not RTS AI.</p>
+          </summary>
+          <div className="platform-downloads" aria-label="Earlier Classic prototype downloads">
             <article className="platform-card is-pending">
-              <div className="platform-card-heading"><span className="platform-icon"><MonitorDown size={23} /></span><div><span className="platform-kicker">Windows 10 / 11</span><h3>Classic alpha for Windows</h3></div><span className="release-status is-pending">{windowsRelease.authenticode === "verified" ? "Signed" : "Unsigned alpha"}</span></div>
+              <div className="platform-card-heading"><span className="platform-icon"><MonitorDown size={23} /></span><div><span className="platform-kicker">Windows 10 / 11</span><h3>Classic prototype for Windows</h3></div><span className="release-status is-pending">{windowsRelease.authenticode === "verified" ? "Signed" : "Unsigned alpha"}</span></div>
               <p>{windowsRelease.authenticode === "verified" ? "An Authenticode-signed per-user setup." : "Checksum-verified but not Authenticode-signed, so SmartScreen may warn before launch."} Released {formatDate(windowsRelease.publishedAt)}.</p>
-              <a className="secondary-download" href={classicWindowsUrl} data-analytics-event="game_download" data-platform="windows-x64-setup"><Download size={15} /> Classic alpha setup ({classicWindowsSize})</a>
+              <a className="secondary-download" href={classicWindowsUrl} data-analytics-event="game_download" data-platform="windows-x64-setup"><Download size={15} /> Classic prototype setup ({classicWindowsSize})</a>
               <div className="platform-meta">{windowsRelease.installerChecksumUrl && <a href={windowsRelease.installerChecksumUrl}>Setup checksum</a>}<a href={windowsRelease.url} data-analytics-event="game_download" data-platform="windows-x64-portable">Portable ZIP</a><a href={windowsRelease.checksumUrl}>ZIP checksum</a>{windowsRelease.aiPackUrl && <a href={windowsRelease.aiPackUrl} data-analytics-event="ai-pack-download" data-platform="windows-x64">Classic Local AI Pack ({classicAiPackSize})</a>}{windowsRelease.aiPackChecksumUrl && <a href={windowsRelease.aiPackChecksumUrl}>AI Pack checksum</a>}</div>
             </article>
             <article className="platform-card is-pending">
-              <div className="platform-card-heading"><span className="platform-icon"><Apple size={23} /></span><div><span className="platform-kicker">Apple desktop</span><h3>Classic alpha for macOS</h3></div><span className="release-status is-pending">{gameRelease.macos ? "Notarized" : "Not available"}</span></div>
+              <div className="platform-card-heading"><span className="platform-icon"><Apple size={23} /></span><div><span className="platform-kicker">Apple desktop</span><h3>Classic prototype for macOS</h3></div><span className="release-status is-pending">{gameRelease.macos ? "Notarized" : "Not available"}</span></div>
               {gameRelease.macos ? (
                 <>
                   <p>{intelMacRelease ? "Signed and notarized disk images for Apple silicon and Intel." : "A signed and notarized disk image for Apple silicon."} Version {gameRelease.macos.version}.</p>
@@ -229,12 +233,12 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
                   <div className="platform-meta">{appleSiliconRelease?.checksumUrl && <a href={appleSiliconRelease.checksumUrl}>Apple silicon checksum</a>}{intelMacRelease?.checksumUrl && <a href={intelMacRelease.checksumUrl}>Intel checksum</a>}</div>
                 </>
               ) : (
-                <><p>No signed macOS build of the Classic alpha is published.</p><span className="pending-download" aria-disabled="true">No placeholder download</span></>
+                <><p>No signed macOS build of the Classic prototype is published.</p><span className="pending-download" aria-disabled="true">No placeholder download</span></>
               )}
             </article>
           </div>
-          <div className="download-footnote"><BrainCircuit size={15} /><span>The Classic alpha keeps its own AI setup: an optional local model pack or an external provider you choose. Hosted AI and the installer choices above belong to the RTS AI mod.</span></div>
-        </section>
+          <div className="download-footnote"><BrainCircuit size={15} /><span>The Classic prototype keeps its own AI setup: an optional local model pack or an external provider you choose. Hosted AI and the installer choices above belong to RTS AI.</span></div>
+        </details>
       </main>
       <SiteFooter />
     </>

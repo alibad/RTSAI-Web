@@ -9,9 +9,9 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
 const canonicalOrigin = new URL("https://rtsai.net");
-const title = "RTS AI — Red Alert 2 with an AI Co-Commander";
+const title = "RTS AI — Modern Real-Time Strategy with an AI Co-Commander";
 const description =
-  "An OpenRA mod for Red Alert 2: modern factions and an AI co-commander that watches your match, answers by voice, and takes command only when you hand it over.";
+  "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander that watches your match and answers by voice. Coming to your browser and Windows.";
 
 export const metadata: Metadata = {
   metadataBase: canonicalOrigin,
@@ -21,12 +21,10 @@ export const metadata: Metadata = {
   category: "games",
   keywords: [
     "RTS AI",
-    "OpenRA AI",
-    "OpenRA companion",
+    "real-time strategy",
+    "browser RTS",
+    "AI co-commander",
     "AI strategy game",
-    "Red Alert 2 mod",
-    "OpenRA mod",
-    "AI game companion",
     "modern factions",
   ],
   alternates: { canonical: "/" },
@@ -67,7 +65,7 @@ export const metadata: Metadata = {
         url: "/social-card.png",
         width: 1200,
         height: 630,
-        alt: "RTS AI — a Red Alert 2 mod for OpenRA with an AI co-commander",
+        alt: "RTS AI: seven real-world factions, one fictional war",
       },
     ],
     type: "website",
