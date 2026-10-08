@@ -19,6 +19,10 @@ const vercelRouteRules = {
   "/faction-art/**": {
     headers: { "cache-control": "public, max-age=31536000, immutable" },
   },
+  // The browser game is its own static Vercel project (RTSAI-WebGame, docs/DEPLOY-PUBLIC.md): it carries the
+  // isolation headers and precompressed files itself. The page uses relative URLs, so /play needs its trailing slash.
+  "/play": { redirect: "/play/" },
+  "/play/**": { proxy: "https://rtsai-play.vercel.app/**" },
 };
 
 const localBindingConfig = {
