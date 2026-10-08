@@ -1999,12 +1999,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "bce96486d05a1e352979f4bfea4bfae587792042",
-        "snapshotSha256": "3d37ca8117e2455b34aabfdd45371800d36633147577d7d87009e31246aa53e8"
+        "commit": "b8ed157023297c5db64c29bc27e09ec2ca6eb45a",
+        "snapshotSha256": "c6a344dd354679725be0757d45eb9c20314d0768d8561a1fb851574b33eb9e77"
       },
       "ra": {
         "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "c787f14ab0c5de82a291766b50f7f179e44c42545d42f6c697a537da5bf95603"
+        "snapshotSha256": "362b6d7090023d08a87ab9091718641328375d9f93cda24e61fb0c9cb9ca81df"
       }
     },
     "factions": [
@@ -10219,7 +10219,7 @@
         "mode": "ra2",
         "name": "Bozkir Battle Tank",
         "category": "vehicle",
-        "cost": 900,
+        "cost": 950,
         "roles": [
           "main-battle-tank"
         ],
@@ -10254,6 +10254,34 @@
                 "Steel": 45,
                 "Concrete": 60,
                 "Drone": 60,
+                "Rocket": 100
+              },
+              "condition": null
+            },
+            {
+              "id": "R2QilinCoax",
+              "range": 5,
+              "minRange": 0,
+              "reload": 20,
+              "burst": 1,
+              "targets": [
+                "Ground",
+                "Water",
+                "MicroDrone"
+              ],
+              "projectile": "InstantHit",
+              "damage": 16,
+              "versus": {
+                "None": 100,
+                "Flak": 80,
+                "Plate": 70,
+                "Light": 50,
+                "Medium": 25,
+                "Heavy": 25,
+                "Wood": 75,
+                "Steel": 50,
+                "Concrete": 25,
+                "Drone": 100,
                 "Rocket": 100
               },
               "condition": null
@@ -14531,7 +14559,7 @@
         "mode": "ra2",
         "name": "Line Fighter",
         "category": "infantry",
-        "cost": 275,
+        "cost": 300,
         "roles": [
           "line-infantry"
         ],
@@ -18770,7 +18798,7 @@
         "mode": "ra2",
         "name": "M1A2S Battle Tank",
         "category": "vehicle",
-        "cost": 1100,
+        "cost": 1150,
         "roles": [
           "main-battle-tank"
         ],
@@ -18805,6 +18833,34 @@
                 "Steel": 45,
                 "Concrete": 60,
                 "Drone": 60,
+                "Rocket": 100
+              },
+              "condition": null
+            },
+            {
+              "id": "R2QilinCoax",
+              "range": 5,
+              "minRange": 0,
+              "reload": 20,
+              "burst": 1,
+              "targets": [
+                "Ground",
+                "Water",
+                "MicroDrone"
+              ],
+              "projectile": "InstantHit",
+              "damage": 16,
+              "versus": {
+                "None": 100,
+                "Flak": 80,
+                "Plate": 70,
+                "Light": 50,
+                "Medium": 25,
+                "Heavy": 25,
+                "Wood": 75,
+                "Steel": 50,
+                "Concrete": 25,
+                "Drone": 100,
                 "Rocket": 100
               },
               "condition": null
@@ -19198,7 +19254,7 @@
         "mode": "ra2",
         "name": "Merkava Battle Tank",
         "category": "vehicle",
-        "cost": 1250,
+        "cost": 1300,
         "roles": [
           "main-battle-tank"
         ],
@@ -19233,6 +19289,34 @@
                 "Steel": 45,
                 "Concrete": 60,
                 "Drone": 60,
+                "Rocket": 100
+              },
+              "condition": null
+            },
+            {
+              "id": "R2QilinCoax",
+              "range": 5,
+              "minRange": 0,
+              "reload": 20,
+              "burst": 1,
+              "targets": [
+                "Ground",
+                "Water",
+                "MicroDrone"
+              ],
+              "projectile": "InstantHit",
+              "damage": 16,
+              "versus": {
+                "None": 100,
+                "Flak": 80,
+                "Plate": 70,
+                "Light": 50,
+                "Medium": 25,
+                "Heavy": 25,
+                "Wood": 75,
+                "Steel": 50,
+                "Concrete": 25,
+                "Drone": 100,
                 "Rocket": 100
               },
               "condition": null
@@ -19918,7 +20002,7 @@
           "artillery"
         ],
         "behavior": {
-          "health": 160,
+          "health": 220,
           "armor": "Light",
           "speed": 90,
           "footprint": null,
@@ -19939,8 +20023,8 @@
               "damage": 34,
               "versus": {
                 "Concrete": 80,
-                "None": 70,
-                "Flak": 70,
+                "None": 100,
+                "Flak": 90,
                 "Plate": 70,
                 "Light": 100,
                 "Medium": 90,
@@ -20179,7 +20263,7 @@
         "mode": "ra2",
         "name": "Qilin Battle Tank",
         "category": "vehicle",
-        "cost": 700,
+        "cost": 750,
         "roles": [
           "main-battle-tank"
         ],
@@ -20214,6 +20298,34 @@
                 "Steel": 45,
                 "Concrete": 60,
                 "Drone": 60,
+                "Rocket": 100
+              },
+              "condition": null
+            },
+            {
+              "id": "R2QilinCoax",
+              "range": 5,
+              "minRange": 0,
+              "reload": 20,
+              "burst": 1,
+              "targets": [
+                "Ground",
+                "Water",
+                "MicroDrone"
+              ],
+              "projectile": "InstantHit",
+              "damage": 16,
+              "versus": {
+                "None": 100,
+                "Flak": 80,
+                "Plate": 70,
+                "Light": 50,
+                "Medium": 25,
+                "Heavy": 25,
+                "Wood": 75,
+                "Steel": 50,
+                "Concrete": 25,
+                "Drone": 100,
                 "Rocket": 100
               },
               "condition": null
@@ -24295,7 +24407,7 @@
         "mode": "ra2",
         "name": "Mountain Rifleman",
         "category": "infantry",
-        "cost": 150,
+        "cost": 165,
         "roles": [
           "line-infantry"
         ],
