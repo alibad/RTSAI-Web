@@ -1999,12 +1999,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "b8ed157023297c5db64c29bc27e09ec2ca6eb45a",
-        "snapshotSha256": "c6a344dd354679725be0757d45eb9c20314d0768d8561a1fb851574b33eb9e77"
+        "commit": "d0dccc256759dcca43131dc9fb78299c5fcbd699",
+        "snapshotSha256": "d4f832655f9ae736942c8dc00fcd7b062cb46cce881eac2dc2da0dc850bba0ff"
       },
       "ra": {
         "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "362b6d7090023d08a87ab9091718641328375d9f93cda24e61fb0c9cb9ca81df"
+        "snapshotSha256": "03e90037fa38ed8a3501792f6f9e7c794f1e248ce19c0febb69e91bb855345d5"
       }
     },
     "factions": [
@@ -10270,7 +10270,7 @@
                 "MicroDrone"
               ],
               "projectile": "InstantHit",
-              "damage": 16,
+              "damage": 12,
               "versus": {
                 "None": 100,
                 "Flak": 80,
@@ -15623,7 +15623,7 @@
         "mode": "ra2",
         "name": "Anti-Armor Team",
         "category": "infantry",
-        "cost": 500,
+        "cost": 550,
         "roles": [
           "anti-armor"
         ],
@@ -18030,7 +18030,7 @@
         "mode": "ra2",
         "name": "Karrar Battle Tank",
         "category": "vehicle",
-        "cost": 850,
+        "cost": 900,
         "roles": [
           "main-battle-tank"
         ],
@@ -18065,6 +18065,34 @@
                 "Steel": 45,
                 "Concrete": 60,
                 "Drone": 60,
+                "Rocket": 100
+              },
+              "condition": null
+            },
+            {
+              "id": "R2QilinCoax",
+              "range": 5,
+              "minRange": 0,
+              "reload": 20,
+              "burst": 1,
+              "targets": [
+                "Ground",
+                "Water",
+                "MicroDrone"
+              ],
+              "projectile": "InstantHit",
+              "damage": 12,
+              "versus": {
+                "None": 100,
+                "Flak": 80,
+                "Plate": 70,
+                "Light": 50,
+                "Medium": 25,
+                "Heavy": 25,
+                "Wood": 75,
+                "Steel": 50,
+                "Concrete": 25,
+                "Drone": 100,
                 "Rocket": 100
               },
               "condition": null
@@ -18849,7 +18877,7 @@
                 "MicroDrone"
               ],
               "projectile": "InstantHit",
-              "damage": 16,
+              "damage": 12,
               "versus": {
                 "None": 100,
                 "Flak": 80,
@@ -19254,12 +19282,12 @@
         "mode": "ra2",
         "name": "Merkava Battle Tank",
         "category": "vehicle",
-        "cost": 1300,
+        "cost": 1400,
         "roles": [
           "main-battle-tank"
         ],
         "behavior": {
-          "health": 640,
+          "health": 580,
           "armor": "Heavy",
           "speed": 80,
           "footprint": null,
@@ -19305,7 +19333,7 @@
                 "MicroDrone"
               ],
               "projectile": "InstantHit",
-              "damage": 16,
+              "damage": 12,
               "versus": {
                 "None": 100,
                 "Flak": 80,
@@ -20314,7 +20342,7 @@
                 "MicroDrone"
               ],
               "projectile": "InstantHit",
-              "damage": 16,
+              "damage": 12,
               "versus": {
                 "None": 100,
                 "Flak": 80,
