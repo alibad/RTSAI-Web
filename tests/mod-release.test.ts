@@ -111,11 +111,29 @@ test("an invalid or half-filled manifest renders as unpublished, never as broken
   }
 });
 
+test("a release claims only the co-commander modes its installer offers", async () => {
+  const none = await buildModRelease({ tag: TAG, ...fakeGitHub(), knownFactionIds: ra2Ids });
+  assert.deepEqual(none.aiModes, [], "no co-commander is claimed unless --ai names it");
+  const local = await buildModRelease({ tag: TAG, ...fakeGitHub(), aiModes: ["local"], knownFactionIds: ra2Ids });
+  assert.deepEqual(local.aiModes, ["local"]);
+  assert.deepEqual(validateModRelease({ ...local, aiModes: ["telepathy"] }), ["unknown AI mode: telepathy"]);
+  assert.deepEqual(validateModRelease({ ...local, aiModes: ["local", "local"] }), ["aiModes lists a mode twice"]);
+  const legacy: Partial<typeof local> = { ...local };
+  delete legacy.aiModes;
+  assert.deepEqual(validateModRelease(legacy), [], "manifests written before aiModes existed stay valid");
+  assert.deepEqual(modReleaseFrom(legacy).aiModes, [], "and claim no co-commander");
+  assert.ok(validateModRelease({ ...committed, published: false, assets: [], ra2FactionIds: [], aiModes: ["hosted"] }).includes("an unpublished manifest must not claim AI modes"));
+});
+
 test("asset names map to download kinds and platforms", () => {
   assert.deepEqual(classifyAsset("RTSAI-v0.2.0-x64.exe"), { kind: "installer", platform: "windows-x64" });
   assert.deepEqual(classifyAsset("RTSAI-v0.2.0-x86.exe"), { kind: "installer", platform: "windows-x86" });
   assert.deepEqual(classifyAsset("RTSAI-v0.2.0-x64-winportable.zip"), { kind: "portable", platform: "windows-x64" });
   assert.deepEqual(classifyAsset("RTSAI-v0.2.0.dmg"), { kind: "installer", platform: "macos" });
+  // The names build-release.ps1 and packaging/macos/build-release.sh write.
+  assert.deepEqual(classifyAsset("RTSAI-0.3.0-alpha.1-win-x64-setup.exe"), { kind: "installer", platform: "windows-x64" });
+  assert.deepEqual(classifyAsset("RTSAI-0.3.0-alpha.1-win-x64-portable.zip"), { kind: "portable", platform: "windows-x64" });
+  assert.deepEqual(classifyAsset("RTSAI-0.3.0-alpha.1-macos.dmg"), { kind: "installer", platform: "macos" });
   assert.deepEqual(classifyAsset("RTSAI-v0.2.0-x86_64.AppImage"), { kind: "installer", platform: "linux" });
   assert.deepEqual(classifyAsset("RTSAI-Local-AI-Pack-x64.zip"), { kind: "ai-pack", platform: "windows-x64" });
   assert.deepEqual(classifyAsset("release-notes.md"), { kind: "other", platform: "any" });

@@ -1,12 +1,12 @@
 import type { CSSProperties } from "react";
-import { ArrowRight, BrainCircuit, Download, Flag, Globe, Mic, MonitorDown, PackageCheck, ShieldCheck, Zap } from "lucide-react";
+import { Apple, ArrowRight, BrainCircuit, Download, Flag, Globe, Mic, MonitorDown, PackageCheck, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "./components/CompanionDemo";
 import { HeroTrailer } from "./components/HeroTrailer";
 import { SiteFooter, SiteHeader } from "./components/SiteChrome";
 import { FactionFlag } from "./components/FactionVisuals";
 import { FrontLine } from "./components/FrontLine";
-import { getModRelease, isPublished } from "../lib/mod-release";
+import { getModRelease, isPublished, macInstaller } from "../lib/mod-release";
 import { buildTrailer } from "../lib/trailer";
 import { factions, dossierForRoster, rosterFactions } from "../lib/game-content";
 import { FactionCard } from "./components/FactionCard";
@@ -18,6 +18,10 @@ const description = "Seven real-world factions. One fictional war. A modern real
 export default async function Home() {
   const modRelease = getModRelease();
   const mod = isPublished(modRelease) ? modRelease : null;
+  const macRelease = mod ? macInstaller(mod) : null;
+  const downloadStatus = mod
+    ? `The ${mod.version} alpha is out for Windows${macRelease ? " and macOS" : ""}.`
+    : "The Windows download is coming soon.";
   const trailer = buildTrailer();
   const modern = factions.filter(f => f.variants.ra2.status === "implemented");
   const structuredData = {
@@ -31,7 +35,7 @@ export default async function Home() {
   const pillars = [
     { id: "factions", icon: Flag, status: `${modern.length} factions`, title: "Real-world factions", description: "Each with its own doctrine, signature units, voice and counters. A fictional war, never a real one.", href: "/factions", action: "Choose your side" },
     { id: "companion", icon: BrainCircuit, status: "AI co-commander", title: "A co-commander that talks back", description: "It sees only what you see, speaks up when it matters, answers by voice, and takes command only when you say so.", href: "/companion", action: "How it works" },
-    { id: "install", icon: PackageCheck, status: "Play now", title: "Nothing else to install", description: "Its own art, sound and maps. Play in your browser at rtsai.net/play now; the Windows download is coming soon.", href: "/download", action: "Ways to play" },
+    { id: "install", icon: PackageCheck, status: "Play now", title: "Nothing else to install", description: `Its own art, sound and maps. Play in your browser at rtsai.net/play now. ${downloadStatus}`, href: "/download", action: "Ways to play" },
   ];
 
   return (
@@ -51,6 +55,7 @@ export default async function Home() {
             <ul className="home-platforms" aria-label="Platforms">
               <li><Globe size={15} /> Browser <small>play now</small></li>
               <li><MonitorDown size={15} /> Windows <small>{mod ? mod.version : "coming soon"}</small></li>
+              {mod && macRelease && <li><Apple size={15} /> macOS <small>{mod.version}</small></li>}
               <li><PackageCheck size={15} /> Nothing else to install</li>
             </ul>
           </div>
@@ -63,7 +68,7 @@ export default async function Home() {
           <div className="home-section-heading">
             <span className="section-number">WHAT YOU GET</span>
             <h2 id="pillars-title">Seven factions.<br />One co-commander.</h2>
-            <p>A standalone game in development, free to play in your browser now. The Windows download is coming soon.</p>
+            <p>A standalone game in development, free to play in your browser now. {downloadStatus}</p>
           </div>
           <div className="home-experience-grid">
             {pillars.map((pillar, index) => (
@@ -103,7 +108,7 @@ export default async function Home() {
             <h2>Play in your browser.<br />Or on Windows.</h2>
           </div>
           <div>
-            <p>{mod ? `RTS AI ${mod.version} is out for Windows, and free to play in your browser at rtsai.net/play.` : "RTS AI is in development and free to play in your browser at rtsai.net/play. The Windows download is coming soon."}</p>
+            <p>{mod ? `RTS AI ${mod.version} is out for Windows${macRelease ? " and macOS" : ""}, and free to play in your browser at rtsai.net/play.` : "RTS AI is in development and free to play in your browser at rtsai.net/play. The Windows download is coming soon."}</p>
             <div className="hero-actions">
               <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>
               {mod && <Link className="text-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link>}

@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+// The committed RTS AI release manifest: published, it drives download links and faction release claims.
+const modRelease = JSON.parse(await readFile(new URL("../data/rtsai-mod-release.json", import.meta.url), "utf8"));
+const claimedByRelease = (id) => modRelease.published && modRelease.ra2FactionIds.includes(id);
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 async function render(pathname = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -44,7 +49,7 @@ test("new faction dossiers show their art, complete rosters and honest release s
     assert.equal(response.status, 200);
     const html = await response.text();
     assert.match(html, /Units, buildings &amp; defenses/);
-    assert.match(html, /Development · release unconfirmed/);
+    assert.match(html, mode === "ra2" && claimedByRelease(faction) ? /In public Windows release/ : /Development · release unconfirmed/);
     assert.match(html, new RegExp(`/faction-art/lineups/${faction}-1440\\.[0-9a-f]{12}\\.avif`));
     assert.ok((html.match(/class="roster-card"/g) ?? []).length >= 16, `${faction}/${mode} shows its own units as cards`);
     assert.match(html, faction === "israel" ? /Coordination Relay/ : /Signal Post/);
@@ -96,7 +101,8 @@ test("renders a focused homepage: the standalone RTS AI promise, real flags, app
   assert.match(html, /Seven real-world factions\.(?:<br\/>)?/);
   assert.match(html, /One fictional war\./);
   assert.match(html, /Play in your browser/);
-  assert.match(html, /Coming soon/);
+  if (modRelease.published) assert.match(html, new RegExp(`Windows <small>${escapeRegExp(modRelease.version)}</small>`), "the Windows platform label shows the release");
+  else assert.match(html, /Coming soon/);
   assert.match(html, /Nothing else to install/);
   assert.match(html, /AI co-commander/);
   assert.match(html, /Interactive AI companion preview/);
@@ -110,7 +116,10 @@ test("renders a focused homepage: the standalone RTS AI promise, real flags, app
   assert.doesNotMatch(head, /Red Alert|RA2|OpenRA mod/i);
   assert.doesNotMatch(html.replace(/<footer[\s\S]*<\/footer>/, ""), /Red Alert|\bRA2\b/);
   assert.doesNotMatch(html, /isAccessibleForFree|"price"|Free alpha|Free playable|Out now|available now/i);
-  assert.doesNotMatch(html, /RTSAI-Mod\/releases|Download RTS AI (?:<!-- -->)?\d|windows-x64-setup\.exe/);
+  // The home page never links release files directly; once a release is out it points to /download.
+  assert.doesNotMatch(html, /RTSAI-Mod\/releases|windows-x64-setup\.exe/);
+  if (modRelease.published) assert.match(html, new RegExp(`Download RTS AI (?:<!-- -->)?${escapeRegExp(modRelease.version)}`));
+  else assert.doesNotMatch(html, /Download RTS AI (?:<!-- -->)?\d/);
   assert.match(html, /href="\/companion"/);
   assert.match(html, /href="\/factions"/);
   assert.match(html, /href="\/download"/);
@@ -191,13 +200,11 @@ test("renders companion and download routes; parked routes stay reachable but un
   assert.match(download, /Classic Local AI Pack/);
 });
 
-test("the download page offers the browser and Windows, both coming soon, and needs no other game", async () => {
+test("the download page offers the browser and Windows and needs no other game", async () => {
   const html = await (await render("/download")).text();
-  assert.match(html, /<title>Play RTS AI/);
   assert.match(html, /Play in your browser/);
   assert.match(html, /rtsai\.net\/play/);
   assert.match(html, /Download for Windows/);
-  assert.equal((html.match(/aria-disabled="true">Coming soon</g) ?? []).length, 2, "both ways to play say coming soon");
   assert.match(html, /Nothing else to install/);
   assert.doesNotMatch(html, /Bring Red Alert 2|We bring the rest|Red Alert 2 required|You need your own Red Alert 2|Steam, EA app or disc/);
   // The original factions: nominative, small print, after the main content.
@@ -205,19 +212,52 @@ test("the download page offers the browser and Windows, both coming soon, and ne
   assert.ok(addOn > html.indexOf('id="mod-downloads"') && addOn < html.indexOf('id="classic-alpha"'), "the add-on note sits in small print near the end");
   assert.equal((html.replace(/<script[\s\S]*?<\/script>/g, "").match(/Red Alert/g) ?? []).length, 1, "the add-on note is the only visible mention");
   assert.match(html, /EA has not endorsed and does not support this product/);
-  const order = [html.indexOf("Play in your browser"), html.indexOf("How should your co-commander think?"), html.indexOf("What your PC needs."), html.indexOf('id="mod-downloads"'), html.indexOf('id="classic-alpha"')];
+  const aiHeading = modRelease.published && !(modRelease.aiModes ?? []).length ? "No co-commander in this download yet." : "How should your co-commander think?";
+  const order = [html.indexOf("Play in your browser"), html.indexOf(aiHeading), html.indexOf("What your PC needs."), html.indexOf('id="mod-downloads"'), html.indexOf('id="classic-alpha"')];
   assert.ok(order.every((index) => index > 0), `every section renders: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, "ways to play, AI choices, requirements, downloads, then the earlier prototype");
-  for (const choice of ["Hosted AI + local voice", "Full local AI", "No AI", "~1.8 GB", "Default"]) assert.ok(html.includes(choice), choice);
-  for (const requirementText of ["Windows 10 or 11, 64-bit", "8 GB; 16 GB recommended for Full local AI", "RTS AI brings its own art, sound and maps"]) assert.ok(html.includes(requirementText), requirementText);
-  assert.match(html, /href="\/privacy#ai-co-commander"/);
-  // Unpublished: honest "coming soon", no RTS AI links, no unsigned-build note, nothing claimed free or live.
-  assert.match(html, /Windows download not yet published/);
-  assert.doesNotMatch(html, /RTSAI-Mod\/releases/);
-  assert.doesNotMatch(html, /data-analytics-event="mod_download"/);
-  assert.doesNotMatch(html, /not code-signed yet|Out now|free (?:alpha|download|game|to play|daily)|is free|for free/i);
-  const beforeClassic = html.slice(0, html.indexOf('id="classic-alpha"'));
-  assert.doesNotMatch(beforeClassic, /releases\/download/, "nothing above the earlier prototype links to a download");
+  assert.doesNotMatch(html, /free (?:alpha|download|game|to play|daily)|is free|for free/i);
+  for (const requirementText of ["Windows 10 or 11, 64-bit", "RTS AI brings its own art, sound and maps"]) assert.ok(html.includes(requirementText), requirementText);
+
+  if (!modRelease.published) {
+    assert.match(html, /<title>Play RTS AI/);
+    assert.equal((html.match(/aria-disabled="true">Coming soon</g) ?? []).length, 2, "both ways to play say coming soon");
+    for (const choice of ["Hosted AI + local voice", "Full local AI", "No AI", "~1.8 GB", "Default"]) assert.ok(html.includes(choice), choice);
+    assert.ok(html.includes("8 GB; 16 GB recommended for Full local AI"));
+    assert.match(html, /href="\/privacy#ai-co-commander"/);
+    // Unpublished: honest "coming soon", no RTS AI links, no unsigned-build note, nothing claimed live.
+    assert.match(html, /Windows download not yet published/);
+    assert.doesNotMatch(html, /RTSAI-Mod\/releases/);
+    assert.doesNotMatch(html, /data-analytics-event="mod_download"/);
+    assert.doesNotMatch(html, /not code-signed yet|Out now/i);
+    const beforeClassic = html.slice(0, html.indexOf('id="classic-alpha"'));
+    assert.doesNotMatch(beforeClassic, /releases\/download/, "nothing above the earlier prototype links to a download");
+    return;
+  }
+
+  // Published: the Windows button downloads the release's installer, with its size and signing status.
+  const installer = modRelease.assets.find((asset) => asset.kind === "installer" && asset.platform === "windows-x64");
+  assert.match(html, new RegExp(`<title>Download RTS AI ${modRelease.version.replace(/\./g, "\\.")}`));
+  assert.ok(html.includes(`href="${installer.url}"`), "the Windows button links the installer");
+  assert.match(html, new RegExp(`Download RTS AI (?:<!-- -->)?${modRelease.version.replace(/\./g, "\\.")}`));
+  assert.doesNotMatch(html, /aria-disabled="true">Coming soon</);
+  assert.ok(html.includes(modRelease.signed ? "Authenticode signed" : "Unsigned alpha"));
+  if (!modRelease.signed) assert.match(html, /not code-signed yet/);
+  for (const asset of modRelease.assets) assert.ok(html.includes(asset.sha256), `${asset.name} SHA-256 listed`);
+  // Only the co-commander modes the installer really offers are described.
+  const aiModes = modRelease.aiModes ?? [];
+  assert.equal(html.includes("Hosted AI + local voice"), aiModes.includes("hosted"));
+  assert.equal(html.includes("Full local AI"), aiModes.includes("local"));
+  if (!aiModes.length) {
+    assert.ok(!html.includes("How should your co-commander think?"));
+    assert.ok(html.includes("About 1 GB free"));
+  }
+  const mac = modRelease.assets.find((asset) => asset.kind === "installer" && asset.platform === "macos");
+  assert.equal(html.includes("Download for Mac"), Boolean(mac));
+  if (mac) {
+    assert.ok(html.includes(`href="${mac.url}"`), "the Mac button links the disk image");
+    assert.match(html, /The Mac app is not notarized yet/);
+  }
 });
 
 test("privacy explains the hosted AI co-commander in plain language", async () => {
@@ -302,8 +342,12 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   assert.match(saudiUnit, /<h1>Saudi National Guard<\/h1>/);
   const download = await (await render("/download?faction=china&mode=ra2")).text();
   assert.match(download, /China \/ RTS AI/);
-  assert.match(download, /Not released yet/);
-  assert.match(download, /RTS AI has no public release yet/);
+  if (claimedByRelease("china")) {
+    assert.match(download, new RegExp(`China is in RTS AI ${escapeRegExp(modRelease.version)}`));
+    assert.match(download, /Download the Windows installer above\./);
+  } else {
+    assert.match(download, /Not released yet|has not been verified in it yet/);
+  }
   assert.match(download, /v0\.1\.0-alpha\.13/);
   assert.doesNotMatch(download, /href="[^"]*windows-dual/);
   for (const path of ["/factions/nonexistent", "/units/nonexistent"]) {
@@ -312,7 +356,7 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   }
 });
 
-test("the complete faction guide covers every current country and building without claiming release coverage", async () => {
+test("the complete faction guide covers every current country and building, claiming release coverage only from the manifest", async () => {
   const { rosters, catalog } = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
   for (const mode of ["ra2", "ra"]) {
     const directory = await (await render(`/factions?mode=${mode}`)).text();
@@ -329,7 +373,7 @@ test("the complete faction guide covers every current country and building witho
         const escapedName = actor.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("'", "&#x27;").replaceAll('"', "&quot;");
         assert.ok(html.includes(escapedName), `${mode}/${id}: ${actor.name} is shown`);
       }
-      if (mode === "ra2") assert.doesNotMatch(html, /In public Windows release/);
+      if (mode === "ra2") assert.equal(/In public Windows release/.test(html), claimedByRelease(id), `${id}: release claim matches the manifest`);
     }
   }
   const unavailable = await (await render("/factions/ukraine?mode=ra2")).text();

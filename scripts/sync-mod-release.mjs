@@ -5,7 +5,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { classifyAsset, isChecksumFile, MOD_REPOSITORY, validateModRelease } from "../lib/mod-release-manifest.mjs";
+import { classifyAsset, isChecksumFile, MOD_AI_MODES, MOD_REPOSITORY, validateModRelease } from "../lib/mod-release-manifest.mjs";
 
 /**
  * Fills data/rtsai-mod-release.json from a published GitHub release of
@@ -14,6 +14,7 @@ import { classifyAsset, isChecksumFile, MOD_REPOSITORY, validateModRelease } fro
  *   npm run sync:mod-release -- v0.2.0-alpha.1
  *   npm run sync:mod-release -- v0.2.0-alpha.1 --factions=china,iran,turkey,saudi-arabia,yemen
  *   npm run sync:mod-release -- v0.2.0-alpha.1 --signed      (Windows: verifies Authenticode first)
+ *   npm run sync:mod-release -- v0.2.0-alpha.1 --ai=local    (co-commander modes the installer offers)
  *   npm run sync:mod-release -- v0.2.0-alpha.1 --dry-run
  *
  * Every downloadable asset needs a published SHA-256: GitHub's asset digest, a
@@ -21,7 +22,9 @@ import { classifyAsset, isChecksumFile, MOD_REPOSITORY, validateModRelease } fro
  * When more than one is present they must agree. `signed` stays false unless
  * --signed is passed and the downloaded installer's digest matches and its
  * Authenticode signature is Valid. `ra2FactionIds` stays empty unless
- * --factions names the RA2 factions verified in this build.
+ * --factions names the RA2 factions verified in this build. `aiModes` stays
+ * empty (the download has no co-commander) unless --ai names the modes the
+ * installer offers and that were verified to work: hosted, local.
  */
 
 const API = `https://api.github.com/repos/${MOD_REPOSITORY}`;
@@ -57,11 +60,12 @@ export function parseChecksums(text, fallbackName = null) {
  *   fetchJson: (url: string) => Promise<any>,
  *   fetchText: (url: string) => Promise<string>,
  *   ra2FactionIds?: string[],
+ *   aiModes?: string[],
  *   knownFactionIds?: string[] | null,
  *   signed?: boolean,
  * }} options
  */
-export async function buildModRelease({ tag, fetchJson, fetchText, ra2FactionIds = [], knownFactionIds = null, signed = false }) {
+export async function buildModRelease({ tag, fetchJson, fetchText, ra2FactionIds = [], aiModes = [], knownFactionIds = null, signed = false }) {
   if (!/^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(tag ?? "")) throw new Error(`Not a release tag: ${tag}`);
   const repository = await fetchJson(API);
   if (repository.private) throw new Error(`${MOD_REPOSITORY} is private, so players could not download its assets. Make it public first.`);
@@ -106,6 +110,7 @@ export async function buildModRelease({ tag, fetchJson, fetchText, ra2FactionIds
     releaseUrl: `https://github.com/${MOD_REPOSITORY}/releases/tag/${tag}`,
     signed,
     ra2FactionIds,
+    aiModes,
     assets,
   };
   const problems = validateModRelease(manifest, knownFactionIds);
@@ -140,9 +145,9 @@ async function verifyAuthenticode(asset) {
 async function main(argv) {
   const [tag, ...flags] = argv;
   const flag = (name) => flags.find((item) => item === `--${name}` || item.startsWith(`--${name}=`));
-  const unknown = flags.filter((item) => !/^--(signed|dry-run|factions=.*)$/.test(item));
+  const unknown = flags.filter((item) => !/^--(signed|dry-run|factions=.*|ai=.*)$/.test(item));
   if (!tag || unknown.length) {
-    throw new Error("Usage: npm run sync:mod-release -- v0.2.0-alpha.1 [--factions=china,iran,...] [--signed] [--dry-run]");
+    throw new Error("Usage: npm run sync:mod-release -- v0.2.0-alpha.1 [--factions=china,iran,...] [--ai=none|local|hosted,local] [--signed] [--dry-run]");
   }
   const headers = {
     Accept: "application/vnd.github+json",
@@ -166,7 +171,10 @@ async function main(argv) {
   const factionList = flag("factions")?.slice("--factions=".length) ?? "";
   const ra2FactionIds = factionList && factionList !== "none" ? factionList.split(",").map((id) => id.trim()).filter(Boolean) : [];
 
-  const manifest = await buildModRelease({ tag, fetchJson, fetchText, ra2FactionIds, knownFactionIds, signed: false });
+  const aiList = flag("ai")?.slice("--ai=".length) ?? "";
+  const aiModes = aiList && aiList !== "none" ? aiList.split(",").map((mode) => mode.trim()).filter(Boolean) : [];
+  for (const mode of aiModes) if (!MOD_AI_MODES.includes(mode)) throw new Error(`Unknown --ai mode: ${mode} (use none, local or hosted)`);
+  const manifest = await buildModRelease({ tag, fetchJson, fetchText, ra2FactionIds, aiModes, knownFactionIds, signed: false });
   if (flag("signed")) {
     const installer = manifest.assets.find((asset) => asset.kind === "installer" && asset.platform === "windows-x64");
     await verifyAuthenticode(installer);
@@ -179,7 +187,7 @@ async function main(argv) {
   }
   const path = resolve("data/rtsai-mod-release.json");
   await writeFile(path, output, "utf8");
-  console.log(`Updated ${path} from ${tag}: ${manifest.assets.length} assets, ${manifest.signed ? "signed" : "unsigned"}, ${manifest.ra2FactionIds.length} RA2 factions claimed.`);
+  console.log(`Updated ${path} from ${tag}: ${manifest.assets.length} assets, ${manifest.signed ? "signed" : "unsigned"}, ${manifest.ra2FactionIds.length} RA2 factions claimed, co-commander: ${manifest.aiModes.length ? manifest.aiModes.join(" + ") : "none"}.`);
   console.log("Run npm test, review the diff, then commit.");
 }
 

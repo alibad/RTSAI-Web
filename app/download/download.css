@@ -4,6 +4,8 @@
 .play-hero { overflow: hidden; padding-bottom: 0 !important; }
 .play-hero .home-frontline { margin-top: 36px; }
 .play-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 980px; margin-top: 36px; }
+.play-options.has-three { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 1200px; }
+@media (max-width: 1100px) { .play-options.has-three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .play-option { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 6px 16px; align-items: start; padding: 24px; border: 1px solid var(--line); border-top: 2px solid var(--gold); background: linear-gradient(145deg, rgba(241, 210, 139, .06), rgba(255, 255, 255, .01)); }
 .play-option > svg { color: var(--gold); margin-top: 4px; }
 .play-option h2 { margin: 6px 0 6px; font-size: 24px; letter-spacing: -.03em; font-weight: 620; }
@@ -19,7 +21,7 @@ details.classic-alpha > summary h2::after { content: " +"; color: #7a7e74; font-
 details.classic-alpha[open] > summary h2::after { content: " −"; }
 details.classic-alpha:not([open]) { padding-bottom: 40px; }
 @media (max-width: 700px) {
-  .play-options { grid-template-columns: 1fr; }
+  .play-options, .play-options.has-three { grid-template-columns: 1fr; }
   .play-option { padding: 18px; }
   .classic-addon-note { width: calc(100% - 30px); }
 }

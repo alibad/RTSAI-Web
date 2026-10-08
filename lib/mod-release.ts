@@ -13,6 +13,7 @@ export const RA2_REQUIREMENT = "You need your own Red Alert 2 (Steam, EA app or 
 
 export type ModAssetKind = "installer" | "portable" | "ai-pack" | "other";
 export type ModPlatform = "windows-x64" | "windows-x86" | "macos" | "linux" | "any";
+export type ModAIMode = "hosted" | "local";
 
 export type ModReleaseAsset = {
   name: string;
@@ -34,6 +35,8 @@ export type ModRelease = {
   signed: boolean;
   /** RA2 factions this release was verified to include. Empty means none is claimed. */
   ra2FactionIds: string[];
+  /** Co-commander modes the installer offers besides "No AI". Empty means the download has no co-commander. */
+  aiModes: ModAIMode[];
   assets: ModReleaseAsset[];
 };
 
@@ -54,10 +57,12 @@ export function modReleaseFrom(value: unknown): ModRelease {
       releaseUrl: null,
       signed: false,
       ra2FactionIds: [],
+      aiModes: [],
       assets: [],
     };
   }
-  return candidate;
+  // Manifests written before aiModes existed claim no co-commander.
+  return { ...candidate, aiModes: candidate.aiModes ?? [] };
 }
 
 export function getModRelease(): ModRelease {
@@ -70,4 +75,8 @@ export function isPublished(release: ModRelease): release is PublishedModRelease
 
 export function windowsInstaller(release: ModRelease) {
   return release.assets.find((asset) => asset.kind === "installer" && asset.platform === "windows-x64") ?? null;
+}
+
+export function macInstaller(release: ModRelease) {
+  return release.assets.find((asset) => asset.kind === "installer" && asset.platform === "macos") ?? null;
 }

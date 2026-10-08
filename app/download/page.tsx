@@ -3,16 +3,26 @@ import { Apple, BrainCircuit, CalendarDays, Cloud, Cpu, Download, ExternalLink, 
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getGameRelease } from "../../lib/release";
-import { getModRelease, isPublished, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
+import { getModRelease, isPublished, macInstaller, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
 import { availability, CLASSIC_ADDON_NOTE, factionById, modeLabel, resolveMode, rosterFactionById } from "../../lib/game-content";
 import "./download.css";
 import { FrontLine } from "../components/FrontLine";
 
-export const metadata: Metadata = {
-  title: "Play RTS AI | In your browser now, Windows coming soon",
-  description: "RTS AI is a modern real-time strategy game with seven real-world factions and an AI co-commander. Play free in your browser now at rtsai.net/play; the Windows download is coming soon. Nothing else to install.",
-  alternates: { canonical: "/download" },
-};
+const releaseAtBuild = getModRelease();
+const releasedVersion = isPublished(releaseAtBuild) ? releaseAtBuild.version : null;
+const releasedPlatforms = macInstaller(releaseAtBuild) ? "Windows and macOS" : "Windows";
+
+export const metadata: Metadata = releasedVersion
+  ? {
+    title: `Download RTS AI ${releasedVersion} | ${releasedPlatforms}, or play in your browser`,
+    description: `RTS AI is a modern real-time strategy game with seven real-world factions. Download the ${releasedVersion} alpha for ${releasedPlatforms}, or play free in your browser at rtsai.net/play. Nothing else to install.`,
+    alternates: { canonical: "/download" },
+  }
+  : {
+    title: "Play RTS AI | In your browser now, Windows coming soon",
+    description: "RTS AI is a modern real-time strategy game with seven real-world factions and an AI co-commander. Play free in your browser now at rtsai.net/play; the Windows download is coming soon. Nothing else to install.",
+    alternates: { canonical: "/download" },
+  };
 
 function formatBytes(bytes: number | null) {
   if (!bytes) return null;
@@ -68,6 +78,16 @@ const requirements = [
   { icon: Mic, label: "Microphone", value: "Optional, for push-to-talk questions" },
 ] as const;
 
+/** The same targets without the co-commander's needs, for a release that ships without it. */
+const requirementsWithoutAI = [
+  { icon: MonitorDown, label: "System", value: "Windows 10 or 11, 64-bit" },
+  { icon: PackageCheck, label: "Game", value: "Nothing else: RTS AI brings its own art, sound and maps" },
+  { icon: Cpu, label: "Processor", value: "64-bit x64 processor" },
+  { icon: MemoryStick, label: "Memory", value: "8 GB" },
+  { icon: HardDrive, label: "Storage", value: "About 1 GB free" },
+  { icon: Wifi, label: "Internet", value: "Only for the download; skirmishes play offline" },
+] as const;
+
 export default async function DownloadPage({ searchParams }: { searchParams: Promise<{ faction?: string | string[]; mode?: string | string[] }> }) {
   const selection = await searchParams;
   const mode = resolveMode(selection.mode, "ra2");
@@ -77,6 +97,11 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
   const mod = getModRelease();
   const published = isPublished(mod) ? mod : null;
   const installer = windowsInstaller(mod);
+  const mac = published ? macInstaller(mod) : null;
+  // A published release only describes the co-commander modes its installer really offers.
+  const noCoCommander = Boolean(published && published.aiModes.length === 0);
+  const offeredChoices = published ? aiChoices.filter((choice) => choice.id === "none" || published.aiModes.some((mode) => mode === choice.id)) : aiChoices;
+  const shownRequirements = noCoCommander ? requirementsWithoutAI : requirements;
 
   const gameRelease = await getGameRelease();
   const windowsRelease = gameRelease.windows;
@@ -112,10 +137,10 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
       <SiteHeader />
       <main id="main-content">
         <header className="route-hero download-route-hero play-hero">
-          <span className="eyebrow">RTS AI / BROWSER AND WINDOWS</span>
+          <span className="eyebrow">{mac ? "RTS AI / BROWSER, WINDOWS AND MACOS" : "RTS AI / BROWSER AND WINDOWS"}</span>
           <h1>Play RTS AI.<br /><em>{published ? "Out now." : "Now in your browser."}</em></h1>
           <p>Seven real-world factions, one fictional war, and an AI co-commander. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
-          <div className="play-options">
+          <div className={`play-options ${mac ? "has-three" : ""}`}>
             <article className="play-option">
               <Globe size={24} aria-hidden="true" />
               <div><span className="platform-kicker">rtsai.net/play</span><h2>Play in your browser</h2><p>No install. Open the page and command.</p></div>
@@ -124,17 +149,25 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             </article>
             <article className="play-option">
               <MonitorDown size={24} aria-hidden="true" />
-              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>The standalone game, with an optional local co-commander.</p></div>
+              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>{noCoCommander ? "The standalone game: seven factions, skirmishes against the built-in bots." : "The standalone game, with an optional local co-commander."}</p></div>
               {published && installer
                 ? <a className="primary-action" href={installer.url} data-analytics-event="mod_download" data-platform="windows-x64-setup"><Download size={17} /> Download RTS AI {published.version}</a>
                 : <span className="pending-download" aria-disabled="true">Coming soon</span>}
             </article>
+            {published && mac && (
+              <article className="play-option">
+                <Apple size={24} aria-hidden="true" />
+                <div><span className="platform-kicker">macOS, Apple silicon and Intel</span><h2>Download for Mac</h2><p>The same game as one universal app. Not notarized yet: approve it once in Privacy &amp; Security.</p></div>
+                <a className="primary-action" href={mac.url} data-analytics-event="mod_download" data-platform="macos-dmg"><Download size={17} /> Download for Mac</a>
+              </article>
+            )}
           </div>
           {published && installer && (
             <div className="release-trust" aria-label="Release details">
               <span><CalendarDays size={15} /> Released {formatDate(published.publishedAt)}</span>
               <span>{published.signed ? <ShieldCheck size={15} /> : <ShieldAlert size={15} />} {published.signed ? "Authenticode signed" : "Unsigned alpha"}</span>
               <span><FileArchive size={15} /> {formatBytes(installer.sizeBytes)} installer, SHA-256 below</span>
+              {mac && <span><Apple size={15} /> {formatBytes(mac.sizeBytes)} Mac disk image</span>}
               <a href={published.releaseUrl}><ExternalLink size={15} /> Release on GitHub</a>
             </div>
           )}
@@ -152,13 +185,20 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
 
         <details className="planned-setup" open={Boolean(published)}><summary>{published ? "Setup and system requirements" : "Planned Windows setup and system requirements"}</summary>
         <section className="download-section mod-setup" aria-labelledby="ai-choice-title">
+          {noCoCommander && published ? (
+          <div className="download-intro">
+            <span className="section-number">01 / AI CO-COMMANDER</span>
+            <h2 id="ai-choice-title">No co-commander in this download yet.</h2>
+            <p>RTS AI {published.version} plays skirmishes against the built-in bots, and the installer asks no AI question. The hosted and local co-commander join the download once each one passes its acceptance test.</p>
+          </div>
+          ) : (<>
           <div className="download-intro">
             <span className="section-number">01 / THE INSTALLER ASKS ONE QUESTION</span>
             <h2 id="ai-choice-title">How should your co-commander think?</h2>
             <p>{published ? "Pick one when you install." : "These choices are planned for the Windows installer. Hosted AI still needs a live service acceptance test before release."} You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">what hosted AI sends</Link>.</p>
           </div>
           <div className="ai-choices">
-            {aiChoices.map((choice) => (
+            {offeredChoices.map((choice) => (
               <article className={`ai-choice ${choice.id === "hosted" ? "is-default" : ""}`} key={choice.id}>
                 <div className="platform-card-heading"><span className="platform-icon"><choice.icon size={22} /></span><div><span className="platform-kicker">{choice.size}</span><h3>{choice.title}</h3></div><span className={`release-status ${choice.id === "hosted" ? "is-ready" : ""}`}>{choice.badge}</span></div>
                 <p>{choice.description}</p>
@@ -167,13 +207,15 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             ))}
           </div>
 
+          </>)}
+
           <div className="download-intro">
             <span className="section-number">02 / WINDOWS REQUIREMENTS</span>
             <h2>What your PC needs.</h2>
-            <p>These are the documented targets for the Windows download; a clean-machine hardware matrix is still being validated, so we do not promise AI response times.</p>
+            <p>{noCoCommander ? "These are the targets for this alpha; a clean-machine hardware matrix is still being validated." : "These are the documented targets for the Windows download; a clean-machine hardware matrix is still being validated, so we do not promise AI response times."}</p>
           </div>
           <dl className="mod-requirements">
-            {requirements.map((item) => (
+            {shownRequirements.map((item) => (
               <div key={item.label}><dt><item.icon size={15} aria-hidden="true" /> {item.label}</dt><dd>{item.value}</dd></div>
             ))}
           </dl>
@@ -182,6 +224,12 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             <div className="unsigned-note" role="note">
               <ShieldAlert size={18} aria-hidden="true" />
               <p><b>This alpha installer is not code-signed yet.</b> Windows SmartScreen may say &ldquo;Windows protected your PC&rdquo;. Before choosing More info, then Run anyway, check that the file&apos;s SHA-256 matches the one listed below: in PowerShell, run <code>Get-FileHash .\{installer?.name} -Algorithm SHA256</code>.</p>
+            </div>
+          )}
+          {published && mac && (
+            <div className="unsigned-note" role="note">
+              <ShieldAlert size={18} aria-hidden="true" />
+              <p><b>The Mac app is not notarized yet.</b> Check the SHA-256 first: in Terminal, run <code>shasum -a 256 {mac.name}</code>. Drag RTS AI to Applications and open it; when macOS says it cannot check the app, open System Settings, Privacy &amp; Security, and choose Open Anyway. On macOS 14 and earlier, right-click the app and choose Open.</p>
             </div>
           )}
         </section>

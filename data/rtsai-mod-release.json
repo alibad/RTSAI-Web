@@ -1,12 +1,46 @@
 {
   "schemaVersion": 1,
   "repository": "alibad/RTSAI-Mod",
-  "published": false,
-  "version": null,
-  "tag": null,
-  "publishedAt": null,
-  "releaseUrl": null,
+  "published": true,
+  "version": "0.3.0-alpha.1",
+  "tag": "v0.3.0-alpha.1",
+  "publishedAt": "2026-10-08T19:20:04Z",
+  "releaseUrl": "https://github.com/alibad/RTSAI-Mod/releases/tag/v0.3.0-alpha.1",
   "signed": false,
-  "ra2FactionIds": [],
-  "assets": []
+  "ra2FactionIds": [
+    "china",
+    "iran",
+    "turkey",
+    "saudi-arabia",
+    "yemen",
+    "israel",
+    "hezbollah"
+  ],
+  "aiModes": [],
+  "assets": [
+    {
+      "name": "RTSAI-0.3.0-alpha.1-macos.dmg",
+      "kind": "installer",
+      "platform": "macos",
+      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.3.0-alpha.1/RTSAI-0.3.0-alpha.1-macos.dmg",
+      "sizeBytes": 219658025,
+      "sha256": "0c2aa3252fa3b08bc255e19481fe0b3b12b118a3de982272733e4c6b1faae650"
+    },
+    {
+      "name": "RTSAI-0.3.0-alpha.1-win-x64-setup.exe",
+      "kind": "installer",
+      "platform": "windows-x64",
+      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.3.0-alpha.1/RTSAI-0.3.0-alpha.1-win-x64-setup.exe",
+      "sizeBytes": 135404260,
+      "sha256": "f39b9bfbbc9160b182ae7fcfff28e8e61b28b9c5b181951932967cde354e8632"
+    },
+    {
+      "name": "RTSAI-0.3.0-alpha.1-win-x64-portable.zip",
+      "kind": "portable",
+      "platform": "windows-x64",
+      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.3.0-alpha.1/RTSAI-0.3.0-alpha.1-win-x64-portable.zip",
+      "sizeBytes": 171518162,
+      "sha256": "1dee91619978931b2e458b5bb2b0ac5c67940a3274930931df724ff90a030d7e"
+    }
+  ]
 }

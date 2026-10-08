@@ -6,6 +6,7 @@ import { ModeNav } from "../components/ContentGuide";
 import { FactionCard } from "../components/FactionCard";
 import { FactionFlag } from "../components/FactionVisuals";
 import { CLASSIC_ADDON, CLASSIC_ADDON_NOTE, dossierForRoster, factions, modeLabel, resolveMode, rosterFactions, rosterHref, rosters } from "../../lib/game-content";
+import { getModRelease, isPublished, macInstaller } from "../../lib/mod-release";
 import "./factions.css";
 
 export const metadata: Metadata = { title: "Factions | RTS AI", description: "Seven real-world factions in one fictional war: their units, buildings, defenses and doctrines. Original factions come with the optional Classic add-on.", alternates: { canonical: "/factions" } };
@@ -17,6 +18,11 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
   const originals = ["Allies", "Soviet"].map(side => ({ name: side === "Soviet" ? "Soviets" : side, factions: all.filter(f => !dossierForRoster(f) && f.side.startsWith(side)) })).filter(g => g.factions.length);
   const uniqueActors = rosters.actors.filter(a => a.mode === mode);
   const buildings = uniqueActors.filter(a => a.category === "structure" || a.category === "defense").length;
+  const modRelease = getModRelease();
+  const released = isPublished(modRelease) ? modRelease : null;
+  const releaseLine = released
+    ? `RTS AI ${released.version} is out for Windows${macInstaller(released) ? " and macOS" : ""}, and free to play in your browser at rtsai.net/play.`
+    : "RTS AI is in development and free to play in your browser now at rtsai.net/play. The Windows download is coming soon.";
   return <><SiteHeader /><main id="main-content" className="catalog-page faction-directory">
     <header className="factions-intro">
       <div><span className="eyebrow">THE FACTIONS</span><h1>Choose your side.</h1></div>
@@ -31,7 +37,7 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       {originals.length > 0 && <li className="is-addon"><b>{originals.reduce((n, g) => n + g.factions.length, 0)}</b><span>in the {CLASSIC_ADDON}</span></li>}
       <li><b>{uniqueActors.length - buildings}</b><span>unique units</span></li>
       <li><b>{buildings}</b><span>buildings & defenses</span></li>
-      <li className="directory-release">{mode === "ra2" ? "RTS AI is in development and free to play in your browser now at rtsai.net/play. The Windows download is coming soon." : "Classic add-on rosters, in development. The earlier Classic prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
+      <li className="directory-release">{mode === "ra2" ? releaseLine : "Classic add-on rosters, in development. The earlier Classic prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
     </ul>
     <section className="faction-group" aria-label="Modern factions">
       <div className="faction-group-heading"><h2>{mode === "ra2" ? "The seven factions" : `Modern factions · ${modeLabel(mode)}`}</h2><span>{modern.length} factions</span></div>

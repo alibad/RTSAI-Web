@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { availability, catalog, factionById, factions, mediaById, resolveMode, unitById, units, unitsForFaction, downloadHref, rosters, rosterActors, rosterFactions, rosterFactionById } from "../lib/game-content";
 import { verifyEvidence } from "../scripts/release-evidence.mjs";
+import modRelease from "../data/rtsai-mod-release.json";
+
+// RTS AI (mode ra2) claims a faction only when the published release manifest names it.
+const ra2Release = (id: string) => modRelease.published && (modRelease.ra2FactionIds as string[]).includes(id) ? "In public Windows release" : "Development · release unconfirmed";
 test("shared catalog has complete faction, unit, mode and media relationships", () => {
   assert.equal(catalog.schemaVersion, 1);
   assert.equal(new Set(factions.map(f => f.id)).size, 7);
@@ -22,9 +26,9 @@ test("shared catalog has complete faction, unit, mode and media relationships", 
 });
 test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(availability(factionById("saudi-arabia")!, "ra"), "In public Windows release");
-  // RA2 exists in the mod but no public RA2 release certifies it yet.
-  assert.equal(availability(factionById("saudi-arabia")!, "ra2"), "Development · release unconfirmed");
-  assert.equal(availability(factionById("china")!, "ra2"), "Development · release unconfirmed");
+  // RTS AI claims follow data/rtsai-mod-release.json, nothing else.
+  assert.equal(availability(factionById("saudi-arabia")!, "ra2"), ra2Release("saudi-arabia"));
+  assert.equal(availability(factionById("china")!, "ra2"), ra2Release("china"));
   assert.equal(resolveMode("ra2"), "ra2");
   assert.equal(resolveMode("ra"), "ra");
   // RA2 is the product mode; callers such as the download page can pin another fallback.
@@ -35,10 +39,10 @@ test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(unitById("missing"), undefined);
   assert.equal(downloadHref("china", "ra2"), "/download?faction=china&mode=ra2");
 });
-test("both new factions expose complete native domains while release claims remain unconfirmed", () => {
+test("both new factions expose complete native domains; release claims come only from the published manifest", () => {
   for (const id of ["israel", "hezbollah"]) for (const mode of ["ra", "ra2"] as const) {
     const faction = factionById(id)!;
-    assert.equal(availability(faction, mode), "Development · release unconfirmed");
+    assert.equal(availability(faction, mode), mode === "ra2" ? ra2Release(id) : "Development · release unconfirmed");
     const roster = rosterFactionById(id, mode)!;
     const actors = rosterActors(roster);
     assert.deepEqual(new Set(actors.map(a => a.category)), new Set(["infantry", "vehicle", "aircraft", "ship", "defense", "structure"]));
