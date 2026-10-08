@@ -46,7 +46,7 @@ export default async function Home() {
           <div className="home-hero-copy">
             <span className="eyebrow">RTS AI · Modern real-time strategy</span>
             <h1>Seven real-world factions.<br /><em>One fictional war.</em></h1>
-            <p className="hero-lede">Command a modern army with an AI co-commander at your side. Its own art, sound and maps: nothing else to install.</p>
+            <p className="hero-lede">One standalone game, two ways to play: Web RTS and Downloadable RTS. Classic and RA2-inspired modes, seven modern factions alongside nine country rule sets, and an optional local AI co-commander. Its own art, sound and maps.</p>
             <div className="hero-actions">
               {/* /play is the browser game's own Vercel project behind a proxy, not a page of this app: a plain link. */}
               <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>

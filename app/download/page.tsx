@@ -40,15 +40,6 @@ const platformLabels: Record<ModReleaseAsset["platform"], string> = { "windows-x
 
 const aiChoices = [
   {
-    id: "hosted",
-    icon: Cloud,
-    title: "Hosted AI + local voice",
-    badge: "Default",
-    size: "Voice models about 270 MB",
-    description: "The co-commander thinks on rtsai.net with Claude (Anthropic). Speech recognition and the voice run on your PC, so your audio is never uploaded. A daily allowance, no account needed.",
-    note: "Needs an internet connection. Offline or over the allowance, it falls back to alert lines.",
-  },
-  {
     id: "local",
     icon: Cpu,
     title: "Full local AI",
@@ -61,7 +52,7 @@ const aiChoices = [
     id: "none",
     icon: PowerOff,
     title: "No AI",
-    badge: "Smallest",
+    badge: "Default",
     size: "No model download",
     description: "Play without the co-commander. Nothing is downloaded for AI and nothing is sent to rtsai.net.",
     note: "You can turn the co-commander on later in the game's settings.",
@@ -74,7 +65,7 @@ const requirements = [
   { icon: Cpu, label: "Processor", value: "4-core x64 CPU with AVX2 for local voice and local AI" },
   { icon: MemoryStick, label: "Memory", value: "8 GB; 16 GB recommended for Full local AI" },
   { icon: HardDrive, label: "Storage", value: "About 5 GB free (6 GB with Full local AI)" },
-  { icon: Wifi, label: "Internet", value: "Needed for the download and for Hosted AI; skirmishes play offline" },
+  { icon: Wifi, label: "Internet", value: "Needed for the installer and optional models; local skirmishes and local AI run offline" },
   { icon: Mic, label: "Microphone", value: "Optional, for push-to-talk questions" },
 ] as const;
 
@@ -139,7 +130,8 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
         <header className="route-hero download-route-hero play-hero">
           <span className="eyebrow">{mac ? "RTS AI / BROWSER, WINDOWS AND MACOS" : "RTS AI / BROWSER AND WINDOWS"}</span>
           <h1>Play RTS AI.<br /><em>{published ? "Out now." : "Now in your browser."}</em></h1>
-          <p>Seven real-world factions, one fictional war, and an AI co-commander. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
+          <p>Web RTS and Downloadable RTS share one standalone game. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
+          <p>The Windows development build combines Classic and RA2-inspired modes, 16 faction choices and six campaigns. Its EXE installer and portable ZIP are built locally; public distribution is still pending. The browser development build adds direct peer multiplayer, chat and optional calls. Mac packaging follows on our Mac machine.</p>
           <div className={`play-options ${mac ? "has-three" : ""}`}>
             <article className="play-option">
               <Globe size={24} aria-hidden="true" />
@@ -195,12 +187,12 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <div className="download-intro">
             <span className="section-number">01 / THE INSTALLER ASKS ONE QUESTION</span>
             <h2 id="ai-choice-title">How should your co-commander think?</h2>
-            <p>{published ? "Pick one when you install." : "These choices are planned for the Windows installer. Hosted AI still needs a live service acceptance test before release."} You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">what hosted AI sends</Link>.</p>
+            <p>{published ? "Pick one when you install." : "The local Windows build defaults to no model download; full local AI is optional."} You can switch later in the game&apos;s settings: AI Off, Local, or External (your own OpenAI-compatible endpoint). See <Link href="/privacy#ai-co-commander">AI privacy</Link>.</p>
           </div>
           <div className="ai-choices">
             {offeredChoices.map((choice) => (
-              <article className={`ai-choice ${choice.id === "hosted" ? "is-default" : ""}`} key={choice.id}>
-                <div className="platform-card-heading"><span className="platform-icon"><choice.icon size={22} /></span><div><span className="platform-kicker">{choice.size}</span><h3>{choice.title}</h3></div><span className={`release-status ${choice.id === "hosted" ? "is-ready" : ""}`}>{choice.badge}</span></div>
+              <article className={`ai-choice ${choice.id === "none" ? "is-default" : ""}`} key={choice.id}>
+                <div className="platform-card-heading"><span className="platform-icon"><choice.icon size={22} /></span><div><span className="platform-kicker">{choice.size}</span><h3>{choice.title}</h3></div><span className={`release-status ${choice.id === "none" ? "is-ready" : ""}`}>{choice.badge}</span></div>
                 <p>{choice.description}</p>
                 <small>{choice.note}</small>
               </article>

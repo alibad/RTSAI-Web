@@ -114,7 +114,8 @@ test("renders a focused homepage: the standalone RTS AI promise, real flags, app
   // Standalone: no Red Alert in the headlines or the metadata, and nothing claimed as live or free.
   const head = html.slice(0, html.indexOf("</head>"));
   assert.doesNotMatch(head, /Red Alert|RA2|OpenRA mod/i);
-  assert.doesNotMatch(html.replace(/<footer[\s\S]*<\/footer>/, ""), /Red Alert|\bRA2\b/);
+  assert.match(html, /Classic and RA2-inspired modes/);
+  assert.doesNotMatch(html, /own Red Alert|required.*Red Alert/i);
   assert.doesNotMatch(html, /isAccessibleForFree|"price"|Free alpha|Free playable|Out now|available now/i);
   // The home page never links release files directly; once a release is out it points to /download.
   assert.doesNotMatch(html, /RTSAI-Mod\/releases|windows-x64-setup\.exe/);
@@ -215,13 +216,13 @@ test("the download page offers the browser and Windows and needs no other game",
   const order = [html.indexOf("Play in your browser"), html.indexOf(aiHeading), html.indexOf("What your PC needs."), html.indexOf('id="mod-downloads"'), html.indexOf('id="classic-alpha"')];
   assert.ok(order.every((index) => index > 0), `every section renders: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, "ways to play, AI choices, requirements, downloads, then the earlier prototype");
-  assert.doesNotMatch(html, /free (?:alpha|download|game|to play|daily)|is free|for free/i);
+  assert.doesNotMatch(html, /daily allowance|Hosted AI \+ local voice/);
   for (const requirementText of ["Windows 10 or 11, 64-bit", "RTS AI brings its own art, sound and maps"]) assert.ok(html.includes(requirementText), requirementText);
 
   if (!modRelease.published) {
     assert.match(html, /<title>Play RTS AI/);
-    assert.equal((html.match(/aria-disabled="true">Coming soon</g) ?? []).length, 2, "both ways to play say coming soon");
-    for (const choice of ["Hosted AI + local voice", "Full local AI", "No AI", "~1.8 GB", "Default"]) assert.ok(html.includes(choice), choice);
+    assert.equal((html.match(/aria-disabled="true">Coming soon</g) ?? []).length, 1, "Windows distribution remains unpublished");
+    for (const choice of ["Full local AI", "No AI", "~1.8 GB", "Default"]) assert.ok(html.includes(choice), choice);
     assert.ok(html.includes("8 GB; 16 GB recommended for Full local AI"));
     assert.match(html, /href="\/privacy#ai-co-commander"/);
     // Unpublished: honest "coming soon", no RTS AI links, no unsigned-build note, nothing claimed live.
@@ -245,7 +246,7 @@ test("the download page offers the browser and Windows and needs no other game",
   for (const asset of modRelease.assets) assert.ok(html.includes(asset.sha256), `${asset.name} SHA-256 listed`);
   // Only the co-commander modes the installer really offers are described.
   const aiModes = modRelease.aiModes ?? [];
-  assert.equal(html.includes("Hosted AI + local voice"), aiModes.includes("hosted"));
+  assert.equal(html.includes("Hosted AI + local voice"), false);
   assert.equal(html.includes("Full local AI"), aiModes.includes("local"));
   if (!aiModes.length) {
     assert.ok(!html.includes("How should your co-commander think?"));
