@@ -22,17 +22,17 @@ export function dossierForRoster(faction: RosterFaction) { return factionById(fa
 export function rosterHref(faction: RosterFaction) { return `/factions/${dossierForRoster(faction)?.id ?? faction.id}?mode=${faction.mode}`; }
 export const categoryLabels: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Naval", defense: "Defenses", structure: "Buildings" };
 /**
- * Visible names for the game modes (owner decision, 7 October 2026): RTS AI is the game, a modern RTS with its own art,
- * sound and maps; Classic is an optional add-on. Internal ids ("ra2", "ra") and the catalog stay as they are.
+ * One standalone product with Classic/top-down and isometric gameplay (owner clarification, 9 October 2026).
+ * The Classic port and combined mode chooser remain in progress. Internal ids and catalog names stay stable.
  */
 export const modeLabels: Record<GameMode, { name: string; subtitle: string; addOn: boolean }> = {
   ra2: { name: "RTS AI", subtitle: "Modern factions · own art, sound and maps", addOn: false },
-  ra: { name: "Classic", subtitle: "Optional add-on · classic battlefield", addOn: true },
+  ra: { name: "Classic", subtitle: "Top-down gameplay · integration in progress", addOn: false },
 };
 export const modeLabel = (mode: GameMode) => modeLabels[mode].name;
-/** The visible label for the original factions, which ship only in the optional classic add-on. */
-export const CLASSIC_ADDON = "Classic add-on";
-export const CLASSIC_ADDON_NOTE = "Own Red Alert 2? An optional classic add-on brings the original factions.";
+/** Legacy identifier retained for callers; original roster entries are not the new Classic-mode delivery. */
+export const CLASSIC_ADDON = "Original roster";
+export const CLASSIC_ADDON_NOTE = "No Red Alert installation is required. Classic and isometric gameplay remain part of RTS AI; the combined mode selector is being integrated.";
 export function resolveMode(value: string | string[] | undefined, fallback: GameMode = "ra2"): GameMode { return value === "ra" || value === "ra2" ? value : fallback; }
 /** Names and roles differ by mode; the catalog validator keeps each one equal to what the game shows. */
 export function unitLabel(unit: Unit, mode: GameMode) { const variant = (unit.variants as Partial<Record<GameMode, { name: string; role: string; description?: string }>>)[mode]; return { name: variant?.name ?? unit.name, role: variant?.role ?? unit.role, description: variant?.description ?? unit.story }; }

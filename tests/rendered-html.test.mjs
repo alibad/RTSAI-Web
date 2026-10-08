@@ -207,10 +207,9 @@ test("the download page offers the browser and Windows and needs no other game",
   assert.match(html, /Download for Windows/);
   assert.match(html, /Nothing else to install/);
   assert.doesNotMatch(html, /Bring Red Alert 2|We bring the rest|Red Alert 2 required|You need your own Red Alert 2|Steam, EA app or disc/);
-  // The original factions: nominative, small print, after the main content.
-  const addOn = html.indexOf("Own Red Alert 2? An optional classic add-on brings the original factions.");
-  assert.ok(addOn > html.indexOf('id="mod-downloads"') && addOn < html.indexOf('id="classic-alpha"'), "the add-on note sits in small print near the end");
-  assert.equal((html.replace(/<script[\s\S]*?<\/script>/g, "").match(/Red Alert/g) ?? []).length, 1, "the add-on note is the only visible mention");
+  assert.match(html, /No Red Alert installation is required/);
+  assert.match(html, /Classic and isometric gameplay remain part of RTS AI/);
+  assert.doesNotMatch(html, /Own Red Alert 2\?/);
   assert.match(html, /EA has not endorsed and does not support this product/);
   const aiHeading = modRelease.published && !(modRelease.aiModes ?? []).length ? "No co-commander in this download yet." : "How should your co-commander think?";
   const order = [html.indexOf("Play in your browser"), html.indexOf(aiHeading), html.indexOf("What your PC needs."), html.indexOf('id="mod-downloads"'), html.indexOf('id="classic-alpha"')];
@@ -318,12 +317,13 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   assert.match(directory, /\/factions\/china\?mode=ra2/);
   assert.match(directory, /\/factions\/yemen\?mode=ra2/);
   assert.doesNotMatch(directory, /Coming to Red Alert 2/);
-  // RTS AI first; the original factions sit in a secondary Classic add-on section. Visible labels only; ids unchanged.
+  // Both modes belong to RTS AI; the historical original roster stays separate from modern factions.
   assert.match(directory, /<b>RTS AI<\/b>/);
-  assert.match(directory, /<a[^>]*href="\/factions\?mode=ra"[^>]*class="is-addon"|<a[^>]*class="is-addon"[^>]*href="\/factions\?mode=ra"/);
-  assert.ok(directory.indexOf("The seven factions") < directory.indexOf('aria-label="Classic add-on"'), "modern factions lead");
-  assert.match(directory, /Own Red Alert 2\? An optional classic add-on brings the original factions\./);
-  assert.doesNotMatch(directory.slice(0, directory.indexOf('aria-label="Classic add-on"')), /Red Alert/, "no Red Alert above the add-on section");
+  assert.match(directory, /href="\/factions\?mode=ra"/);
+  assert.ok(directory.indexOf("The seven factions") < directory.indexOf('aria-label="Original roster"'), "modern factions lead");
+  assert.match(directory, /No Red Alert installation is required\./);
+  assert.doesNotMatch(directory, /Own Red Alert 2\?/);
+  assert.doesNotMatch(directory.slice(0, directory.indexOf('aria-label="Original roster"')), /Own Red Alert/, "no ownership prerequisite above the original roster");
   const dossier = await (await render("/factions/china?mode=ra2")).text();
   assert.match(dossier, /\/units\/cnqilin\?mode=ra2/);
   assert.match(dossier, /\/faction-art\/lineups\/china-1440\.[0-9a-f]{12}\.avif/);

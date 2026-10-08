@@ -9,7 +9,7 @@ import { CLASSIC_ADDON, CLASSIC_ADDON_NOTE, dossierForRoster, factions, modeLabe
 import { getModRelease, isPublished, macInstaller } from "../../lib/mod-release";
 import "./factions.css";
 
-export const metadata: Metadata = { title: "Factions | RTS AI", description: "Seven real-world factions in one fictional war: their units, buildings, defenses and doctrines. Original factions come with the optional Classic add-on.", alternates: { canonical: "/factions" } };
+export const metadata: Metadata = { title: "Factions | RTS AI", description: "Seven real-world factions in one fictional war: their units, buildings, defenses and doctrines. A standalone game with Classic and isometric gameplay; no Red Alert installation required.", alternates: { canonical: "/factions" } };
 
 export default async function FactionsPage({ searchParams }: { searchParams: Promise<{ mode?: string | string[] }> }) {
   const mode = resolveMode((await searchParams).mode);
@@ -37,7 +37,7 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       {originals.length > 0 && <li className="is-addon"><b>{originals.reduce((n, g) => n + g.factions.length, 0)}</b><span>in the {CLASSIC_ADDON}</span></li>}
       <li><b>{uniqueActors.length - buildings}</b><span>unique units</span></li>
       <li><b>{buildings}</b><span>buildings & defenses</span></li>
-      <li className="directory-release">{mode === "ra2" ? releaseLine : "Classic add-on rosters, in development. The earlier Classic prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
+      <li className="directory-release">{mode === "ra2" ? releaseLine : "Classic gameplay is being integrated into the standalone product. The earlier prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
     </ul>
     <section className="faction-group" aria-label="Modern factions">
       <div className="faction-group-heading"><h2>{mode === "ra2" ? "The seven factions" : `Modern factions · ${modeLabel(mode)}`}</h2><span>{modern.length} factions</span></div>

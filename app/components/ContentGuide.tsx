@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { availability, downloadHref, modeLabels, type Faction, type GameMode } from "../../lib/game-content";
 
-/** RTS AI first; the Classic add-on second and visually quieter. Visible labels only; the ?mode= ids are unchanged. */
+/** Both gameplay modes belong to RTS AI. Catalog ids stay unchanged during the Classic port. */
 export function ModeNav({ mode, path }: { mode: GameMode; path: string }) {
   return <nav className="mode-nav" aria-label="Game mode">{(["ra2", "ra"] as const).map(id =>
     <Link key={id} className={modeLabels[id].addOn ? "is-addon" : undefined} href={`${path}?mode=${id}`} aria-current={mode === id ? "page" : undefined}><b>{modeLabels[id].addOn ? `${modeLabels[id].name} add-on` : modeLabels[id].name}</b><span>{modeLabels[id].subtitle}</span></Link>)}</nav>;

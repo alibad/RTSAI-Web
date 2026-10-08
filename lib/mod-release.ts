@@ -8,8 +8,8 @@ import { validateModRelease } from "./mod-release-manifest.mjs";
  * "coming soon" and renders no mod download links.
  */
 
-/** The ownership requirement, word for word wherever the site offers the mod. */
-export const RA2_REQUIREMENT = "You need your own Red Alert 2 (Steam, EA app or disc). The mod imports it on first launch; we never ship EA's files.";
+/** The standalone game's content contract. No owned-game import is a player prerequisite. */
+export const RA2_REQUIREMENT = "No Red Alert or Red Alert 2 installation is required. RTS AI brings its own art, sound and maps.";
 
 export type ModAssetKind = "installer" | "portable" | "ai-pack" | "other";
 export type ModPlatform = "windows-x64" | "windows-x86" | "macos" | "linux" | "any";
