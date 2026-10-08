@@ -31,7 +31,7 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       {originals.length > 0 && <li className="is-addon"><b>{originals.reduce((n, g) => n + g.factions.length, 0)}</b><span>in the {CLASSIC_ADDON}</span></li>}
       <li><b>{uniqueActors.length - buildings}</b><span>unique units</span></li>
       <li><b>{buildings}</b><span>buildings & defenses</span></li>
-      <li className="directory-release">{mode === "ra2" ? "RTS AI is in development. Browser play and the Windows download are coming soon." : "Classic add-on rosters, in development. The earlier Classic prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
+      <li className="directory-release">{mode === "ra2" ? "RTS AI is in development and free to play in your browser now at rtsai.net/play. The Windows download is coming soon." : "Classic add-on rosters, in development. The earlier Classic prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
     </ul>
     <section className="faction-group" aria-label="Modern factions">
       <div className="faction-group-heading"><h2>{mode === "ra2" ? "The seven factions" : `Modern factions · ${modeLabel(mode)}`}</h2><span>{modern.length} factions</span></div>

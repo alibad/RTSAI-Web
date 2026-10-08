@@ -31,7 +31,7 @@ export default async function Home() {
   const pillars = [
     { id: "factions", icon: Flag, status: `${modern.length} factions`, title: "Real-world factions", description: "Each with its own doctrine, signature units, voice and counters. A fictional war, never a real one.", href: "/factions", action: "Choose your side" },
     { id: "companion", icon: BrainCircuit, status: "AI co-commander", title: "A co-commander that talks back", description: "It sees only what you see, speaks up when it matters, answers by voice, and takes command only when you say so.", href: "/companion", action: "How it works" },
-    { id: "install", icon: PackageCheck, status: "Coming soon", title: "Nothing else to install", description: "Its own art, sound and maps. Play in your browser at rtsai.net/play, or download it for Windows.", href: "/download", action: "Release status" },
+    { id: "install", icon: PackageCheck, status: "Play now", title: "Nothing else to install", description: "Its own art, sound and maps. Play in your browser at rtsai.net/play now; the Windows download is coming soon.", href: "/download", action: "Ways to play" },
   ];
 
   return (
@@ -44,11 +44,12 @@ export default async function Home() {
             <h1>Seven real-world factions.<br /><em>One fictional war.</em></h1>
             <p className="hero-lede">Command a modern army with an AI co-commander at your side. Its own art, sound and maps: nothing else to install.</p>
             <div className="hero-actions">
-              {mod ? <Link className="primary-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link> : <span className="soon-action" aria-disabled="true"><Globe size={17} /> Play in your browser <small>Coming soon</small></span>}
+              {/* /play is the browser game's own Vercel project behind a proxy, not a page of this app: a plain link. */}
+              <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>
               <Link className="text-action" href="/factions">Choose your side <ArrowRight size={17} /></Link>
             </div>
             <ul className="home-platforms" aria-label="Platforms">
-              <li><Globe size={15} /> Browser <small>coming soon</small></li>
+              <li><Globe size={15} /> Browser <small>play now</small></li>
               <li><MonitorDown size={15} /> Windows <small>{mod ? mod.version : "coming soon"}</small></li>
               <li><PackageCheck size={15} /> Nothing else to install</li>
             </ul>
@@ -62,7 +63,7 @@ export default async function Home() {
           <div className="home-section-heading">
             <span className="section-number">WHAT YOU GET</span>
             <h2 id="pillars-title">Seven factions.<br />One co-commander.</h2>
-            <p>A standalone game in development. Browser and Windows releases are coming soon.</p>
+            <p>A standalone game in development, free to play in your browser now. The Windows download is coming soon.</p>
           </div>
           <div className="home-experience-grid">
             {pillars.map((pillar, index) => (
@@ -98,13 +99,14 @@ export default async function Home() {
 
         <section className="closing-section home-closing">
           <div>
-            <span className="eyebrow">{mod ? `RTS AI ${mod.version}` : "Coming soon"}</span>
+            <span className="eyebrow">{mod ? `RTS AI ${mod.version}` : "Play now"}</span>
             <h2>Play in your browser.<br />Or on Windows.</h2>
           </div>
           <div>
-            <p>{mod ? `RTS AI ${mod.version} is out for Windows. Browser play at rtsai.net/play is coming soon.` : "RTS AI is in development. Browser play at rtsai.net/play and the Windows download are coming soon."}</p>
+            <p>{mod ? `RTS AI ${mod.version} is out for Windows, and free to play in your browser at rtsai.net/play.` : "RTS AI is in development and free to play in your browser at rtsai.net/play. The Windows download is coming soon."}</p>
             <div className="hero-actions">
-              <Link className="primary-action" href="/download"><Download size={17} /> {mod ? `Download RTS AI ${mod.version}` : "Release status"}</Link>
+              <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>
+              {mod && <Link className="text-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link>}
               <Link className="text-action" href="/factions">Meet the factions <ArrowRight size={17} /></Link>
             </div>
           </div>

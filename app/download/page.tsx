@@ -9,8 +9,8 @@ import "./download.css";
 import { FrontLine } from "../components/FrontLine";
 
 export const metadata: Metadata = {
-  title: "Play RTS AI | Browser and Windows, coming soon",
-  description: "RTS AI is a modern real-time strategy game with seven real-world factions and an AI co-commander. Browser play and the Windows download are coming soon; nothing else to install.",
+  title: "Play RTS AI | In your browser now, Windows coming soon",
+  description: "RTS AI is a modern real-time strategy game with seven real-world factions and an AI co-commander. Play free in your browser now at rtsai.net/play; the Windows download is coming soon. Nothing else to install.",
   alternates: { canonical: "/download" },
 };
 
@@ -102,7 +102,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           ? "Download the Windows installer above."
           : published
             ? `RTS AI ${published.version} is out, but ${faction.name} has not been verified in it yet.`
-            : "RTS AI has no public release yet. Browser play and the Windows download are coming soon."
+            : "Play it in your browser now at rtsai.net/play. The Windows download is coming soon."
         : selectionStatus === "In public Windows release"
           ? `Your Classic faction is part of the earlier Classic prototype ${windowsRelease.version} for Windows below. Mac faction parity has not been separately certified.`
           : "This Classic faction is not certified in the earlier Classic prototype.";
@@ -113,13 +113,14 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
       <main id="main-content">
         <header className="route-hero download-route-hero play-hero">
           <span className="eyebrow">RTS AI / BROWSER AND WINDOWS</span>
-          <h1>Play RTS AI.<br /><em>{published ? "Out now for Windows." : "Coming soon."}</em></h1>
+          <h1>Play RTS AI.<br /><em>{published ? "Out now." : "Now in your browser."}</em></h1>
           <p>Seven real-world factions, one fictional war, and an AI co-commander. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
           <div className="play-options">
             <article className="play-option">
               <Globe size={24} aria-hidden="true" />
               <div><span className="platform-kicker">rtsai.net/play</span><h2>Play in your browser</h2><p>No install. Open the page and command.</p></div>
-              <span className="pending-download" aria-disabled="true">Coming soon</span>
+              {/* /play is the browser game's own Vercel project behind a proxy, not a page of this app: a plain link. */}
+              <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play now</a>
             </article>
             <article className="play-option">
               <MonitorDown size={24} aria-hidden="true" />
