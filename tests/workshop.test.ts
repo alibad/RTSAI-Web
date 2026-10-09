@@ -23,11 +23,11 @@ test("terrain is deterministic across presets and modes, with valid spawns",()=>
     for(const p of s.spawns)assert.notEqual(s.cells[p.y][p.x],1);
   }
 });
-test("all actor facts carry source behavior; every faction can place its complete roster",()=>{
-  for(const a of rosters.actors){assert.ok(a.behavior.health>0);assert.ok(Array.isArray(a.behavior.weapons));assert.ok(Array.isArray(a.behavior.actions));}
+test("actor facts preserve upgrades; every faction can place its health-bearing roster",()=>{
+  for(const a of rosters.actors){assert.ok(a.behavior.health===null||a.behavior.health>0);assert.ok(Array.isArray(a.behavior.weapons));assert.ok(Array.isArray(a.behavior.actions));}
   for(const faction of rosters.factions){
     const s=generateScene(faction.mode as GameMode,42,64,"plains");for(let y=1;y<63;y++)for(let x=35;x<63;x++)s.cells[y][x]=1;
-    for(const actorKey of faction.actors){const a=actorFor(actorKey),p=makePiece(s,actorKey,faction.id,"blue",{x:a.behavior.waterPlacement?45:10,y:10});assert.equal(placementIssue(s,p),null,a.name);assert.deepEqual(dimensions(a).every(n=>n>0),true);}
+    for(const actorKey of faction.actors){const a=actorFor(actorKey),p=makePiece(s,actorKey,faction.id,"blue",{x:a.behavior.waterPlacement?45:10,y:10});if(a.behavior.health===null){assert.equal(a.id,"gapurifier");assert.match(placementIssue(s,p)!,/building upgrade/);continue;}assert.equal(placementIssue(s,p),null,a.name);assert.deepEqual(dimensions(a).every(n=>n>0),true);}
   }
 });
 test("placement checks footprints, domains, borders, finite coordinates and painting protects placements",()=>{

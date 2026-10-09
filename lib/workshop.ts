@@ -123,6 +123,7 @@ function covers(piece: Piece, x: number, y: number) { const [w, h] = dimensions(
 export function placementIssue(scene: Scene, piece: Piece, pieces: Piece[] = scene.pieces) {
   if (!Number.isFinite(piece.x) || !Number.isFinite(piece.y)) return "Enter finite map coordinates.";
   const actor = actorFor(piece.actorKey);
+  if (actor.behavior.health === null) return "This is a building upgrade; install it on its host building in the game.";
   if (actor.mode !== scene.mode) return "This actor belongs to the other game mode.";
   if (pieces.length >= 160 && !pieces.some(p => p.id === piece.id)) return "This scene supports up to 160 actors.";
   const [w, h] = dimensions(actor);

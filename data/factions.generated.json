@@ -1,6 +1,6 @@
 {
   "source": "OpenRA-AI/catalog/factions.json",
-  "sha256": "655dfe0dddfd88d9ce4a557d4eb72ed7e7ab1bfef2f9e54b0dddf9b56b3221e3",
+  "sha256": "e41571fcd9391c919f8186fdc1564d262ee21795c33fafdf051df63b01fb2a62",
   "catalog": {
     "schemaVersion": 1,
     "id": "modern-factions",
@@ -13,6 +13,11 @@
       "engineCommit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
       "productCommit": "8fc59f71ab71a5e4834f8476506a65c01d734a05",
       "modCommit": "fce87fdd10ee44f3baf7f5023324d5cac50721c1"
+    },
+    "links": {
+      "origin": "https://rtsai.net",
+      "faction": "/factions/{factionId}?mode={mode}",
+      "unit": "/units/{unitId}?mode={mode}"
     },
     "modes": [
       {
@@ -1999,12 +2004,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "d0dccc256759dcca43131dc9fb78299c5fcbd699",
-        "snapshotSha256": "d4f832655f9ae736942c8dc00fcd7b062cb46cce881eac2dc2da0dc850bba0ff"
+        "commit": "d8c997d08442ff5dc3036b4567708b9953092821",
+        "snapshotSha256": "95549ccfb2c721050890fd7e24a501451ca4deed72e44557060fd7ec43868dec"
       },
       "ra": {
-        "commit": "cd9bcba176db0cb4265739a08fa41bb3c125d195",
-        "snapshotSha256": "03e90037fa38ed8a3501792f6f9e7c794f1e248ce19c0febb69e91bb855345d5"
+        "commit": "8e053c5de825321cac62c6f3ed101ff713d9838f",
+        "snapshotSha256": "322705daa4a6af00f1929a49480626489efbd85334c53d1b2e7b8eef2408bed6"
       }
     },
     "factions": [
@@ -2045,13 +2050,10 @@
           "ra2:gayard",
           "ra2:amradr",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2091,13 +2093,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2137,13 +2136,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2183,13 +2179,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2228,13 +2221,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2271,14 +2261,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -2315,14 +2302,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -2359,14 +2343,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -2403,14 +2384,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -2451,13 +2429,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2495,14 +2470,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -2543,13 +2515,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2587,13 +2556,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2633,13 +2599,10 @@
           "ra2:gaweap",
           "ra2:gayard",
           "ra2:gaairc",
-          "ra2:gagap",
           "ra2:gadept",
-          "ra2:gaspysat",
           "ra2:gacsph",
           "ra2:gatech",
-          "ra2:gaweat",
-          "ra2:gaorep"
+          "ra2:gapurifier"
         ]
       },
       {
@@ -2675,14 +2638,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -2722,14 +2682,11 @@
           "ra2:narefn",
           "ra2:naweap",
           "ra2:nayard",
-          "ra2:napsis",
           "ra2:naradr",
           "ra2:nadept",
           "ra2:nairon",
           "ra2:natech",
-          "ra2:namisl",
-          "ra2:nanrct",
-          "ra2:naclon"
+          "ra2:nanrct"
         ]
       },
       {
@@ -3554,7 +3511,7 @@
         "key": "ra2:aegis",
         "id": "aegis",
         "mode": "ra2",
-        "name": "Aegis Cruiser",
+        "name": "Air Defense Cruiser Cruiser",
         "category": "ship",
         "cost": 1200,
         "roles": [
@@ -3776,7 +3733,7 @@
         "key": "ra2:amradr",
         "id": "amradr",
         "mode": "ra2",
-        "name": "American Airforce Command Headquarters",
+        "name": "American Airfield",
         "category": "structure",
         "cost": 1000,
         "roles": [],
@@ -3825,7 +3782,7 @@
         "key": "ra2:apoc",
         "id": "apoc",
         "mode": "ra2",
-        "name": "Apocalypse Tank",
+        "name": "Heavy Assault Tank Tank",
         "category": "vehicle",
         "cost": 1750,
         "roles": [
@@ -3837,7 +3794,7 @@
           "speed": 60,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Soviet Advanced Battle Tank with Double Barrel\nand Anti-Aircraft Missile Launcher.\nStrong vs Vehicles, Aircraft\nWeak vs Infantry",
+          "description": "Union Advanced Battle Tank with Double Barrel\nand Anti-Aircraft Missile Launcher.\nStrong vs Vehicles, Aircraft\nWeak vs Infantry",
           "weapons": [
             {
               "id": "120mmx",
@@ -4003,7 +3960,7 @@
         "key": "ra2:atesla",
         "id": "atesla",
         "mode": "ra2",
-        "name": "Prism Tower",
+        "name": "Spectrum Tower",
         "category": "defense",
         "cost": 1500,
         "roles": [],
@@ -4079,7 +4036,7 @@
         "key": "ra2:beag",
         "id": "beag",
         "mode": "ra2",
-        "name": "Black Eagle",
+        "name": "Strike Fighter",
         "category": "aircraft",
         "cost": 1200,
         "roles": [
@@ -4308,7 +4265,7 @@
         "key": "ra2:cleg",
         "id": "cleg",
         "mode": "ra2",
-        "name": "Chrono Legionnaire",
+        "name": "Phase Legionnaire",
         "category": "infantry",
         "cost": 1500,
         "roles": [
@@ -4424,7 +4381,7 @@
         "key": "ra2:cmin",
         "id": "cmin",
         "mode": "ra2",
-        "name": "Chrono Miner",
+        "name": "Ore Harvester",
         "category": "vehicle",
         "cost": 1400,
         "roles": [],
@@ -4519,7 +4476,7 @@
         "key": "ra2:deso",
         "id": "deso",
         "mode": "ra2",
-        "name": "Desolator",
+        "name": "Area Denial Trooper",
         "category": "infantry",
         "cost": 600,
         "roles": [
@@ -4696,7 +4653,7 @@
           "speed": 90,
           "footprint": null,
           "waterPlacement": true,
-          "description": "Allied Main Battle Ship armed with cannons and\nan Osprey helicopter.\nCan detect submarines and sea animals.\nStrong vs Naval units\nWeak vs Ground units, Aircraft",
+          "description": "Coalition Main Battle Ship armed with cannons and\nan Osprey helicopter.\nCan detect submarines and sea animals.\nStrong vs Naval units\nWeak vs Ground units, Aircraft",
           "weapons": [
             {
               "id": "155mm",
@@ -4853,7 +4810,7 @@
         "key": "ra2:dlph",
         "id": "dlph",
         "mode": "ra2",
-        "name": "Dolphin",
+        "name": "Scout Submersible",
         "category": "ship",
         "cost": 500,
         "roles": [
@@ -4865,7 +4822,7 @@
           "speed": 120,
           "footprint": null,
           "waterPlacement": true,
-          "description": "Trained dolphin\narmed with sonic beams.\nStrong vs Ships",
+          "description": "Trained scout submersible\narmed with sonic beams.\nStrong vs Ships",
           "weapons": [
             {
               "id": "SonicZap",
@@ -5067,7 +5024,7 @@
         "key": "ra2:dron",
         "id": "dron",
         "mode": "ra2",
-        "name": "Terror Drone",
+        "name": "Attack Drone",
         "category": "infantry",
         "cost": 500,
         "roles": [],
@@ -5524,7 +5481,7 @@
         "key": "ra2:e2",
         "id": "e2",
         "mode": "ra2",
-        "name": "Conscript",
+        "name": "Rifleman",
         "category": "infantry",
         "cost": 100,
         "roles": [
@@ -6338,7 +6295,7 @@
         "key": "ra2:gaairc",
         "id": "gaairc",
         "mode": "ra2",
-        "name": "Airforce Command Headquarters",
+        "name": "Airfield",
         "category": "structure",
         "cost": 1000,
         "roles": [],
@@ -6387,7 +6344,7 @@
         "key": "ra2:gacsph",
         "id": "gacsph",
         "mode": "ra2",
-        "name": "Chronosphere",
+        "name": "Strategic Uplink",
         "category": "structure",
         "cost": 2500,
         "roles": [],
@@ -6397,7 +6354,7 @@
           "speed": null,
           "footprint": "4,3",
           "waterPlacement": false,
-          "description": "Allows teleporting units in a 3x3 array.",
+          "description": "Superweapon: rapid redeployment of a group of units.",
           "weapons": [],
           "actions": [
             {
@@ -6446,7 +6403,7 @@
           "speed": null,
           "footprint": "3,3",
           "waterPlacement": false,
-          "description": "Repairs vehicles and removes Terror Drones (for a price).",
+          "description": "Repairs vehicles and removes Attack Drones (for a price).",
           "weapons": [],
           "actions": [
             {
@@ -6458,102 +6415,6 @@
               "id": "Power",
               "label": "Power",
               "detail": "-25 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure"
-          ]
-        }
-      },
-      {
-        "key": "ra2:gagap",
-        "id": "gagap",
-        "mode": "ra2",
-        "name": "Gap Generator",
-        "category": "structure",
-        "cost": 1000,
-        "roles": [],
-        "behavior": {
-          "health": 600,
-          "armor": "Wood",
-          "speed": null,
-          "footprint": "1,1",
-          "waterPlacement": false,
-          "description": "Obscures the enemy's view with shroud.\nRequires power to operate.",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-100 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure"
-          ]
-        }
-      },
-      {
-        "key": "ra2:gaorep",
-        "id": "gaorep",
-        "mode": "ra2",
-        "name": "Ore Purifier",
-        "category": "structure",
-        "cost": 2500,
-        "roles": [],
-        "behavior": {
-          "health": 900,
-          "armor": "Wood",
-          "speed": null,
-          "footprint": "3,3",
-          "waterPlacement": false,
-          "description": "Refines all forms of income by 25%.",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-200 power; low-power conditions can alter operation."
             },
             {
               "id": "DamageMultiplier:R2DESIGNATED",
@@ -6747,6 +6608,26 @@
         }
       },
       {
+        "key": "ra2:gapurifier",
+        "id": "gapurifier",
+        "mode": "ra2",
+        "name": "Refinery Purifier",
+        "category": "structure",
+        "cost": 1000,
+        "roles": [],
+        "behavior": {
+          "health": null,
+          "armor": "None",
+          "speed": null,
+          "footprint": null,
+          "waterPlacement": false,
+          "description": "Refinery upgrade: place it on a refinery.\nThat refinery earns 25% more from ore.",
+          "weapons": [],
+          "actions": [],
+          "targetTypes": []
+        }
+      },
+      {
         "key": "ra2:garefn",
         "id": "garefn",
         "mode": "ra2",
@@ -6796,58 +6677,10 @@
         }
       },
       {
-        "key": "ra2:gaspysat",
-        "id": "gaspysat",
-        "mode": "ra2",
-        "name": "Spy Satellite Uplink",
-        "category": "structure",
-        "cost": 1500,
-        "roles": [],
-        "behavior": {
-          "health": 1000,
-          "armor": "Wood",
-          "speed": null,
-          "footprint": "2,2",
-          "waterPlacement": false,
-          "description": "Reveals the entire battlefield.",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-100 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure"
-          ]
-        }
-      },
-      {
         "key": "ra2:gatech",
         "id": "gatech",
         "mode": "ra2",
-        "name": "Battle Lab",
+        "name": "Tech Center",
         "category": "structure",
         "cost": 2000,
         "roles": [],
@@ -6896,7 +6729,7 @@
         "key": "ra2:gawall",
         "id": "gawall",
         "mode": "ra2",
-        "name": "Allied Wall",
+        "name": "Wall",
         "category": "structure",
         "cost": 100,
         "roles": [],
@@ -6930,7 +6763,7 @@
         "key": "ra2:gaweap",
         "id": "gaweap",
         "mode": "ra2",
-        "name": "War Factory",
+        "name": "Vehicle Factory",
         "category": "structure",
         "cost": 2000,
         "roles": [],
@@ -6952,55 +6785,6 @@
               "id": "Power",
               "label": "Power",
               "detail": "-25 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure",
-            "SpyInfiltrate"
-          ]
-        }
-      },
-      {
-        "key": "ra2:gaweat",
-        "id": "gaweat",
-        "mode": "ra2",
-        "name": "Weather Controller",
-        "category": "structure",
-        "cost": 5000,
-        "roles": [],
-        "behavior": {
-          "health": 1000,
-          "armor": "Concrete",
-          "speed": null,
-          "footprint": "3,3",
-          "waterPlacement": false,
-          "description": "Play God with deadly weather!",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-200 power; low-power conditions can alter operation."
             },
             {
               "id": "DamageMultiplier:R2DESIGNATED",
@@ -7151,7 +6935,7 @@
         "key": "ra2:harv",
         "id": "harv",
         "mode": "ra2",
-        "name": "War Miner",
+        "name": "Armed Harvester",
         "category": "vehicle",
         "cost": 1400,
         "roles": [],
@@ -7302,7 +7086,7 @@
         "key": "ra2:htk",
         "id": "htk",
         "mode": "ra2",
-        "name": "Flak Track",
+        "name": "AA Carrier",
         "category": "vehicle",
         "cost": 500,
         "roles": [
@@ -7458,7 +7242,7 @@
         "key": "ra2:htnk",
         "id": "htnk",
         "mode": "ra2",
-        "name": "Rhino Heavy Tank",
+        "name": "Main Battle Tank Heavy Tank",
         "category": "vehicle",
         "cost": 900,
         "roles": [
@@ -7470,7 +7254,7 @@
           "speed": 90,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Soviet Main Battle Tank.\nStrong vs Vehicles\nWeak vs Infantry, Aircraft",
+          "description": "Union Main Battle Tank.\nStrong vs Vehicles\nWeak vs Infantry, Aircraft",
           "weapons": [
             {
               "id": "120mm",
@@ -7759,7 +7543,7 @@
         "key": "ra2:ivan",
         "id": "ivan",
         "mode": "ra2",
-        "name": "Crazy Ivan",
+        "name": "Demolition Specialist",
         "category": "infantry",
         "cost": 600,
         "roles": [
@@ -7915,7 +7699,7 @@
         "key": "ra2:jumpjet",
         "id": "jumpjet",
         "mode": "ra2",
-        "name": "Rocketeer",
+        "name": "Airborne Trooper",
         "category": "aircraft",
         "cost": 600,
         "roles": [
@@ -8179,7 +7963,7 @@
         "key": "ra2:mgtk",
         "id": "mgtk",
         "mode": "ra2",
-        "name": "Mirage Tank",
+        "name": "Camouflage Tank",
         "category": "vehicle",
         "cost": 1000,
         "roles": [
@@ -8331,7 +8115,7 @@
         "key": "ra2:mtnk",
         "id": "mtnk",
         "mode": "ra2",
-        "name": "Grizzly Battle Tank",
+        "name": "Medium Tank Battle Tank",
         "category": "vehicle",
         "cost": 700,
         "roles": [
@@ -8343,7 +8127,7 @@
           "speed": 105,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Allied Main Battle Tank.\nStrong vs Vehicles, Ships\nWeak vs Infantry, Aircraft",
+          "description": "Coalition Main Battle Tank.\nStrong vs Vehicles, Ships\nWeak vs Infantry, Aircraft",
           "weapons": [
             {
               "id": "105mm",
@@ -8480,54 +8264,6 @@
         }
       },
       {
-        "key": "ra2:naclon",
-        "id": "naclon",
-        "mode": "ra2",
-        "name": "Cloning Vats",
-        "category": "structure",
-        "cost": 2500,
-        "roles": [],
-        "behavior": {
-          "health": 1000,
-          "armor": "Wood",
-          "speed": null,
-          "footprint": "2, 2",
-          "waterPlacement": false,
-          "description": "Clones most trained infantry.",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-200 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure"
-          ]
-        }
-      },
-      {
         "key": "ra2:nadept",
         "id": "nadept",
         "mode": "ra2",
@@ -8539,9 +8275,9 @@
           "health": 1200,
           "armor": "Wood",
           "speed": null,
-          "footprint": "4,3",
+          "footprint": "3,3",
           "waterPlacement": false,
-          "description": "Repairs vehicles and removes Terror Drones (for a price).",
+          "description": "Repairs vehicles and removes Attack Drones (for a price).",
           "weapons": [],
           "actions": [
             {
@@ -8662,7 +8398,7 @@
           "health": 500,
           "armor": "Steel",
           "speed": null,
-          "footprint": "2,2",
+          "footprint": "3,2",
           "waterPlacement": false,
           "description": "Produces infantry.",
           "weapons": [],
@@ -8703,7 +8439,7 @@
         "key": "ra2:nairon",
         "id": "nairon",
         "mode": "ra2",
-        "name": "Iron Curtain Device",
+        "name": "EW Array",
         "category": "structure",
         "cost": 2500,
         "roles": [],
@@ -8713,7 +8449,7 @@
           "speed": null,
           "footprint": "3, 3",
           "waterPlacement": false,
-          "description": "Grants invulnerability to armored units.\nFries fleshy units.",
+          "description": "Superweapon: an electronic shield over a group of units.",
           "weapons": [],
           "actions": [
             {
@@ -8821,59 +8557,10 @@
         }
       },
       {
-        "key": "ra2:namisl",
-        "id": "namisl",
-        "mode": "ra2",
-        "name": "Nuclear Missile Silo",
-        "category": "structure",
-        "cost": 5000,
-        "roles": [],
-        "behavior": {
-          "health": 1000,
-          "armor": "Concrete",
-          "speed": null,
-          "footprint": "3, 3",
-          "waterPlacement": false,
-          "description": "Provides an atomic bomb.\nRequires power to operate.\nSpecial Ability: Atom Bomb\nMaximum 1 can be built.",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-200 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure",
-            "SpyInfiltrate"
-          ]
-        }
-      },
-      {
         "key": "ra2:nanrct",
         "id": "nanrct",
         "mode": "ra2",
-        "name": "Nuclear Reactor",
+        "name": "Heavy Power Plant",
         "category": "structure",
         "cost": 1000,
         "roles": [],
@@ -8881,9 +8568,9 @@
           "health": 1000,
           "armor": "Concrete",
           "speed": null,
-          "footprint": "4,4",
+          "footprint": "3,3",
           "waterPlacement": false,
-          "description": "Provides power for other structures.",
+          "description": "Provides a large amount of power for other structures.",
           "weapons": [],
           "actions": [
             {
@@ -8922,7 +8609,7 @@
         "key": "ra2:napowr",
         "id": "napowr",
         "mode": "ra2",
-        "name": "Tesla Reactor",
+        "name": "Power Plant",
         "category": "structure",
         "cost": 600,
         "roles": [],
@@ -8930,7 +8617,7 @@
           "health": 750,
           "armor": "Wood",
           "speed": null,
-          "footprint": "3,2",
+          "footprint": "2,2",
           "waterPlacement": false,
           "description": "Provides power for other structures.",
           "weapons": [],
@@ -8964,59 +8651,6 @@
             "DetonateAttack",
             "Structure",
             "SpyInfiltrate"
-          ]
-        }
-      },
-      {
-        "key": "ra2:napsis",
-        "id": "napsis",
-        "mode": "ra2",
-        "name": "Psychic Sensor",
-        "category": "structure",
-        "cost": 1000,
-        "roles": [],
-        "behavior": {
-          "health": 750,
-          "armor": "Wood",
-          "speed": null,
-          "footprint": "2,2",
-          "waterPlacement": false,
-          "description": "Detects enemy units and strikepoints",
-          "weapons": [],
-          "actions": [
-            {
-              "id": "WithMakeAnimation",
-              "label": "Construction",
-              "detail": "Plays the make sequence before the finished building appears."
-            },
-            {
-              "id": "Power",
-              "label": "Power",
-              "detail": "-100 power; low-power conditions can alter operation."
-            },
-            {
-              "id": "detector:",
-              "label": "Detection",
-              "detail": "Cloak detection within 6 cells."
-            },
-            {
-              "id": "DamageMultiplier:R2DESIGNATED",
-              "label": "Damage Multiplier",
-              "detail": "120% when r2-designated."
-            },
-            {
-              "id": "DamageMultiplier:ironcurtain",
-              "label": "Damage Multiplier",
-              "detail": "0% when invulnerability."
-            }
-          ],
-          "targetTypes": [
-            "R2Lased",
-            "R2ILMarked",
-            "Ground",
-            "C4",
-            "DetonateAttack",
-            "Structure"
           ]
         }
       },
@@ -9197,7 +8831,7 @@
         "key": "ra2:natech",
         "id": "natech",
         "mode": "ra2",
-        "name": "Battle Lab",
+        "name": "Tech Center",
         "category": "structure",
         "cost": 2000,
         "roles": [],
@@ -9205,7 +8839,7 @@
           "health": 500,
           "armor": "Wood",
           "speed": null,
-          "footprint": "3,3",
+          "footprint": "3,2",
           "waterPlacement": false,
           "description": "Allows deployment of advanced units.",
           "weapons": [],
@@ -9246,7 +8880,7 @@
         "key": "ra2:nawall",
         "id": "nawall",
         "mode": "ra2",
-        "name": "Soviet Wall",
+        "name": "Wall",
         "category": "structure",
         "cost": 100,
         "roles": [],
@@ -9280,7 +8914,7 @@
         "key": "ra2:naweap",
         "id": "naweap",
         "mode": "ra2",
-        "name": "War Factory",
+        "name": "Vehicle Factory",
         "category": "structure",
         "cost": 2000,
         "roles": [],
@@ -9386,7 +9020,7 @@
         "key": "ra2:orca",
         "id": "orca",
         "mode": "ra2",
-        "name": "Harrier",
+        "name": "Strike Aircraft",
         "category": "aircraft",
         "cost": 1200,
         "roles": [
@@ -9516,7 +9150,7 @@
           "speed": 150,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Attack helicopter with a chain gun and anti-armor rockets.\nRockets hit laser-marked targets harder. Vulnerable to anti-air.\nRequires Battle Lab.",
+          "description": "Attack helicopter with a chain gun and anti-armor rockets.\nRockets hit laser-marked targets harder. Vulnerable to anti-air.\nRequires Tech Center.",
           "weapons": [
             {
               "id": "R2ApacheCannon",
@@ -9809,7 +9443,7 @@
           "speed": 240,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Fast strafing strikes vs armor and buildings.\nLong reload between passes. Weak vs interceptors and AA.\nProduced at the War Factory; no airfield required.",
+          "description": "Fast strafing strikes vs armor and buildings.\nLong reload between passes. Weak vs interceptors and AA.\nProduced at the Vehicle Factory; no airfield required.",
           "weapons": [
             {
               "id": "R2AzarStrike",
@@ -11953,7 +11587,7 @@
           "speed": 270,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Multirole fighter: four air-to-air missiles and two guided\nstrike missiles; returns to Airforce Command to rearm.\nRequires Battle Lab.",
+          "description": "Multirole fighter: four air-to-air missiles and two guided\nstrike missiles; returns to the Airfield to rearm.\nRequires Tech Center.",
           "weapons": [
             {
               "id": "R2F15AAM",
@@ -21516,7 +21150,7 @@
           "speed": 260,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Fast air-superiority fighter. Four missiles; automatically\nreturns to Airforce Command to rearm.\nCannot attack ground targets. Requires Battle Lab.",
+          "description": "Fast air-superiority fighter. Four missiles; automatically\nreturns to the Airfield to rearm.\nCannot attack ground targets. Requires Tech Center.",
           "weapons": [
             {
               "id": "R2InterceptorMissile",
@@ -23141,7 +22775,7 @@
           "speed": 145,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Rocket gunship vs infantry and light vehicles.\nWeak vs heavy tanks; vulnerable to dedicated AA.\nProduced at the War Factory.",
+          "description": "Rocket gunship vs infantry and light vehicles.\nWeak vs heavy tanks; vulnerable to dedicated AA.\nProduced at the Vehicle Factory.",
           "weapons": [
             {
               "id": "R2ToufanRocket",
@@ -25566,7 +25200,7 @@
         "key": "ra2:shk",
         "id": "shk",
         "mode": "ra2",
-        "name": "Tesla Trooper",
+        "name": "Arc Trooper",
         "category": "infantry",
         "cost": 500,
         "roles": [
@@ -25578,7 +25212,7 @@
           "speed": 60,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Special armored unit using electricity.\nStrong vs Infantry, Light armor\nWeak vs Tanks, Aircraft\nSpecial ability: Charge tesla coils",
+          "description": "Special armored unit using electricity.\nStrong vs Infantry, Light armor\nWeak vs Tanks, Aircraft\nSpecial ability: Charge arc coils",
           "weapons": [
             {
               "id": "ElectricBolt",
@@ -26099,7 +25733,7 @@
         "key": "ra2:sqd",
         "id": "sqd",
         "mode": "ra2",
-        "name": "Giant Squid",
+        "name": "Assault Submersible",
         "category": "ship",
         "cost": 1000,
         "roles": [
@@ -26201,7 +25835,7 @@
         "key": "ra2:sref",
         "id": "sref",
         "mode": "ra2",
-        "name": "Prism Tank",
+        "name": "Spectrum Tank",
         "category": "vehicle",
         "cost": 1200,
         "roles": [
@@ -26353,7 +25987,7 @@
         "key": "ra2:sub",
         "id": "sub",
         "mode": "ra2",
-        "name": "Typhoon Attack Sub",
+        "name": "Attack Submarine Attack Sub",
         "category": "ship",
         "cost": 1000,
         "roles": [
@@ -26365,7 +25999,7 @@
           "speed": 60,
           "footprint": null,
           "waterPlacement": true,
-          "description": "Submerged anti-ship unit armed with\ntorpedoes.\nCan detect other submarines and Giant Squids.\nStrong vs Ships\nWeak vs Ground units, Aircraft\nSpecial Ability: Submerge",
+          "description": "Submerged anti-ship unit armed with\ntorpedoes.\nCan detect other submarines and Assault Submersibles.\nStrong vs Ships\nWeak vs Ground units, Aircraft\nSpecial Ability: Submerge",
           "weapons": [
             {
               "id": "SubTorpedo",
@@ -26519,7 +26153,7 @@
         "key": "ra2:tany",
         "id": "tany",
         "mode": "ra2",
-        "name": "Tanya",
+        "name": "Commando",
         "category": "infantry",
         "cost": 1000,
         "roles": [
@@ -26796,7 +26430,7 @@
         "key": "ra2:tesla",
         "id": "tesla",
         "mode": "ra2",
-        "name": "Tesla Coil",
+        "name": "Arc Coil",
         "category": "defense",
         "cost": 1500,
         "roles": [],
@@ -27052,7 +26686,7 @@
         "key": "ra2:ttnk",
         "id": "ttnk",
         "mode": "ra2",
-        "name": "Tesla Tank",
+        "name": "Arc Tank",
         "category": "vehicle",
         "cost": 1200,
         "roles": [
@@ -27064,7 +26698,7 @@
           "speed": 90,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Russian special tank armed with dual small Tesla Coils.\nStrong vs Vehicles, Infantry\nWeak vs Aircraft",
+          "description": "Russian special tank armed with dual small Arc Coils.\nStrong vs Vehicles, Infantry\nWeak vs Aircraft",
           "weapons": [
             {
               "id": "TankBolt",
@@ -27204,7 +26838,7 @@
         "key": "ra2:yuri",
         "id": "yuri",
         "mode": "ra2",
-        "name": "Yuri",
+        "name": "Control Specialist",
         "category": "infantry",
         "cost": 1200,
         "roles": [
@@ -27216,7 +26850,7 @@
           "speed": 60,
           "footprint": null,
           "waterPlacement": false,
-          "description": "Psychic infantry. Can mind control enemy units.\nCan be deployed to unleash a powerful psychic wave.\nStrong vs Infantry, Vehicles\nWeak vs Terror Drones, Aircraft, Buildings",
+          "description": "Control infantry. Can mind control enemy units.\nCan be deployed to unleash a powerful control wave.\nStrong vs Infantry, Vehicles\nWeak vs Attack Drones, Aircraft, Buildings",
           "weapons": [
             {
               "id": "MindControl",
@@ -27320,7 +26954,7 @@
         "key": "ra2:zep",
         "id": "zep",
         "mode": "ra2",
-        "name": "Kirov Airship",
+        "name": "Heavy Airship Airship",
         "category": "aircraft",
         "cost": 2000,
         "roles": [

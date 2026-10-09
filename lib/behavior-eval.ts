@@ -1,5 +1,5 @@
 import { rosters, type GameMode } from "./game-content";
-import { actorFor, canDeploy, createWorld, generateScene, issueOrder, makePiece, parseScene, placementIssue, prototypeRange, stepWorld, supportedWeapon, type LivePiece, type Scene, type World } from "./workshop";
+import { actorFor, canDeploy, createWorld, generateScene, issueOrder, makePiece, maxHealth, parseScene, placementIssue, prototypeRange, stepWorld, supportedWeapon, type LivePiece, type Scene, type World } from "./workshop";
 
 export const policies = { nearest: "Advance & engage", focus: "Focus weakest target", hold: "Hold firing line", kite: "Kite between shots", deploy: "Deploy & defend" } as const;
 export type Policy = keyof typeof policies;
@@ -45,7 +45,7 @@ export function trialScene(c: EvalConfig, seed: number, mirrored: boolean): Scen
   }
   return s;
 }
-function remaining(world:World,team:string){return world.pieces.filter(p=>p.team===team&&p.health>0).reduce((v,p)=>v+Math.max(0,actorFor(p.actorKey).cost??0)*p.health/actorFor(p.actorKey).behavior.health,0);}
+function remaining(world:World,team:string){return world.pieces.filter(p=>p.team===team&&p.health>0).reduce((v,p)=>v+Math.max(0,actorFor(p.actorKey).cost??0)*p.health/maxHealth(actorFor(p.actorKey)),0);}
 function snapshot(w:World):Frame { return structuredClone({time:w.time,pieces:w.pieces,effects:w.effects,shots:w.shots,damage:w.damage,destroyed:w.destroyed}); }
 export function createTrial(c:EvalConfig,policy:Policy,rep:number){
   const seed=c.custom?.seed??c.seed+Math.floor(rep/2),mirrored=!c.custom&&rep%2===1,scene=trialScene(c,seed,mirrored),world=createWorld(scene);world.auto=false;

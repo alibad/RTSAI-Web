@@ -131,7 +131,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <span className="eyebrow">{mac ? "RTS AI / BROWSER, WINDOWS AND MACOS" : "RTS AI / BROWSER AND WINDOWS"}</span>
           <h1>Play RTS AI.<br /><em>{published ? "Out now." : "Now in your browser."}</em></h1>
           <p>Web RTS and Downloadable RTS share one standalone game. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
-          <p>The Windows development build combines Classic and RA2-inspired modes, 16 faction choices and six campaigns. Its EXE installer and portable ZIP are built locally; public distribution is still pending. The browser development build adds direct peer multiplayer, chat and optional calls. Mac packaging follows on our Mac machine.</p>
+          <p>The Windows alpha combines Classic and RA2-inspired modes, 16 country choices and six campaigns. Choose a mode from the game&apos;s main menu. Classic currently shares the modern army on a rectangular grid; more features from the historical Classic game are still being migrated. Mac packaging for this version follows on our Mac machine.</p>
           <div className={`play-options ${mac ? "has-three" : ""}`}>
             <article className="play-option">
               <Globe size={24} aria-hidden="true" />
@@ -141,7 +141,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             </article>
             <article className="play-option">
               <MonitorDown size={24} aria-hidden="true" />
-              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>{noCoCommander ? "The standalone game: seven factions, skirmishes against the built-in bots." : "The standalone game, with an optional local co-commander."}</p></div>
+              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>{noCoCommander ? "The standalone game, with built-in bots." : "Both game modes, campaigns and an optional local co-commander."}</p></div>
               {published && installer
                 ? <a className="primary-action" href={installer.url} data-analytics-event="mod_download" data-platform="windows-x64-setup"><Download size={17} /> Download RTS AI {published.version}</a>
                 : <span className="pending-download" aria-disabled="true">Coming soon</span>}
@@ -278,7 +278,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
               )}
             </article>
           </div>
-          <div className="download-footnote"><BrainCircuit size={15} /><span>The Classic prototype keeps its own AI setup: an optional local model pack or an external provider you choose. Hosted AI and the installer choices above belong to RTS AI.</span></div>
+          <div className="download-footnote"><BrainCircuit size={15} /><span>The earlier prototype keeps its own AI setup. The current Windows game above includes both mode choices and optional local AI.</span></div>
         </details>
       </main>
       <SiteFooter />

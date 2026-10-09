@@ -68,7 +68,7 @@ test("complete rosters retain source names, countries and all buildings", async 
   const source = JSON.parse(await readFile(new URL("../../RTSAI-Art/rebuild/catalog.json", import.meta.url), "utf8"));
   assert.equal(rosterFactions("ra2").length, 16);
   assert.equal(rosterFactions("ra").length, 12);
-  assert.equal(rosters.actors.length, 398);
+  assert.deepEqual(rosters.actors.map(a => a.key).sort(), Object.keys(source.actors).sort());
   for (const faction of rosters.factions) {
     const original = source.factions.find((f: {id: string; mode: string}) => f.id === faction.id && f.mode === (faction.mode === "ra" ? "classic" : "ra2"));
     assert.equal(faction.name, original.name);

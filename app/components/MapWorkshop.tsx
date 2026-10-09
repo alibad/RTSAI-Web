@@ -165,7 +165,7 @@ export function MapWorkshop({initialMode="ra2",campaignPreview=false,flags={}}:{
     return()=>{cancelAnimationFrame(frame);frame=0;kick.current=()=>{};observer.disconnect();node.removeEventListener("wheel",wheel);if(cameraCommit.current)clearTimeout(cameraCommit.current);};
   },[moveCamera]);
   const countries=rosterFactions(scene.mode), country=countries.find(f=>f.id===faction)??countries[0];
-  const palette=rosterActors(country).filter(a=>(category==="all"||a.category===category)&&a.name.toLowerCase().includes(query.toLowerCase()));
+  const palette=rosterActors(country).filter(a=>a.behavior.health!==null&&(category==="all"||a.category===category)&&a.name.toLowerCase().includes(query.toLowerCase()));
   const piece=hud.pieces.find(p=>p.id===selected), actor=piece?actorFor(piece.actorKey):null;
   const editable=phase==="edit";
   function at(client:Point){const rect=canvas.current!.getBoundingClientRect();return screenToCell({x:client.x-rect.left,y:client.y-rect.top},doc.current,cameraRef.current,rect.width,rect.height);}
