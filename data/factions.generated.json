@@ -2004,12 +2004,12 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "d8c997d08442ff5dc3036b4567708b9953092821",
-        "snapshotSha256": "95549ccfb2c721050890fd7e24a501451ca4deed72e44557060fd7ec43868dec"
+        "commit": "fe27626ce36e63aebafb410ee27204c1d0f24af5",
+        "snapshotSha256": "697c3fadbd03a85c0f6ebf9d79a304e53fe2d21e0d598e59f5038e0bee34e6e4"
       },
       "ra": {
-        "commit": "8e053c5de825321cac62c6f3ed101ff713d9838f",
-        "snapshotSha256": "322705daa4a6af00f1929a49480626489efbd85334c53d1b2e7b8eef2408bed6"
+        "commit": "ac5f57c1ba6fff57686f614b913447bc7fe9f94a",
+        "snapshotSha256": "143c3f9f1da762798cdb512c2b73118724f21d3ba7a9c68c552d0bf088a2ebbe"
       }
     },
     "factions": [

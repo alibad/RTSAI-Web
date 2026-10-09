@@ -1,0 +1,40 @@
+{
+  "durationSeconds": 42,
+  "sources": [
+    {
+      "path": "RTSAI-Film\\public\\footage\\coldopen.mp4",
+      "sha256": "38e6f482418c6ceca89bc53d4536c378006033edaa33ba1e768c2d267b6c73ef"
+    },
+    {
+      "path": "RTSAI-Mod\\docs\\acceptance-20261009\\classic-after.png",
+      "sha256": "120fb303b88381cda85af9835ba8f568160e69b7dc03befe5add3ea72f0b9919"
+    },
+    {
+      "path": "RTSAI-Mod\\docs\\acceptance-20261009\\ra2.png",
+      "sha256": "c7d456689512df5966b7b30c13607ed47f49e44f20390ef086dfa46d056cc23b"
+    },
+    {
+      "path": "RTSAI-Film\\out\\scene-ArtAfter.mp4",
+      "sha256": "f584f3a752850f4951e00c6b3d8343e732774acded7ce4d7e335003385b7ea36"
+    },
+    {
+      "path": "RTSAI-Film\\public\\footage\\battle-3.mp4",
+      "sha256": "b7586535baa60a80dcb533906261d85287fce488fc0afb16ec9fc9d7371e1f3c"
+    },
+    {
+      "path": "RTSAI-Film\\public\\footage\\browser-battle.mp4",
+      "sha256": "8984e4753510a13867adf9b1fa23c65ed9d0ee5a61b284ec5f6d9607fc54924a"
+    },
+    {
+      "path": "RTSAI-Film\\public\\footage\\cocommander.mp4",
+      "sha256": "6a8dfffa48208a4afa9876a29009f09a9f9dae36a47773229a9f7d559274ac11"
+    },
+    {
+      "path": "RTSAI-Film\\audio\\score-film.wav",
+      "sha256": "1b956b4b28bcf48bd423af7617f5cf9eae82f8a39dc5c38b428b800f414de23a"
+    }
+  ],
+  "outputSha256": "dec4ccae13f05159b2015bdcd9f5ee714084227b89f434a2ddf44bc5faff8385",
+  "scope": "Original captured game footage and native acceptance stills. Local AI demonstration. No claim of cross-network acceptance.",
+  "musicProvenance": "RTSAI-Film/audio/README.md and RTSAI-Mod/mods/rtsai/standalone/audio/PROVENANCE.json"
+}

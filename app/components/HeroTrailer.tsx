@@ -64,6 +64,7 @@ export function HeroTrailer({ video, poster }: { video: string; poster: string }
       <button type="button" onClick={toggle}>
         {playing ? <Pause size={14} /> : <Play size={14} />} {playing ? "Pause trailer" : "Play trailer"}
       </button>
+      <a href={video} target="_blank" rel="noopener noreferrer">Watch full trailer with sound</a>
     </figure>
   );
 }

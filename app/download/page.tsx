@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Apple, BrainCircuit, CalendarDays, Cloud, Cpu, Download, ExternalLink, FileArchive, Globe, HardDrive, MemoryStick, Mic, MonitorDown, PackageCheck, PowerOff, ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
+import { Apple, BrainCircuit, CalendarDays, Cpu, Download, ExternalLink, FileArchive, Globe, HardDrive, MemoryStick, Mic, MonitorDown, PackageCheck, PowerOff, ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getGameRelease } from "../../lib/release";

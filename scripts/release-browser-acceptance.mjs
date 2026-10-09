@@ -1,0 +1,46 @@
+// Verify the actual release website, media bytes, download and motion preference.
+import { chromium } from '../../RTSAI-WebGame/web/node_modules/playwright-core/index.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+const base = process.argv[2] || 'https://rtsai.net';
+const out = path.resolve(process.argv[3] || '../artifacts/consolidation-20261009/release-browser');
+const manifest = JSON.parse(fs.readFileSync(new URL('../data/rtsai-mod-release.json',import.meta.url)));
+const provenance = JSON.parse(fs.readFileSync(new URL('../docs/release-trailer-provenance-20261009.json',import.meta.url)));
+fs.mkdirSync(out,{recursive:true});
+const browser = await chromium.launch({channel:'chrome',headless:true});
+const errors=[];
+try {
+ const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});
+ page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto(base);
+ await page.getByRole('link',{name:'Watch full trailer with sound',exact:true}).waitFor();
+ const video=page.getByLabel('RTS AI gameplay trailer');
+ await page.waitForFunction(()=>document.querySelector('video')?.readyState>=2);
+ assert.equal(Math.round(await video.evaluate(v=>v.duration)),42);
+ assert.equal(await video.evaluate(v=>v.muted),true);
+ await page.getByRole('button',{name:'Pause trailer',exact:true}).click();
+ assert.equal(await video.evaluate(v=>v.paused),true);
+ await page.getByRole('button',{name:'Play trailer',exact:true}).click();
+ await page.getByRole('button',{name:'Pause trailer',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Pause trailer',exact:true}).click();
+ await page.screenshot({path:path.join(out,'trailer-home.png')});
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.reload();
+ await page.getByRole('button',{name:'Play trailer',exact:true}).waitFor();
+ assert.equal(await page.getByLabel('RTS AI gameplay trailer').evaluate(v=>v.paused),true);
+ const media=await page.request.get(base+'/trailer/rtsai-trailer.mp4');assert.equal(media.status(),200);
+ assert.equal(createHash('sha256').update(await media.body()).digest('hex'),provenance.outputSha256);
+ await page.goto(base+'/download');
+ const install=manifest.assets.find(a=>a.kind==='installer'&&a.platform==='windows-x64');
+ const link=page.getByRole('link',{name:'Download RTS AI '+manifest.version,exact:true});
+ assert.equal(await link.getAttribute('href'),install.url);
+ await page.screenshot({path:path.join(out,'download.png'),fullPage:true});
+ const downloading=page.waitForEvent('download',{timeout:120000});await link.click();
+ const download=await downloading;const file=path.join(out,'website-downloaded-setup.exe');await download.saveAs(file);
+ assert.equal(createHash('sha256').update(fs.readFileSync(file)).digest('hex'),install.sha256);
+ assert.deepEqual(errors,[]);
+ fs.writeFileSync(path.join(out,'acceptance.json'),JSON.stringify({url:base,version:manifest.version,websiteInstallerHash:install.sha256,trailerHash:provenance.outputSha256,trailerSeconds:42,playPause:true,reducedMotion:true,syntheticMedia:false,pageErrors:errors},null,2));
+ console.log('PASS release website, full trailer bytes, controls, reduced motion and real download button.');
+} finally {await browser.close();}

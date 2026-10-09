@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import test from "node:test";
 
 // The committed RTS AI release manifest: published, it drives download links and faction release claims.
@@ -105,8 +106,14 @@ test("renders a focused homepage: the standalone RTS AI promise, real flags, app
   else assert.match(html, /Coming soon/);
   assert.match(html, /Nothing else to install/);
   assert.match(html, /AI co-commander/);
-  assert.match(html, /Interactive AI companion preview/);
-  assert.doesNotMatch(html, /<video/, "no trailer files, so the co-commander section keeps the CompanionDemo");
+  if (existsSync(new URL('../public/trailer/rtsai-trailer.mp4', import.meta.url))) {
+    assert.match(html, /RTS AI gameplay trailer/);
+    assert.match(html, /Watch full trailer with sound/);
+    assert.match(html, /<video/);
+  } else {
+    assert.match(html, /Interactive AI companion preview/);
+    assert.doesNotMatch(html, /<video/, "without trailer files the CompanionDemo remains visible");
+  }
   assert.match(html, /AUTO when you say so/);
   for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"]) assert.match(html, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
   assert.ok((html.match(/\/faction-art\/lineups\/[a-z-]+-1440\.[0-9a-f]{12}\.avif/g) ?? []).length >= 7, "the front line shows every faction's lineup");
