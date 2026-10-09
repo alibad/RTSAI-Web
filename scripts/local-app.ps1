@@ -4,14 +4,13 @@
   battle runner on one origin.
 
 .DESCRIPTION
-  Runs from its own worktree (RTSAI-Web-wt-app), detached at the newest commit of rtsai/integration, so in-progress
-  edits in other worktrees never reach it. "RTS AI Studio.vbs" in the Windows Startup folder runs this hidden at login;
-  run it again to pick up new commits. -NoUpdate keeps the current checkout.
+  Runs from the canonical RTSAI-Web checkout without changing its Git branch. Existing Startup launchers can
+  run this hidden at login. -NoUpdate is retained for compatibility with older launch commands.
 
   Ports: 3450 the app (Studio, plus a proxy to the website), 3451 the production website (loopback only),
   3462 the native OpenRA runner used by Workshop experiments. Logs: .cache\local-app\.
 #>
-param([switch]$NoUpdate, [string]$Branch = "rtsai/integration")
+param([switch]$NoUpdate, [string]$Branch = "main")
 $ErrorActionPreference = "Stop"
 
 $App = Split-Path -Parent $PSScriptRoot
@@ -27,7 +26,7 @@ $Node = (Get-Command node).Source
 function Stop-AppServers {
   # Only this worktree's own servers: their command lines carry its path.
   Get-CimInstance Win32_Process -Filter "Name='node.exe' OR Name='python.exe'" |
-    Where-Object { $_.CommandLine -and $_.CommandLine.Contains($App) } |
+    Where-Object { $_.CommandLine -and $_.CommandLine.Replace('/', '\').Contains($App + '\') } |
     ForEach-Object { Write-Host "Stopping $($_.Name) $($_.ProcessId)"; Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 }
 
@@ -47,10 +46,7 @@ try {
   Set-Location $App
   Stop-AppServers
 
-  if (-not $NoUpdate) {
-    if (git status --porcelain --untracked-files=no) { Write-Host "Local edits in $App; keeping the current checkout." }
-    else { git checkout --quiet --detach $Branch; if ($LASTEXITCODE -ne 0) { throw "Could not check out $Branch" } }
-  }
+  if ($Branch -ne 'main') { throw 'The local Studio uses the canonical main checkout.' }
   $head = (git rev-parse HEAD).Trim()
   Write-Host "Serving $head"
 
@@ -62,12 +58,7 @@ try {
     Set-Content $lockStamp $lock
   }
 
-  # Share the integration worktree's extracted RA2 originals and GLB thumbnails instead of rebuilding them.
-  $integration = Join-Path $Games "RTSAI-Web-wt-integration\.cache"
-  foreach ($name in "ra2-originals", "classic-originals", "glb-thumbs") {
-    $link = Join-Path $App ".cache\$name"; $source = Join-Path $integration $name
-    if (-not (Test-Path $link) -and (Test-Path $source)) { New-Item -ItemType Junction -Path $link -Target $source | Out-Null }
-  }
+  # Optional reference caches live in this checkout's .cache; retired folders are not runtime dependencies.
 
   # The local app is an admin build: it keeps Campaign studio and AI testing, which rtsai.net leaves out (lib/admin.ts).
   $env:RTSAI_ADMIN = "1"
