@@ -2,6 +2,47 @@ import { readFile, writeFile, readdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
+const frozenConfigPath = process.argv.find(arg => arg.startsWith("--frozen-inputs="))?.slice(16);
+if (frozenConfigPath) {
+  if (!process.argv.includes("--check")) throw new Error("Frozen content adapter is read-only; S10 owns generated refresh");
+  const config = JSON.parse(await readFile(resolve(frozenConfigPath), "utf8"));
+  const catalogBytes = await readFile(resolve(config.catalog));
+  const digest = createHash("sha256").update(catalogBytes).digest("hex");
+  if (digest !== config.catalogSha256) throw new Error("Frozen catalog changed");
+  const accepted = JSON.parse(catalogBytes);
+  for (const faction of accepted.factions) delete faction.flavour;
+  const snapshot = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
+  if (snapshot.sha256 !== digest) throw new Error("Website catalog provenance is stale");
+  if (snapshot.derivation?.type === "standalone-frozen-facts") {
+    const factsBytes = await readFile(resolve(config.standaloneFacts));
+    const { standaloneSnapshot } = await import("./standalone-content.mjs");
+    const expected = standaloneSnapshot(accepted, JSON.parse(factsBytes), createHash("sha256").update(factsBytes).digest("hex"), digest);
+    if (JSON.stringify(snapshot) !== JSON.stringify(expected)) throw new Error("Standalone website content is stale");
+  } else if (JSON.stringify(snapshot.catalog) !== JSON.stringify(accepted)) throw new Error("Website dossier catalog is stale");
+  execFileSync(process.execPath, ["--import", "tsx", resolve("scripts/standalone-facts.ts"), `--mod=${config.mod}`, `--mod-identity=${config.modIdentity}`, `--engine=${config.engine}`, `--engine-identity=${config.engineIdentity}`, `--catalog=${config.catalog}`, `--catalog-sha256=${config.catalogSha256}`, `--check=${config.standaloneFacts}`], { stdio: "inherit" });
+  console.log(`Frozen content check passed; ${snapshot.derivation?.type === "standalone-frozen-facts" ? "standalone facts imported" : "historical roster preserved pending import"}`);
+  process.exit(0);
+}
+const currentSnapshot = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
+if (currentSnapshot.derivation?.type === "standalone-frozen-facts") {
+  const inputs = JSON.parse(await readFile(new URL("../data/content-inputs.generated.json", import.meta.url), "utf8"));
+  const baseBytes = await readFile(new URL("../data/catalog-base.generated.json", import.meta.url));
+  const factsBytes = await readFile(new URL("../data/standalone-facts.generated.json", import.meta.url));
+  const digest = bytes => createHash("sha256").update(bytes).digest("hex");
+  if (inputs.schema !== 1 || digest(baseBytes) !== inputs.catalogBaseSha256 || digest(factsBytes) !== inputs.factsSha256) throw new Error("Standalone input snapshot changed; refresh from verified frozen sources");
+  const { standaloneSnapshot } = await import("./standalone-content.mjs");
+  const expected = standaloneSnapshot(JSON.parse(baseBytes), JSON.parse(factsBytes), inputs.factsSha256, inputs.sourceCatalogSha256);
+  const media = JSON.parse(await readFile(new URL("../public/game-media/manifest.json", import.meta.url), "utf8"));
+  const ids = new Set(media.map(item => item.id));
+  for (const id of [...expected.catalog.factions.map(f => f.heroAssetId), ...expected.catalog.units.flatMap(u => u.assetIds)]) if (!ids.has(id)) throw new Error("Missing catalog media: " + id);
+  const output = new URL("../data/factions.generated.json", import.meta.url);
+  const serialized = JSON.stringify(expected, null, 2) + "\n";
+  if (process.argv.includes("--check")) {
+    if (await readFile(output, "utf8") !== serialized) throw new Error("Standalone content stale; run npm run sync:content");
+  } else await writeFile(output, serialized);
+  console.log("Validated standalone catalog from repository-owned frozen facts; publication and human approvals unchanged");
+  process.exit(0);
+}
 const product = resolve(process.argv.find(arg => arg.startsWith("--product="))?.slice(10) ?? "../OpenRA-AI");
 const engine = resolve(process.argv.find(arg => arg.startsWith("--engine="))?.slice(9) ?? "../OpenRA");
 const python = process.env.CATALOG_PYTHON ?? (process.platform === "win32" ? resolve(product, ".venv/Scripts/python.exe") : "python3");

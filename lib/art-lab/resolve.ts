@@ -92,11 +92,12 @@ function manifestList(manifest: Yaml, key: string) {
   return (child(manifest, key)?.value.nodes ?? []).map(n => n.key);
 }
 
-export function loadModData(reader: ModReader, options: { manifestPath?: string; extra?: Partial<Record<"Rules" | "Sequences" | "Weapons", string[]>> } = {}): ModData {
+export function loadModData(reader: ModReader, options: { manifestPath?: string; resolvePackage?: typeof packagePath; extra?: Partial<Record<"Rules" | "Sequences" | "Weapons", string[]>> } = {}): ModData {
   const manifestNodes = parseMiniYaml(reader.text(options.manifestPath ?? `${MOD_DIR}/mod.yaml`), "mod.yaml");
   const manifest: Yaml = { value: null, nodes: manifestNodes };
+  const resolvePackage = options.resolvePackage ?? packagePath;
   const load = (refs: string[]) => [...new Set(refs)].map(ref => {
-    const { path } = packagePath(ref);
+    const { path } = resolvePackage(ref);
     if (!path || !reader.exists(path)) throw new Error(`mod.yaml lists ${ref}, which is not in the mod checkout`);
     return { ref, path, nodes: parseMiniYaml(reader.text(path), ref) };
   });
@@ -122,7 +123,7 @@ export function loadModData(reader: ModReader, options: { manifestPath?: string;
 
   const messages = new Map<string, string>();
   for (const ref of manifestList(manifest, "FluentMessages")) {
-    const { path } = packagePath(ref);
+    const { path } = resolvePackage(ref);
     if (path && reader.exists(path)) parseFluent(reader.text(path), messages);
   }
   return { manifest, rules, ruleKeys, sequences, rawSequenceKeys, modelSequences, messages, ruleSources, weapons };

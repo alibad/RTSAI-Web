@@ -38,7 +38,7 @@ test('imports reject dangling branches, loops, duplicated keys and oversized or 
   assert.throws(() => parseCampaign(bad(c => { c.missions[0].shots[0].seconds = 999; })), /whole number/);
   assert.throws(() => parseCampaign(bad(c => { c.missions[0].objectives[0].seconds = 180; })), /time limit/);
   assert.throws(() => parseCampaign(bad(c => { c.missions[0].objectives[0].actorId = 999; })), /missing map actor/);
-  assert.throws(() => parseCampaign(bad(c => { c.missions[0].actorKey = 'classic:e6'; })), /faction and mode/);
+  assert.throws(() => parseCampaign(bad(c => { c.missions[0].actorKey = 'ra:e1'; })), /faction and mode/);
   assert.throws(() => parseCampaign(' '.repeat(2_000_001)), /too large/);
 });
 test('imports strip media URLs, scripts and unrelated metadata instead of forwarding it', () => {

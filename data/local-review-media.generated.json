@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "date": "2026-10-11",
+  "status": "local-review-candidate",
+  "durationSeconds": 48,
+  "files": [
+    {
+      "path": "/review-media/2026-10-11/rtsai-local-walkthrough-20261011.mp4",
+      "sha256": "d8eadc6e5d6b2a0b73cd567ef2aa9ed299ef096fd730170fb17e232ed97827ad",
+      "bytes": 3100153
+    },
+    {
+      "path": "/review-media/2026-10-11/poster.jpg",
+      "sha256": "6631f6bb8330fd35d914a428f0dc07e0e1ce19f425a25726fbc6f95b8de206d3",
+      "bytes": 279751
+    },
+    {
+      "path": "/review-media/2026-10-11/captions.en.vtt",
+      "sha256": "85aa9eaa8c760c284e80a1c99f2e2ef15b5fc9c95d103bee7f3d35493df23a2b",
+      "bytes": 1199
+    },
+    {
+      "path": "/review-media/2026-10-11/captions.en.srt",
+      "sha256": "31ad03e31d8af094a068bcfad9a675e4ffee88c29fdebc22c4a28c8cdc3a33b5",
+      "bytes": 1191
+    }
+  ],
+  "evidence": "Actual six-second browser clips captured at2fps and native stills; captioned original soundtrack; no narration. Local acceptance does not establish a public game release.",
+  "humanListeningApproval": false,
+  "replacesReleaseTrailer": false
+}

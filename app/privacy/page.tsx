@@ -4,7 +4,7 @@ import { SiteHeader, SiteFooter } from "../components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "Privacy — RTS AI",
-  description: "How RTS AI handles account identity, product analytics, feedback and the hosted AI co-commander.",
+  description: "How RTS AI handles website accounts, bounded analytics, feedback and optional local companion requests.",
   alternates: { canonical: "/privacy" },
 };
 
@@ -13,55 +13,43 @@ export default function PrivacyPage() {
     <><SiteHeader /><main id="main-content" className="privacy-page">
       <Link className="privacy-back" href="/">← Back to RTS AI</Link>
       <span className="eyebrow">Privacy / plain language</span>
-      <h1>Your identity is for your account—not ad targeting.</h1>
-      <p className="privacy-lede">RTS AI uses Firebase Authentication to create your website account and Google Analytics to understand whether the product is useful. In the game, the AI co-commander can think on rtsai.net with Claude, without an account; that is explained below.</p>
-
+      <h1>Your account helps you use the website.</h1>
+      <p className="privacy-lede">The website uses Firebase Authentication for accounts and Google Analytics for bounded product events. Published game builds and locally tested companion features have different capabilities; a local check does not establish a hosted service.</p>
       <section id="ai-co-commander">
-        <h2>AI co-commander in the game</h2>
+        <h2>Optional AI co-commander</h2>
         <div className="privacy-detail">
-          <p>Hosted AI is planned for the first RTS AI release and still needs live service verification. The previous Classic alpha uses its own local AI pack or an external provider you choose.</p>
-          <p>You choose how the co-commander thinks, and can change it at any time in the game&apos;s AI settings. <b>Hosted</b> is the default for new installs. <b>Local</b> runs everything on your PC. <b>External</b> sends requests to an AI service you choose, under that service&apos;s own terms. <b>AI Off</b> turns the co-commander off. Only Hosted involves rtsai.net.</p>
-          <h3>What hosted mode sends</h3>
-          <p>When the co-commander needs to think, the game sends rtsai.net a compact snapshot of the match state, up to two downscaled screenshots of your game view, and the text of the question you spoke or typed. rtsai.net checks your allowance and forwards these to Anthropic, whose Claude model writes the answer. They are used to answer that request; rtsai.net does not store them and does not write them to its logs.</p>
-          <h3>What stays on your PC</h3>
-          <p>Your voice audio is transcribed on your own PC, and spoken replies are generated there too. Audio is never uploaded; only the transcribed text of a question is sent, as above.</p>
-          <h3>What rtsai.net keeps</h3>
-          <ul>
-            <li><b>An anonymous install token.</b> On first launch the game receives a token tied to a random install ID, not to your name, email or a website account. No account is required. We keep the install record (its creation time and whether it is active) so the token keeps working; if you ever link the install to an rtsai.net account to raise your allowance, the record also holds that account&apos;s ID.</li>
-            <li><b>IP addresses for rate limiting only.</b> When an install registers, your IP address is converted into a keyed hash and used to limit how many new installs one network can register per day. The raw address is not stored by RTS AI, and the hashed counter is set to expire within two days.</li>
-            <li><b>Daily usage counters that expire.</b> For each install we count requests, tokens and cost per day so the free allowance and abuse limits work. These counters are set to expire within three days (per-minute counters after one day) and are then deleted automatically. Service-wide daily totals, which are not linked to any install, are kept for 60 days for cost control.</li>
-            <li><b>Operational logs.</b> Each hosted request writes one log line with a shortened install ID, token counts, the number and size of images, cost and response time. It never includes your questions, the snapshot, screenshots or the answer.</li>
-          </ul>
-          <h3>Who processes what</h3>
-          <ul>
-            <li><b>RTS AI (rtsai.net)</b> checks your token and allowance and forwards hosted requests.</li>
-            <li><b>Anthropic</b> receives the snapshot, screenshots and question text of hosted requests to generate answers, under its commercial terms.</li>
-            <li><b>Vercel</b> hosts rtsai.net and handles the network requests, including your IP address.</li>
-            <li><b>Google Firebase (Cloud Firestore)</b> stores the install records and usage counters described above.</li>
-          </ul>
-          <h3>How to opt out</h3>
-          <p>Choose AI Off, Local, or External in the game&apos;s AI settings. With AI Off or Local, nothing from your match is sent to rtsai.net or Anthropic.</p>
+          <p>The published browser build runs without the local companion. The Windows release page lists the AI options offered by that installer. The newer browser integration and Mac candidate are locally tested and await publication.</p>
+          <h3>Local and external requests</h3>
+          <p>AI Off keeps manual gameplay available. A local companion can use deterministic alerts and grounded advice without a model. If you deliberately configure an external model endpoint, question text and a compact, fog-respecting match observation can be sent to that endpoint under its own terms. Optional visual or audio processing depends on the runtime you install and configure; do not assume it is present in a game download.</p>
+          <p>The locally tested Mac candidate includes no model, microphone transcription or speech runtime. It starts with hosted access and automatic model installation disabled. Its reviewed native order controls do not establish neural inference or voice-conversation availability.</p>
+          <h3>Hosted service status</h3>
+          <p>A hosted co-commander is not advertised as available. The accepted companion contract requires verified server authentication, explicit provider approval and durable per-user and global budget enforcement before activation. The locally tested policy is a reference seam, not deployed cost enforcement. We do not promise anonymous access, an allowance, retention periods or a particular provider for an unverified service.</p>
+          <h3>Your control over orders</h3>
+          <p>Advice is read-only. In the accepted local integration, an order must be proposed, shown for review and explicitly applied by its displayed proposal ID. A lost confirmation reply leaves the outcome unknown until checked; it is not evidence that no order was sent. You can turn the companion off and continue manual play.</p>
         </div>
       </section>
       <section>
         <h2>Account data</h2>
-        <p>When you sign up, Firebase Authentication stores your name, email address, encrypted credential information, account identifier, and basic account timestamps. We use that information to sign you in, address you in the interface, secure AI features, and support your account.</p>
+        <p>Firebase Authentication stores account identity and sign-in information, including your name, email address, account identifier and account timestamps. We use it to sign you in, secure website features and support your account. Vercel hosts the website and handles network requests.</p>
+        <p>The parked Earth map can request map tiles from OpenStreetMap. That tile request exposes your network address and the requested map area to the tile service.</p>
       </section>
       <section>
         <h2>Usage analytics</h2>
-        <p>Feature events can be associated with your pseudonymous Firebase user ID. We do not send your name, email, free-text mission prompt, search query, or exact latitude and longitude to Google Analytics.</p>
+        <p>Website events such as play-link and download-link clicks can be associated with your pseudonymous Firebase user ID. A click does not establish a completed download, successful game start or connected peer. A bounded game-start adapter is prepared for a future integrated browser build; current website listeners do not measure the separate play document.</p>
+        <p>We do not send your name, email, free-text mission prompt, search query, exact latitude and longitude, lobby IDs or peer IDs to Google Analytics. The prepared game event carries only its version, mode and transport.</p>
       </section>
       <section>
         <h2>Product feedback</h2>
-        <p>Feedback you deliberately submit becomes a private GitHub issue with your Firebase account identity so we can investigate and reply. An admin alert is queued through our existing Firebase mail system. You can optionally include bounded browser, console, and network diagnostics; screenshots, page HTML, form values, request bodies, headers, and URL queries are not captured. Written feedback and diagnostics are never sent to Google Analytics.</p>
+        <p>Feedback you deliberately submit includes your Firebase account identity. It can be saved as a private GitHub issue, or accepted through a queued Firebase mail notification if issue creation fails. The receipt states whether an issue exists and whether a notification was queued; it does not confirm email delivery. If both paths fail, the form keeps your draft for retry.</p>
+        <p>You can optionally include bounded browser, console and network diagnostics. Screenshots, page HTML, form values, request bodies, headers and URL queries are not captured. Written feedback and diagnostics are never sent to Google Analytics.</p>
       </section>
       <section>
         <h2>Your controls</h2>
-        <p>You can sign out at any time from the account menu. Account deletion and data-export controls will be added before the service leaves alpha.</p>
+        <p>You can sign out from the account menu. Account deletion and data-export controls remain planned before the website leaves alpha.</p>
       </section>
       <section>
         <h2>Public downloads</h2>
-        <p>Browsing the marketing site, downloading public game builds and using the in-game co-commander do not require an RTS AI account. Generating a mission or using interactive AI surfaces on this website does.</p>
+        <p>Browsing the site and downloading public game builds do not require an RTS AI account. Interactive website AI features require sign-in. That website account does not enable a hosted in-game model service.</p>
       </section>
     </main><SiteFooter /></>
   );

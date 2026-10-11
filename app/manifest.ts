@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "RTS AI — Modern real-time strategy",
     short_name: "RTS AI",
-    description: "Seven real-world factions, one fictional war, and an AI co-commander. Coming to your browser and Windows.",
+    description: "Seven real-world factions, one fictional war, and an AI co-commander. Play in your browser or download the Windows alpha.",
     start_url: "/",
     scope: "/",
     display: "standalone",

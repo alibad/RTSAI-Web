@@ -13,7 +13,7 @@ import { FactionCard } from "./components/FactionCard";
 import "./home.css";
 
 const canonicalUrl = "https://rtsai.net";
-const description = "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander. Coming to your browser and Windows.";
+const description = "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander. Play in your browser or download the Windows alpha.";
 
 export default async function Home() {
   const modRelease = getModRelease();
@@ -34,7 +34,7 @@ export default async function Home() {
   };
   const pillars = [
     { id: "factions", icon: Flag, status: `${modern.length} factions`, title: "Real-world factions", description: "Each with its own doctrine, signature units, voice and counters. A fictional war, never a real one.", href: "/factions", action: "Choose your side" },
-    { id: "companion", icon: BrainCircuit, status: "AI co-commander", title: "A co-commander that talks back", description: "It sees only what you see, speaks up when it matters, answers by voice, and takes command only when you say so.", href: "/companion", action: "How it works" },
+    { id: "companion", icon: BrainCircuit, status: "AI co-commander", title: "A co-commander that talks back", description: "Local integration supports fog-respecting advice and reviewed orders. Model and voice runtimes are optional; the public browser build runs without the companion.", href: "/companion", action: "How it works" },
     { id: "install", icon: PackageCheck, status: "Play now", title: "Nothing else to install", description: `Its own art, sound and maps. Play in your browser at rtsai.net/play now. ${downloadStatus}`, href: "/download", action: "Ways to play" },
   ];
 
@@ -46,7 +46,7 @@ export default async function Home() {
           <div className="home-hero-copy">
             <span className="eyebrow">RTS AI · Modern real-time strategy</span>
             <h1>Seven real-world factions.<br /><em>One fictional war.</em></h1>
-            <p className="hero-lede">One standalone game, two ways to play: Web RTS and Downloadable RTS. Classic and RA2-inspired modes, seven modern factions alongside nine country rule sets, and an optional local AI co-commander. Its own art, sound and maps.</p>
+            <p className="hero-lede">One standalone game with its own art, sound and maps. Play Classic/top-down and isometric modes in your browser, or check the native alpha downloads. The optional local co-commander has separate runtime and release requirements.</p>
             <div className="hero-actions">
               {/* /play is the browser game's own Vercel project behind a proxy, not a page of this app: a plain link. */}
               <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>
@@ -86,15 +86,15 @@ export default async function Home() {
         <section className="home-companion" aria-labelledby="companion-title">
           <div>
             <span className="section-number">THE AI CO-COMMANDER</span>
-            <h2 id="companion-title">Your battlefield.<br /><em>Now it talks back.</em></h2>
+            <h2 id="companion-title">Your battlefield.<br /><em>Your final say.</em></h2>
             <ul className="hero-proof">
               <li><ShieldCheck size={15} /> Sees only what you see</li>
-              <li><Mic size={15} /> Ask by voice</li>
-              <li><Zap size={15} /> AUTO when you say so</li>
+              <li><Mic size={15} /> Optional local companion</li>
+              <li><Zap size={15} /> Review before applying</li>
             </ul>
             <Link className="text-action" href="/companion">How the co-commander works <ArrowRight size={17} /></Link>
           </div>
-          {trailer ? <HeroTrailer video={trailer.video} poster={trailer.poster} /> : <CompanionDemo />}
+          {trailer ? <div><HeroTrailer video={trailer.video} poster={trailer.poster} /><p>Earlier companion demonstration. Voice and model capabilities depend on the installed runtime.</p></div> : <CompanionDemo />}
         </section>
 
         <section className="home-nations" aria-labelledby="faction-entry-title">
@@ -105,7 +105,7 @@ export default async function Home() {
         <section className="closing-section home-closing">
           <div>
             <span className="eyebrow">{mod ? `RTS AI ${mod.version}` : "Play now"}</span>
-            <h2>Play in your browser.<br />Or on Windows.</h2>
+            <h2>Play in your browser.<br />Or on your computer.</h2>
           </div>
           <div>
             <p>{mod ? `RTS AI ${mod.version} is out for Windows${macRelease ? " and macOS" : ""}, and free to play in your browser at rtsai.net/play.` : "RTS AI is in development and free to play in your browser at rtsai.net/play. The Windows download is coming soon."}</p>

@@ -18,12 +18,20 @@ function isAllowedOrigin(request: Request) {
   return [...defaults, ...configured].includes(origin) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
 }
 
-export async function POST(request: Request) {
+export function createFeedbackHandler(dependencies: {
+  verifyIdentity: typeof verifyFirebaseIdentity;
+  createIssue: typeof createGitHubIssue;
+  issueConfigured: typeof isGitHubConfigured;
+  sendEmail: typeof sendFirebaseEmail;
+  recipients: typeof mailGroup;
+  reportError: typeof console.error;
+}) {
+return async function handleFeedback(request: Request) {
   if (!isAllowedOrigin(request)) return Response.json({ error: "Invalid request origin" }, { status: 403 });
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > maxBodyBytes) return Response.json({ error: "Feedback is too large" }, { status: 413 });
 
-  const identity = await verifyFirebaseIdentity(request);
+  const identity = await dependencies.verifyIdentity(request);
   if (!identity) return Response.json({ error: "Sign in required" }, { status: 401 });
 
   let input: unknown;
@@ -44,20 +52,20 @@ export async function POST(request: Request) {
   const labels = feedbackLabels(parsed.value.category);
 
   let issue: { number: number; html_url: string } | null = null;
-  if (isGitHubConfigured()) {
+  if (dependencies.issueConfigured()) {
     try {
       try {
-        const response = await createGitHubIssue({ title: issueTitle, body: issueBody, labels });
+        const response = await dependencies.createIssue({ title: issueTitle, body: issueBody, labels });
         issue = { number: response.number, html_url: response.htmlUrl };
       } catch (cause) {
         const status = cause instanceof GitHubRequestError ? cause.status : 0;
         if (status !== 422) throw cause;
-        const response = await createGitHubIssue({ title: issueTitle, body: issueBody });
+        const response = await dependencies.createIssue({ title: issueTitle, body: issueBody });
         issue = { number: response.number, html_url: response.htmlUrl };
       }
     } catch (cause) {
       const status = cause instanceof GitHubRequestError ? cause.status : 0;
-      console.error("Private feedback issue creation failed", {
+      dependencies.reportError("Private feedback issue creation failed", {
         status,
         name: cause instanceof Error ? cause.name : "UnknownError",
         message: cause instanceof Error ? cause.message.slice(0, 300) : "Unknown failure",
@@ -66,7 +74,7 @@ export async function POST(request: Request) {
   }
 
   let notificationQueued = false;
-  const administrator = process.env.FEEDBACK_ADMIN_EMAIL || mailGroup()[0];
+  const administrator = process.env.FEEDBACK_ADMIN_EMAIL || dependencies.recipients()[0];
   if (administrator) {
     const email = createFeedbackEmail({
       receipt,
@@ -77,16 +85,16 @@ export async function POST(request: Request) {
       identity,
     });
     try {
-      await sendFirebaseEmail({
+      await dependencies.sendEmail({
         to: administrator,
         subject: `[RTS AI] ${parsed.value.category}: ${parsed.value.title}`,
         html: email.html,
         text: email.text,
-        auditToGroup: !mailGroup().includes(administrator),
+        auditToGroup: !dependencies.recipients().includes(administrator),
       });
       notificationQueued = true;
     } catch (cause) {
-      console.error("Firebase feedback notification failed", { issueNumber: issue?.number, cause: cause instanceof Error ? cause.message : "unknown" });
+      dependencies.reportError("Firebase feedback notification failed", { issueNumber: issue?.number, cause: cause instanceof Error ? cause.message : "unknown" });
     }
   }
 
@@ -108,3 +116,13 @@ export async function POST(request: Request) {
     { headers: { "Cache-Control": "no-store" } },
   );
 }
+}
+
+export const POST = createFeedbackHandler({
+  verifyIdentity: verifyFirebaseIdentity,
+  createIssue: createGitHubIssue,
+  issueConfigured: isGitHubConfigured,
+  sendEmail: sendFirebaseEmail,
+  recipients: mailGroup,
+  reportError: console.error,
+});

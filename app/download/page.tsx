@@ -4,18 +4,20 @@ import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getGameRelease } from "../../lib/release";
 import { getModRelease, isPublished, macInstaller, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
+import { getMacAlphaRelease } from "../../lib/mac-release";
 import { availability, CLASSIC_ADDON_NOTE, factionById, modeLabel, resolveMode, rosterFactionById } from "../../lib/game-content";
 import "./download.css";
 import { FrontLine } from "../components/FrontLine";
 
 const releaseAtBuild = getModRelease();
+const macAlphaRelease = getMacAlphaRelease();
 const releasedVersion = isPublished(releaseAtBuild) ? releaseAtBuild.version : null;
 const releasedPlatforms = macInstaller(releaseAtBuild) ? "Windows and macOS" : "Windows";
 
 export const metadata: Metadata = releasedVersion
   ? {
-    title: `Download RTS AI ${releasedVersion} | ${releasedPlatforms}, or play in your browser`,
-    description: `RTS AI is a modern real-time strategy game with seven real-world factions. Download the ${releasedVersion} alpha for ${releasedPlatforms}, or play free in your browser at rtsai.net/play. Nothing else to install.`,
+    title: macAlphaRelease ? "Download RTS AI | Windows, Mac alpha, or play in your browser" : `Download RTS AI ${releasedVersion} | ${releasedPlatforms}, or play in your browser`,
+    description: macAlphaRelease ? `Download Windows ${releasedVersion} or the separate macOS 15+ alpha, or play both standalone modes free in your browser at rtsai.net/play. No owned Red Alert installation is required.` : `RTS AI is a modern real-time strategy game with seven real-world factions. Download the ${releasedVersion} alpha for ${releasedPlatforms}, or play free in your browser at rtsai.net/play. Nothing else to install.`,
     alternates: { canonical: "/download" },
   }
   : {
@@ -120,8 +122,8 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             ? `RTS AI ${published.version} is out, but ${faction.name} has not been verified in it yet.`
             : "Play it in your browser now at rtsai.net/play. The Windows download is coming soon."
         : selectionStatus === "In public Windows release"
-          ? `Your Classic faction is part of the earlier Classic prototype ${windowsRelease.version} for Windows below. Mac faction parity has not been separately certified.`
-          : "This Classic faction is not certified in the earlier Classic prototype.";
+          ? `This historical Classic catalog does not certify the current standalone Classic release.`
+          : "The standalone Classic build passed local checks, but this historical catalog does not certify its faction coverage or public availability.";
 
   return (
     <>
@@ -131,7 +133,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <span className="eyebrow">{mac ? "RTS AI / BROWSER, WINDOWS AND MACOS" : "RTS AI / BROWSER AND WINDOWS"}</span>
           <h1>Play RTS AI.<br /><em>{published ? "Out now." : "Now in your browser."}</em></h1>
           <p>Web RTS and Downloadable RTS share one standalone game. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
-          <p>The Windows alpha combines Classic and RA2-inspired modes, 16 country choices and six campaigns. Choose a mode from the game&apos;s main menu. Classic currently shares the modern army on a rectangular grid; more features from the historical Classic game are still being migrated. Mac packaging for this version follows on our Mac machine.</p>
+          <p>The Windows alpha and separate Mac alpha are described by their release files below. Play both Classic/top-down and isometric modes in the browser. Both standalone modes require no owned Red Alert installation.</p>
           <div className={`play-options ${mac ? "has-three" : ""}`}>
             <article className="play-option">
               <Globe size={24} aria-hidden="true" />
@@ -181,7 +183,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <div className="download-intro">
             <span className="section-number">01 / AI CO-COMMANDER</span>
             <h2 id="ai-choice-title">No co-commander in this download yet.</h2>
-            <p>RTS AI {published.version} plays skirmishes against the built-in bots, and the installer asks no AI question. The hosted and local co-commander join the download once each one passes its acceptance test.</p>
+            <p>RTS AI {published.version} plays skirmishes against the built-in bots, and the installer asks no AI question. Local companion integration has separate acceptance evidence; that does not add it to this published installer.</p>
           </div>
           ) : (<>
           <div className="download-intro">
@@ -250,6 +252,20 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           )}
         </section>
 
+        <section className="download-section" aria-labelledby="local-mac-title">
+          <div className="download-intro">
+            <span className="section-number">{macAlphaRelease ? "MAC ALPHA / SEPARATE PRERELEASE" : "LOCAL ACCEPTANCE / NOT PUBLISHED"}</span>
+            <h2 id="local-mac-title">{macAlphaRelease ? "Standalone Mac alpha." : "Standalone Mac candidate."}</h2>
+            <p>The macOS 15+ build passed local checks in both modes. It uses an ad-hoc signature and is not notarized. Game binaries are universal; the bundled companion supports Apple silicon only. Intel execution and another Mac remain pending. No model, microphone transcription or speech runtime is included. Grounded advice and individually reviewed native orders were checked locally; neural inference and voice conversations were not.</p>
+            <p>Native and browser unit-voice settings support faction-language defaults and an English override. Fluent listening review remains pending.</p>
+            {macAlphaRelease ? <>
+              <a className="primary-action" href={macAlphaRelease.asset.url} data-analytics-event="mod_download" data-platform="macos-alpha-dmg"><Download size={17} /> Download Mac alpha</a>
+              <p>{formatBytes(macAlphaRelease.asset.sizeBytes)} · Internal version {macAlphaRelease.internalVersion} · <a href={macAlphaRelease.releaseUrl}>Release notes and checksum</a></p>
+              <p>SHA-256: <code>{macAlphaRelease.asset.sha256}</code></p>
+              <p>Copy the app to Applications and attempt to open it. If macOS blocks it, use System Settings &gt; Privacy &amp; Security &gt; Open Anyway after checking the checksum.</p>
+            </> : <p>This candidate is not a public download.</p>}
+          </div>
+        </section>
         <p className="classic-addon-note">{CLASSIC_ADDON_NOTE}</p>
 
         <details className="download-section classic-alpha" id="classic-alpha">

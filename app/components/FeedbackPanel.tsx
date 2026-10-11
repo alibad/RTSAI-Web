@@ -173,7 +173,7 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!user || busy || store.title.trim().length < 4 || store.description.trim().length < 10) return;
+    if (!user || busy || store.description.trim().length < 10) return;
     setBusy(true);
     setError("");
     try {
@@ -208,7 +208,7 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Could not save feedback. Your message is still here—please try again.";
       setError(message);
-      toast.error("Feedback was not sent");
+      toast.error("Feedback could not be saved");
     } finally {
       setBusy(false);
     }
@@ -243,8 +243,8 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
               <div className="feedback-success" role="status">
                 <span><CheckCircle2 size={28} /></span>
                 <p className="eyebrow">Saved privately</p>
-                <h2 id="feedback-title">Your feedback is in the builder’s inbox.</h2>
-                <p>Receipt <strong>{success.receipt}</strong>. {success.notificationQueued ? "A Firebase mail alert was queued." : "The private issue is saved; its mail alert will be retried separately."}</p>
+                <h2 id="feedback-title">Your feedback was saved privately.</h2>
+                <p>Receipt <strong>{success.receipt}</strong>. {success.notificationQueued ? "A Firebase mail alert was queued." : "The private issue is saved; no mail alert was confirmed."}</p>
                 <div>{success.issueUrl && <a href={success.issueUrl} target="_blank" rel="noreferrer">Open private issue</a>}<button type="button" onClick={close}>Done</button></div>
               </div>
             ) : (
@@ -252,7 +252,7 @@ export function FeedbackPanel({ user, openAuth }: { user: User | null; openAuth:
                 <div className="feedback-heading">
                   <p className="eyebrow">Private feedback</p>
                   <h2 id="feedback-title">Show us what could be better.</h2>
-                  <p>Your note becomes a private issue for the builder. Attach the exact part of the page when context matters.</p>
+                  <p>We save a private issue when available, or queue a mail fallback. Attach the exact part of the page when context matters.</p>
                 </div>
                 <div className="feedback-form-grid">
                   <label className="feedback-field"><span>Category</span><OptionSelect value={store.category} onValueChange={store.setCategory} options={categoryOptions} contentClassName="ui-paper" /></label>

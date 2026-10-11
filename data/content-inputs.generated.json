@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "catalogBaseSha256": "2d3905bc2a558a1af7df6639e51e5e3a6848b0e6eb4af0cd3a884166e2997ae0",
+  "factsSha256": "a9d215138aae7ad93bb0296bbac2ebfba5e0d02c21a3bdfa7fb727c26aec8c74",
+  "sourceCatalogSha256": "e41571fcd9391c919f8186fdc1564d262ee21795c33fafdf051df63b01fb2a62",
+  "scope": "Frozen standalone input facts; refresh with explicit verified Mod/engine inputs. Human approvals and public availability are separate."
+}

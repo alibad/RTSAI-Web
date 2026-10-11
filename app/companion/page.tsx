@@ -1,62 +1,36 @@
 import type { Metadata } from "next";
-import { ArrowRight, BrainCircuit, Map, Mic2, RadioTower, Sparkles } from "lucide-react";
+import { ArrowRight, BrainCircuit, Map, RadioTower, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "../components/CompanionDemo";
 import { gameSource, SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { getMacAlphaRelease } from "../../lib/mac-release";
 
 export const metadata: Metadata = {
   title: "AI Game Companion | RTS AI",
-  description: "Meet the interruptible, fog-respecting AI companion built into OpenRA AI, with voice, safe actions, and optional AUTO command.",
+  description: "Optional local co-commander integration: fog-respecting advice, explicit order review and manual control. Public release capabilities vary.",
   alternates: { canonical: "/companion" },
 };
 
 export default function CompanionPage() {
+  const macAlpha = getMacAlphaRelease();
   return (
-    <>
-      <SiteHeader />
-      <main id="main-content">
-        <header className="route-hero route-hero-split">
-          <div>
-            <span className="eyebrow">AI GAME COMPANION</span>
-            <h1>A second mind.<br /><em>Never a second driver.</em></h1>
-            <p>It watches the same match you do, speaks only when useful, answers on demand, and gives command back instantly.</p>
-            <div className="hero-actions">
-              <Link className="primary-action" href="/download">Play with the companion</Link>
-              <a className="text-action" href={gameSource} target="_blank" rel="noreferrer">Inspect the game source <ArrowRight size={16} /></a>
-            </div>
-          </div>
-          <CompanionDemo />
-        </header>
-
-        <section className="companion-section">
-          <div className="section-intro">
-            <span className="section-number">HOW IT BEHAVES</span>
-            <h2>Helpful enough to speak.<br />Safe enough to act.</h2>
-            <p>The companion combines deterministic game state with fog-respecting tactical views. It can explain, propose a safe order for confirmation, or delegate real-time play to OpenRA&apos;s native bot stack when AUTO is explicitly enabled.</p>
-          </div>
-          <div className="principles">
-            <article><RadioTower size={22} /><h3>Notices the change</h3><p>New armor, a power deficit, a lost harvester, or a critically damaged unit—not a running commentary.</p><span>Game event → relevance gate</span></article>
-            <article><BrainCircuit size={22} /><h3>Respects fog of war</h3><p>The model receives only the compact observation already visible to you. Hidden enemies stay hidden.</p><span>Snapshot → AI layer → one line</span></article>
-            <article><Mic2 size={22} /><h3>You retain command</h3><p>Confirm individual actions, switch strategies by voice, or turn AUTO on. Interrupt speech or disable delegation at any moment.</p><span>Ask · confirm · delegate · take back</span></article>
-          </div>
-        </section>
-
-        <section className="architecture-section">
-          <div className="architecture-copy">
-            <span className="section-number">BUILT TO EVOLVE</span>
-            <h2>The experience stays stable.<br />The models can change.</h2>
-            <p>The game never talks to a model provider directly. A private AI layer owns model credentials and named capabilities, while deterministic OpenRA logic keeps economy, production, combat, and AUTO play moving without waiting on an LLM.</p>
-            <a href={gameSource} target="_blank" rel="noreferrer">Read the architecture <ArrowRight size={16} /></a>
-          </div>
-          <div className="route-diagram" aria-label="AI routing architecture">
-            <div><Map size={18} /><span>OpenRA engine<small>fog-respecting snapshot</small></span></div><i />
-            <div className="active-route"><Sparkles size={18} /><span>OpenRA AI<small>relevance + safe actions</small></span></div><i />
-            <div><RadioTower size={18} /><span>AI layer<small>named model routes</small></span></div><i />
-            <div className="model-routes"><span>strategy<small>provider or local model</small></span><span>transcription<small>voice input route</small></span><span>speech<small>spoken response route</small></span></div>
-          </div>
-        </section>
-      </main>
-      <SiteFooter />
-    </>
+    <><SiteHeader /><main id="main-content">
+      <header className="route-hero route-hero-split">
+        <div><span className="eyebrow">OPTIONAL LOCAL CO-COMMANDER</span><h1>A second mind.<br /><em>Your final say.</em></h1>
+          <p>Ask for advice, review a proposed order and decide whether to apply it. These controls passed local integration checks; model and voice runtimes are optional.</p>
+          <div className="hero-actions"><Link className="primary-action" href="/download">Check release capabilities</Link><a className="text-action" href={gameSource} target="_blank" rel="noreferrer">Inspect the game source <ArrowRight size={16} /></a></div>
+        </div><CompanionDemo />
+      </header>
+      <section className="companion-section"><div className="section-intro"><span className="section-number">LOCALLY VERIFIED CONTROLS</span><h2>Read the battlefield.<br />Review the order.</h2><p>Deterministic OpenRA rules remain authoritative. Advice does not execute orders, and a proposal must identify the action you are reviewing.</p></div>
+        <div className="principles">
+          <article><RadioTower size={22} /><h3>Grounded advice</h3><p>Critical alerts and grounded strategy answers can run without a model. Local scripted-model checks verify the client boundary, not model quality.</p><span>Observation → advice</span></article>
+          <article><BrainCircuit size={22} /><h3>Respects fog of war</h3><p>The companion receives a compact observation of what your player can see. Engine validation checks ownership, targets and current state before accepting an order.</p><span>Visible state → live validation</span></article>
+          <article><ShieldCheck size={22} /><h3>You retain command</h3><p>Apply confirms the displayed proposal ID. A lost reply leaves the outcome unknown until its exact receipt is checked. Turning AI Off leaves manual gameplay available.</p><span>Propose · review · apply</span></article>
+        </div>
+      </section>
+      <section className="architecture-section"><div className="architecture-copy"><span className="section-number">CAPABILITIES BY BUILD</span><h2>Local checks.<br />Clear release limits.</h2><p>The public static browser build has no local companion service routes. Locally served development builds support reviewed orders. The macOS 15+ {macAlpha ? "alpha is downloadable and" : "candidate is not published and"} supports Apple silicon companion use, but contains no model, transcription or speech runtime. It is ad-hoc signed and not notarized; Intel companion support and another Mac remain pending.</p><p>Hosted model access requires authenticated, durable budget controls and provider approval. That service is not advertised as available. Native and browser unit-voice language selection is separate from companion speech; human listening review remains pending.</p><Link href="/privacy#ai-co-commander">Read AI privacy <ArrowRight size={16} /></Link></div>
+        <div className="route-diagram" aria-label="Local companion architecture"><div><Map size={18} /><span>OpenRA engine<small>visible state and order receipts</small></span></div><i /><div className="active-route"><Sparkles size={18} /><span>Local companion<small>advice + reviewed proposals</small></span></div><i /><div><ShieldCheck size={18} /><span>Player review<small>explicit proposal ID</small></span></div><i /><div className="model-routes"><span>Optional runtime<small>not included in the Mac candidate</small></span></div></div>
+      </section>
+    </main><SiteFooter /></>
   );
 }

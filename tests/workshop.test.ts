@@ -63,16 +63,16 @@ test("target domains and armor constrain direct damage and orders",()=>{
 });
 test("Classic target aliases support ground guns and anti-air without shooting inherited aircraft ground tags",()=>{
   const s=generateScene("ra",42,64,"plains");
-  const tank=add(s,"2tnk",10,10,"blue","england"),aa=add(s,"cnmantis",12,10,"blue","china");
+  const tank=add(s,"mtnk",10,10,"blue","england"),aa=add(s,"r2mantis",12,10,"blue","china");
   const aircraft=rosters.actors.find(a=>a.mode==="ra"&&a.category==="aircraft")!;
   const target=makePiece(s,aircraft.key,"china","red",{x:13,y:10});
   assert.equal(supportedWeapon(tank,target),undefined);assert.ok(supportedWeapon(aa,target));
   assert.ok(supportedWeapon(tank,{...tank,id:99,team:"red"}));
 });
 test("naval yards use measured water placement while retaining building targets",()=>{
-  for(const [mode,id] of [["ra2","gayard"],["ra2","nayard"],["ra","syrd"],["ra","spen"]] as const){
+  for(const [mode,id] of [["ra2","gayard"],["ra2","nayard"],["ra","gayard"],["ra","nayard"]] as const){
     const s=generateScene(mode,42,64,"plains"),a=actorFor(key(id,mode));assert.equal(a.behavior.waterPlacement,true);
-    const yard=makePiece(s,a.key,mode==="ra2"?"america":"england","blue",{x:10,y:10});assert.match(placementIssue(s,yard)!,/water/);
+    const yard=makePiece(s,a.key,rosters.factions.find(f=>f.mode===mode && f.actors.includes(a.key))!.id,"blue",{x:10,y:10});assert.match(placementIssue(s,yard)!,/water/);
     const [w,h]=dimensions(a);for(let y=10;y<10+h;y++)for(let x=10;x<10+w;x++)s.cells[y][x]=1;assert.equal(placementIssue(s,yard),null);
   }
 });
@@ -99,10 +99,10 @@ test("scene files round-trip and reject invalid mode, faction, overlap and exces
 });
 test("Classic and RA2 exports retain tile, ore, actor and start coordinates in format 12",()=>{
   for(const mode of ["ra","ra2"] as const){
-    const s=generateScene(mode,42,64,"plains");add(s,mode==="ra2"?"mtnk":"2tnk",10,10,"blue",mode==="ra2"?"america":"england");
+    const s=generateScene(mode,42,64,"plains");add(s,"mtnk",10,10,"blue","america");
     const map=compileWorkshopMap(s),view=new DataView(map.binary.buffer),area=map.width*map.height;
     assert.equal(view.getUint8(0),2);assert.equal(view.getUint16(1,true),map.width);assert.equal(map.binary.length,17+area*5);
-    assert.match(map.yaml,/MapFormat: 12/);assert.match(map.yaml,mode==="ra2"?/RequiresMod: rtsai/:/RequiresMod: ra/);
+    assert.match(map.yaml,/MapFormat: 12/);assert.match(map.yaml,mode==="ra2"?/RequiresMod: rtsai\n/:/RequiresMod: rtsai-topdown\n/);
     const all=new Set<string>();
     for(let y=0;y<s.size;y++)for(let x=0;x<s.size;x++){
       const p=nativeMapPosition(nativePosition(s,{x,y}),mode);assert.ok(p.x>=0&&p.x<map.width&&p.y>=0&&p.y<map.height);all.add(p.x+","+p.y);

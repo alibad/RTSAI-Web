@@ -58,7 +58,7 @@ test("creates a complete Firebase mail fallback without a GitHub issue", () => {
     submission: result.value,
     identity: { uid: "firebase-user", email: "player@example.com", name: "Player" },
   });
-  assert.match(email.html, /Delivered directly through Firebase mail/);
+  assert.match(email.html, /Queued through Firebase mail/);
   assert.match(email.text, /Private issue: pending synchronization/);
   assert.match(email.text, /button\.generate/);
   assert.match(email.text, /Firebase UID: firebase-user/);

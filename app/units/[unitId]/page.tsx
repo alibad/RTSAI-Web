@@ -62,7 +62,7 @@ export default async function UnitPage({ params, searchParams }: Props) {
       </section>
       {siblings.length > 0 && <nav className="unit-siblings" aria-label={`More ${faction.name} units`}><span className="section-number">MORE FROM {faction.name.toUpperCase()}</span><ul>{siblings.map(s => <li key={s.actor}><Link href={s.href} title={s.name}><Cameo actorId={s.actor} alt={s.name} /></Link></li>)}</ul><Link className="text-action" href={`/factions/${faction.id}?mode=${mode}#complete-roster-title`}>Full faction roster →</Link></nav>}
       <details className="catalog-provenance"><summary>Inspect the gameplay source</summary><p>Editorial ID: <code>{unit.id}</code> · actor: <code>{variant.actorId}</code></p><p><code>{variant.rulesPath}</code></p><p>Stats are read from this mode’s rules; bars compare units of the same kind. Pictures are rendered from the project’s own model of this unit{mode === "ra" ? " for RTS AI" : ""}.</p></details>
-    </> : <section className="catalog-unavailable"><h2>Not in RTS AI.</h2><p>This unit belongs to the Classic add-on roster only.</p><Link href={`/units/${unit.id}?mode=ra`}>View the Classic version →</Link></section>}
+    </> : <section className="catalog-unavailable"><h2>Not in RTS AI.</h2><p>This unit belongs to the historical Classic catalog only; it is not a verified entry in the current standalone release.</p><Link href={`/units/${unit.id}?mode=ra`}>View the Classic version →</Link></section>}
     <ReleaseCallout faction={faction} mode={mode} />
   </main><SiteFooter /></>;
 }

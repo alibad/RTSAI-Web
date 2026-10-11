@@ -38,7 +38,7 @@ export function starterScene(mode: GameMode, seed=42, size: Scene["size"]=64, pr
     const sign=team==="blue"?-1:1;
     for(const [category,dx,dy] of [["vehicle",5,0],["infantry",7,2],["defense",10,5],["structure",14,9]] as const) {
       const candidates=actors.filter(a=>a.category===category && (category==="structure" || a.behavior.weapons.some(w=>(w.damage??0)>0 && (w.range??0)>=(category==="infantry"?3:2) && w.targets.some(t=>["Ground","GroundActor","Vehicle","Infantry","Structure"].includes(t)) && conditionActive(w.condition,{rank:"rookie",deployed:false,powered:true,flags:[]}))));
-      if(category==="vehicle")candidates.sort((a,b)=>Number(b.behavior.armor==="Heavy")-Number(a.behavior.armor==="Heavy")||Math.abs(maxHealth(a)-(mode==="ra2"?300:30000))-Math.abs(maxHealth(b)-(mode==="ra2"?300:30000)));
+      if(category==="vehicle")candidates.sort((a,b)=>Number(b.behavior.armor==="Heavy")-Number(a.behavior.armor==="Heavy")||Math.abs(maxHealth(a)-300)-Math.abs(maxHealth(b)-300));
       const actor=candidates[0] ?? actors.find(a=>a.category===category);
       if(!actor) continue;
       let done=false;
@@ -305,7 +305,7 @@ export function MapWorkshop({initialMode="ra2",campaignPreview=false,flags={}}:{
         <div className="workshop-playback"><button className="workshop-primary" onClick={()=>phase==="running"?changePhase("paused"):run()}>{phase==="running"?<Pause size={15}/>:<Play size={15}/ >}{phase==="running"?"Pause":"Run battle"}</button><button onClick={singleStep} disabled={phase==="running"}>Step</button><button onClick={reset}>Reset battle</button><OptionSelect aria-label="Simulation speed" value={rate} onValueChange={setRate} options={rateOptions}/><label><input type="checkbox" checked={auto} onChange={e=>setAuto(e.target.checked)}/>Auto engage</label><label><input type="checkbox" checked={ranges} onChange={e=>setRanges(e.target.checked)}/>Ranges</label></div>
         <p className="workshop-notice" role="status">{notice}</p>
         <div className="workshop-entities" aria-label="Placed actors">{hud.pieces.map(p=><button key={p.id} className={p.health<=0?"destroyed":""} aria-pressed={selected===p.id} onClick={()=>focus(p.id)}><i className={"team-"+p.team}/><span>{actorFor(p.actorKey).name}<small>#{p.id} · {p.health<=0?p.phase:p.order.type}</small></span></button>)}</div>
-        <p className="workshop-model-note">Browser prototype · illustrated terrain · {!(scene.mode==="ra2"?camera.iso:!camera.iso)?"tactical symbols in this view":artStatus.local?"unit art as your local game plays it (preview mod, private originals)":scene.mode==="ra2"?"published unit art"+(artStatus.missing?"; original Classic add-on units shown as markers":""):"Classic unit art is local-only; units shown as markers"} · configured unit stats · simplified combat<br/>{scene.source} · rules {scene.ruleCommit.slice(0,8)}</p>
+        <p className="workshop-model-note">Browser prototype · illustrated terrain · {!(scene.mode==="ra2"?camera.iso:!camera.iso)?"tactical symbols in this view":artStatus.local?"unit art as your local game plays it (preview mod, private originals)":scene.mode==="ra2"?"published unit art"+(artStatus.missing?"; catalog units shown as markers":""):"Classic unit art is local-only; units shown as markers"} · configured unit stats · simplified combat<br/>{scene.source} · rules {scene.ruleCommit.slice(0,8)}</p>
       </div>
       <aside className="workshop-inspector">
         <div className="workshop-panel-title"><h2>Inspect & experiment</h2></div>

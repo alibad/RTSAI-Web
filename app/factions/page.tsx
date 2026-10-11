@@ -5,7 +5,7 @@ import { SiteHeader, SiteFooter } from "../components/SiteChrome";
 import { ModeNav } from "../components/ContentGuide";
 import { FactionCard } from "../components/FactionCard";
 import { FactionFlag } from "../components/FactionVisuals";
-import { CLASSIC_ADDON, CLASSIC_ADDON_NOTE, dossierForRoster, factions, modeLabel, resolveMode, rosterFactions, rosterHref, rosters } from "../../lib/game-content";
+import { CLASSIC_ADDON, CLASSIC_ADDON_NOTE, dossierForRoster, factions, modeLabel, resolveMode, rosterFactions, rosterHref, rosters, standaloneRosters } from "../../lib/game-content";
 import { getModRelease, isPublished, macInstaller } from "../../lib/mod-release";
 import "./factions.css";
 
@@ -37,7 +37,7 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       {originals.length > 0 && <li className="is-addon"><b>{originals.reduce((n, g) => n + g.factions.length, 0)}</b><span>in the {CLASSIC_ADDON}</span></li>}
       <li><b>{uniqueActors.length - buildings}</b><span>unique units</span></li>
       <li><b>{buildings}</b><span>buildings & defenses</span></li>
-      <li className="directory-release">{mode === "ra2" ? releaseLine : "Classic gameplay is being integrated into the standalone product. The earlier prototype contains the Red Sea slice."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
+      <li className="directory-release">{mode === "ra2" ? releaseLine : standaloneRosters ? "Standalone Classic passed local integration checks and awaits publication. This roster reflects the accepted local standalone rules." : "Standalone Classic passed local integration checks and awaits publication. This catalog describes historical Classic rules; its current standalone roster refresh is pending."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
     </ul>
     <section className="faction-group" aria-label="Modern factions">
       <div className="faction-group-heading"><h2>{mode === "ra2" ? "The seven factions" : `Modern factions · ${modeLabel(mode)}`}</h2><span>{modern.length} factions</span></div>
@@ -47,6 +47,6 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       <div className="faction-group-heading"><div><h2>{CLASSIC_ADDON}</h2><p>{CLASSIC_ADDON_NOTE}</p></div><span>Original factions · {originals.reduce((n, g) => n + g.factions.length, 0)}</span></div>
       {originals.map(group => <div className="classic-addon-side" aria-label={group.name} key={group.name}><h3>{group.name}</h3><div className="faction-original-grid">{group.factions.map(f => <FactionCard faction={f} key={f.id} />)}</div></div>)}
     </section>}
-    <p className="directory-footnote">Names and rosters are checked against the game rules. Shared units are counted once in the totals. {factions.filter(f => f.variants[mode].status === "implemented").length} modern factions have detailed dossiers. Balance is still being refined. National flags: flag-icons (MIT).</p>
+    <p className="directory-footnote">Names and rosters come from the generated catalog snapshot. {standaloneRosters ? "Both rosters reflect the locally accepted standalone rules; this does not certify public availability." : "Classic entries describe historical rules, not the newly integrated standalone profile."} Shared units are counted once in the totals. {factions.filter(f => f.variants[mode].status === "implemented").length} modern factions have detailed dossiers. Balance is still being refined. National flags: flag-icons (MIT).</p>
   </main><SiteFooter /></>;
 }

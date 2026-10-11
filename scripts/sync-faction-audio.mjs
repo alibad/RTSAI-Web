@@ -15,6 +15,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
+import { verifyFrozenInput } from "./frozen-inputs.mjs";
 import { register } from "tsx/esm/api";
 
 register();
@@ -42,12 +43,18 @@ for (const dir of ["mods/rtsai/modern-factions/audio/", "mods/rtsai/audio/sfx/"]
 let sheet = new Map();
 try { sheet = new Map(parseVoiceSheet(read.text("docs/voice-review.csv")).map(l => [l.file, l])); } catch { /* none */ }
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
-const commit = execFileSync("git", ["-C", modRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+const frozenIdentity = arg("mod-identity", "");
+const frozen = frozenIdentity ? verifyFrozenInput(modRoot, frozenIdentity) : null;
+const commit = frozen?.head ?? execFileSync("git", ["-C", modRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+const voiceSelection = arg("voice-language", "base");
+if (!["base", "faction", "en"].includes(voiceSelection)) throw new Error("Invalid voice language");
+const voiceOptions = {};
 
 // Every played project clip per actor, grouped as the Studio shows them.
 const units = {}, wanted = new Map(), skipped = [];
 for (const faction of artLab.factions) for (const actor of faction.actors) {
-  const s = actorSounds(data, audio, actor, faction.id);
+  const s = actorSounds(data, audio, actor, faction.id, voiceSelection === "base" ? undefined : voiceSelection);
+  if (s.voiceOptions) voiceOptions[actor] = s.voiceOptions;
   const groups = [];
   for (const g of s.groups) {
     if (!g.played || !KINDS.has(g.kind)) continue;
@@ -65,11 +72,23 @@ for (const faction of artLab.factions) for (const actor of faction.actors) {
 }
 
 const previous = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : null;
+const planPath = arg("plan", "");
+if (planPath) {
+  if (check || existsSync(planPath)) throw new Error("Audio plan requires a new explicit output and cannot combine with --check");
+  const sourceClips = Object.fromEntries([...wanted].map(([file, record]) => [file, { sourceSha256: sha(read.bytes(file)), license: record.license, existingPublished: previous?.clips?.[file]?.sourceSha256 === sha(read.bytes(file)) ? previous.clips[file].src : null }]));
+  const changedUnits = [...new Set([...Object.keys(previous?.units ?? {}), ...Object.keys(units)])].filter(actor => JSON.stringify(previous?.units?.[actor]) !== JSON.stringify(units[actor]));
+  writeFileSync(resolve(planPath), JSON.stringify({ schema: 1, source: { commit, identity: frozenIdentity || null }, voiceSelection, voiceOptions, units, sourceClips, changedUnits, unpublishedClips: Object.keys(sourceClips).filter(file => !sourceClips[file].existingPublished), humanReview: "pending", policy: "Plan only; no public files, approvals or release manifest changed" }, null, 2) + "\n");
+  console.log(JSON.stringify({ status: "plan-only", changedUnits, sourceClips: wanted.size, unpublishedClips: Object.values(sourceClips).filter(clip => !clip.existingPublished).length }));
+  process.exit(0);
+}
+
 if (check) {
   const problems = [];
   if (!previous) problems.push("data/faction-audio.json is missing");
   else {
     if (JSON.stringify(previous.units) !== JSON.stringify(units)) problems.push("the units' sound lists changed");
+    if (frozenIdentity && previous.sourceIdentity !== frozenIdentity) problems.push("the frozen source identity changed");
+    if (Object.keys(voiceOptions).length && ((previous.voiceSelection ?? "base") !== voiceSelection || JSON.stringify(previous.voiceOptions) !== JSON.stringify(voiceOptions))) problems.push("the native voice language metadata changed");
     for (const [file] of wanted) {
       const clip = previous.clips[file];
       if (!clip) { problems.push(`${file} is not published`); continue; }
@@ -115,6 +134,8 @@ const manifest = {
   schemaVersion: 1, generatedBy: "scripts/sync-faction-audio.mjs", mod: { repo: "alibad/RTSAI-Mod", commit }, encoder: ENCODER_LABEL,
   policy: "Only the project's own, licensed clips (a per-clip record with a licence in the mod). Original Red Alert 2 sounds are never published.",
   clips, units,
+  ...(frozenIdentity ? { sourceIdentity: frozenIdentity } : {}),
+  ...(Object.keys(voiceOptions).length ? { voiceSelection, voiceOptions } : {}),
 };
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 1) + "\n");
 console.log(`Faction audio: ${Object.keys(clips).length} clips (${(bytes / 1048576).toFixed(2)} MB) for ${Object.keys(units).length} actors from ${commit.slice(0, 12)}${skipped.length ? `; skipped ${skipped.length}: ${[...new Set(skipped)].slice(0, 5).join(", ")}` : ""}`);

@@ -20,12 +20,12 @@ test("shared catalog has complete faction, unit, mode and media relationships", 
     }
   }
   for (const u of units) for (const id of u.assetIds) assert.ok(mediaById(id), id);
-  assert.equal(unitById("cncloud")?.variants.ra?.actorId, "CNCLOUD");
+  assert.equal(unitById("cncloud")?.variants.ra?.actorId, "r2cloud");
   assert.equal(unitById("cncloud")?.variants.ra2?.actorId, "r2cloud");
   assert.equal(unitById("cnhaiwang")?.variants.ra2?.actorId, "r2haiwang");
 });
 test("release coverage is mode-specific and unknown inputs are safe", () => {
-  assert.equal(availability(factionById("saudi-arabia")!, "ra"), "In public Windows release");
+  assert.equal(availability(factionById("saudi-arabia")!, "ra"), "Development · release unconfirmed");
   // RTS AI claims follow data/rtsai-mod-release.json, nothing else.
   assert.equal(availability(factionById("saudi-arabia")!, "ra2"), ra2Release("saudi-arabia"));
   assert.equal(availability(factionById("china")!, "ra2"), ra2Release("china"));
@@ -46,18 +46,14 @@ test("both new factions expose complete native domains; release claims come only
     const roster = rosterFactionById(id, mode)!;
     const actors = rosterActors(roster);
     assert.deepEqual(new Set(actors.map(a => a.category)), new Set(["infantry", "vehicle", "aircraft", "ship", "defense", "structure"]));
-    const prefix = (mode === "ra2" ? "r2" : "") + (id === "israel" ? "il" : "hz");
+    const prefix = "r2" + (id === "israel" ? "il" : "hz");
     const relay = actors.find(a => a.id === prefix + "relay")!;
     const workshop = actors.find(a => a.id === prefix + "workshop")!;
     assert.equal(relay.behavior.weapons.length, 0);
     assert.equal(workshop.behavior.weapons.length, 0);
     assert.ok(relay.behavior.actions.some(a => a.label === "Support aura"));
     assert.ok(workshop.behavior.actions.some(a => a.label === "Power"));
-    if (mode === "ra") for (const defense of actors.filter(a => a.category === "defense" && a.id.startsWith(prefix))) {
-      const roles: readonly string[] = defense.roles;
-      assert.ok(roles.includes("defense"), defense.id);
-      assert.ok(!roles.includes("line-infantry") && !roles.includes("light-vehicle"), defense.id);
-    }
+    for (const defense of actors.filter(a => a.category === "defense" && a.id.startsWith(prefix))) assert.ok(defense.behavior.weapons.length > 0, defense.id);
     for (const unit of unitsForFaction(id, mode)) {
       assert.ok(actors.some(a => a.id === unit.variants[mode]?.actorId.toLowerCase()), unit.id);
       for (const asset of unit.assetIds) assert.equal(mediaById(asset)?.faction, id);
@@ -65,26 +61,23 @@ test("both new factions expose complete native domains; release claims come only
   }
 });
 test("complete rosters retain source names, countries and all buildings", async () => {
-  const source = JSON.parse(await readFile(new URL("../../RTSAI-Art/rebuild/catalog.json", import.meta.url), "utf8"));
-  assert.equal(rosterFactions("ra2").length, 16);
-  assert.equal(rosterFactions("ra").length, 12);
-  assert.deepEqual(rosters.actors.map(a => a.key).sort(), Object.keys(source.actors).sort());
-  for (const faction of rosters.factions) {
-    const original = source.factions.find((f: {id: string; mode: string}) => f.id === faction.id && f.mode === (faction.mode === "ra" ? "classic" : "ra2"));
-    assert.equal(faction.name, original.name);
-    assert.deepEqual(faction.actors, original.actors);
-    assert.equal(rosterActors(faction).length, faction.actors.length);
-  }
-  for (const actor of rosters.actors) {
-    const original = source.actors[actor.key];
-    assert.equal(actor.name, original.name);
-    assert.equal(actor.cost, original.cost);
-    assert.equal(actor.category, original.category);
-    assert.deepEqual(actor.roles, original.roles);
-    assert.equal(actor.behavior.health, original.currentBehavior.health);
-    assert.deepEqual(actor.behavior.weapons, original.currentBehavior.weapons);
-    assert.deepEqual(actor.behavior.actions, original.currentBehavior.actions);
-    assert.deepEqual(actor.behavior.targetTypes, original.currentBehavior.targetTypes);
+  const source = JSON.parse(await readFile(new URL("../data/standalone-facts.generated.json", import.meta.url), "utf8"));
+  for (const mode of ["ra", "ra2"] as const) {
+    const profile = source.profiles[mode === "ra" ? "rtsai-topdown" : "rtsai"];
+    assert.equal(rosterFactions(mode).length, 16);
+    const originalActors = new Map(profile.factions.flatMap((f: {units: {id: string}[]}) => f.units.map(a => [a.id, a] as const)));
+    assert.deepEqual(rosters.actors.filter(a => a.mode === mode).map(a => a.id).sort(), [...originalActors.keys()].sort());
+    for (const faction of rosterFactions(mode)) {
+      const original = profile.factions.find((f: {id: string}) => f.id === faction.id);
+      assert.equal(faction.name, original.name);
+      assert.deepEqual(faction.actors, original.units.map((a: {id: string}) => `${mode}:${a.id}`));
+      for (const actor of rosterActors(faction)) {
+        const unit = original.units.find((a: {id: string}) => a.id === actor.id);
+        for (const key of ["name", "cost", "category", "roles"] as const) assert.deepEqual(actor[key], unit[key]);
+        for (const key of ["health", "armor", "speed", "footprint", "weapons", "actions", "targetTypes"] as const) assert.deepEqual(actor.behavior[key], unit.behavior[key]);
+        assert.equal(actor.behavior.waterPlacement, unit.category === "ship" || unit.waterPlacement);
+      }
+    }
   }
   assert.equal(rosterFactionById("saudi-arabia", "ra2")?.id, "saudi");
   assert.equal(rosterFactionById("ukraine", "ra2"), undefined);

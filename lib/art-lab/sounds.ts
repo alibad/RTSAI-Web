@@ -23,7 +23,7 @@ export type SoundKind = "voice" | "weapon" | "impact" | "death" | "deploy" | "mo
 export type SoundGroup = { id: string; label: string; kind: SoundKind; trait: string; files: SoundFile[]; note?: string;
   /** False for a voice-set category this actor's rules never play (a vehicle's inherited infantry death cries). */
   played: boolean };
-export type ActorSounds = { actor: string; faction: string | null; voiceSet: string | null; groups: SoundGroup[] };
+export type ActorSounds = { actor: string; faction: string | null; voiceSet: string | null; groups: SoundGroup[]; voiceOptions?: { family: string; selected: string; preferences: string[]; review: "human-listening-pending" } };
 
 export type AudioData = { voices: Map<string, Yaml>; notifications: Map<string, Yaml>; music: YamlNode[] };
 
@@ -81,12 +81,16 @@ export function weaponSounds(data: ModData, weapon: string) {
 const unique = (files: SoundFile[]) => [...new Map(files.map(f => [f.file, f])).values()];
 
 /** Every sound an actor plays, grouped by when it plays. `faction` picks faction prefixes (engineer voices). */
-export function actorSounds(data: ModData, audio: AudioData, actorId: string, faction: string | null): ActorSounds {
+export function actorSounds(data: ModData, audio: AudioData, actorId: string, faction: string | null, voiceLanguage?: "faction" | "en"): ActorSounds {
   const actor = data.rules.get(actorId.toLowerCase());
   const out: ActorSounds = { actor: actorId, faction, voiceSet: null, groups: [] };
   if (!actor) return out;
-  const voiced = traits(actor, "Voiced")[0];
-  const voiceSet = voiced ? childValue(voiced[1].value, "VoiceSet") : null;
+  const customVoiced = traits(actor, "RTSAIVoiced")[0];
+  const voiced = customVoiced ?? traits(actor, "Voiced")[0];
+  const family = voiced ? childValue(voiced[1].value, "VoiceSet") : null;
+  const selected = family && voiceLanguage ? `${family.toLowerCase()}__${voiceLanguage}` : null;
+  const voiceSet = selected && audio.voices.has(selected) ? selected : family;
+  if (customVoiced && family) out.voiceOptions = { family, selected: voiceSet!, preferences: ["faction", "en"].filter(value => audio.voices.has(`${family.toLowerCase()}__${value}`)), review: "human-listening-pending" };
   out.voiceSet = voiceSet;
   const voices = voiceSet ? voiceSetFiles(audio, voiceSet, faction) : [];
   const deathCategories = new Set<string>();
@@ -98,7 +102,7 @@ export function actorSounds(data: ModData, audio: AudioData, actorId: string, fa
     if (!v.files.length) continue;
     const deathLike = /^(Die|Zapped|Burned|Melted|PsyCrush)$/.test(v.category) || deathCategories.has(v.category);
     const played = deathLike ? deathCategories.has(v.category) : true;
-    out.groups.push({ id: `voice:${v.category}`, label: VOICE_LABELS[v.category] ?? v.category, kind: deathLike ? "death" : "voice", trait: `Voiced (${voiceSet}) · ${v.category}`, files: v.files, played,
+    out.groups.push({ id: `voice:${v.category}`, label: VOICE_LABELS[v.category] ?? v.category, kind: deathLike ? "death" : "voice", trait: `${customVoiced ? "RTSAIVoiced" : "Voiced"} (${voiceSet}) · ${v.category}`, files: v.files, played,
       ...(played ? {} : { note: "In the voice set, but this actor's rules never play it (no DeathSounds for it)." }) });
   }
   const reports: SoundFile[] = [], impacts: SoundFile[] = [];

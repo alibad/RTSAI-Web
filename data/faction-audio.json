@@ -3,7 +3,7 @@
  "generatedBy": "scripts/sync-faction-audio.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "edd904b7dec537fc9d1c11ba15b745541d1c59a8"
+  "commit": "99048bc99b7b6bbd4d991c3b375da7106399af95"
  },
  "encoder": "ffmpeg libmp3lame, mono, 22.05 kHz, 40 kbps",
  "policy": "Only the project's own, licensed clips (a per-clip record with a licence in the mod). Original Red Alert 2 sounds are never published.",
@@ -2862,6 +2862,30 @@
      "mods/rtsai/modern-factions/audio/rcn-infantry-action-zh.wav",
      "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
     ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
    }
   ],
   "r2cnportable": [
@@ -2898,6 +2922,30 @@
     "kind": "voice",
     "clips": [
      "mods/rtsai/modern-factions/audio/rcn-infantry-action-zh.wav",
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
      "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
     ]
    },
@@ -2944,6 +2992,30 @@
     "kind": "voice",
     "clips": [
      "mods/rtsai/modern-factions/audio/rcn-infantry-action-zh.wav",
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
      "mods/rtsai/modern-factions/audio/rcn-infantry-action-en.wav"
     ]
    }
@@ -3024,6 +3096,30 @@
     ]
    },
    {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
     "id": "death:explosion",
     "label": "Destroyed · explosion",
     "kind": "death",
@@ -3066,6 +3162,30 @@
     "kind": "voice",
     "clips": [
      "mods/rtsai/modern-factions/audio/rcn-vehicle-action-zh.wav",
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
      "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
     ]
    },
@@ -3116,6 +3236,30 @@
     ]
    },
    {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
     "id": "death:explosion",
     "label": "Destroyed · explosion",
     "kind": "death",
@@ -3158,6 +3302,30 @@
     "kind": "voice",
     "clips": [
      "mods/rtsai/modern-factions/audio/rcn-vehicle-action-zh.wav",
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
      "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
     ]
    },
@@ -3216,6 +3384,30 @@
     ]
    },
    {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-vehicle-action-en.wav"
+    ]
+   },
+   {
     "id": "death:explosion",
     "label": "Destroyed · explosion",
     "kind": "death",
@@ -3258,6 +3450,30 @@
     "kind": "voice",
     "clips": [
      "mods/rtsai/modern-factions/audio/rcn-air-action-zh.wav",
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
      "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
     ]
    },
@@ -3306,6 +3522,30 @@
      "mods/rtsai/modern-factions/audio/rcn-air-action-zh.wav",
      "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
     ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
    }
   ],
   "r2crane": [
@@ -3342,6 +3582,30 @@
     "kind": "voice",
     "clips": [
      "mods/rtsai/modern-factions/audio/rcn-air-action-zh.wav",
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Build",
+    "label": "Built",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:Deploy",
+    "label": "Deploy",
+    "kind": "voice",
+    "clips": [
+     "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
+    ]
+   },
+   {
+    "id": "voice:SpecialAttack",
+    "label": "SpecialAttack",
+    "kind": "voice",
+    "clips": [
      "mods/rtsai/modern-factions/audio/rcn-air-action-en.wav"
     ]
    }
@@ -7784,5 +8048,954 @@
     ]
    }
   ]
+ },
+ "sourceIdentity": "b153198307187e65de2f5019ce44e5d840644e17984baaebcf9974f9dbdb5602",
+ "voiceSelection": "base",
+ "voiceOptions": {
+  "r2cnrifle": {
+   "family": "R2ChinainfantryVoice",
+   "selected": "R2ChinainfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2cnportable": {
+   "family": "R2ChinainfantryVoice",
+   "selected": "R2ChinainfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2cnnetwork": {
+   "family": "R2ChinainfantryVoice",
+   "selected": "R2ChinainfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2redspear": {
+   "family": "R2ChinaredspearVoice",
+   "selected": "R2ChinaredspearVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2qilin": {
+   "family": "R2ChinavehicleVoice",
+   "selected": "R2ChinavehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2zbd": {
+   "family": "R2ChinavehicleVoice",
+   "selected": "R2ChinavehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2lynx": {
+   "family": "R2ChinavehicleVoice",
+   "selected": "R2ChinavehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2mantis": {
+   "family": "R2ChinavehicleVoice",
+   "selected": "R2ChinavehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2phl": {
+   "family": "R2ChinavehicleVoice",
+   "selected": "R2ChinavehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2skyspear": {
+   "family": "R2ChinaairVoice",
+   "selected": "R2ChinaairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2cloud": {
+   "family": "R2ChinaairVoice",
+   "selected": "R2ChinaairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2crane": {
+   "family": "R2ChinaairVoice",
+   "selected": "R2ChinaairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2kunlun": {
+   "family": "R2ChinanavalVoice",
+   "selected": "R2ChinanavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2luyang": {
+   "family": "R2ChinanavalVoice",
+   "selected": "R2ChinanavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2haiying": {
+   "family": "R2ChinanavalVoice",
+   "selected": "R2ChinanavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2jiaolong": {
+   "family": "R2ChinanavalVoice",
+   "selected": "R2ChinanavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2haiwang": {
+   "family": "R2ChinanavalVoice",
+   "selected": "R2ChinanavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2basij": {
+   "family": "R2IraninfantryVoice",
+   "selected": "R2IraninfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2toophan": {
+   "family": "R2IraninfantryVoice",
+   "selected": "R2IraninfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2dronecontrol": {
+   "family": "R2IrandroneVoice",
+   "selected": "R2IrandroneVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2shadowone": {
+   "family": "R2IranshadowVoice",
+   "selected": "R2IranshadowVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2karrar": {
+   "family": "R2IranvehicleVoice",
+   "selected": "R2IranvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2raad": {
+   "family": "R2IranvehicleVoice",
+   "selected": "R2IranvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2fajr": {
+   "family": "R2IranvehicleVoice",
+   "selected": "R2IranvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2coast": {
+   "family": "R2IranvehicleVoice",
+   "selected": "R2IranvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2mohajer": {
+   "family": "R2IrandroneVoice",
+   "selected": "R2IrandroneVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2loiter": {
+   "family": "R2IrandroneVoice",
+   "selected": "R2IrandroneVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2toufan": {
+   "family": "R2IranairVoice",
+   "selected": "R2IranairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2azar": {
+   "family": "R2IranairVoice",
+   "selected": "R2IranairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2peykaap": {
+   "family": "R2IrannavalVoice",
+   "selected": "R2IrannavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ghadir": {
+   "family": "R2IrannavalVoice",
+   "selected": "R2IrannavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2trrifle": {
+   "family": "R2TurkeyinfantryVoice",
+   "selected": "R2TurkeyinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2trat": {
+   "family": "R2TurkeyinfantryVoice",
+   "selected": "R2TurkeyinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2trdroneop": {
+   "family": "R2TurkeyinfantryVoice",
+   "selected": "R2TurkeyinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2greywolf": {
+   "family": "R2TurkeygreywolfVoice",
+   "selected": "R2TurkeygreywolfVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2aras": {
+   "family": "R2TurkeyvehicleVoice",
+   "selected": "R2TurkeyvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2bozkir": {
+   "family": "R2TurkeyvehicleVoice",
+   "selected": "R2TurkeyvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2gokkalkan": {
+   "family": "R2TurkeyvehicleVoice",
+   "selected": "R2TurkeyvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2yildirim": {
+   "family": "R2TurkeyvehicleVoice",
+   "selected": "R2TurkeyvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2deniz": {
+   "family": "R2TurkeyvehicleVoice",
+   "selected": "R2TurkeyvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sancak": {
+   "family": "R2TurkeyvehicleVoice",
+   "selected": "R2TurkeyvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sahin": {
+   "family": "R2TurkeyairVoice",
+   "selected": "R2TurkeyairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2kuzgun": {
+   "family": "R2TurkeyairVoice",
+   "selected": "R2TurkeyairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2turna": {
+   "family": "R2TurkeyairVoice",
+   "selected": "R2TurkeyairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2poyraz": {
+   "family": "R2TurkeynavalVoice",
+   "selected": "R2TurkeynavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ege": {
+   "family": "R2TurkeynavalVoice",
+   "selected": "R2TurkeynavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2marmara": {
+   "family": "R2TurkeynavalVoice",
+   "selected": "R2TurkeynavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sang": {
+   "family": "R2SaudiinfantryVoice",
+   "selected": "R2SaudiinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2saat": {
+   "family": "R2SaudiinfantryVoice",
+   "selected": "R2SaudiinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sajtac": {
+   "family": "R2SaudijtacVoice",
+   "selected": "R2SaudijtacVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2falcon": {
+   "family": "R2SaudifalconVoice",
+   "selected": "R2SaudifalconVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2m1a2s": {
+   "family": "R2SaudivehicleVoice",
+   "selected": "R2SaudivehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2bradley": {
+   "family": "R2SaudivehicleVoice",
+   "selected": "R2SaudivehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sads": {
+   "family": "R2SaudivehicleVoice",
+   "selected": "R2SaudivehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2caesar": {
+   "family": "R2SaudivehicleVoice",
+   "selected": "R2SaudivehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2f15sa": {
+   "family": "R2SaudiairVoice",
+   "selected": "R2SaudiairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ah64sa": {
+   "family": "R2SaudiairVoice",
+   "selected": "R2SaudiairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sadiq": {
+   "family": "R2SaudinavalVoice",
+   "selected": "R2SaudinavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2riyadh": {
+   "family": "R2SaudinavalVoice",
+   "selected": "R2SaudinavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2jubail": {
+   "family": "R2SaudinavalVoice",
+   "selected": "R2SaudinavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ymr": {
+   "family": "R2YemeninfantryVoice",
+   "selected": "R2YemeninfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2yrpg": {
+   "family": "R2YemeninfantryVoice",
+   "selected": "R2YemeninfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2yspot": {
+   "family": "R2YemenspotterVoice",
+   "selected": "R2YemenspotterVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2wadighost": {
+   "family": "R2YemenghostVoice",
+   "selected": "R2YemenghostVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2technical": {
+   "family": "R2YemenvehicleVoice",
+   "selected": "R2YemenvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ytechrr": {
+   "family": "R2YemenvehicleVoice",
+   "selected": "R2YemenvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2yzu": {
+   "family": "R2YemenvehicleVoice",
+   "selected": "R2YemenvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ymlr": {
+   "family": "R2YemenvehicleVoice",
+   "selected": "R2YemenvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2samad": {
+   "family": "R2YemendroneVoice",
+   "selected": "R2YemendroneVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2sahaab": {
+   "family": "R2YemendroneVoice",
+   "selected": "R2YemendroneVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hodeidah": {
+   "family": "R2YemennavalVoice",
+   "selected": "R2YemennavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2mokha": {
+   "family": "R2YemennavalVoice",
+   "selected": "R2YemennavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilrifle": {
+   "family": "R2IsraelinfantryVoice",
+   "selected": "R2IsraelinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilat": {
+   "family": "R2IsraelinfantryVoice",
+   "selected": "R2IsraelinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilobserver": {
+   "family": "R2IsraelobserverVoice",
+   "selected": "R2IsraelobserverVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilrecon": {
+   "family": "R2IsraelreconVoice",
+   "selected": "R2IsraelreconVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2merkava": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2namer": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilshield": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilhowitzer": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilfalcon": {
+   "family": "R2IsraelairVoice",
+   "selected": "R2IsraelairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilgunship": {
+   "family": "R2IsraelairVoice",
+   "selected": "R2IsraelairVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilpatrol": {
+   "family": "R2IsraelnavalVoice",
+   "selected": "R2IsraelnavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilfrigate": {
+   "family": "R2IsraelnavalVoice",
+   "selected": "R2IsraelnavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2iltender": {
+   "family": "R2IsraelnavalVoice",
+   "selected": "R2IsraelnavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilsentry": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilbattery": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2ilatpost": {
+   "family": "R2IsraelvehicleVoice",
+   "selected": "R2IsraelvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzrifle": {
+   "family": "R2HezbollahinfantryVoice",
+   "selected": "R2HezbollahinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzat": {
+   "family": "R2HezbollahinfantryVoice",
+   "selected": "R2HezbollahinfantryVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzfpv": {
+   "family": "R2HezbollahfpvVoice",
+   "selected": "R2HezbollahfpvVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzspotter": {
+   "family": "R2HezbollahspotterVoice",
+   "selected": "R2HezbollahspotterVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzscout": {
+   "family": "R2HezbollahscoutVoice",
+   "selected": "R2HezbollahscoutVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hztechnical": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzrecoilless": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzescort": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzrail": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzrockets": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzdrone": {
+   "family": "R2HezbollahdroneVoice",
+   "selected": "R2HezbollahdroneVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzskiff": {
+   "family": "R2HezbollahnavalVoice",
+   "selected": "R2HezbollahnavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzmissileboat": {
+   "family": "R2HezbollahnavalVoice",
+   "selected": "R2HezbollahnavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzsurvey": {
+   "family": "R2HezbollahnavalVoice",
+   "selected": "R2HezbollahnavalVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzbunker": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzaanest": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  },
+  "r2hzcoastal": {
+   "family": "R2HezbollahvehicleVoice",
+   "selected": "R2HezbollahvehicleVoice",
+   "preferences": [
+    "faction",
+    "en"
+   ],
+   "review": "human-listening-pending"
+  }
  }
 }

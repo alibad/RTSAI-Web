@@ -5,6 +5,7 @@ import test from "node:test";
 
 // The committed RTS AI release manifest: published, it drives download links and faction release claims.
 const modRelease = JSON.parse(await readFile(new URL("../data/rtsai-mod-release.json", import.meta.url), "utf8"));
+const macAlphaRelease = JSON.parse(await readFile(new URL("../data/rtsai-mac-release.json", import.meta.url), "utf8"));
 const claimedByRelease = (id) => modRelease.published && modRelease.ra2FactionIds.includes(id);
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -114,14 +115,14 @@ test("renders a focused homepage: the standalone RTS AI promise, real flags, app
     assert.match(html, /Interactive AI companion preview/);
     assert.doesNotMatch(html, /<video/, "without trailer files the CompanionDemo remains visible");
   }
-  assert.match(html, /AUTO when you say so/);
+  assert.match(html, /Review before applying/);
   for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"]) assert.match(html, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
   assert.ok((html.match(/\/faction-art\/lineups\/[a-z-]+-1440\.[0-9a-f]{12}\.avif/g) ?? []).length >= 7, "the front line shows every faction's lineup");
   assert.match(html, /Türkiye/);
   // Standalone: no Red Alert in the headlines or the metadata, and nothing claimed as live or free.
   const head = html.slice(0, html.indexOf("</head>"));
   assert.doesNotMatch(head, /Red Alert|RA2|OpenRA mod/i);
-  assert.match(html, /Classic and RA2-inspired modes/);
+  assert.match(html, /Classic\/top-down and isometric modes/);
   assert.doesNotMatch(html, /own Red Alert|required.*Red Alert/i);
   assert.doesNotMatch(html, /isAccessibleForFree|"price"|Free alpha|Free playable|Out now|available now/i);
   // The home page never links release files directly; once a release is out it points to /download.
@@ -150,9 +151,9 @@ test("renders companion and download routes; parked routes stay reachable but un
     render("/download").then((response) => response.text()),
   ]);
 
-  assert.match(companion, /AI GAME COMPANION/);
-  assert.match(companion, /Helpful enough to speak/);
-  assert.match(companion, /AI layer/);
+  assert.match(companion, /OPTIONAL LOCAL CO-COMMANDER/);
+  assert.match(companion, /Your final say/);
+  assert.match(companion, /LOCALLY VERIFIED CONTROLS/);
   assert.doesNotMatch(companion, /href="\/capabilities/);
   for (const parked of [studio, platform, capabilityAtlas]) assert.match(parked, /name="robots" content="noindex, follow"/);
   assert.match(studio, /EARTH TO BATTLEFIELD/);
@@ -216,7 +217,7 @@ test("the download page offers the browser and Windows and needs no other game",
   assert.match(html, /Nothing else to install/);
   assert.doesNotMatch(html, /Bring Red Alert 2|We bring the rest|Red Alert 2 required|You need your own Red Alert 2|Steam, EA app or disc/);
   assert.match(html, /No Red Alert installation is required/);
-  assert.match(html, /Classic and isometric gameplay remain part of RTS AI/);
+  assert.match(html, /both Classic\/top-down and isometric modes/);
   assert.doesNotMatch(html, /Own Red Alert 2\?/);
   assert.match(html, /EA has not endorsed and does not support this product/);
   const aiHeading = modRelease.published && !(modRelease.aiModes ?? []).length ? "No co-commander in this download yet." : "How should your co-commander think?";
@@ -244,7 +245,8 @@ test("the download page offers the browser and Windows and needs no other game",
 
   // Published: the Windows button downloads the release's installer, with its size and signing status.
   const installer = modRelease.assets.find((asset) => asset.kind === "installer" && asset.platform === "windows-x64");
-  assert.match(html, new RegExp(`<title>Download RTS AI ${modRelease.version.replace(/\./g, "\\.")}`));
+  if (macAlphaRelease.published) assert.match(html, /<title>Download RTS AI \| Windows, Mac alpha, or play in your browser/);
+  else assert.match(html, new RegExp(`<title>Download RTS AI ${modRelease.version.replace(/\./g, "\\.")}`));
   assert.ok(html.includes(`href="${installer.url}"`), "the Windows button links the installer");
   assert.match(html, new RegExp(`Download RTS AI (?:<!-- -->)?${modRelease.version.replace(/\./g, "\\.")}`));
   assert.doesNotMatch(html, /aria-disabled="true">Coming soon</);
@@ -267,23 +269,27 @@ test("the download page offers the browser and Windows and needs no other game",
   }
 });
 
-test("privacy explains the hosted AI co-commander in plain language", async () => {
+test("Mac alpha download is independent of the preserved Windows release", async () => {
+  const macAlpha = JSON.parse(await readFile(new URL("../data/rtsai-mac-release.json", import.meta.url), "utf8"));
+  const html = await (await render("/download")).text();
+  if (macAlpha.published) {
+    assert.ok(html.includes(`href="${macAlpha.asset.url}"`));
+    assert.ok(html.includes(macAlpha.asset.sha256));
+    assert.match(html, /macOS 15\+/);
+    assert.match(html, /bundled companion supports Apple silicon only/);
+    assert.match(html, /Intel execution and another Mac remain pending/);
+    assert.match(html, /ad-hoc signature and is not notarized/);
+    assert.doesNotMatch(html, /candidate is not a public download/);
+  } else {
+    assert.doesNotMatch(html, /Download Mac alpha/);
+  }
+});
+
+test("privacy distinguishes local acceptance, unavailable hosted service and feedback queue receipts", async () => {
   const html = await (await render("/privacy")).text();
   assert.match(html, /id="ai-co-commander"/);
-  for (const claim of [
-    "compact snapshot of the match state",
-    "up to two downscaled screenshots",
-    "forwards these to Anthropic",
-    "Your voice audio is transcribed on your own PC",
-    "Audio is never uploaded",
-    "anonymous install token",
-    "No account is required",
-    "IP addresses for rate limiting only",
-    "Daily usage counters that expire",
-    "AI Off, Local, or External",
-    "Vercel",
-    "Google Firebase (Cloud Firestore)",
-  ]) assert.ok(html.includes(claim), claim);
+  for (const claim of ["compact, fog-respecting match observation", "no model, microphone transcription or speech runtime", "verified server authentication", "durable per-user and global budget enforcement", "does not confirm email delivery", "keeps your draft for retry", "A click does not establish", "Vercel"]) assert.ok(html.includes(claim), claim);
+  assert.doesNotMatch(html, /Hosted.*is the default|No account is required|Audio is never uploaded|anonymous install token/);
   assert.match(html, /do not send your name, email/);
   assert.match(html, /Written feedback and diagnostics are never sent to Google Analytics/);
 });
@@ -340,8 +346,8 @@ test("faction-to-unit-to-install journey retains mode and refuses unsupported co
   assert.match(unit, /<h1>Qilin Battle Tank<\/h1>/);
   assert.match(unit, /\/download\?faction=china&amp;mode=ra2/);
   const classic = await (await render("/units/cnqilin?mode=ra")).text();
-  assert.match(classic, /<code>CNQILIN<\/code>/);
-  assert.match(classic, /<h1>Qilin Main Battle Tank<\/h1>/);
+  assert.match(classic, /<code>r2qilin<\/code>/);
+  assert.match(classic, /<h1>Qilin Battle Tank<\/h1>/);
   const yemen = await (await render("/factions/yemen?mode=ra2")).text();
   assert.match(yemen, /\/units\/tech\?mode=ra2/);
   assert.doesNotMatch(yemen, /No roster in this mode yet/);
@@ -384,9 +390,7 @@ test("the complete faction guide covers every current country and building, clai
       if (mode === "ra2") assert.equal(/In public Windows release/.test(html), claimedByRelease(id), `${id}: release claim matches the manifest`);
     }
   }
-  const unavailable = await (await render("/factions/ukraine?mode=ra2")).text();
-  assert.match(unavailable, /No roster in this mode/);
-  assert.match(unavailable, /\/factions\/ukraine\?mode=ra/);
+  for (const mode of ["ra", "ra2"]) assert.equal((await render(`/factions/ukraine?mode=${mode}`)).status, 404);
   const stockDownload = await (await render("/download?faction=america&mode=ra2")).text();
   assert.match(stockDownload, /America \/ RTS AI/);
   assert.match(stockDownload, /Not released yet/);

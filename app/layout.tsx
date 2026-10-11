@@ -11,7 +11,7 @@ const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 const canonicalOrigin = new URL("https://rtsai.net");
 const title = "RTS AI — Modern Real-Time Strategy with an AI Co-Commander";
 const description =
-  "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander that watches your match and answers by voice. Coming to your browser and Windows.";
+  "Seven real-world factions. One fictional war. A modern real-time strategy game with an optional AI co-commander for locally tested advice and reviewed orders. Play in your browser or check the native alpha downloads.";
 
 export const metadata: Metadata = {
   metadataBase: canonicalOrigin,

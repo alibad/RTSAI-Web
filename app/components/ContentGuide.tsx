@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { availability, downloadHref, modeLabels, type Faction, type GameMode } from "../../lib/game-content";
+import { availability, standaloneRosters, downloadHref, modeLabels, type Faction, type GameMode } from "../../lib/game-content";
 
 /** Both gameplay modes belong to RTS AI. Catalog ids stay unchanged during the Classic port. */
 export function ModeNav({ mode, path }: { mode: GameMode; path: string }) {
@@ -9,5 +9,5 @@ export function ModeNav({ mode, path }: { mode: GameMode; path: string }) {
 }
 export function ReleaseCallout({ faction, mode }: { faction: Faction; mode: GameMode }) {
   const status = availability(faction, mode);
-  return <aside className="catalog-release" aria-label="Play this faction"><div><span className="section-number">{status}</span><h2>{status === "In public Windows release" ? "Ready for the battlefield." : "Coming to your browser and Windows."}</h2><p>{status === "Not in this mode" ? "There is no roster for this faction in this mode yet." : status === "In public Windows release" ? `This faction is verified in the public ${mode === "ra2" ? "RTS AI release" : "earlier Classic prototype"} for Windows. See the installation details before you download.` : "RTS AI is in development. Check the release page for what you can play today."}</p></div><Link className="primary-action" href={downloadHref(faction.id, mode)}>Release details <ArrowRight size={17} /></Link></aside>;
+  return <aside className="catalog-release" aria-label="Play this faction"><div><span className="section-number">{status}</span><h2>{status === "In public Windows release" ? "Ready for the battlefield." : "Check current release coverage."}</h2><p>{status === "Not in this mode" ? "There is no roster for this faction in this mode yet." : status === "In public Windows release" ? `This faction is verified in the public RTS AI release for Windows. See the installation details before you download.` : standaloneRosters ? "These rosters describe the locally verified standalone rules. Check the release page for what is published today." : "Check the release page for what you can play today. The Classic catalog is a historical reference; it does not certify the new standalone Classic build."}</p></div><Link className="primary-action" href={downloadHref(faction.id, mode)}>Release details <ArrowRight size={17} /></Link></aside>;
 }

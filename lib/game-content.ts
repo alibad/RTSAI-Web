@@ -1,8 +1,6 @@
 // Shared with installed packages. Engine rules remain authoritative for balance.
 import snapshot from "../data/factions.generated.json";
 import { gameMedia } from "./game-media.generated";
-import release from "../data/openra-ai-release.json";
-import coverage from "../data/release-content.json";
 import { getModRelease } from "./mod-release";
 export type GameMode = "ra" | "ra2";
 export const catalog = snapshot.catalog;
@@ -12,6 +10,7 @@ export type Faction = (typeof factions)[number];
 export type Unit = (typeof units)[number];
 export const modes = catalog.modes;
 export const rosters = snapshot.rosters;
+export const standaloneRosters = (snapshot as { derivation?: { type: string } }).derivation?.type === "standalone-frozen-facts";
 export type RosterFaction = (typeof rosters.factions)[number];
 export function rosterFactions(mode: GameMode) { return rosters.factions.filter(f => f.mode === mode); }
 export function rosterFactionById(id: string, mode: GameMode) {
@@ -27,12 +26,12 @@ export const categoryLabels: Record<string, string> = { infantry: "Infantry", ve
  */
 export const modeLabels: Record<GameMode, { name: string; subtitle: string; addOn: boolean }> = {
   ra2: { name: "RTS AI", subtitle: "Modern factions · own art, sound and maps", addOn: false },
-  ra: { name: "Classic", subtitle: "Top-down gameplay · integration in progress", addOn: false },
+  ra: { name: "Classic", subtitle: standaloneRosters ? "Top-down gameplay · standalone local roster" : "Top-down gameplay · historical catalog reference", addOn: false },
 };
 export const modeLabel = (mode: GameMode) => modeLabels[mode].name;
 /** Legacy identifier retained for callers; original roster entries are not the new Classic-mode delivery. */
 export const CLASSIC_ADDON = "Original roster";
-export const CLASSIC_ADDON_NOTE = "No Red Alert installation is required. Classic and isometric gameplay remain part of RTS AI; the combined mode selector is being integrated.";
+export const CLASSIC_ADDON_NOTE = standaloneRosters ? "No Red Alert installation is required. Both standalone modes passed local integration checks. This roster reflects those local rules; release availability still comes from the published release manifest." : "No Red Alert installation is required. Both standalone modes passed local integration checks. The next browser build and new Mac build are not public downloads yet. This Classic catalog remains a historical reference until its standalone roster refresh.";
 export function resolveMode(value: string | string[] | undefined, fallback: GameMode = "ra2"): GameMode { return value === "ra" || value === "ra2" ? value : fallback; }
 /** Names and roles differ by mode; the catalog validator keeps each one equal to what the game shows. */
 export function unitLabel(unit: Unit, mode: GameMode) { const variant = (unit.variants as Partial<Record<GameMode, { name: string; role: string; description?: string }>>)[mode]; return { name: variant?.name ?? unit.name, role: variant?.role ?? unit.role, description: variant?.description ?? unit.story }; }
@@ -48,7 +47,5 @@ export function availability(faction: Faction, mode: GameMode) {
     const mod = getModRelease();
     return mod.published && mod.ra2FactionIds.includes(faction.id) ? "In public Windows release" : "Development · release unconfirmed";
   }
-  const verified = coverage.windows.version === release.windows.version && coverage.windows.engineCommit === release.engineCommit && coverage.windows.productCommit === release.productCommit;
-  if (verified && coverage.windows.modes[mode].factionIds.some(id => id === faction.id)) return "In public Windows release";
   return "Development · release unconfirmed";
 }
