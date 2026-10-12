@@ -2,23 +2,27 @@
  * Original RA2 art for the dev-only Review (Node only; imported solely by review-server.ts).
  *
  * Original Westwood files are EA copyright and stay LOCAL: they are extracted from the player's own RA2 content
- * by the mod's engine (`OpenRA.Utility rtsai --extract`, which reads the encrypted MIX headers and mounts the
- * mod's packages exactly as the game does) into a gitignored cache, and served only by the dev review API,
+ * by the mod's engine (`OpenRA.Utility rtsai-classic --extract`, which reads the encrypted MIX headers and mounts the
+ * classic add-on's packages exactly as the game does) into a gitignored cache, and served only by the dev review API,
  * which answers 404 in production. Nothing here is imported by any page, and nothing is copied into public/.
+ *
+ * The standalone game (`mods/rtsai`) mounts no RA2 file: its stand-ins carry the EA file names, so its own art is
+ * read from the mod's folders, never from this cache. The original countries are drawn as the classic add-on
+ * plays them, with the player's files.
  *
  * The engine looks for content under `<EngineDir>/Support`; a small shim directory in the cache gives it one,
  * linking the mod engine's `mods` and the existing RA2 content, so no other repository is touched.
  */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { crc32, deflateSync } from "node:zlib";
 import { child, childValue, traits, parseMiniYaml } from "./miniyaml";
 import { decodePal } from "./pal";
 import { buildRenderSpec, spriteWithUrlsOf } from "./render-spec";
-import { loadModData, MOD_DIR, resolveActor, worldNormals, type ModReader, type Ra2Hook } from "./resolve";
+import { CLASSIC_DIR, loadModData, MOD_DIR, MODERN_FACTIONS, resolveActor, worldNormals, type ModData, type ModReader, type Ra2Hook } from "./resolve";
 import { behaviorFacts, type BehaviorFacts } from "./behavior";
 import { loadClassicData } from "./classic";
 import { computeRosters, type FactionRoster, type RosterUnit } from "./roster";
@@ -59,7 +63,12 @@ export type RosterPayload = {
   mode?: "ra2" | "classic";
   factions: FactionRoster[];
   unresolved?: string[];
+  /** What the game draws today. In RA2 mode the standalone game: original countries wear modern-faction stand-ins. */
   stock: Record<string, StockArt>;
+  /** RA2: the original countries' units as the classic add-on draws them, from the player's own files. */
+  originals?: Record<string, StockArt>;
+  /** RA2: the original countries (faction ids) that `originals` draws. */
+  countries?: string[];
   extraction: { requested: number; cached: number; missing: string[]; error: string | null; ms: number };
 };
 
@@ -73,6 +82,7 @@ const cached = (cfg: OriginalsConfig, name: string) => { const p = cachePath(cfg
 
 /** Path of a cached original file, or null (unsafe name or not extracted). */
 export function cachedFile(cfg: OriginalsConfig, name: string) {
+  checkCacheSource(cfg);
   return cached(cfg, name) ? cachePath(cfg, name) : null;
 }
 
@@ -93,8 +103,43 @@ function ensureShim(cfg: OriginalsConfig) {
   return shim;
 }
 
-/** Extracts RA2 files with the mod's own engine. Returns the names it could not find. */
+/** The mod whose file system mounts the player's own files: the classic add-on (the standalone game mounts none). */
+const extractMod = (cfg: OriginalsConfig) => (cfg.mode === "classic" ? "ra" : "rtsai-classic");
+
+const checkedCaches = new Set<string>();
+/**
+ * The cache holds only what `extractMod` read from the player's files. Earlier RA2 caches were extracted through the
+ * standalone mod, which answers the EA names with its own stand-ins, so they start over once. Only plain files are
+ * removed: the shim next to them links into the engine and the RA2 content.
+ */
+function checkCacheSource(cfg: OriginalsConfig) {
+  if (checkedCaches.has(cfg.cacheDir)) return;
+  const marker = join(cfg.cacheDir, "extracted-by.txt");
+  const by = extractMod(cfg);
+  const recorded = existsSync(marker) ? readFileSync(marker, "utf8").trim() : null;
+  if (recorded !== by && !(recorded === null && cfg.mode === "classic")) {
+    const dir = filesDir(cfg);
+    if (existsSync(dir)) for (const f of readdirSync(dir, { withFileTypes: true })) if (f.isFile()) unlinkSync(join(dir, f.name));
+    rmSync(join(cfg.cacheDir, "missing.json"), { force: true });
+  }
+  mkdirSync(cfg.cacheDir, { recursive: true });
+  writeFileSync(marker, `${by}\n`);
+  checkedCaches.add(cfg.cacheDir);
+}
+
+/**
+ * The mod folders a manifest mounts (`ra2|<dir>` packages), last mounted first: the engine reads a bare file name from
+ * the last mounted package that has it, named packages included (OpenRA.Game/FileSystem/FileSystem.cs).
+ */
+export function mountedDirs(reader: ModReader, manifest: string): string[] {
+  const fs = parseMiniYaml(reader.text(manifest), manifest).find(n => n.key === "FileSystem")?.value;
+  const packages = ["Packages", "SystemPackages", "ContentPackages"].flatMap(k => child(fs, k)?.value.nodes ?? []);
+  return packages.flatMap(n => { const dir = /^~?ra2\|(.+)$/.exec(n.key.trim())?.[1]; return dir ? [`${MOD_DIR}/${dir}`] : []; }).reverse();
+}
+
+/** Extracts the player's original files with the mod's own engine. Returns the names it could not find. */
 export async function extractOriginals(cfg: OriginalsConfig, names: string[]): Promise<string[]> {
+  checkCacheSource(cfg);
   const out = filesDir(cfg);
   mkdirSync(out, { recursive: true });
   const missingFile = join(cfg.cacheDir, "missing.json");
@@ -106,7 +151,7 @@ export async function extractOriginals(cfg: OriginalsConfig, names: string[]): P
   const bin = join(cfg.modRoot, cfg.mode === "classic" ? "bin" : "engine/bin");
   const [cmd, pre] = process.platform === "win32" ? [join(bin, "OpenRA.Utility.exe"), []] : ["dotnet", [join(bin, "OpenRA.Utility.dll")]];
   const env = { ...process.env, ENGINE_DIR: shim, MOD_SEARCH_PATHS: join(cfg.modRoot, "mods") };
-  const extract = (batch: string[]) => run(cmd, [...pre, cfg.mode === "classic" ? "ra" : "rtsai", "--extract", ...batch], { cwd: out, env, windowsHide: true, timeout: 120_000 });
+  const extract = (batch: string[]) => run(cmd, [...pre, extractMod(cfg), "--extract", ...batch], { cwd: out, env, windowsHide: true, timeout: 120_000 });
   // The utility extracts in order and stops at the first file it cannot find: that file is the first one still
   // missing, so note it and carry on with the rest (one extra launch per missing file).
   let rest = todo;
@@ -208,6 +253,7 @@ export function visualPayload(cfg: OriginalsConfig, image: string, sequence: str
 }
 async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequence: string, palette: string) {
   if (![image, sequence, palette].every(s => SAFE_NAME.test(s))) throw new Error("Invalid effect reference");
+  checkCacheSource(cfg);
   const reader = modReader(cfg.modRoot);
   const loaded = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
   const img = loaded.sequences.get(image), seq = img && child(img, sequence);
@@ -228,8 +274,11 @@ async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequenc
     writeFileSync(join(cfg.cacheDir, "owned-files", name), reader.bytes(path));
     return `owned/${name}`;
   };
+  // Effects play as the game ships: in RA2 mode a bare name is the standalone mod's own file (its stand-ins included).
+  const dirs = cfg.mode === "classic" ? ["mods/ra/bits"] : mountedDirs(reader, `${MOD_DIR}/mod.yaml`);
   const local = (name: string) => {
-    const path = name.includes("|") ? name.replace(/^ra2\|/, "mods/rtsai/").replace(/^ra\|/, "mods/ra/").replace(/^common\|/, cfg.mode === "classic" ? "mods/common/" : "engine/mods/common/") : `${cfg.mode === "classic" ? "mods/ra" : MOD_DIR}/bits/${name}`;
+    if (!name.includes("|")) { const dir = dirs.find(d => reader.exists(`${d}/${name}`)); return dir ? ownFile(`${dir}/${name}`) : null; }
+    const path = name.replace(/^ra2\|/, "mods/rtsai/").replace(/^ra\|/, "mods/ra/").replace(/^common\|/, cfg.mode === "classic" ? "mods/common/" : "engine/mods/common/");
     return reader.exists(path) ? ownFile(path) : null;
   };
   const context = (record: (name: string) => string | null) => ({ palettes: {}, normalsTypes: worldNormals(data), recordFile: ownFile, ra2: { record, bytes: (name: string) => cached(cfg, name) ? new Uint8Array(readFileSync(cachePath(cfg, name)!)) : new Uint8Array(0) } });
@@ -281,14 +330,45 @@ export function rosterPayload(cfg: OriginalsConfig, refresh = false): Promise<Ro
 
 async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const started = Date.now();
+  checkCacheSource(cfg);
   const reader = modReader(cfg.modRoot);
-  const ownedPaths = new Map<string, string>();
   let provenance: ProvenanceRecord | null = null;
   try { provenance = JSON.parse(reader.text(`mods/${cfg.mode === "classic" ? "ra" : "rtsai"}/modern-factions/ART-PROVENANCE.json`)); } catch { /* Unknown authorship stays unknown. */ }
   const data = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
   const { factions, stock: stockInfo } = computeRosters(data);
   const ids = new Set<string>();
   for (const f of factions) for (const u of f.units) { ids.add(u.id); if (u.reference) ids.add(u.reference); }
+  const run: StockRun = { cfg, reader, provenance, ownedPaths: new Map(), extraction: { requested: 0, cached: 0, missing: [], error: null } };
+  // RA2: the game as it ships reads no player file, so its art (the stand-ins under EA names included) is the mod's own.
+  const stock = await resolveStock(run, data, ids, stockInfo, factions, cfg.mode === "classic"
+    ? { dirs: ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"].map(d => `mods/ra/${d}`), extract: true, rules: "RTS AI Classic · OpenRA fork" }
+    : { dirs: mountedDirs(reader, `${MOD_DIR}/mod.yaml`), extract: false, rules: "RTS AI · RTSAI-Mod" });
+  // The original countries as the classic add-on plays them: Westwood's art from the player's own files.
+  let originals: Pick<RosterPayload, "originals" | "countries"> = {};
+  if (cfg.mode !== "classic" && reader.exists(`${CLASSIC_DIR}/mod.yaml`)) {
+    const classic = loadModData(reader, { manifestPath: `${CLASSIC_DIR}/mod.yaml` });
+    const rosters = computeRosters(classic);
+    const countries = rosters.factions.filter(f => !(MODERN_FACTIONS as readonly string[]).includes(f.id));
+    const countryIds = new Set(countries.flatMap(f => f.units.map(u => u.id)));
+    originals = {
+      countries: countries.map(f => f.id),
+      originals: await resolveStock(run, classic, countryIds, rosters.stock, rosters.factions, { dirs: mountedDirs(reader, `${CLASSIC_DIR}/mod.yaml`), extract: true, rules: "RTS AI Classic add-on · RTSAI-Mod" }),
+    };
+  }
+  return { mode: cfg.mode ?? "ra2", factions, stock, ...originals, unresolved: [...ids].filter(id => !stock[id]), extraction: { ...run.extraction, ms: Date.now() - started } };
+}
+
+type StockRun = {
+  cfg: OriginalsConfig; reader: ModReader; provenance: ProvenanceRecord | null; ownedPaths: Map<string, string>;
+  extraction: Omit<RosterPayload["extraction"], "ms">;
+};
+
+/**
+ * Resolves `ids` with one game's rules. A bare file name is read from `dirs` (the mod folders that game mounts, last
+ * mounted first) and, when `extract`, otherwise from the player's own files.
+ */
+async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stockInfo: Record<string, RosterUnit>, factions: FactionRoster[], opts: { dirs: string[]; extract: boolean; rules: string }): Promise<Record<string, StockArt>> {
+  const { cfg, reader, ownedPaths, provenance } = run;
   const palettes = stockPalettes(data);
   const paletteRefs: Record<string, PaletteRef> = {};
   const world = data.rules.get("world")!;
@@ -301,10 +381,23 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     writeFileSync(join(cfg.cacheDir, "owned-files", name), reader.bytes(path));
     return `owned/${name}`;
   };
+  const local = new Map<string, string | null>();
+  const localRef = (n: string): string | null => {
+    if (n.startsWith("owned/")) return n;
+    if (!local.has(n)) {
+      const path = n.includes("|")
+        ? n.replace(/^ra\|/, "mods/ra/").replace(/^ra2\|/, "mods/rtsai/").replace(/^classic\|/, `${CLASSIC_DIR}/`).replace(/^common\|/, "engine/mods/common/")
+        : opts.dirs.map(d => `${d}/${n}`).find(p => reader.exists(p));
+      local.set(n, path && reader.exists(path) ? ownFile(path) : null);
+    }
+    return local.get(n)!;
+  };
+  // The resolver reads some files back by the name the rules use (voxels): the mod's own copy when it has one.
+  const keyOf = (n: string) => localRef(n) ?? n;
   for (const [, node] of traits(world, "PaletteFromFile")) {
     if (childValue(node.value, "Tileset") && childValue(node.value, "Tileset") !== "TEMPERATE") continue;
-    const name = childValue(node.value, "Name") ?? "", ref = childValue(node.value, "Filename") ?? "";
-    const file = ref.includes("|") ? ownFile(ref.replace(/^ra2\|/, "mods/rtsai/").replace(/^ra\|/, "mods/ra/")) : ref.toLowerCase();
+    const name = childValue(node.value, "Name") ?? "", ref = (childValue(node.value, "Filename") ?? "").toLowerCase();
+    const file = localRef(ref) ?? ref;
     if (!SAFE_NAME.test(file.replace(/^owned\//, ""))) continue;
     paletteRefs[name] = { name, file, basePalette: name, remap: [], transparent: child(node.value, "TransparentIndex") ? numbers(childValue(node.value, "TransparentIndex")) : [0], shadow: numbers(childValue(node.value, "ShadowIndex")), definedBy: "Merged World rules" };
   }
@@ -314,40 +407,35 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   }
   // The default player remap may retain its base name.
   if (palettes.player && paletteRefs.player) paletteRefs.player.remap = palettes.player.remap;
+  const chromeFile = palettes.chrome ? localRef(palettes.chrome.file!) ?? palettes.chrome.file! : null;
   const normalsTypes = worldNormals(data);
-  const outside = ownFile;
   const resolveAll = (ra2: Ra2Hook) => {
     const out = new Map<string, ReturnType<typeof resolveActor>>();
     for (const id of ids) {
       const actor = data.rules.get(id);
       if (!actor) continue;
-      try { out.set(id, resolveActor(reader, data, id, actor, null, { palettes: paletteRefs, normalsTypes, recordFile: outside, ra2 })); } catch { /* reported as missing art */ }
+      try { out.set(id, resolveActor(reader, data, id, actor, null, { palettes: paletteRefs, normalsTypes, recordFile: ownFile, ra2 })); } catch { /* reported as missing art */ }
     }
     return out;
   };
 
-  // Pass 1: which RA2 files the game would read for these actors.
-  const wanted = new Set<string>(Object.values(paletteRefs).map(p => p.file!).filter(Boolean));
-  const localRef = (n: string): string | null => {
-    if (n.includes("|")) {
-      const path = n.replace(/^ra\|/, "mods/ra/").replace(/^ra2\|/, "mods/rtsai/").replace(/^common\|/, "engine/mods/common/");
-      return reader.exists(path) ? ownFile(path) : null;
-    }
-    const dir = cfg.mode === "classic" ? "mods/ra" : MOD_DIR;
-    for (const sub of ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"]) if (reader.exists(`${dir}/${sub}/${n}`)) return ownFile(`${dir}/${sub}/${n}`);
-    return null;
-  };
-  resolveAll({ record: n => localRef(n) ?? (wanted.add(n), null), bytes: n => cached(cfg, n) ? new Uint8Array(readFileSync(cachePath(cfg, n)!)) : new Uint8Array(0) });
-  let error: string | null = null;
-  let missing: string[] = [];
-  try { missing = await extractOriginals(cfg, [...wanted]); } catch (e) { error = e instanceof Error ? e.message : String(e); }
+  // Pass 1: which of the player's files the game would read for these actors.
+  const wanted = new Set<string>([...Object.values(paletteRefs).map(p => p.file!), chromeFile ?? ""].filter(f => f && !f.startsWith("owned/")));
+  resolveAll({ record: n => localRef(n) ?? (wanted.add(n), null), bytes: n => cached(cfg, keyOf(n)) ? new Uint8Array(readFileSync(cachePath(cfg, keyOf(n))!)) : new Uint8Array(0) });
+  let missing = [...wanted];
+  if (opts.extract) {
+    try { missing = await extractOriginals(cfg, [...wanted]); } catch (e) { run.extraction.error = e instanceof Error ? e.message : String(e); }
+  }
+  run.extraction.requested += wanted.size;
+  run.extraction.cached += [...wanted].filter(n => cached(cfg, n)).length;
+  run.extraction.missing.push(...missing.filter(n => !run.extraction.missing.includes(n)));
 
   // Pass 2: resolve with the extracted bytes.
-  const bytes = (n: string) => new Uint8Array(readFileSync(cachePath(cfg, n)!));
-  const resolved = resolveAll({ record: n => localRef(n) ?? (cached(cfg, n) ? n : null), bytes });
+  const bytes = (n: string) => new Uint8Array(readFileSync(cachePath(cfg, keyOf(n))!));
+  const resolved = resolveAll({ record: n => localRef(n) ?? (opts.extract && cached(cfg, n) ? n : null), bytes });
   const url = (key: string | null | undefined) => (key ? key.startsWith("owned/") ? `/api/art-review/mod/${encodeURIComponent(key.slice(6))}?mode=${cfg.mode ?? "ra2"}` : `${cfg.mode === "classic" ? "/api/art-review/classic/" : RA2_ROUTE}${encodeURIComponent(key)}` : null);
   const paletteSpec = (p: PaletteRef | null): PaletteSpec | null => (p && cached(cfg, p.file!) ? { name: p.name, url: url(p.file)!, remap: p.remap, transparent: p.transparent, shadow: p.shadow } : null);
-  const chromePal = palettes.chrome && cached(cfg, palettes.chrome.file!) ? decodePal(bytes(palettes.chrome.file!), palettes.chrome.transparent, palettes.chrome.shadow) : null;
+  const chromePal = palettes.chrome && chromeFile && cached(cfg, chromeFile) ? decodePal(bytes(chromeFile), palettes.chrome.transparent, palettes.chrome.shadow) : null;
   const bitsFiles = new Set<string>();
   for (const dir of ["bits", "bits/cameos", "bits/structures", "bits/animations", "bits/projectiles"]) {
     try { for (const f of readdirSync(join(cfg.modRoot, MOD_DIR, dir))) bitsFiles.add(f.toLowerCase()); } catch { /* absent */ }
@@ -398,7 +486,7 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     const own = modelFiles.filter(f => ownedPaths.has(f));
     const model = combineSources((own.length ? own : modelFiles).map(sourceOf), "Current model");
     const icon = art.cameo.file ? sourceOf(art.cameo.file) : combineSources([], "Current icon");
-    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id), ruleKey: data.ruleKeys.get(id), sources: { model, icon, files, rules: cfg.mode === "classic" ? "RTS AI Classic · OpenRA fork" : "RTS AI · RTSAI-Mod" } };
+    stock[id] = { spec, sprite: spriteWithUrlsOf(sprite, url), files: art.files, fromModBits: art.files.filter(f => bitsFiles.has(f)), info: stockInfo[id] ?? factions.flatMap(f => f.units).find(u => u.id === id) ?? null, behavior: behaviorFacts(data, id), ruleKey: data.ruleKeys.get(id), sources: { model, icon, files, rules: opts.rules } };
   }
-  return { mode: cfg.mode ?? "ra2", factions, stock, unresolved: [...ids].filter(id => !stock[id]), extraction: { requested: wanted.size, cached: [...wanted].filter(n => cached(cfg, n)).length, missing, error, ms: Date.now() - started } };
+  return stock;
 }

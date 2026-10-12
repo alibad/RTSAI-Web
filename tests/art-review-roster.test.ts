@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { artLab } from "../lib/art-lab/manifest";
-import { conditionHolds, encodePng } from "../lib/art-lab/originals";
+import { conditionHolds, encodePng, mountedDirs } from "../lib/art-lab/originals";
 import { loadModData, type ModReader } from "../lib/art-lab/resolve";
 import { buildableFor, computeRosters, pickReference, type RosterUnit } from "../lib/art-lab/roster";
 
@@ -117,4 +117,16 @@ test("every faction's real roster from the sibling RTSAI-Mod (skipped without th
   // New units with no original in their domain (none today); listed so a new one shows up in the test output.
   if (without.length) console.log(`No same-domain original for: ${without.join(", ")}`);
   assert.deepEqual(without, []);
+});
+
+test("bare file names resolve like the engine: the last mounted mod folder wins; the classic add-on drops the country stand-ins", () => {
+  const manifestText = ["FileSystem: DefaultFileSystem", "\tPackages:", "\t\t^EngineDir", "\t\t$rtsai: ra2", "\t\tra2|standalone/placeholders",
+    "\t\tra2|standalone/placeholders/conquer: conquer", "\t\t~ra2|standalone/units", "\t\tra2|bits", ""].join("\n");
+  const reader: ModReader = { text: () => manifestText, bytes: () => new Uint8Array(0), exists: () => true };
+  assert.deepEqual(mountedDirs(reader, "mods/rtsai/mod.yaml"), ["mods/rtsai/bits", "mods/rtsai/standalone/units", "mods/rtsai/standalone/placeholders/conquer", "mods/rtsai/standalone/placeholders"]);
+  if (!existsSync(join(modRoot, "mods/rtsai-classic/mod.yaml"))) return;
+  const manifest = readFileSync(join(modRoot, "mods/rtsai-classic/mod.yaml"), "utf8");
+  assert.doesNotMatch(manifest, /campaigns\/countr/, "the classic add-on plays the original countries with the player's own art and voices");
+  const classic = loadModData({ text: p => readFileSync(join(modRoot, p), "utf8"), bytes: p => new Uint8Array(readFileSync(join(modRoot, p))), exists: p => existsSync(join(modRoot, p)) }, { manifestPath: "mods/rtsai-classic/mod.yaml" });
+  assert.equal(classic.rules.get("e1")?.nodes.find(n => n.key === "RenderSprites")?.value.nodes.find(n => n.key === "Image"), undefined, "the GI keeps its own image (gi.shp)");
 });

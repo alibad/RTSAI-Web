@@ -28,6 +28,8 @@ export type Ra2Hook = { record(name: string): string | null; bytes(name: string)
 
 export const MODERN_FACTIONS = ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"] as const;
 export const MOD_DIR = "mods/rtsai";
+/** The optional add-on that plays the original countries with the player's own RA2 files (`classic|` package). */
+export const CLASSIC_DIR = "mods/rtsai-classic";
 export const ART_DIR = `${MOD_DIR}/modern-factions`;
 
 /** `ra2|modern-factions/voxels/r2qilin` -> mod path, or null when the file lives in a package the mod does not own. */
@@ -37,6 +39,7 @@ export function packagePath(ref: string): { path: string | null; reason: string 
   const pkg = ref.slice(0, bar);
   const rest = ref.slice(bar + 1);
   if (pkg === "ra2") return { path: `${MOD_DIR}/${rest}`, reason: null };
+  if (pkg === "classic") return { path: `${CLASSIC_DIR}/${rest}`, reason: null };
   if (pkg === "ra") return { path: `mods/ra/${rest}`, reason: null };
   if (pkg === "common") return { path: `engine/mods/common/${rest}`, reason: null };
   return { path: null, reason: `package ${pkg}| (RA2 game data or engine content)` };

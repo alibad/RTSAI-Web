@@ -257,15 +257,23 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     return () => { delete (window as unknown as { __artReview?: typeof hook }).__artReview; };
   }, [frames, unitIndex]);
   const rosterInfo = useMemo(() => new Map((roster?.factions ?? []).flatMap(f => f.units.map(u => [`${f.id}:${u.id}`, u] as const))), [roster]);
+  // The original countries as the classic add-on plays them: Westwood's art from the owner's own RA2 files. The
+  // standalone game dresses them in modern-faction stand-ins, which `unitIndex` keeps for our own factions.
+  const countries = useMemo(() => new Set(roster?.countries ?? []), [roster]);
+  const originalIndex = useMemo(() => new Map(Object.entries(roster?.originals ?? {}).flatMap(([id, o]) => {
+    const u = unitIndex.get(id);
+    return u ? [[id, { ...u, name: o.info?.name || u.name, spec: o.spec, sprite: o.sprite, files: o.files, fromModBits: o.fromModBits, sources: o.sources, origin: "original" as const, identity: undefined, releaseSources: undefined, previousArt: undefined }] as const] : [];
+  })), [roster, unitIndex]);
+  const unitIn = useCallback((id: string, faction: string) => (countries.has(faction) ? originalIndex.get(id) : undefined) ?? unitIndex.get(id), [countries, originalIndex, unitIndex]);
   const rows = useMemo(() => units.map(u => rowFor({ ...u, origin: "new" })), [units, rowFor]);
   const factionIds = useMemo(() => (roster?.factions.map(f => f.id) ?? [...new Set(units.map(u => u.factionId))]), [roster, units]);
   // Each faction's whole roster (new and original units), in build-palette order; new units only until it loads.
   const rostersById = useMemo(() => new Map(factionIds.map(id => {
     const f = roster?.factions.find(x => x.id === id);
     const ids = f ? f.units.map(u => u.id) : units.filter(u => u.factionId === id).map(u => u.id);
-    const list = ids.flatMap(i => { const u = unitIndex.get(i); return u ? [rowFor(u)] : []; });
+    const list = ids.flatMap(i => { const u = unitIn(i, id); return u ? [rowFor(u)] : []; });
     return [id, authored ? list.filter(r => r.origin === "new") : list] as const;
-  })), [factionIds, roster, units, unitIndex, rowFor, authored]);
+  })), [factionIds, roster, units, unitIn, rowFor, authored]);
   const factionSummaries: FactionSummary[] = useMemo(() => factionIds.map(id => {
     const list = rostersById.get(id) ?? [];
     const withCandidates = list.filter(r => r.count > 0);
@@ -287,7 +295,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const boardUnitsFor = useCallback((id: string) => boardUnits.filter(u => u.factionId === id), [boardUnits]);
   const boardFaction = boardFactions.some(f => f.id === factionId) ? factionId : boardFactions[0]?.id ?? factionId;
   const counts = useMemo(() => (mode === "ra2" && state ? rosterCounts(units.map(u => u.id), workspace, library, preview, state.review) : null), [mode, state, units, workspace, library, preview]);
-  const selectedUnit = selected ? unitIndex.get(selected) : undefined;
+  const selectedUnit = selected ? unitIn(selected, factionId) : undefined;
   // The public viewer's page for what is open here (catalog faction ids: saudi -> saudi-arabia).
   // RA2: the Encounter is the browser game's sandbox with this unit placed (Classic keeps the native Encounter).
   const encounterLink = mode === "ra2" && selectedUnit ? encounterHref(selectedUnit.id, factionId) : undefined;
@@ -309,7 +317,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const chainStep: ChainStep = step === AUTO ? (natives.length ? "game" : "now") : step;
   const slot: SlotId = iconMode ? "icon" : chainStep === "design" ? "concept" : "model";
   const info = unit ? rosterInfo.get(`${factionId}:${unit.id}`) ?? [...rosterInfo.entries()].find(([k]) => k.endsWith(`:${unit.id}`))?.[1] : undefined;
-  const reference = !authored && info?.reference ? unitIndex.get(info.reference) ?? null : null;
+  // The original unit a new one replaces, as Westwood drew it (the standalone game wears a stand-in in its place).
+  const reference = !authored && info?.reference ? originalIndex.get(info.reference) ?? unitIndex.get(info.reference) ?? null : null;
   const referenceWhy = info?.referenceWhy;
   const paletteUnits = useMemo(() => factionRows.map(r => ({ ...r.unit, factionId })), [factionRows, factionId]);
   const unitKey = unit?.id ?? null;
