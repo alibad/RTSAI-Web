@@ -37,6 +37,7 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       {originals.length > 0 && <li className="is-addon"><b>{originals.reduce((n, g) => n + g.factions.length, 0)}</b><span>in the {CLASSIC_ADDON}</span></li>}
       <li><b>{uniqueActors.length - buildings}</b><span>unique units</span></li>
       <li><b>{buildings}</b><span>buildings & defenses</span></li>
+      <li className="directory-release">Every unit’s art, the original countries’ and other OpenRA mods’ included: <Link href="/faction-studio">open the Faction Studio →</Link></li>
       <li className="directory-release">{mode === "ra2" ? releaseLine : standaloneRosters ? "Standalone Classic passed local integration checks and awaits publication. This roster reflects the accepted local standalone rules." : "Standalone Classic passed local integration checks and awaits publication. This catalog describes historical Classic rules; its current standalone roster refresh is pending."} <Link href={`/download?mode=${mode}`}>Release status →</Link></li>
     </ul>
     <section className="faction-group" aria-label="Modern factions">

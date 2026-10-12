@@ -1,10 +1,11 @@
 /**
  * Original RA2 art for the dev-only Review (Node only; imported solely by review-server.ts).
  *
- * Original Westwood files are EA copyright and stay LOCAL: they are extracted from the player's own RA2 content
- * by the mod's engine (`OpenRA.Utility rtsai-classic --extract`, which reads the encrypted MIX headers and mounts the
- * classic add-on's packages exactly as the game does) into a gitignored cache, and served only by the dev review API,
- * which answers 404 in production. Nothing here is imported by any page, and nothing is copied into public/.
+ * Original Westwood files are EA copyright: they are extracted from the player's own RA2 content by the mod's engine
+ * (`OpenRA.Utility rtsai-classic --extract`, which reads the encrypted MIX headers and mounts the classic add-on's
+ * packages exactly as the game does) into a gitignored cache and served by the dev review API (404 in production).
+ * Nothing here is imported by any page or committed. The shared Studio shows them from a snapshot the owner publishes
+ * (scripts/publish-studio.ts), free and non-commercial under EA's C&C modding guidelines, with EA's notice.
  *
  * The standalone game (`mods/rtsai`) mounts no RA2 file: its stand-ins carry the EA file names, so its own art is
  * read from the mod's folders, never from this cache. The original countries are drawn as the classic add-on

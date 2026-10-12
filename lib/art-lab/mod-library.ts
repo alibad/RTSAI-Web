@@ -3,8 +3,8 @@
  *
  * Each mod is read in place from its checkout under OpenRA-Upstreams: its own rules, sequences and art, mounted in the
  * order its mod.yaml gives. A file the mod takes from an owned game (RA2 or Red Alert MIX files) comes from the
- * player's own files through the same private extraction as the originals. Nothing here is copied into the website,
- * and third-party art stays on this machine like the originals do.
+ * player's own files through the same private extraction as the originals. The shared Studio shows the result from the
+ * owner's published snapshot (scripts/publish-studio.ts), credited to each mod's authors.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";

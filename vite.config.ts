@@ -59,22 +59,8 @@ function artReviewDevApi(): Plugin {
   };
 }
 
-// Production builds swap the Review UI for an empty stub before any bundling or client-reference analysis,
-// so the review code is absent from every production artifact (the page itself answers 404 there).
-function artReviewProductionStub(): Plugin {
-  const stubId = "\0rtsai-art-review-stub";
-  return {
-    name: "rtsai-art-review-production-stub",
-    apply: "build",
-    enforce: "pre",
-    resolveId(source) {
-      return /(^|[\\/])components[\\/]art[\\/]ReviewApp(\.tsx)?$/.test(source) ? stubId : null;
-    },
-    load(id) {
-      return id === stubId ? "export function ReviewApp() { return null; }\n" : null;
-    },
-  };
-}
+// The Review UI ships in production builds as the shared, read-only Faction Studio (/faction-studio), which reads a
+// published snapshot (lib/art-lab/studio-snapshot.ts); its local API above stays a dev-server-only middleware.
 
 // Public builds swap the admin-only Workshop tools (Campaign studio, AI testing) for empty stubs, so their code never
 // reaches an rtsai.net bundle; their pages answer 404 there (lib/admin.ts). Admin builds and dev keep them.
@@ -157,7 +143,7 @@ export default defineConfig(async ({ command }) => {
       worker,
       optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
       resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
-      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewProductionStub(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), react()],
+      plugins: [artReviewDevApi(), artReviewClientPreview(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), react()],
     };
   }
 
@@ -169,7 +155,7 @@ export default defineConfig(async ({ command }) => {
       server,
       define,
       worker,
-      plugins: [artReviewDevApi(), artReviewProductionStub(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
+      plugins: [artReviewDevApi(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
@@ -182,7 +168,6 @@ export default defineConfig(async ({ command }) => {
     worker,
     plugins: [
       artReviewDevApi(),
-      artReviewProductionStub(),
       adminToolsProductionStub(),
       localUnitArtProductionStub(),
       vinext(),

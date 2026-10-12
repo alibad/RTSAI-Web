@@ -64,7 +64,8 @@ async function post(action: ReviewAction, mode: StudioMode): Promise<ReviewEntry
  * 3D model, game model, animations, checks and your call. Each step opens on the stage. Choices go to
  * RTSAI-Art/review.json through the dev-only API; nothing reaches the mod until a separate export.
  */
-export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
+/** `shared`: the public, read-only Studio (rtsai.net/faction-studio): browse art; decisions stay in the owner's local app. */
+export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[]; tints: MapTint[]; shared?: boolean }) {
   const [mode, setMode] = useState<StudioMode>("ra2");
   // The mod library: other projects' mods the Studio can read from this machine.
   const [mods, setMods] = useState<ModListing[]>([]);
@@ -398,7 +399,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const selectSound = useRef<string | null>(null);
   const takeSelect = useCallback((actor: string) => { if (selectSound.current !== actor) return false; selectSound.current = null; return true; }, []);
 
-  const chain: ChainData | null = unit && isNew ? {
+  // The asset chain walks the owner's drafts and decisions: the shared Studio shows what is in the game instead.
+  const chain: ChainData | null = unit && isNew && !shared ? {
     current: { item: currentItem, tag: unit.spec.voxel ? "VXL" : "SHP" },
     design,
     glb: { options: glb },
@@ -510,7 +512,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     }
   };
   const label = (id: string) => (id === "current" ? "Current" : labels.get(id) ?? id);
-  const decide: Decide | null = unit ? {
+  const decide: Decide | null = unit && !shared ? {
     choose: c => void send({ type: "choose", actor: unit.id, slot, candidate: c, view: view() },
       c === "current" ? "Keeping current" : slot === "concept" ? `${label(c)} is the reference` : `${label(c)} chosen for the game (applies at the next export)`),
     clear: () => void send({ type: "clear", actor: unit.id, slot }, "Decision undone"),
@@ -575,19 +577,19 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const showFilm = Boolean(unit && focused && surface === "art" && !lineupOnly && !(slot === "model" && chain && (versions.length <= 2 || !["now", "game"].includes(chainStep))));
   const showShelf = Boolean(unit && surface === "art" && slot === "model" && (!chain || chainStep === "anim" || chainStep === "sounds"));
   const inspector = chain && !iconMode && chainStep === "checks" ? "checks" : "facts";
-  const board = surface === "board" && mode === "ra2";
+  const board = surface === "board" && mode === "ra2" && !shared;
 
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}${board ? " is-board" : ""}${authored ? " is-authored" : ""}`}>
-      {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
+      {sourcesOpen && <SourceLibrary shared={shared} mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" && !shared ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
       {unit && <UnitSounds soundsKey={unitSoundKey} frames={frames} item={focused?.item ?? null} takeSelect={takeSelect} />}
       {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
-      <StudioBar viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} mods={mods} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <StudioBar shared={shared} viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} mods={mods} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
-        tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
+        tally={mode === "ra2" && !shared ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
-          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" ? openSounds : undefined} />}
+          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" && !shared ? openSounds : undefined} />}
         <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface === "art" ? " has-chain" : ""}`} id="main-content">
           {chain && surface === "art" && state && <AssetChain soundsKey={unitSoundKey} data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>
@@ -598,6 +600,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
             : surface === "arena" ? (encounterLink
               ? <p className="lab-empty">The Encounter is the browser game’s battle sandbox now: the game’s own simulation, with results, a replay and a native check. <a href={encounterLink} target="_blank" rel="noreferrer">Open it with {unit.name} →</a></p>
               : isModMode(mode) ? <p className="lab-empty">The Encounter runs RTS AI’s own game; other projects’ mods are for browsing their art.</p>
+              : shared ? <p className="lab-empty">Classic encounters run in the RTS AI desktop app.</p>
               : <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} />) : stage}
           {showFilm && focused && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
@@ -615,7 +618,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         </details>}
-        {unit && mode === "ra2" && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} showable={e => Boolean(e.release || e.candidate)} />}
+        {unit && mode === "ra2" && !shared && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} showable={e => Boolean(e.release || e.candidate)} />}
         </aside>}
       </div>
     </div>

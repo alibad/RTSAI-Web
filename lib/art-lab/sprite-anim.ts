@@ -12,11 +12,19 @@ export const animationLabels: Record<string, string> = {
   stand: "Stand", move: "Walk", attack: "Fire", idle: "Idle", die: "Die", prone: "Prone", body: "Idle", make: "Build-up",
 };
 
-// A build-menu icon is never an actor body, even when the body file is unresolved.
-const own = (s: SpriteSequence) => s.name !== "icon" && !s.usedBy.some(u => u.startsWith("Buildable icon")) && Boolean(s.file) && !s.inherited && !(s.file ?? "").endsWith(".png");
+const isIcon = (s: SpriteSequence) => s.name === "icon" || s.usedBy.some(u => u.startsWith("Buildable icon"));
+/**
+ * The actor's own drawn sequences. A build-menu icon is never an actor body, even when the body file is unresolved and
+ * falls back to the icon's file; other PNG files are sprite sheets (OpenRA's PngSheet, e.g. OpenHV), wherever served from.
+ */
+function ownIn(sprite: SpriteArt) {
+  const icons = new Set(sprite.sequences.filter(isIcon).map(s => s.file).filter(Boolean));
+  return (s: SpriteSequence) => !isIcon(s) && Boolean(s.file) && !s.inherited && !icons.has(s.file);
+}
 
 export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
   if (!sprite) return [];
+  const own = ownIn(sprite);
   const seqs = sprite.sequences.filter(own);
   const by = (prefix: string) => seqs.find(s => s.usedBy.some(u => u.startsWith(prefix))) ?? null;
   const infantry = seqs.some(s => s.usedBy.some(u => u.startsWith("WithInfantryBody")));
@@ -80,7 +88,7 @@ export function pickAnimation(sprite: SpriteArt | null, id: string) {
 
 export function turretSequence(sprite: SpriteArt | null) {
   if (!sprite?.turret) return null;
-  return sprite.sequences.find(s => s.name === sprite.turret!.sequence && own(s)) ?? null;
+  return sprite.sequences.find(s => s.name === sprite.turret!.sequence && ownIn(sprite!)(s)) ?? null;
 }
 
 /**
@@ -89,31 +97,31 @@ export function turretSequence(sprite: SpriteArt | null) {
  */
 export function spriteSpins(sprite: SpriteArt | null, body: SpriteSequence | null = null): string[] {
   if (!sprite) return [];
-  const main = body ?? sprite.sequences.filter(own).find(s => s.usedBy.some(u => u.startsWith("WithFacingSpriteBody") || u.startsWith("WithSpriteBody"))) ?? null;
+  const main = body ?? sprite.sequences.filter(ownIn(sprite)).find(s => s.usedBy.some(u => u.startsWith("WithFacingSpriteBody") || u.startsWith("WithSpriteBody"))) ?? null;
   const loops = [main, turretSequence(sprite)].some(s => s && typeof s.length === "number" && s.length > 1);
   return [...spriteOverlays(sprite).filter(o => o.mode === "loop").map(o => o.seq.name), ...turretSprites(sprite).map(s => s.name), ...(loops ? [sprite.spin ?? "moving parts"] : [])];
 }
 
 /** Extra sprites riding a turret (WithSpriteTurret@radar: a dish that turns with the turret and loops its frames). */
 export function turretSprites(sprite: SpriteArt | null) {
-  return (sprite?.turretSprites ?? []).flatMap(name => sprite!.sequences.filter(s => s.name === name && own(s)));
+  return (sprite?.turretSprites ?? []).flatMap(name => sprite!.sequences.filter(s => s.name === name && ownIn(sprite!)(s)));
 }
 
 /** The barrel sprite (WithSpriteBarrel), drawn at the turret with its LocalOffset turned by the turret's facing. */
 export function barrelSequence(sprite: SpriteArt | null) {
-  return sprite?.barrel ? sprite.sequences.find(s => s.name === sprite.barrel!.sequence && own(s)) ?? null : null;
+  return sprite?.barrel ? sprite.sequences.find(s => s.name === sprite.barrel!.sequence && ownIn(sprite!)(s)) ?? null : null;
 }
 
 export function overlaySequence(sprite: SpriteArt | null) {
-  return sprite?.sequences.find(s => own(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) ?? null;
+  return sprite?.sequences.find(s => ownIn(sprite!)(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay"))) ?? null;
 }
 
 /** Legacy manifests have no layer metadata; resolve all of their decorative sequences as well. */
 export function spriteOverlays(sprite: SpriteArt | null) {
   if (!sprite) return [];
-  const declarations = sprite.overlays ?? sprite.sequences.filter(s => own(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay")) && !s.name.startsWith("damaged-")).map(s => ({ sequence: s.name, trait: "WithIdleOverlay", offset: [0, 0, 0] as [number, number, number], requiresCondition: null, mode: "loop" as const }));
+  const declarations = sprite.overlays ?? sprite.sequences.filter(s => ownIn(sprite!)(s) && s.usedBy.some(u => u.startsWith("WithIdleOverlay")) && !s.name.startsWith("damaged-")).map(s => ({ sequence: s.name, trait: "WithIdleOverlay", offset: [0, 0, 0] as [number, number, number], requiresCondition: null, mode: "loop" as const }));
   return declarations.flatMap(o => {
-    const seq = sprite.sequences.find(s => s.name === o.sequence && own(s));
+    const seq = sprite.sequences.find(s => s.name === o.sequence && ownIn(sprite!)(s));
     return seq ? [{ ...o, seq }] : [];
   });
 }
