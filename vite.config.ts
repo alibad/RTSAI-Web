@@ -59,8 +59,24 @@ function artReviewDevApi(): Plugin {
   };
 }
 
-// The Review UI ships in production builds as the shared, read-only Faction Studio (/faction-studio), which reads a
-// published snapshot (lib/art-lab/studio-snapshot.ts); its local API above stays a dev-server-only middleware.
+// The Review UI ships in production builds as the shared, read-only Faction Studio (/faction-studio), which loads it from
+// client code and reads a published snapshot (lib/art-lab/studio-snapshot.ts); its local API above stays dev-only.
+// The local route (app/art/review/page.tsx, 404 in production) imports it from a server component: production builds
+// swap that one import for an empty stub, keeping a "use client" module out of the server (RSC) graph.
+function artReviewLocalRouteStub(): Plugin {
+  const stubId = "\0rtsai-art-review-local-route-stub";
+  return {
+    name: "rtsai-art-review-local-route-stub",
+    apply: "build",
+    enforce: "pre",
+    resolveId(source, importer) {
+      return /(^|[\\/])components[\\/]art[\\/]ReviewApp(\.tsx)?$/.test(source) && /[\\/]app[\\/]art[\\/]review[\\/]page\.tsx$/.test(importer ?? "") ? stubId : null;
+    },
+    load(id) {
+      return id === stubId ? "export function ReviewApp() { return null; }\n" : null;
+    },
+  };
+}
 
 // Public builds swap the admin-only Workshop tools (Campaign studio, AI testing) for empty stubs, so their code never
 // reaches an rtsai.net bundle; their pages answer 404 there (lib/admin.ts). Admin builds and dev keep them.
@@ -143,7 +159,7 @@ export default defineConfig(async ({ command }) => {
       worker,
       optimizeDeps: { include: ["react-dom/client", "react/jsx-runtime", "lucide-react", "zustand", "three", "three/examples/jsm/controls/OrbitControls.js", "next/link", "next/router"] },
       resolve: { alias: Object.fromEntries(["link", "router", "navigation"].map(name => [`next/${name}`, fileURLToPath(new URL(`./node_modules/vinext/dist/shims/${name}.js`, import.meta.url))])) },
-      plugins: [artReviewDevApi(), artReviewClientPreview(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), react()],
+      plugins: [artReviewDevApi(), artReviewClientPreview(), artReviewLocalRouteStub(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), react()],
     };
   }
 
@@ -155,7 +171,7 @@ export default defineConfig(async ({ command }) => {
       server,
       define,
       worker,
-      plugins: [artReviewDevApi(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
+      plugins: [artReviewDevApi(), artReviewLocalRouteStub(), adminToolsProductionStub(), localUnitArtProductionStub(), tailwindcss(), vinext(), nitro({ routeRules: vercelRouteRules })],
     };
   }
 
@@ -168,6 +184,7 @@ export default defineConfig(async ({ command }) => {
     worker,
     plugins: [
       artReviewDevApi(),
+      artReviewLocalRouteStub(),
       adminToolsProductionStub(),
       localUnitArtProductionStub(),
       vinext(),
