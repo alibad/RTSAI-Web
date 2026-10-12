@@ -95,34 +95,35 @@ function manifestList(manifest: Yaml, key: string) {
   return (child(manifest, key)?.value.nodes ?? []).map(n => n.key);
 }
 
-export function loadModData(reader: ModReader, options: { manifestPath?: string; resolvePackage?: typeof packagePath; extra?: Partial<Record<"Rules" | "Sequences" | "Weapons", string[]>> } = {}): ModData {
+export function loadModData(reader: ModReader, options: { manifestPath?: string; resolvePackage?: typeof packagePath; extra?: Partial<Record<"Rules" | "Sequences" | "Weapons", string[]>>; lenient?: boolean } = {}): ModData {
   const manifestNodes = parseMiniYaml(reader.text(options.manifestPath ?? `${MOD_DIR}/mod.yaml`), "mod.yaml");
   const manifest: Yaml = { value: null, nodes: manifestNodes };
   const resolvePackage = options.resolvePackage ?? packagePath;
-  const load = (refs: string[]) => [...new Set(refs)].map(ref => {
+  // Lenient (another project's mod): a file its engine provides, or one that does not parse, is left out.
+  const load = (refs: string[]) => [...new Set(refs)].flatMap(ref => {
     const { path } = resolvePackage(ref);
-    if (!path || !reader.exists(path)) throw new Error(`mod.yaml lists ${ref}, which is not in the mod checkout`);
-    return { ref, path, nodes: parseMiniYaml(reader.text(path), ref) };
+    if (!path || !reader.exists(path)) { if (options.lenient) return []; throw new Error(`mod.yaml lists ${ref}, which is not in the mod checkout`); }
+    try { return [{ ref, path, nodes: parseMiniYaml(reader.text(path), ref) }]; } catch (e) { if (options.lenient) return []; throw e; }
   });
   const toMap = (nodes: YamlNode[], lower: boolean) => new Map(nodes.map(n => [lower ? n.key.toLowerCase() : n.key, n.value]));
 
   const ruleFiles = load([...manifestList(manifest, "Rules"), ...(options.extra?.Rules ?? [])]);
-  const mergedRules = mergeMiniYaml(ruleFiles.map(f => f.nodes));
+  const mergedRules = mergeMiniYaml(ruleFiles.map(f => f.nodes), options.lenient);
   const rules = toMap(mergedRules, true);
   const ruleKeys = new Map(mergedRules.map(n => [n.key.toLowerCase(), n.key]));
   const ruleSources = new Map<string, string>();
   for (const file of ruleFiles) for (const n of file.nodes) if (!ruleSources.has(n.key.toLowerCase())) ruleSources.set(n.key.toLowerCase(), file.path);
 
   const sequenceFiles = load([...manifestList(manifest, "Sequences"), ...(options.extra?.Sequences ?? [])]);
-  const sequences = toMap(mergeMiniYaml(sequenceFiles.map(f => f.nodes)), false);
+  const sequences = toMap(mergeMiniYaml(sequenceFiles.map(f => f.nodes), options.lenient), false);
   const rawSequenceKeys = new Map<string, Set<string>>();
   for (const file of sequenceFiles) for (const image of file.nodes) {
     const keys = rawSequenceKeys.get(image.key) ?? new Set<string>();
     for (const s of image.value.nodes) if (!s.key.startsWith("Inherits")) keys.add(s.key);
     rawSequenceKeys.set(image.key, keys);
   }
-  const modelSequences = toMap(mergeMiniYaml(load(manifestList(manifest, "ModelSequences")).map(f => f.nodes)), true);
-  const weapons = toMap(mergeMiniYaml(load([...manifestList(manifest, "Weapons"), ...(options.extra?.Weapons ?? [])]).map(f => f.nodes)), true);
+  const modelSequences = toMap(mergeMiniYaml(load(manifestList(manifest, "ModelSequences")).map(f => f.nodes), options.lenient), true);
+  const weapons = toMap(mergeMiniYaml(load([...manifestList(manifest, "Weapons"), ...(options.extra?.Weapons ?? [])]).map(f => f.nodes), options.lenient), true);
 
   const messages = new Map<string, string>();
   for (const ref of manifestList(manifest, "FluentMessages")) {

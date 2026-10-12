@@ -122,12 +122,30 @@ export function buildableFor(data: ModData, faction: string) {
   return { owned, always };
 }
 
+/**
+ * A production queue's role. RTS AI's own names pass as they are; other mods' (Infantry.Shared, InfantrySQ, RAVehicle)
+ * are read by keyword. Upgrade, research and power queues build no units.
+ */
+export function baseQueue(queue: string): string | null {
+  if (QUEUES.has(queue)) return queue;
+  const q = queue.toLowerCase();
+  if (/upgrade|research|power|policy|doctrine/.test(q)) return null;
+  if (/infantry|soldier/.test(q)) return "Infantry";
+  if (/aircraft|helicopter|plane|(^|[^a-z])air/.test(q)) return "Aircraft";
+  if (/ship|naval|boat|(^|[^a-z])sea/.test(q)) return "Ship";
+  if (/defen[cs]e|turret/.test(q)) return "Defense";
+  if (/support/.test(q)) return "Support";
+  if (/building|structure/.test(q)) return "Building";
+  if (/vehicle|tank|armou?r|mech/.test(q)) return "Vehicle";
+  return null;
+}
+
 function unitOf(data: ModData, id: string, origin: RosterOrigin): RosterUnit | null {
   const actor = data.rules.get(id);
   const buildable = child(actor, "Buildable")?.value;
   if (!actor || !buildable || !drawable(actor)) return null;
-  const queue = list(childValue(buildable, "Queue"));
-  if (!queue.some(q => QUEUES.has(q))) return null;
+  const queue = list(childValue(buildable, "Queue")).map(baseQueue).filter((q): q is string => q !== null);
+  if (!queue.length) return null;
   const nameKey = childValue(child(actor, "Tooltip")?.value, "Name");
   const cost = child(actor, "Valued") ? Number(childValue(child(actor, "Valued")!.value, "Cost") ?? 0) : null;
   // Walls, superweapons and the like share the Support queue with defences; only armed ones are defences.
@@ -170,8 +188,13 @@ export function pickReference(unit: RosterUnit, replaced: RosterUnit[], stock: R
   return found ? { id: found.id, why: found.why } : null;
 }
 
+/** Faction traits on the World actor: OpenRA's `Faction`, or a mod's own kind of it (Cameo's `FactionCA`). */
+function factionTraits(world: Yaml) {
+  return world.nodes.filter(n => /^Faction[A-Za-z0-9]*(@|$)/.test(n.key) && childValue(n.value, "InternalName") !== null);
+}
+
 export function playableFactions(data: ModData): string[] {
-  return traits(data.rules.get("world")!, "Faction").map(([, n]) => n.value)
+  return factionTraits(data.rules.get("world")!).map(n => n.value)
     .filter(n => childValue(n, "Selectable")?.toLowerCase() !== "false" && !childValue(n, "RandomFactionMembers"))
     .map(n => childValue(n, "InternalName") ?? "").filter(id => id && !/^random/i.test(id));
 }
@@ -195,7 +218,7 @@ export function computeRosters(data: ModData, factionIds: readonly string[] = pl
     if (u) allStock.set(name, u);
   }
   const factions = factionIds.map(id => {
-    const trait = traits(world, "Faction").map(([, n]) => n).find(n => childValue(n.value, "InternalName") === id);
+    const trait = factionTraits(world).find(n => childValue(n.value, "InternalName") === id);
     const { owned } = buildableFor(data, id);
     const units: RosterUnit[] = [];
     const replaced: RosterUnit[] = [];

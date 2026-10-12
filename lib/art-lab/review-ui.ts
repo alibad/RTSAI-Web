@@ -4,6 +4,12 @@
  */
 import type { Candidate } from "./review";
 
+/** The Studio's game: RTS AI's own two (review and decide), or another project's mod (`mod:<id>`, read-only). */
+export type StudioMode = "ra2" | "classic" | `mod:${string}`;
+export const isModMode = (mode: string): mode is `mod:${string}` => /^mod:[a-z0-9-]{1,32}$/.test(mode);
+/** One mod of the mod library (GET /api/art-review/mods). */
+export type ModListing = { id: string; name: string; content: "ra2" | "ra" | null; gaps: string | null; url: string };
+
 export const kindNames: Record<string, string> = { voxel: "Voxel", sprite: "Sprite", cameo: "Icon", concept: "Concept" };
 export const kindTags: Record<string, string> = { voxel: "VXL", sprite: "SHP", cameo: "PNG", concept: "PNG" };
 
