@@ -73,7 +73,7 @@ test("owner-approved Workshop renders both mode palettes and honest experiment c
     const response=await render("/workshop?mode="+mode),html=await response.text();
     assert.equal(response.status,200);
     assert.match(html,/<title>Map Workshop/);
-    assert.match(html,/href="\/workshop"/);
+    assert.match(html,/class="nav-play" href="\/play\/"/,"the nav leads to the game");
     assert.match(html,/Interactive battlefield/);
     assert.match(html,/Save scene/);assert.match(html,/Load scene/);assert.match(html,/OpenRA map/);
     assert.match(html,/Run battle/);assert.match(html,/Terrain generator/);

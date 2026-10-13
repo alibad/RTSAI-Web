@@ -1,4 +1,4 @@
-import { Github } from "lucide-react";
+import { Gamepad2, Github } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { AccountNav } from "./AccountNav";
@@ -23,10 +23,10 @@ export function SiteHeader() {
         <Brand />
         <div className="nav-links">
           <Link href="/factions">Factions</Link>
-          <Link href="/workshop">Workshop</Link>
           <Link href="/download">Download</Link>
         </div>
         <div className="nav-actions">
+          <a className="nav-play" href="/play/" data-analytics-event="play_browser"><Gamepad2 size={15} /> Play</a>
           <a className="nav-source" href={modSource} target="_blank" rel="noreferrer"><Github size={15} /> Game source</a>
           <AccountNav />
         </div>
