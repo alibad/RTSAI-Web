@@ -5,7 +5,7 @@ import { SiteHeader, SiteFooter } from "../components/SiteChrome";
 import { ModeNav } from "../components/ContentGuide";
 import { FactionCard } from "../components/FactionCard";
 import { FactionFlag } from "../components/FactionVisuals";
-import { dossierForRoster, factions, modeLabel, resolveMode, rosterFactions, rosterHref, rosters, standaloneRosters } from "../../lib/game-content";
+import { CLASSIC_ADDON, dossierForRoster, factions, modeLabel, resolveMode, rosterFactions, rosterHref, rosters, standaloneRosters } from "../../lib/game-content";
 import { getModRelease, isPublished, macInstaller } from "../../lib/mod-release";
 import { EA_NOTICE } from "../../lib/ea-notice";
 import "./factions.css";
@@ -47,8 +47,8 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       <div className="faction-group-heading"><h2>{mode === "ra2" ? "The seven factions" : `Modern factions · ${modeLabel(mode)}`}</h2><span>{modern.length} factions</span></div>
       <div className="faction-feature-grid">{modern.map((f, i) => <FactionCard faction={f} key={f.id} featured={i === 0} />)}</div>
     </section>
-    {originals.length > 0 && <section className="faction-group classic-addon" aria-label="The original countries">
-      <div className="faction-group-heading"><div><h2>The original countries</h2><p>Red Alert 2’s nine countries, playable in the browser game alongside the modern factions, in Westwood’s original art. {EA_NOTICE}</p></div><span>{originalCount} countries</span></div>
+    {originals.length > 0 && <section className="faction-group classic-addon" aria-label={CLASSIC_ADDON}>
+      <div className="faction-group-heading"><div><h2>The original countries</h2><p>Red Alert 2’s nine countries, playable in the browser game alongside the modern factions, in Westwood’s original art. No Red Alert installation is required. {EA_NOTICE}</p></div><span>{originalCount} countries</span></div>
       {originals.map(group => <div className="classic-addon-side" aria-label={group.name} key={group.name}><h3>{group.name}</h3><div className="faction-original-grid">{group.factions.map(f => <FactionCard faction={f} key={f.id} />)}</div></div>)}
     </section>}
     <p className="directory-footnote">Names and rosters come from the generated catalog snapshot. {standaloneRosters ? "Both rosters reflect the locally accepted standalone rules; this does not certify public availability." : "Classic entries describe historical rules, not the newly integrated standalone profile."} Shared units are counted once in the totals. {factions.filter(f => f.variants[mode].status === "implemented").length} modern factions have detailed dossiers. Balance is still being refined. National flags: flag-icons (MIT).</p>

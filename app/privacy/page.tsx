@@ -35,7 +35,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>Usage analytics</h2>
-        <p>Website and game events can be associated with your pseudonymous Firebase user ID in Google Analytics: sign-ups and sign-ins, play and download clicks, the game loading, matches starting and ending (mode, map, faction, result), multiplayer matches (number of players and AI), applied AI co-commander suggestions, and game errors.</p>
+        <p>Website and game events can be associated with your pseudonymous Firebase user ID in Google Analytics: sign-ups and sign-ins, play and download clicks, the game loading, matches starting and ending (mode, map, faction, result), multiplayer matches (number of players and AI), applied AI co-commander suggestions, and game errors. A click does not establish a completed download or a game start: the game reports those itself when it loads and when a match begins.</p>
         <p>We do not send your name, email, free-text mission prompt, search query, exact latitude and longitude, match codes or connection details to Google Analytics.</p>
         <p>Our Firebase database keeps a few counts for your account (matches, multiplayer matches, applied suggestions and errors) and overall totals.</p>
       </section>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>Multiplayer</h2>
-        <p>To start a direct match, your browser briefly stores a connection description, including the network addresses it can be reached on, in our Firebase database. Only the match host can read it. It is deleted as soon as you are seated in the lobby or turned away, and the match itself is deleted when it starts or is closed. During a match, your browser connects directly to the host's, so players in the same match can see each other's network addresses.</p>
+        <p>To start a direct match, your browser briefly stores a connection description, including the network addresses it can be reached on, in our Firebase database. Only the match host can read it. It is deleted as soon as you are seated in the lobby or turned away, and the match itself is deleted when it starts or is closed. During a match, your browser connects directly to the host’s, so players in the same match can see each other’s network addresses.</p>
       </section>
       <section>
         <h2>Product feedback</h2>
