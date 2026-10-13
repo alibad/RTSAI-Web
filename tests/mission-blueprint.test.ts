@@ -8,7 +8,8 @@ const blueprint: MissionBlueprint = {
   place: "Riyadh, Saudi Arabia",
   title: "Riyadh Crossing",
   radiusM: 3500,
-  size: 96,
+  size: 64,
+  players: 4,
   seed: 42,
   story: "A fictional supply corridor.",
 };
@@ -20,7 +21,9 @@ test("mission blueprints round-trip through a shareable query", () => {
 test("mission blueprints reject unsafe coordinates and normalize unsupported settings", () => {
   assert.equal(decodeMissionBlueprint(new URLSearchParams("lat=91&lon=0")), null);
   const decoded = decodeMissionBlueprint(new URLSearchParams("lat=1&lon=2&size=999&radius=1&seed=-4"));
-  assert.equal(decoded?.size, 96);
+  assert.equal(decoded?.size, 64);
+  assert.equal(decoded?.players, 2);
+  assert.equal(decodeMissionBlueprint(new URLSearchParams("lat=1&lon=2&size=128"))?.size, 80, "old links open as the large battlefield");
   assert.equal(decoded?.radiusM, 3500);
   assert.equal(decoded?.seed, 0);
 });

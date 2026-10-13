@@ -48,6 +48,10 @@ export default function PrivacyPage() {
         <p>To start a direct match, your browser briefly stores a connection description, including the network addresses it can be reached on, in our Firebase database. Only the match host can read it. It is deleted as soon as you are seated in the lobby or turned away, and the match itself is deleted when it starts or is closed. During a match, your browser connects directly to the host’s, so players in the same match can see each other’s network addresses.</p>
       </section>
       <section>
+        <h2>Saved maps</h2>
+        <p>When you save a battlefield from the Earth studio, our Firebase database keeps it with your user ID: its name, the place and coordinates you picked, its settings, a preview picture and the map itself. Only you see your list of saved maps, but any signed-in player who has a map’s link or joins your match can load it, so the people you play with get your map. You can delete a saved map from the studio at any time.</p>
+      </section>
+      <section>
         <h2>Product feedback</h2>
         <p>Feedback you deliberately submit includes your Firebase account identity. It can be saved as a private GitHub issue, or accepted through a queued Firebase mail notification if issue creation fails. The receipt states whether an issue exists and whether a notification was queued; it does not confirm email delivery. If both paths fail, the form keeps your draft for retry.</p>
         <p>You can add screenshots (and mark them up first), one voice note and files: images, video, audio or text, up to 10 MB each. In the browser game, opening Feedback during a match attaches a picture of the battlefield, which you can remove before sending. Nothing is sent until you press send. The files are stored privately in our Firebase database with your account identifier, and only the RTS AI team can open them; the private issue and the team&apos;s alert name the files and link to that team-only page. Files stay until the team removes them.</p>

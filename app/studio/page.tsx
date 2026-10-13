@@ -4,17 +4,15 @@ import { ArrowRight } from "lucide-react";
 import { MissionStudio } from "../components/MissionStudio";
 import { CapabilitySlice } from "../components/CapabilitySlice";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-import { getWindowsRelease } from "../../lib/release";
 
 export const metadata: Metadata = {
   title: "Earth Mission Studio | RTS AI",
-  description: "Pin a real place on Earth and generate a deterministic, validated, editable OpenRA battlefield in your browser.",
+  description: "Pin a real place on Earth, build a battlefield from it in your browser, and play it in RTS AI alone or with friends.",
   alternates: { canonical: "/studio" },
   robots: { index: false, follow: true },
 };
 
-export default async function StudioPage() {
-  const windowsRelease = await getWindowsRelease();
+export default function StudioPage() {
   return (
     <>
       <SiteHeader />
@@ -22,10 +20,10 @@ export default async function StudioPage() {
         <header className="route-hero route-hero-light">
           <span className="eyebrow">EARTH TO BATTLEFIELD</span>
           <h1>Choose a place.<br /><em>Shape a playable mission.</em></h1>
-          <p>Search the real world, inspect the source terrain, choose the gameplay footprint, and compile a validated OpenRA map without leaving the browser.</p>
+          <p>Search the real world, choose the size and the number of players, and build a battlefield you can play in your browser, alone or with friends.</p>
           <Link className="text-action" href="/platform">How Earth becomes playable <ArrowRight size={16} /></Link>
         </header>
-        <MissionStudio windowsRelease={windowsRelease} />
+        <MissionStudio />
         <CapabilitySlice
           light
           eyebrow="EARTH → OPENRA"

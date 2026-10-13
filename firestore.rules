@@ -61,6 +61,49 @@ service cloud.firestore {
       }
     }
 
+    // ---- Saved maps: Earth battlefields from the studio (lib/saved-maps.ts writes; RTSAI-WebGame web/src/net/saved-maps.ts
+    // reads). maps/{id} is what a list shows, mapData/{id} the map itself; both are created in one commit. Any member
+    // reads one by id (a host's guests fetch the match's map); only its owner lists, renames or deletes theirs.
+    function savedMap(d) {
+      return d.keys().hasOnly(['owner', 'mapId', 'title', 'place', 'latitude', 'longitude', 'radius', 'seed', 'size', 'players', 'preview', 'created'])
+        && d.keys().hasAll(['owner', 'mapId', 'title', 'place', 'latitude', 'longitude', 'radius', 'seed', 'size', 'players', 'preview', 'created'])
+        && d.mapId is string && d.mapId.matches('^earth-[a-f0-9]{16}$')
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.place is string && d.place.size() <= 120
+        && d.latitude is number && d.latitude >= -85 && d.latitude <= 85
+        && d.longitude is number && d.longitude >= -180 && d.longitude <= 180
+        && d.radius is int && d.radius >= 500 && d.radius <= 10000
+        && d.seed is int && d.seed >= 0 && d.seed <= 2147483647
+        && d.size in [48, 64, 80] && d.players in [2, 4]
+        && d.preview is bytes && d.preview.size() > 0 && d.preview.size() <= 131072;
+    }
+    match /maps/{mapDoc} {
+      allow get: if member();
+      allow list: if member() && resource.data.owner == request.auth.uid;
+      allow create: if member() && mapDoc.matches('^[A-Za-z0-9]{20}$')
+        && savedMap(request.resource.data)
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.created == request.time
+        && getAfter(/databases/$(database)/documents/mapData/$(mapDoc)).data.mapId == request.resource.data.mapId;
+      allow update: if member() && resource.data.owner == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title'])
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80;
+      allow delete: if member() && resource.data.owner == request.auth.uid;
+    }
+    // map.yaml and map.bin; the largest map (80 × 160 cells) has a 76,817-byte map.bin.
+    match /mapData/{mapDoc} {
+      allow get: if member();
+      allow list, update: if false;
+      allow create: if member() && mapDoc.matches('^[A-Za-z0-9]{20}$')
+        && request.resource.data.keys().hasOnly(['owner', 'mapId', 'yaml', 'bin'])
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.mapId is string && request.resource.data.mapId.matches('^earth-[a-f0-9]{16}$')
+        && request.resource.data.yaml is string && request.resource.data.yaml.size() > 0 && request.resource.data.yaml.size() <= 8192
+        && request.resource.data.bin is bytes && request.resource.data.bin.size() > 17 && request.resource.data.bin.size() <= 76817
+        && getAfter(/databases/$(database)/documents/maps/$(mapDoc)).data.owner == request.auth.uid;
+      allow delete: if member() && resource.data.owner == request.auth.uid;
+    }
+
     // ---- Team admins: a doc at admins/{uid}, written only from the Firebase console.
     function admin() {
       return member() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));

@@ -125,5 +125,44 @@ await expect("admin deletes the report from the browser", false, () => call(admi
 await expect("player makes themself an admin", false, () => call(a, "PATCH", `/admins/${a.uid}`, { fields: { note: str("me") } }));
 await expect("admin reads the admin list", false, () => call(admin, "GET", `/admins/${admin.uid}`));
 
+// ---- saved maps (lib/saved-maps.ts): created together by their owner; any member reads one by id; the owner lists
+const mapIdOf = n => `earth-${String(n).repeat(16).slice(0, 16)}`;
+const newMapDoc = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), v => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[v % 62]).join("");
+const mapFields = (uid, extra = {}) => ({ owner: str(uid), mapId: str(mapIdOf(1)), title: str("Istanbul strait"), place: str("Istanbul, Türkiye"),
+  latitude: { doubleValue: 41.025 }, longitude: { doubleValue: 29 }, radius: int(3500), seed: int(42), size: int(64), players: int(2), preview: bytes(5000), ...extra });
+const dataFields = (uid, extra = {}) => ({ owner: str(uid), mapId: str(mapIdOf(1)), yaml: str("MapFormat: 12\n"), bin: bytes(17 + 6 * 64 * 128), ...extra });
+const saveMap = (who, id, map, data) => call(who, "POST", ":commit", { writes: [
+  ...(data ? [{ update: { name: doc(`mapData/${id}`), fields: data }, currentDocument: { exists: false } }] : []),
+  ...(map ? [{ update: { name: doc(`maps/${id}`), fields: map }, currentDocument: { exists: false }, updateTransforms: [{ fieldPath: "created", setToServerValue: "REQUEST_TIME" }] }] : []),
+] });
+const M = newMapDoc();
+await expect("player saves a map", true, () => saveMap(a, M, mapFields(a.uid), dataFields(a.uid)));
+await expect("map without its data", false, () => saveMap(a, newMapDoc(), mapFields(a.uid), null));
+await expect("data without its map", false, () => saveMap(a, newMapDoc(), null, dataFields(a.uid)));
+await expect("map saved for someone else", false, () => saveMap(a, newMapDoc(), mapFields(b.uid), dataFields(b.uid)));
+await expect("map and data that disagree", false, () => saveMap(a, newMapDoc(), mapFields(a.uid), dataFields(a.uid, { mapId: str(mapIdOf(2)) })));
+await expect("map id that isn't a content id", false, () => saveMap(a, newMapDoc(), mapFields(a.uid, { mapId: str("earth-xyz") }), dataFields(a.uid, { mapId: str("earth-xyz") })));
+await expect("map with extra fields", false, () => saveMap(a, newMapDoc(), mapFields(a.uid, { public: { booleanValue: true } }), dataFields(a.uid)));
+await expect("map of an unsupported size", false, () => saveMap(a, newMapDoc(), mapFields(a.uid, { size: int(128) }), dataFields(a.uid)));
+await expect("map data over the largest map", false, () => saveMap(a, newMapDoc(), mapFields(a.uid), dataFields(a.uid, { bin: bytes(76818) })));
+await expect("preview over 128 KiB", false, () => saveMap(a, newMapDoc(), mapFields(a.uid, { preview: bytes(131073) }), dataFields(a.uid)));
+await expect("map document id that isn't 20 letters", false, () => saveMap(a, "short", mapFields(a.uid), dataFields(a.uid)));
+await expect("anonymous visitor saves a map", false, () => saveMap(anon, newMapDoc(), mapFields(anon.uid), dataFields(anon.uid)));
+await expect("another player reads the map by id", true, () => call(b, "GET", `/maps/${M}`));
+await expect("another player reads its data by id", true, () => call(b, "GET", `/mapData/${M}`));
+await expect("signed-out visitor reads a map", false, () => call(null, "GET", `/maps/${M}`));
+const own = await expect("owner lists their maps", true, () => call(a, "POST", ":runQuery", { structuredQuery: { from: [{ collectionId: "maps" }], where: { fieldFilter: { field: { fieldPath: "owner" }, op: "EQUAL", value: str(a.uid) } } } }));
+assert.equal(own.body.filter(r => r.document).length, 1);
+await expect("player lists someone else's maps", false, () => call(b, "POST", ":runQuery", { structuredQuery: { from: [{ collectionId: "maps" }], where: { fieldFilter: { field: { fieldPath: "owner" }, op: "EQUAL", value: str(a.uid) } } } }));
+await expect("player lists every map", false, () => call(b, "GET", "/maps"));
+await expect("player lists map data", false, () => call(a, "GET", "/mapData"));
+await expect("owner renames their map", true, () => call(a, "PATCH", `/maps/${M}?updateMask.fieldPaths=title`, { fields: { title: str("The strait") } }));
+await expect("owner changes their map's size", false, () => call(a, "PATCH", `/maps/${M}?updateMask.fieldPaths=size`, { fields: { size: int(80) } }));
+await expect("owner rewrites the map data", false, () => call(a, "PATCH", `/mapData/${M}?updateMask.fieldPaths=yaml`, { fields: { yaml: str("x") } }));
+await expect("another player renames it", false, () => call(b, "PATCH", `/maps/${M}?updateMask.fieldPaths=title`, { fields: { title: str("mine") } }));
+await expect("another player deletes it", false, () => call(b, "DELETE", `/maps/${M}`));
+await expect("owner deletes the map", true, () => call(a, "DELETE", `/maps/${M}`));
+await expect("owner deletes its data", true, () => call(a, "DELETE", `/mapData/${M}`));
+
 console.log(results.map(r => `${r.ok ? "PASS" : "FAIL"} ${r.label} (${r.status})`).join("\n"));
 console.log(`\n${results.filter(r => r.ok).length}/${results.length} rules checks passed`);

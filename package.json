@@ -20,6 +20,8 @@
     "check:art": "node --import tsx scripts/sync-mod-art.mjs --check",
     "sync:faction-art": "node scripts/export-faction-art.mjs",
     "check:faction-art": "node scripts/export-faction-art.mjs --check",
+    "sync:earth-terrain": "node scripts/sync-earth-terrain.mjs",
+    "check:earth-terrain": "node scripts/sync-earth-terrain.mjs --check",
     "check:sounds": "node scripts/check-sounds.mjs",
     "sync:audio": "node scripts/sync-faction-audio.mjs",
     "check:audio": "node scripts/sync-faction-audio.mjs --check",
