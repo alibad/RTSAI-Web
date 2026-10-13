@@ -15,12 +15,10 @@ install tokens are issued:
 - `RTSAI_AI_TOKEN_SECRET` (sensitive, at least 32 characters)
 - `RTSAI_AI_FIREBASE_SERVICE_ACCOUNT` (sensitive)
 
-Spend alerts at 50% and 80% of the daily cap. These are the existing feedback
-mail settings; confirm they are present:
-
-- `MAIL_FIREBASE_PROJECT_ID`
-- `MAIL_FIREBASE_API_KEY`
-- `FEEDBACK_ADMIN_EMAIL` (or `MAIL_GROUP`; its first address is used)
+Spend alerts at 50% and 80% of the daily cap go through the project's own
+`mail` collection (Trigger Email extension on rtsai-net) to the first
+`MAIL_GROUP` address. They write anonymously, so Anonymous sign-in must be
+enabled on rtsai-net; feedback and event notices write as the signed-in player.
 
 Optional. When unset, the per-install daily allowance is $0.25 and the global
 daily cap is $10:

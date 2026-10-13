@@ -164,5 +164,17 @@ await expect("another player deletes it", false, () => call(b, "DELETE", `/maps/
 await expect("owner deletes the map", true, () => call(a, "DELETE", `/maps/${M}`));
 await expect("owner deletes its data", true, () => call(a, "DELETE", `/mapData/${M}`));
 
+// ---- outgoing mail (lib/firebase-mail.ts): the Trigger Email extension's exact shape, to the team group only
+const mail = (to, message = {}) => ({ fields: { to: { arrayValue: { values: to.map(str) } }, message: { mapValue: { fields: { subject: str("[RTS AI] New player"), html: str("<p>Hi</p>"), text: str("Hi"), ...message } } } } });
+await expect("player's request mails the team group", true, () => call(a, "POST", "/mail", mail(["rtsai@googlegroups.com"])));
+await expect("server job mails the team group anonymously", true, () => call(anon, "POST", "/mail", mail(["rtsai@googlegroups.com"])));
+await expect("mail to anyone else", false, () => call(a, "POST", "/mail", mail(["someone@example.com"])));
+await expect("mail to the group and someone else", false, () => call(a, "POST", "/mail", mail(["rtsai@googlegroups.com", "someone@example.com"])));
+await expect("mail with a hidden copy", false, () => call(a, "POST", "/mail", { fields: { ...mail(["rtsai@googlegroups.com"]).fields, bcc: { arrayValue: { values: [str("someone@example.com")] } } } }));
+await expect("mail with an attachment field", false, () => call(a, "POST", "/mail", mail(["rtsai@googlegroups.com"], { attachments: str("x") })));
+await expect("mail over the size limit", false, () => call(a, "POST", "/mail", mail(["rtsai@googlegroups.com"], { html: str("x".repeat(32768)) })));
+await expect("signed-out visitor sends mail", false, () => call(null, "POST", "/mail", mail(["rtsai@googlegroups.com"])));
+await expect("player reads the mail queue", false, () => call(a, "GET", "/mail"));
+
 console.log(results.map(r => `${r.ok ? "PASS" : "FAIL"} ${r.label} (${r.status})`).join("\n"));
 console.log(`\n${results.filter(r => r.ok).length}/${results.length} rules checks passed`);

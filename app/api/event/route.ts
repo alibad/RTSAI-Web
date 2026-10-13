@@ -66,7 +66,7 @@ export function createEventHandler(deps: {
       const h = request.headers;
       try {
         await deps.sendEmail({
-          to, auditToGroup: false,
+          to, idToken: bearerToken(request),
           ...eventEmail({ name, headline: lines.join(" · "), user: identity, props, counts, context: {
             at: new Date().toISOString(), country: h.get("x-vercel-ip-country") ?? "", region: decode(h.get("x-vercel-ip-country-region")),
             city: decode(h.get("x-vercel-ip-city")), userAgent: h.get("user-agent") ?? "", referer: h.get("referer") ?? "",

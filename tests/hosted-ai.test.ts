@@ -25,10 +25,9 @@ const tunables = [
   "RTSAI_AI_LINKED_DAILY_USD",
   "RTSAI_AI_FIREBASE_SERVICE_ACCOUNT",
   "VERCEL_ENV",
-  "MAIL_FIREBASE_PROJECT_ID",
-  "MAIL_FIREBASE_API_KEY",
+  "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+  "NEXT_PUBLIC_FIREBASE_API_KEY",
   "MAIL_GROUP",
-  "FEEDBACK_ADMIN_EMAIL",
 ];
 const MODEL_KEY = "test-placeholder-not-a-real-key";
 const TOKEN_SECRET = "test-secret-0123456789abcdef0123456789abcdef";
@@ -368,9 +367,9 @@ test("production refuses every route until the model key, token secret and durab
 test("spend alerts queue one email per threshold per day at 50% and 80% of the global cap", async () => {
   const mails: { to: string | string[]; subject: string; text: string; html: string }[] = [];
   setHostedAiOverrides({ store, now: () => NOW, sendMail: async (mail) => { mails.push(mail); return "mail-id"; } });
-  process.env.MAIL_FIREBASE_PROJECT_ID = "demo-mail";
-  process.env.MAIL_FIREBASE_API_KEY = "test-placeholder";
-  process.env.FEEDBACK_ADMIN_EMAIL = "ops@example.com";
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = "demo-mail";
+  process.env.NEXT_PUBLIC_FIREBASE_API_KEY = "test-placeholder";
+  process.env.MAIL_GROUP = "ops@example.com";
   process.env.RTSAI_AI_GLOBAL_DAILY_CAP_USD = "1";
   const day = utcDay(NOW);
   const { token, install_id } = await newInstall();
@@ -422,8 +421,8 @@ test("a failed alert email releases the claim for a later retry; alerts stay off
   assert.equal((await chat(token, simple)).status, 200, "without mail settings the answer is served and nothing is sent");
   assert.equal(attempts, 0);
 
-  process.env.MAIL_FIREBASE_PROJECT_ID = "demo-mail";
-  process.env.MAIL_FIREBASE_API_KEY = "test-placeholder";
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = "demo-mail";
+  process.env.NEXT_PUBLIC_FIREBASE_API_KEY = "test-placeholder";
   process.env.MAIL_GROUP = "archive@example.com, second@example.com";
   assert.equal((await chat(token, simple)).status, 200, "a failing mail backend never fails the player's call");
   assert.equal(attempts, 2, "the 50% send failed, the 80% send went out");

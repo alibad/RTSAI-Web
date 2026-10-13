@@ -7,7 +7,7 @@ import {
   validateFeedbackPayload,
 } from "../../../lib/feedback";
 import { mailGroup, sendFirebaseEmail } from "../../../lib/firebase-mail";
-import { verifyFirebaseIdentity } from "../../../lib/firebase-token";
+import { bearerToken, verifyFirebaseIdentity } from "../../../lib/firebase-token";
 import { createGitHubIssue, GitHubRequestError, isGitHubConfigured } from "../../../lib/github";
 
 // Files never pass through here: the reporter's browser stores them in Firestore first (feedbackReports/<id>, see
@@ -74,7 +74,8 @@ return async function handleFeedback(request: Request) {
   }
 
   let notificationQueued = false;
-  const administrator = process.env.FEEDBACK_ADMIN_EMAIL || dependencies.recipients()[0];
+  // Team alerts go to the team group (MAIL_GROUP), the archive of every event; the rules accept no other recipient.
+  const administrator = dependencies.recipients()[0];
   if (administrator) {
     const email = createFeedbackEmail({
       receipt,
@@ -91,7 +92,7 @@ return async function handleFeedback(request: Request) {
         subject: `[RTS AI] ${parsed.value.category}: ${parsed.value.title}`,
         html: email.html,
         text: email.text,
-        auditToGroup: !dependencies.recipients().includes(administrator),
+        idToken: bearerToken(request),
       });
       notificationQueued = true;
     } catch (cause) {

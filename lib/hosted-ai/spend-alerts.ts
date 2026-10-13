@@ -1,5 +1,5 @@
 import { escapeHtml } from "../feedback";
-import { mailGroup, sendFirebaseEmail } from "../firebase-mail";
+import { mailConfigured as firebaseMailConfigured, mailGroup, sendFirebaseEmail } from "../firebase-mail";
 import { usdFromMicros } from "./config";
 import type { UsageStore } from "./store";
 
@@ -8,8 +8,8 @@ import type { UsageStore } from "./store";
  *
  * When today's settled spend across every install crosses 50% and then 80% of
  * RTSAI_AI_GLOBAL_DAILY_CAP_USD, one email per threshold per UTC day is queued
- * through the existing Firebase mail path (the Trigger Email extension's `mail`
- * collection) to FEEDBACK_ADMIN_EMAIL, or the first MAIL_GROUP address.
+ * through the Firebase mail path (rtsai-net's `mail` collection, delivered by the
+ * Trigger Email extension) to the team group, the first MAIL_GROUP address.
  *
  * The usage store deduplicates across server instances (claimSpendAlert); a
  * small in-process memo keeps later calls on the same instance from touching
@@ -43,11 +43,11 @@ export function resetSpendAlertMemo() {
 }
 
 export function spendAlertRecipient() {
-  return (process.env.FEEDBACK_ADMIN_EMAIL ?? "").trim() || mailGroup()[0] || "";
+  return mailGroup()[0] || "";
 }
 
 function mailConfigured() {
-  return Boolean(process.env.MAIL_FIREBASE_PROJECT_ID && process.env.MAIL_FIREBASE_API_KEY && spendAlertRecipient());
+  return firebaseMailConfigured() && Boolean(spendAlertRecipient());
 }
 
 /** Thresholds (percent) that today's settled spend has reached. */
@@ -81,7 +81,7 @@ export async function sendSpendAlerts(input: AlertInput) {
   const thresholds = reachedThresholds(spentMicros, capMicros);
   if (!thresholds.length) return [];
   if (!mailConfigured()) {
-    if (!warnedUnconfigured) console.warn("Hosted AI spend alerts are not configured (MAIL_FIREBASE_PROJECT_ID, MAIL_FIREBASE_API_KEY, FEEDBACK_ADMIN_EMAIL)");
+    if (!warnedUnconfigured) console.warn("Hosted AI spend alerts are not configured (NEXT_PUBLIC_FIREBASE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_API_KEY, MAIL_GROUP)");
     warnedUnconfigured = true;
     return [];
   }

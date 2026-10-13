@@ -83,10 +83,12 @@ content never enter Google Analytics.
 Copy the server-only feedback variables from `.env.example` into the hosting
 environment:
 
-- `MAIL_FIREBASE_PROJECT_ID` and `MAIL_FIREBASE_API_KEY` identify the existing
-  Firebase mail project. SMTP credentials stay in Firebase Secret Manager.
-- `FEEDBACK_ADMIN_EMAIL` receives the alert, while `MAIL_GROUP` receives the
-  configured audit copy.
+- Email goes through rtsai-net itself: each message is a document in its `mail`
+  collection, delivered by the Trigger Email extension installed on rtsai-net
+  (`firebase/firestore-send-email`). SMTP credentials live only in that
+  extension's secret. `firestore.rules` accepts mail to the team group only.
+- `MAIL_GROUP` is that group (`rtsai@googlegroups.com`): feedback, event notices
+  and spend alerts all go there, its searchable archive of every event.
 - `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and
   `GITHUB_APP_PRIVATE_KEY` authenticate the GitHub App. Its installation needs
   metadata read access and issue read/write access to `GITHUB_REPO_OWNER` /

@@ -1,29 +1,41 @@
 /**
- * Server-only Firebase mail writer.
+ * Server-only mail writer for RTS AI's own Firebase project (rtsai-net).
  *
- * The shared Firebase project already runs the official Trigger Email
- * extension. This writer mints an anonymous Firebase token and writes the
- * extension's strictly bounded document shape through the Firestore REST API.
- * No SMTP credential or service account is exposed to this application.
+ * Each email is one document in the `mail` collection; the Trigger Email extension (firebase/firestore-send-email,
+ * installed on rtsai-net) delivers it over SMTP and writes its `delivery` state back. firestore.rules ("Outgoing
+ * mail") only accepts the extension's exact shape, addressed to the team group, so the writer needs no secret: it
+ * writes with the signed-in caller's verified ID token when the route has one, and otherwise (server jobs such as
+ * hosted-AI spend alerts) as an anonymous user of the same project. No SMTP credential or service account lives here.
  */
 
-const mailProjectId = () => process.env.MAIL_FIREBASE_PROJECT_ID ?? "";
-const mailApiKey = () => process.env.MAIL_FIREBASE_API_KEY ?? "";
+const projectId = () => process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "";
+const apiKey = () => process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "";
+
+/** Local tests write to the Firestore and Auth emulators. */
+function firestoreBase() {
+  const emulator = process.env.FIRESTORE_EMULATOR_HOST;
+  return `${emulator ? `http://${emulator}` : "https://firestore.googleapis.com"}/v1/projects/${projectId()}/databases/(default)/documents`;
+}
+function identityBase() {
+  const emulator = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  return emulator ? `http://${emulator}/identitytoolkit.googleapis.com` : "https://identitytoolkit.googleapis.com";
+}
+
+export function mailConfigured() {
+  return Boolean(projectId() && apiKey());
+}
 
 let cachedToken: { idToken: string; expiresAtMs: number } | null = null;
 
 async function anonymousMailToken() {
   if (cachedToken && Date.now() < cachedToken.expiresAtMs - 5 * 60_000) return cachedToken.idToken;
-  if (!mailProjectId() || !mailApiKey()) throw new Error("Firebase mail backend is not configured");
+  if (!mailConfigured()) throw new Error("Firebase mail is not configured");
 
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${mailApiKey()}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ returnSecureToken: true }),
-    },
-  );
+  const response = await fetch(`${identityBase()}/v1/accounts:signUp?key=${apiKey()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ returnSecureToken: true }),
+  });
   if (!response.ok) throw new Error(`Firebase mail authentication failed (${response.status})`);
   const payload = await response.json() as { idToken?: string; expiresIn?: string };
   if (!payload.idToken) throw new Error("Firebase mail authentication returned no token");
@@ -53,6 +65,7 @@ function encodeFields(value: Record<string, unknown>) {
   );
 }
 
+/** The team's Google Group (MAIL_GROUP): every team email goes here, its searchable archive of events. */
 export function mailGroup() {
   return (process.env.MAIL_GROUP ?? "")
     .split(",")
@@ -65,35 +78,25 @@ export async function sendFirebaseEmail(input: {
   subject: string;
   html: string;
   text: string;
-  cc?: string | string[];
-  bcc?: string | string[];
-  auditToGroup?: boolean;
+  /** The signed-in caller's verified Firebase ID token; without it the write is anonymous. */
+  idToken?: string;
 }) {
-  const token = await anonymousMailToken();
-  const to = Array.isArray(input.to) ? input.to : [input.to];
-  const bcc = [
-    ...(input.bcc ? (Array.isArray(input.bcc) ? input.bcc : [input.bcc]) : []),
-    ...(input.auditToGroup === false ? [] : mailGroup()),
-  ].filter((value, index, values) => value && !to.includes(value) && values.indexOf(value) === index);
-  const document: Record<string, unknown> = {
-    to,
+  if (!mailConfigured()) throw new Error("Firebase mail is not configured");
+  const token = input.idToken || await anonymousMailToken();
+  const document = {
+    to: Array.isArray(input.to) ? input.to : [input.to],
     message: {
       subject: input.subject.slice(0, 199),
       html: input.html.slice(0, 32_767),
       text: input.text.slice(0, 32_767),
     },
   };
-  if (input.cc) document.cc = Array.isArray(input.cc) ? input.cc : [input.cc];
-  if (bcc.length) document.bcc = bcc;
 
-  const response = await fetch(
-    `https://firestore.googleapis.com/v1/projects/${mailProjectId()}/databases/(default)/documents/mail`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ fields: encodeFields(document) }),
-    },
-  );
+  const response = await fetch(`${firestoreBase()}/mail`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: encodeFields(document) }),
+  });
   if (!response.ok) {
     const detail = (await response.text()).replace(/[A-Za-z0-9_-]{32,}/g, "[redacted]").slice(0, 500);
     throw new Error(`Firebase mail write failed (${response.status}): ${detail}`);

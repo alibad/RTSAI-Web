@@ -189,9 +189,9 @@ test("a chat call that crosses 50% of the cap queues exactly one alert in the Fi
     RTSAI_AI_TOKEN_SECRET: "test-secret-0123456789abcdef0123456789abcdef",
     RTSAI_AI_STORE: "firestore",
     RTSAI_AI_GLOBAL_DAILY_CAP_USD: "1",
-    MAIL_FIREBASE_PROJECT_ID: "demo-rtsai",
-    MAIL_FIREBASE_API_KEY: "test-placeholder",
-    FEEDBACK_ADMIN_EMAIL: "ops@example.com",
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: "demo-rtsai",
+    NEXT_PUBLIC_FIREBASE_API_KEY: "test-placeholder",
+    MAIL_GROUP: "ops@example.com",
   });
   setHostedAiOverrides({ now: () => NOW });
   resetSpendAlertMemo();
@@ -220,6 +220,6 @@ test("a chat call that crosses 50% of the cap queues exactly one alert in the Fi
     assert.equal(mailDocuments().length, 1, "later calls and fresh instances do not send it again");
   } finally {
     setHostedAiOverrides({});
-    for (const name of ["ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "RTSAI_AI_TOKEN_SECRET", "RTSAI_AI_STORE", "RTSAI_AI_GLOBAL_DAILY_CAP_USD", "MAIL_FIREBASE_PROJECT_ID", "MAIL_FIREBASE_API_KEY", "FEEDBACK_ADMIN_EMAIL"]) delete process.env[name];
+    for (const name of ["ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "RTSAI_AI_TOKEN_SECRET", "RTSAI_AI_STORE", "RTSAI_AI_GLOBAL_DAILY_CAP_USD", "NEXT_PUBLIC_FIREBASE_PROJECT_ID", "NEXT_PUBLIC_FIREBASE_API_KEY", "MAIL_GROUP"]) delete process.env[name];
   }
 });
