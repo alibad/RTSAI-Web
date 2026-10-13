@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 
+// The viewer is members-only (SignInGate): with Firebase configured the server renders only the gate, because sign-in
+// is known in the browser. These checks read the viewer itself, so they need a build without NEXT_PUBLIC_FIREBASE_*.
 async function render(pathname) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -21,6 +23,7 @@ test("the Faction viewer: every modern faction, its units drawn from the game's 
     const response = await render(`/viewer/${id}`);
     assert.equal(response.status, 200, id);
     const html = await response.text();
+    assert.doesNotMatch(html, /signin-gate/, "build without NEXT_PUBLIC_FIREBASE_* to test the viewer's content (it is members-only)");
     assert.match(html, /Faction viewer/);
     assert.match(html, /Campaigns/, `${id} surfaces campaigns`);
     assert.match(html, /\/faction-art\/cameos\/r2[a-z0-9]+\.[0-9a-f]{12}\.png/, `${id} lists its units by their approved cameos`);
@@ -61,7 +64,7 @@ test("a unit in the viewer: stats, weapons and doctrine; original units are text
   assert.match(html, /装甲平台在线/, "with what they say");
   if (!adminBuild) assert.doesNotMatch(html, adminOnly);
   const engineer = await (await render("/viewer/china/engineer")).text();
-  assert.match(engineer, /A (<!-- -->)?Original roster(<!-- -->)? unit/, "original units are distinguished from standalone roster entries");
+  assert.match(engineer, /An (<!-- -->)?Original roster(<!-- -->)? unit, in Westwood’s original art/, "original units are distinguished and drawn with Westwood's art (loaded in the browser)");
   assert.doesNotMatch(engineer.replace(/<script[\s\S]*?<\/script>/g, ""), /Red Alert 2 unit|Red Alert 2 sounds/, "no Red Alert 2 framing in the visible text");
   assert.doesNotMatch(engineer, /\/api\/art-review|ra2\/[a-z]+\.shp/, "no original art is fetched or named");
   for (const path of ["/viewer/china/r2nope", "/viewer/narnia", "/viewer/china/r2karrar"]) assert.equal((await render(path)).status, 404, path);

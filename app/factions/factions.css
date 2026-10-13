@@ -40,10 +40,11 @@
 @media (prefers-reduced-motion: reduce) { .sprite-loop img { animation: none; } }
 
 /* ---------- /factions ---------- */
-.factions-intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 32px; margin-bottom: 8px; }
+/* Sixteen sides: the heading on top, every flag in one row beneath it. */
+.factions-intro { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 20px; margin-bottom: 8px; }
 .factions-intro h1 { font-size: clamp(42px, 5.4vw, 72px); line-height: 1; letter-spacing: -.05em; font-weight: 650; margin: 14px 0 0; }
-.flag-rail { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.flag-rail a { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 8px 8px; min-width: 74px; border-bottom: 2px solid transparent; color: #a6ab9d; font-size: 11px; transition: border-color .15s, color .15s, transform .15s; }
+.flag-rail { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 4px; }
+.flag-rail a { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 6px 8px; min-width: 66px; border-bottom: 2px solid transparent; color: #a6ab9d; font-size: 11px; transition: border-color .15s, color .15s, transform .15s; }
 .flag-rail a:hover, .flag-rail a:focus-visible { border-color: var(--faction-accent); color: var(--paper); transform: translateY(-2px); }
 .directory-stats { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin: 0 0 8px; padding: 0; list-style: none; }
 .directory-stats li { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 14px 18px; border: 1px solid var(--line); background: var(--ink-soft); }
@@ -53,7 +54,7 @@
 .directory-stats .directory-release a { color: var(--gold); }
 
 .faction-feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.faction-original-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.faction-original-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 10px; }
 
 .faction-tile.is-modern { position: relative; padding: 0; border: 1px solid var(--line); border-top: 3px solid var(--faction-accent); background: linear-gradient(180deg, #181d18 0%, #121512 100%); overflow: hidden; clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%); }
 .faction-tile.is-modern:hover { background: linear-gradient(180deg, #1c221c 0%, #141814 100%); }
@@ -81,11 +82,14 @@
 .faction-tile.is-compact .faction-tile-name h3 { font-size: 22px; }
 .faction-tile.is-compact p { font-size: 13px; }
 
-.faction-tile.is-original { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-left: 3px solid var(--faction-accent); background: var(--ink-soft); transition: background .15s, border-color .15s; }
+.faction-tile.is-original { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-left: 3px solid var(--faction-accent); background: var(--ink-soft); transition: background .15s, border-color .15s; }
 .faction-tile.is-original:hover { background: #20261f; border-color: var(--faction-accent); }
 .faction-tile.is-original h3 { margin: 0 0 4px; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
 .faction-tile.is-original span { color: #9ea395; font-size: 11px; }
-.faction-tile.is-original > svg { margin-left: auto; color: #80857a; }
+.faction-original-head { display: flex; align-items: center; gap: 14px; }
+.faction-original-head > svg { margin-left: auto; color: #80857a; }
+.unit-cameo.is-pending { width: 60px; height: 48px; opacity: .35; }
+.unit-cameo.is-inline { display: inline-block; vertical-align: middle; margin-right: 6px; }
 
 /* ---------- /factions/[id] ---------- */
 .faction-hero { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: end; gap: 12px; min-height: 420px; padding: 40px 0 0 40px; border: 1px solid var(--line); border-top: 3px solid var(--faction-accent); overflow: hidden; clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 0 100%); background:

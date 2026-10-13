@@ -2,6 +2,8 @@ import Link from "next/link";
 import { categoryLabels, modeLabel, rosterActors, units, type GameMode, type RosterFaction } from "../../lib/game-content";
 import { artActorFor, categoryOrder, unitStats, viewerHref, VIEWER_READY } from "../../lib/faction-art";
 import { Cameo, CategoryIcon, StatBars, UnitRender } from "./FactionVisuals";
+import { OriginalCameo } from "./OriginalCameos";
+import { EA_NOTICE } from "../../lib/ea-notice";
 
 type Actor = ReturnType<typeof rosterActors>[number];
 const cost = (actor: Actor) => (actor.cost === null ? null : `$${actor.cost.toLocaleString("en")}`);
@@ -9,7 +11,7 @@ const roles = (actor: Actor) => actor.roles.slice(0, 2).map(r => r.replaceAll("-
 
 /**
  * The faction's whole build roster by category. Its own units are cards with their art and stats; units shared
- * with the original sides are named only (their art is the original game's, which this site never shows).
+ * with the original sides are listed with Westwood's build icons (the Faction Studio's published art).
  */
 export function CompleteRoster({ faction, mode, catalogFactionId }: { faction: RosterFaction; mode: GameMode; catalogFactionId?: string }) {
   const actors = rosterActors(faction);
@@ -41,11 +43,11 @@ export function CompleteRoster({ faction, mode, catalogFactionId }: { faction: R
         })}</ul>}
         {shared.length > 0 && <div className="shared-units"><span>{cards.length ? "Shared" : ""}</span><ul>{shared.map(actor => {
           const dossier = units.find(u => u.variants[mode]?.actorId.toLowerCase() === actor.id.toLowerCase());
-          const label = <>{actor.name}{cost(actor) && <small>{cost(actor)}</small>}</>;
+          const label = <><OriginalCameo id={actor.id} mode={mode} />{actor.name}{cost(actor) && <small>{cost(actor)}</small>}</>;
           return <li key={actor.key}>{dossier ? <Link href={`/units/${dossier.id}?mode=${mode}`}>{label}</Link> : label}</li>;
         })}</ul></div>}
       </div>;
     })}
-    <p className="directory-footnote">Costs and stats come from this mode’s rules; bars compare units of the same kind. Country bonuses and upgrades can change play. These are development rosters, not a promise of public release coverage.</p>
+    <p className="directory-footnote">Costs and stats come from this mode’s rules; bars compare units of the same kind. Country bonuses and upgrades can change play. These are development rosters, not a promise of public release coverage.{actors.length > ownCount ? ` Shared units are shown with Westwood’s original art. ${EA_NOTICE}` : ""}</p>
   </section>;
 }

@@ -12,6 +12,7 @@ import { ViewerAdmin, type ShownVersion } from "./ViewerAdmin";
 import { soundEngine } from "../review/sound";
 import { SoundControls } from "../review/SoundControls";
 import type { PublicClip } from "../../../../lib/faction-audio";
+import { EA_NOTICE, useOriginalArt } from "../../../../lib/original-art";
 import "./viewer.css";
 
 const groups: [string, string][] = [["infantry", "Infantry"], ["vehicle", "Vehicles"], ["aircraft", "Aircraft"], ["ship", "Naval"], ["defense", "Defenses"], ["structure", "Buildings"]];
@@ -22,7 +23,8 @@ const hrefFor = (faction: string, unit: string | null) => (unit ? `/viewer/${fac
 /**
  * The public Faction viewer: a faction's units as the game draws them (turn them, play their actions), their stats
  * and doctrine, and the faction's campaigns. Read-only and player-facing: no candidates, checks, decisions or
- * provenance. Original EA units are listed by name only. The admin build adds a tucked-away History per unit.
+ * provenance. Shared original units are drawn with Westwood's art from the Faction Studio's published snapshot (with
+ * EA's notice). The admin build adds a tucked-away History per unit.
  */
 export function FactionViewer({ faction, factions, initial, marks, lineup, artFactionId }: {
   faction: ViewerFaction;
@@ -50,7 +52,12 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   // The details panel follows one frame after the stage: on a software GPU, repainting both in the frame that answers
   // the click doubles its cost, so the click paints the new unit first and its details right after.
   const infoUnit = useAfterPaint(unit);
-  const items = useMemo(() => new Map(units.flatMap(u => (u.art ? [[u.id, { key: u.id, spec: u.art.spec, sprite: u.art.sprite } as StageItem]] : []))), [units]);
+  // Shared original units: Westwood's art, loaded once for factions that build any.
+  const original = useOriginalArt(units.some(u => !u.art));
+  const items = useMemo(() => new Map(units.flatMap(u => {
+    const art = u.art ?? original[u.id.toLowerCase()];
+    return art ? [[u.id, { key: u.id, spec: art.spec, sprite: art.sprite } as StageItem]] : [];
+  })), [units, original]);
   const item = unit ? items.get(unit.id) ?? null : null;
   // The last unit with art stays on the (hidden) stage while the overview or a text-only unit is shown.
   const [stageItem, setStageItem] = useState<StageItem | null>(item);
@@ -102,8 +109,10 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
             </ul></section>;
           })}
           {shared.length > 0 && <section className="viewer-shared"><h2>Shared units<small>{shared.length}</small></h2>
-            <p>{faction.classicLabel} units the faction also builds. Their art comes from your own game files, so it is not shown here.</p>
-            <ul>{shared.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}><span><b>{u.name}</b><small>{groups.find(g => g[0] === u.category)?.[1] ?? u.category}</small></span></a></li>)}</ul>
+            <p>{faction.classicLabel} units the faction also builds, in Westwood’s original art. {EA_NOTICE}</p>
+            <ul>{shared.map(u => { const cameo = original[u.id.toLowerCase()]?.spec.cameo; return <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}>
+              {cameo ? <img src={cameo} width={60} height={48} alt="" loading="lazy" decoding="async" /> : <i className="viewer-nocameo" />}
+              <span><b>{u.name}</b><small>{groups.find(g => g[0] === u.category)?.[1] ?? u.category}</small></span></a></li>; })}</ul>
           </section>}
         </aside>
 
@@ -119,7 +128,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
             </div>
           )}
           {unit && !item && (
-            <div className="viewer-stock"><Swords size={34} aria-hidden="true" /><h1>{unit.name}</h1><p>A {faction.classicLabel} unit. Its art comes from your own game files, so it is not shown here.</p></div>
+            <div className="viewer-stock"><Swords size={34} aria-hidden="true" /><h1>{unit.name}</h1><p>An {faction.classicLabel} unit, in Westwood’s original art. Loading…</p></div>
           )}
           {!unit && (
             <div className="viewer-hero">
