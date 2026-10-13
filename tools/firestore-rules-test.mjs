@@ -1,6 +1,7 @@
-// firestore.rules against the local emulators: what signed-in players may and may not do.
+// firestore.rules against the local emulators: what signed-in players may and may not do (counters, matchmaking,
+// feedback files).
 //   firebase emulators:start --only auth,firestore --project demo-rtsai     (Java 11+)
-//   node tools/firestore-rules-test.mjs
+//   node tools/firestore-rules-test.mjs          (on a fresh emulator: it creates fixed match codes)
 // Then the same counters through the real writer: FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 is set below.
 import assert from "node:assert/strict";
 
@@ -71,6 +72,58 @@ await expect("host rewrites the offer", false, () => call(a, "PATCH", `/p2pMatch
 await expect("anonymous visitor reads a match", false, () => call(anon, "GET", `/p2pMatches/${code}`));
 await expect("guest deletes the match", false, () => call(b, "DELETE", `/p2pMatches/${code}`));
 await expect("host closes the match", true, () => call(a, "DELETE", `/p2pMatches/${code}`));
+
+// ---- feedback files (app/components/feedback/report-files.ts): create-only by the reporter, read by admins only
+const owner = { token: "owner" }; // the emulator's admin token, standing in for the Firebase console
+const doc = path => `projects/${project}/databases/(default)/documents/${path}`;
+const create = (who, path, fields, serverTime = []) => call(who, "POST", ":commit", { writes: [{ update: { name: doc(path), fields }, currentDocument: { exists: false }, updateTransforms: serverTime.map(fieldPath => ({ fieldPath, setToServerValue: "REQUEST_TIME" })) }] });
+const str = v => ({ stringValue: v }), int = v => ({ integerValue: String(v) }), bytes = n => ({ bytesValue: Buffer.alloc(n, 7).toString("base64") });
+const admin = await user(`admin${Date.now()}@test.dev`);
+await expect("console makes an admin", true, () => call(owner, "PATCH", `/admins/${admin.uid}`, { fields: { note: str("rules test") } }));
+const report = crypto.randomUUID(), R = `feedbackReports/${report}`, fid = "k3v9q2m8x1b7n4c6", other = "a1b2c3d4e5f6g7h8";
+const reportFields = uid => ({ owner: str(uid), source: str("game") });
+await expect("reporter creates their report", true, () => create(a, R, reportFields(a.uid), ["created"]));
+await expect("report for someone else", false, () => create(a, `feedbackReports/${crypto.randomUUID()}`, reportFields(b.uid), ["created"]));
+await expect("report with a made-up time", false, () => create(a, `feedbackReports/${crypto.randomUUID()}`, { ...reportFields(a.uid), created: ts(0) }));
+await expect("report id that isn't a UUID", false, () => create(a, "feedbackReports/not-a-uuid", reportFields(a.uid), ["created"]));
+await expect("report with extra fields", false, () => create(a, `feedbackReports/${crypto.randomUUID()}`, { ...reportFields(a.uid), admin: { booleanValue: true } }, ["created"]));
+await expect("anonymous visitor files a report", false, () => create(anon, `feedbackReports/${crypto.randomUUID()}`, reportFields(anon.uid), ["created"]));
+await expect("signed-out visitor files a report", false, () => create(null, `feedbackReports/${crypto.randomUUID()}`, reportFields("x"), ["created"]));
+await expect("report rewritten", false, () => call(a, "PATCH", `/${R}`, { fields: reportFields(a.uid) }));
+await expect("reporter writes a 900 KiB chunk", true, () => create(a, `${R}/chunks/${fid}_0`, { data: bytes(921600) }));
+await expect("chunk over 900 KiB", false, () => create(a, `${R}/chunks/${other}_0`, { data: bytes(921601) }));
+await expect("13th chunk of a file", false, () => create(a, `${R}/chunks/${other}_12`, { data: bytes(10) }));
+await expect("chunk that isn't bytes", false, () => create(a, `${R}/chunks/${other}_1`, { data: str("text") }));
+await expect("chunk with extra fields", false, () => create(a, `${R}/chunks/${other}_2`, { data: bytes(10), note: str("x") }));
+await expect("someone else adds a chunk", false, () => create(b, `${R}/chunks/${other}_0`, { data: bytes(10) }));
+await expect("chunk rewritten", false, () => call(a, "PATCH", `/${R}/chunks/${fid}_0`, { fields: { data: bytes(10) } }));
+const file = (extra = {}) => ({ name: str("screenshot-1.jpg"), kind: str("screenshot"), contentType: str("image/jpeg"), bytes: int(921600), chunks: int(1), ...extra });
+await expect("reporter records the file", true, () => create(a, `${R}/files/${fid}`, file(), ["created"]));
+await expect("a second chunk for the next file", true, () => create(a, `${R}/chunks/${other}_0`, { data: bytes(100) }));
+await expect("file whose chunks aren't there", false, () => create(a, `${R}/files/zzzzzzzzzzzzzzzz`, file({ bytes: int(100) }), ["created"]));
+await expect("file larger than its chunks", false, () => create(a, `${R}/files/${other}`, file({ bytes: int(921601) }), ["created"]));
+await expect("file over 10 MB", false, () => create(a, `${R}/files/${other}`, file({ bytes: int(10485761), chunks: int(12) }), ["created"]));
+await expect("HTML file", false, () => create(a, `${R}/files/${other}`, file({ kind: str("file"), contentType: str("text/html"), bytes: int(100) }), ["created"]));
+await expect("screenshot that isn't an image", false, () => create(a, `${R}/files/${other}`, file({ contentType: str("audio/webm"), bytes: int(100) }), ["created"]));
+await expect("voice note over 10 minutes", false, () => create(a, `${R}/files/${other}`, file({ kind: str("voice"), contentType: str("audio/webm"), bytes: int(100), durationSeconds: int(601) }), ["created"]));
+await expect("file with a made-up time", false, () => create(a, `${R}/files/${other}`, file({ bytes: int(100), created: ts(0) })));
+await expect("someone else records a file", false, () => create(b, `${R}/files/${other}`, file({ bytes: int(100) }), ["created"]));
+await expect("voice note record", true, () => create(a, `${R}/files/${other}`, file({ name: str("voice-note.webm"), kind: str("voice"), contentType: str("audio/webm"), bytes: int(100), durationSeconds: int(42) }), ["created"]));
+await expect("reporter reads their report back", false, () => call(a, "GET", `/${R}`));
+await expect("reporter lists the files", false, () => call(a, "GET", `/${R}/files`));
+await expect("reporter reads a chunk", false, () => call(a, "GET", `/${R}/chunks/${fid}_0`));
+await expect("another player reads the report", false, () => call(b, "GET", `/${R}`));
+await expect("listing all reports", false, () => call(b, "GET", "/feedbackReports"));
+await expect("admin reads the report", true, () => call(admin, "GET", `/${R}`));
+const listed = await expect("admin lists its files", true, () => call(admin, "GET", `/${R}/files`));
+assert.equal(listed.body.documents.length, 2);
+const chunk = await expect("admin reads a chunk", true, () => call(admin, "GET", `/${R}/chunks/${fid}_0`));
+assert.equal(Buffer.from(chunk.body.fields.data.bytesValue, "base64").length, 921600);
+await expect("reporter edits the report", false, () => call(a, "PATCH", `/${R}?updateMask.fieldPaths=source`, { fields: { source: str("web") } }));
+await expect("reporter deletes a file", false, () => call(a, "DELETE", `/${R}/files/${fid}`));
+await expect("admin deletes the report from the browser", false, () => call(admin, "DELETE", `/${R}`));
+await expect("player makes themself an admin", false, () => call(a, "PATCH", `/admins/${a.uid}`, { fields: { note: str("me") } }));
+await expect("admin reads the admin list", false, () => call(admin, "GET", `/admins/${admin.uid}`));
 
 console.log(results.map(r => `${r.ok ? "PASS" : "FAIL"} ${r.label} (${r.status})`).join("\n"));
 console.log(`\n${results.filter(r => r.ok).length}/${results.length} rules checks passed`);

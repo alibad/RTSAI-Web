@@ -50,7 +50,9 @@ export default function PrivacyPage() {
       <section>
         <h2>Product feedback</h2>
         <p>Feedback you deliberately submit includes your Firebase account identity. It can be saved as a private GitHub issue, or accepted through a queued Firebase mail notification if issue creation fails. The receipt states whether an issue exists and whether a notification was queued; it does not confirm email delivery. If both paths fail, the form keeps your draft for retry.</p>
-        <p>You can optionally include bounded browser, console and network diagnostics. Screenshots, page HTML, form values, request bodies, headers and URL queries are not captured. Written feedback and diagnostics are never sent to Google Analytics.</p>
+        <p>You can add screenshots (and mark them up first), one voice note and files: images, video, audio or text, up to 10 MB each. In the browser game, opening Feedback during a match attaches a picture of the battlefield, which you can remove before sending. Nothing is sent until you press send. The files are stored privately in our Firebase database with your account identifier, and only the RTS AI team can open them; the private issue and the team&apos;s alert name the files and link to that team-only page. Files stay until the team removes them.</p>
+        <p>The microphone button in a text box uses your browser&apos;s speech recognition (in Chrome, Google&apos;s service) to type for you; it attaches no audio. A voice note is a recording you choose to attach.</p>
+        <p>You can optionally include bounded browser, console and network diagnostics. Page HTML, form values, request bodies, headers and URL queries are not captured. Written feedback and diagnostics are never sent to Google Analytics.</p>
       </section>
       <section>
         <h2>Your controls</h2>

@@ -60,5 +60,69 @@ service cloud.firestore {
         allow delete: if member() && (resource.data.guest == request.auth.uid || host() == request.auth.uid);
       }
     }
+
+    // ---- Team admins: a doc at admins/{uid}, written only from the Firebase console.
+    function admin() {
+      return member() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    match /admins/{uid} {
+      allow read, write: if false;
+    }
+
+    // ---- Feedback files (RTSAI-Web app/components/feedback/report-files.ts, shared with the game). The reporter's
+    // browser writes a report, its files' bytes in chunks of at most 900 KiB, then each file's record; create only,
+    // within 30 minutes of the report. Nobody but an admin can read or list them (the site's /feedback/<id> viewer).
+    match /feedbackReports/{reportId} {
+      function report() { return get(/databases/$(database)/documents/feedbackReports/$(reportId)).data; }
+      function writable() {
+        return member() && report().owner == request.auth.uid && request.time < report().created + duration.value(30, 'm');
+      }
+      function chunkExists(fileId, index) {
+        return exists(/databases/$(database)/documents/feedbackReports/$(reportId)/chunks/$(fileId + '_' + string(index)));
+      }
+      allow read: if admin();
+      allow create: if member()
+        && reportId.matches('^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
+        && request.resource.data.keys().hasOnly(['owner', 'created', 'source'])
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.created == request.time
+        && request.resource.data.source in ['web', 'game'];
+      allow update, delete: if false;
+
+      // {fileId}_{index}: at most 12 chunks (10 MiB), each written once.
+      match /chunks/{chunkId} {
+        allow read: if admin();
+        allow create: if writable()
+          && chunkId.matches('^[a-z0-9]{16}_([0-9]|1[01])$')
+          && request.resource.data.keys().hasOnly(['data'])
+          && request.resource.data.data is bytes
+          && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 921600;
+        allow update, delete: if false;
+      }
+
+      // Written last: the record of a whole file, whose first and last chunks must already be there.
+      match /files/{fileId} {
+        allow read: if admin();
+        allow create: if writable()
+          && fileId.matches('^[a-z0-9]{16}$')
+          && request.resource.data.keys().hasOnly(['name', 'kind', 'contentType', 'bytes', 'chunks', 'durationSeconds', 'created'])
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120
+          && request.resource.data.kind in ['screenshot', 'voice', 'file']
+          && request.resource.data.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'video/webm', 'video/mp4',
+            'video/quicktime', 'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/wav',
+            'audio/x-wav', 'text/plain', 'text/markdown', 'text/csv', 'application/json']
+          && (request.resource.data.kind != 'screenshot' || request.resource.data.contentType.matches('image/.*'))
+          && (request.resource.data.kind != 'voice' || request.resource.data.contentType.matches('audio/.*'))
+          && request.resource.data.bytes is int && request.resource.data.bytes > 0 && request.resource.data.bytes <= 10485760
+          && request.resource.data.chunks is int && request.resource.data.chunks >= 1 && request.resource.data.chunks <= 12
+          && (request.resource.data.chunks - 1) * 921600 < request.resource.data.bytes
+          && request.resource.data.bytes <= request.resource.data.chunks * 921600
+          && (!('durationSeconds' in request.resource.data) || (request.resource.data.durationSeconds is int
+            && request.resource.data.durationSeconds >= 0 && request.resource.data.durationSeconds <= 600))
+          && request.resource.data.created == request.time
+          && chunkExists(fileId, 0) && chunkExists(fileId, request.resource.data.chunks - 1);
+        allow update, delete: if false;
+      }
+    }
   }
 }

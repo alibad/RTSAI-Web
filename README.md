@@ -64,10 +64,13 @@ That endpoint verifies the token signature, audience, and issuer against
 Google's published Firebase keys before it requests Earth geometry. The client
 gate is therefore backed by an API authorization boundary.
 
-The global Feedback button uses the same signed-in identity. It can attach a
-text description of a selected page element and, only when the player enables
-them, bounded browser, console, and network diagnostics. It never captures
-screenshots, page HTML, form values, request bodies, headers, or URL queries.
+The global Feedback button uses the same signed-in identity. It is the feedback
+skill's Full mode, shared with the browser game at `/play`: a screenshot of the
+tab (the browser's own screen capture) marked up in a canvas annotator, voice
+notes (MediaRecorder) and dictation into the text boxes, file attachments
+(images, video, audio, text; 10 MB each), a selected page element and, only when
+the player enables them, bounded browser, console, and network diagnostics. It
+never captures page HTML, form values, request bodies, headers, or URL queries.
 
 `/api/feedback` validates the Firebase ID token and sanitizes the full payload.
 It creates a private issue through an installed GitHub App and queues a complete
@@ -89,9 +92,22 @@ environment:
   metadata read access and issue read/write access to `GITHUB_REPO_OWNER` /
   `GITHUB_REPO_NAME`. Personal access tokens are not supported.
 
-This is deliberately the feedback skill's Core mode: reliable text, selected
-element context, and opt-in diagnostics. Media capture should only be added
-after a private object-storage backend and retention policy are configured.
+Files never pass through `/api/feedback`. The signed-in browser writes them
+straight into Firestore (`app/components/feedback/report-files.ts`):
+`feedbackReports/<report id>` holds the owner and time, `chunks/` the bytes in
+documents of at most 900 KiB (10 MB, so 12 chunks, per file) and `files/` one
+record per file, written last. `firestore.rules` lets the reporter create
+those, never change them, and only for 30 minutes; only team admins (a document
+at `admins/<uid>`, created in the Firebase console) can read them, in the
+`/feedback/<report id>` viewer that the issue and the mail alert link. The
+project is on the free Spark plan (no Storage bucket, no charges): a report is a
+few dozen writes against 20K a day and its bytes count toward 1 GiB stored.
+`/api/feedback` receives only the report id and each file's id, name, type and
+size. Deploy the rules with `firebase deploy --only firestore:rules --project
+rtsai-net`; `node tools/firestore-rules-test.mjs` checks them on the emulators.
+The browser game at `/play` runs the same flow from copies of
+`app/components/feedback/` and `useFeedbackDictation.tsx` (RTSAI-WebGame
+`web/src/ui/feedback/`); change both together.
 
 Validate the production build with:
 

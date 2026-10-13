@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
+import type { Firestore } from "firebase/firestore";
 import {
   getAnalytics,
   isSupported,
@@ -22,9 +23,12 @@ const firebaseConfig = {
 export const firebaseIsConfigured = Boolean(
   firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId,
 );
+/** Local tests only (NEXT_PUBLIC_FIREBASE_EMULATORS=1 with a demo- project): the Auth and Firestore emulators. */
+const useEmulators = process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1";
 
 let firebaseApp: FirebaseApp | null = null;
 let firebaseAuth: Auth | null = null;
+let firestorePromise: Promise<Firestore | null> | null = null;
 let analyticsPromise: Promise<Analytics | null> | null = null;
 
 function getFirebaseApp() {
@@ -36,8 +40,23 @@ function getFirebaseApp() {
 export function getFirebaseAuth() {
   const app = getFirebaseApp();
   if (!app) return null;
-  if (!firebaseAuth) firebaseAuth = getAuth(app);
+  if (!firebaseAuth) {
+    firebaseAuth = getAuth(app);
+    if (useEmulators) connectAuthEmulator(firebaseAuth, "http://127.0.0.1:9099", { disableWarnings: true });
+  }
   return firebaseAuth;
+}
+
+/** Firestore, loaded on first use (feedback files): pages that never need it never download it. */
+export function getFirebaseFirestore() {
+  return firestorePromise ??= (async () => {
+    const app = getFirebaseApp();
+    if (!app) return null;
+    const { connectFirestoreEmulator, getFirestore } = await import("firebase/firestore");
+    const db = getFirestore(app);
+    if (useEmulators) connectFirestoreEmulator(db, "127.0.0.1", 8085);
+    return db;
+  })();
 }
 
 async function getFirebaseAnalytics() {

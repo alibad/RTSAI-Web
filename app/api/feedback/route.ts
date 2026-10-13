@@ -2,21 +2,17 @@ import {
   createFeedbackEmail,
   createFeedbackIssueBody,
   feedbackLabels,
+  feedbackViewerUrl,
+  isAllowedFeedbackOrigin,
   validateFeedbackPayload,
 } from "../../../lib/feedback";
 import { mailGroup, sendFirebaseEmail } from "../../../lib/firebase-mail";
 import { verifyFirebaseIdentity } from "../../../lib/firebase-token";
 import { createGitHubIssue, GitHubRequestError, isGitHubConfigured } from "../../../lib/github";
 
+// Files never pass through here: the reporter's browser stores them in Firestore first (feedbackReports/<id>, see
+// app/components/feedback/report-files.ts) and the request only names them; the issue links the team-only viewer.
 const maxBodyBytes = 64_000;
-
-function isAllowedOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  const configured = process.env.FEEDBACK_ALLOWED_ORIGINS?.split(",").map((value) => value.trim()).filter(Boolean) ?? [];
-  const defaults = ["https://rtsai.net", "https://www.rtsai.net", "https://openra-ai.albertine.chatgpt.site"];
-  return [...defaults, ...configured].includes(origin) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
-}
 
 export function createFeedbackHandler(dependencies: {
   verifyIdentity: typeof verifyFirebaseIdentity;
@@ -27,7 +23,7 @@ export function createFeedbackHandler(dependencies: {
   reportError: typeof console.error;
 }) {
 return async function handleFeedback(request: Request) {
-  if (!isAllowedOrigin(request)) return Response.json({ error: "Invalid request origin" }, { status: 403 });
+  if (!isAllowedFeedbackOrigin(request)) return Response.json({ error: "Invalid request origin" }, { status: 403 });
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > maxBodyBytes) return Response.json({ error: "Feedback is too large" }, { status: 413 });
 
@@ -47,21 +43,25 @@ return async function handleFeedback(request: Request) {
   const receipt = `RTS-${parsed.value.clientSubmissionId.slice(0, 8).toUpperCase()}`;
   const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://rtsai.net").replace(/\/$/, "");
   const pageUrl = `${baseUrl}${parsed.value.pagePath || "/"}`;
+  const viewerUrl = feedbackViewerUrl(baseUrl, parsed.value.clientSubmissionId);
   const issueTitle = `[${parsed.value.category}] ${parsed.value.title} — ${parsed.value.pagePath || "/"}`.slice(0, 240);
-  const issueBody = createFeedbackIssueBody({ receipt, receivedAt, pageUrl, submission: parsed.value, identity });
-  const labels = feedbackLabels(parsed.value.category);
+  const issueBody = createFeedbackIssueBody({ receipt, receivedAt, pageUrl, viewerUrl, submission: parsed.value, identity });
+  const labels = feedbackLabels(parsed.value.category, parsed.value.source);
+  // A label GitHub doesn't know (422) is retried without it: first without a newer source label, then with none.
+  const labelAttempts = [labels, ...(parsed.value.source === "web" ? [] : [feedbackLabels(parsed.value.category)]), undefined];
 
   let issue: { number: number; html_url: string } | null = null;
   if (dependencies.issueConfigured()) {
     try {
-      try {
-        const response = await dependencies.createIssue({ title: issueTitle, body: issueBody, labels });
-        issue = { number: response.number, html_url: response.htmlUrl };
-      } catch (cause) {
-        const status = cause instanceof GitHubRequestError ? cause.status : 0;
-        if (status !== 422) throw cause;
-        const response = await dependencies.createIssue({ title: issueTitle, body: issueBody });
-        issue = { number: response.number, html_url: response.htmlUrl };
+      for (const [index, attempt] of labelAttempts.entries()) {
+        try {
+          const response = await dependencies.createIssue({ title: issueTitle, body: issueBody, ...(attempt ? { labels: attempt } : {}) });
+          issue = { number: response.number, html_url: response.htmlUrl };
+          break;
+        } catch (cause) {
+          const status = cause instanceof GitHubRequestError ? cause.status : 0;
+          if (status !== 422 || index === labelAttempts.length - 1) throw cause;
+        }
       }
     } catch (cause) {
       const status = cause instanceof GitHubRequestError ? cause.status : 0;
@@ -81,6 +81,7 @@ return async function handleFeedback(request: Request) {
       issueNumber: issue?.number,
       issueUrl: issue?.html_url,
       receivedAt,
+      viewerUrl,
       submission: parsed.value,
       identity,
     });
