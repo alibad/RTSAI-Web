@@ -55,7 +55,7 @@ test("the local Studio route and its API stay out of production; the shared Stud
   const html = await shared.text();
   assert.match(html, /EA has not endorsed and does not support this product\./, "EA's modding-guideline notice is shown");
   const snapshot = JSON.parse(readFileSync(new URL("../data/studio-snapshot.json", import.meta.url), "utf8"));
-  if (snapshot.index) assert.match(snapshot.index, /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/studio\/s\//, "the snapshot is hosted, not read from local files");
+  if (snapshot.index) assert.match(snapshot.index, /^https:\/\/rtsai-studio\.pages\.dev\/s\//, "the snapshot is hosted (Cloudflare Pages), not read from local files");
 });
 
 test("the Art Lab stays out of the sitemap and is not linked from live pages", async () => {

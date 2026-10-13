@@ -1,30 +1,33 @@
 /**
  * Publish the shared Studio's snapshot (rtsai.net/faction-studio) from this machine.
  *
- *   node --import tsx scripts/publish-studio.ts            # resolve, upload what is new, write data/studio-snapshot.json
- *   node --import tsx scripts/publish-studio.ts --dry-run  # resolve and count only
+ *   node --import tsx scripts/publish-studio.ts              # resolve, write the static site, deploy it, write data/studio-snapshot.json
+ *   node --import tsx scripts/publish-studio.ts --dry-run    # resolve and count only
+ *   node --import tsx scripts/publish-studio.ts --no-deploy  # write the static site (.cache/studio-cdn) without deploying
  *
  * It resolves every roster the local Studio shows (RTS AI's factions; the original countries with Westwood art from the
- * player's own RA2 / Yuri's Revenge / Red Alert files; every mod of the mod library), uploads each referenced art file
- * once to the public Vercel Blob store under its content hash, uploads the roster JSON with those URLs, and records the
- * snapshot's index in data/studio-snapshot.json (commit and push it to publish). Needs BLOB_READ_WRITE_TOKEN (.env.local,
- * from `vercel env pull`). No C&C music is published: the Studio's art is sprites, models, palettes and icons only.
+ * player's own RA2 / Yuri's Revenge / Red Alert files; every mod of the mod library) and writes a static site: each
+ * referenced art file once under its content hash (a/<sha>.<ext>), and the snapshot's rosters and index under s/<time>/.
+ * The site is served by the Cloudflare Pages project STUDIO_CDN_PROJECT (default rtsai-studio) at STUDIO_CDN_URL
+ * (default https://rtsai-studio.pages.dev): free, no transfer cap, and an edge in Doha, close to the players in Qatar.
+ * Deploying needs `npx wrangler login` once. Commit and push data/studio-snapshot.json to publish. No C&C music is
+ * published: the Studio's art is sprites, models, palettes and icons only.
  */
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { extname, join, resolve } from "node:path";
-import { list, put } from "@vercel/blob";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, extname, join, resolve } from "node:path";
 import { cachedFile, classicConfig, rosterPayload, yrConfig, originalsConfig, type OriginalsConfig } from "../lib/art-lab/originals";
 import { availableMods, modConfig, modLibraryConfig, modRosterPayload } from "../lib/art-lab/mod-library";
 import { readState } from "../lib/art-lab/review-server";
 
 const web = resolve(process.cwd());
 const dryRun = process.argv.includes("--dry-run");
-for (const line of existsSync(join(web, ".env.local")) ? readFileSync(join(web, ".env.local"), "utf8").split(/\r?\n/) : []) {
-  const m = /^([A-Z_][A-Z0-9_]*)="?(.*?)"?$/.exec(line);
-  if (m && m[1] === "BLOB_READ_WRITE_TOKEN" && !process.env.BLOB_READ_WRITE_TOKEN) process.env.BLOB_READ_WRITE_TOKEN = m[2];
-}
-if (!dryRun && !process.env.BLOB_READ_WRITE_TOKEN) throw new Error("BLOB_READ_WRITE_TOKEN is not set (vercel env pull)");
+const deploy = !process.argv.includes("--no-deploy");
+const project = process.env.STUDIO_CDN_PROJECT ?? "rtsai-studio";
+const cdn = (process.env.STUDIO_CDN_URL ?? `https://${project}.pages.dev`).replace(/\/$/, "");
+/** Kept between publishes: every deploy uploads the whole site, and older snapshots stay valid. */
+const site = join(web, ".cache", "studio-cdn");
 
 const base = originalsConfig(web), lib = modLibraryConfig(web);
 const yr = yrConfig(base), classic = classicConfig(base);
@@ -58,50 +61,55 @@ for (const url of urls) {
   const path = localFile(url);
   if (!path) { unresolved.push(url); continue; }
   const data = readFileSync(path);
-  files.set(url, { path, key: `studio/a/${createHash("sha256").update(data).digest("hex").slice(0, 24)}${extname(path).toLowerCase()}`, bytes: data.length });
+  files.set(url, { path, key: `a/${createHash("sha256").update(data).digest("hex").slice(0, 24)}${extname(path).toLowerCase()}`, bytes: data.length });
 }
 const unique = new Map([...files.values()].map(f => [f.key, f]));
 log(`${urls.size} art URLs, ${unique.size} unique files, ${([...unique.values()].reduce((n, f) => n + f.bytes, 0) / 1048576).toFixed(0)} MB, ${unresolved.length} unresolved`);
 if (unresolved.length) console.log("unresolved:", unresolved.slice(0, 10).join(" "));
 if (dryRun) process.exit(0);
 
-// 3. Upload what the store lacks (content-addressed, so a file is uploaded once across publishes).
-const have = new Map<string, string>();
-for (let cursor: string | undefined; ;) {
-  const page = await list({ prefix: "studio/a/", limit: 1000, cursor });
-  for (const b of page.blobs) have.set(b.pathname, b.url);
-  if (!page.hasMore) break;
-  cursor = page.cursor;
+// 3. The static site: art files (content-addressed, so each is written once across publishes), headers for the Studio
+// page at rtsai.net to read them (CORS, cross-origin resource policy) and a year of caching (nothing ever changes).
+let added = 0;
+for (const f of unique.values()) {
+  const to = join(site, f.key);
+  if (existsSync(to)) continue;
+  mkdirSync(dirname(to), { recursive: true });
+  copyFileSync(f.path, to);
+  added++;
 }
-const type = (key: string) => (key.endsWith(".png") ? "image/png" : key.endsWith(".json") ? "application/json" : "application/octet-stream");
-const todo = [...unique.values()].filter(f => !have.has(f.key));
-log(`${have.size} already hosted, uploading ${todo.length}`);
-let done = 0;
-async function upload(f: { path: string; key: string }) {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      const blob = await put(f.key, readFileSync(f.path), { access: "public", addRandomSuffix: false, allowOverwrite: true, contentType: type(f.key), cacheControlMaxAge: 31536000 });
-      have.set(f.key, blob.url);
-      if (++done % 250 === 0) log(`uploaded ${done}/${todo.length}`);
-      return;
-    } catch (e) { if (attempt >= 5) throw e; await new Promise(r => setTimeout(r, 1000 * attempt)); }
-  }
-}
-for (let i = 0; i < todo.length; i += 12) await Promise.all(todo.slice(i, i + 12).map(upload));
+writeFileSync(join(site, "_headers"), [
+  "/*", "  Access-Control-Allow-Origin: *", "  Cross-Origin-Resource-Policy: cross-origin", "  X-Content-Type-Options: nosniff",
+  "/a/*", "  Cache-Control: public, max-age=31536000, immutable",
+  "/s/*", "  Cache-Control: public, max-age=31536000, immutable", "",
+].join("\n"));
+writeFileSync(join(site, "index.html"), "<!doctype html><title>RTS AI Studio art</title><p>Art for <a href=\"https://rtsai.net/faction-studio\">rtsai.net/faction-studio</a>.</p>\n");
+log(`${added} new art files, ${unique.size - added} already in the site`);
 
 // 4. Rosters pointing at the hosted files, then the snapshot index.
 const rewrite = (v: unknown): unknown => {
-  if (typeof v === "string") { const f = files.get(v); return f ? have.get(f.key) ?? v : v; }
+  if (typeof v === "string") { const f = files.get(v); return f ? `${cdn}/${f.key}` : v; }
   if (Array.isArray(v)) return v.map(rewrite);
   if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, rewrite(x)]));
   return v;
 };
 const publishedAt = new Date().toISOString(), id = publishedAt.replace(/[:.]/g, "-");
-const putJson = async (name: string, body: unknown) => (await put(`studio/s/${id}/${name}`, JSON.stringify(body), { access: "public", addRandomSuffix: false, contentType: "application/json", cacheControlMaxAge: 31536000 })).url;
+const writeJson = (name: string, body: unknown) => {
+  const key = `s/${id}/${name}`;
+  mkdirSync(join(site, "s", id), { recursive: true });
+  writeFileSync(join(site, key), JSON.stringify(body));
+  return `${cdn}/${key}`;
+};
 const rosterUrls: Record<string, string> = {};
-for (const [mode, payload] of Object.entries(rosters)) rosterUrls[mode] = await putJson(`roster-${mode.replace(":", "-")}.json`, rewrite(payload));
+for (const [mode, payload] of Object.entries(rosters)) rosterUrls[mode] = writeJson(`roster-${mode.replace(":", "-")}.json`, rewrite(payload));
 const state = readState(join(web, ".cache", "shared-studio-empty-workspace"));
-const index = await putJson("index.json", { publishedAt, rosters: rosterUrls, mods, state });
+const index = writeJson("index.json", { publishedAt, rosters: rosterUrls, mods, state });
+
+// 5. Deploy, then record the snapshot for the site.
+if (deploy) {
+  log(`deploying ${site} to Cloudflare Pages project ${project}`);
+  execFileSync("npx", ["--yes", "wrangler@4", "pages", "deploy", site, "--project-name", project, "--branch", "main", "--commit-dirty=true"], { stdio: "inherit", shell: process.platform === "win32" });
+}
 const counts = Object.fromEntries(Object.entries(rosters).map(([mode, r]) => [mode, Object.keys((r as { stock: object }).stock).length]));
 writeFileSync(join(web, "data", "studio-snapshot.json"), `${JSON.stringify({ index, publishedAt, files: unique.size, units: counts }, null, 2)}\n`);
-log(`published ${index}`);
+log(deploy ? `published ${index}` : `site written to ${site}; deploy it, then push data/studio-snapshot.json`);
