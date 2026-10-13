@@ -58,7 +58,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>Public downloads</h2>
-        <p>Browsing the site and downloading public game builds do not require an RTS AI account. Playing in the browser, the Map Workshop, the Faction viewer and the Earth Mission Studio require a free account, as do interactive website AI features. That website account does not enable a hosted in-game model service.</p>
+        <p>Browsing the site and downloading public game builds do not require an RTS AI account. Playing in the browser, the Map Workshop, the Faction Studio, the Faction viewer and the Earth Mission Studio require a free account, as do interactive website AI features. That website account does not enable a hosted in-game model service.</p>
       </section>
     </main><SiteFooter /></>
   );
