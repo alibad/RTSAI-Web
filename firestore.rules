@@ -34,7 +34,7 @@ service cloud.firestore {
     }
 
     // ---- Matchmaking for direct multiplayer (RTSAI-WebGame web/src/net/matchmaker.ts). Only introductions:
-    // a guest's WebRTC offer and the host's answer. Expired documents are removed by TTL on `expires`.
+    // a guest's WebRTC offer and the host's answer. Clients delete them once used (TTL needs a paid plan).
     match /p2pMatches/{code} {
       function host() { return get(/databases/$(database)/documents/p2pMatches/$(code)).data.host; }
       allow get: if member();

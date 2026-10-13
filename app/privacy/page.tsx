@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>Multiplayer</h2>
-        <p>To start a direct match, your browser briefly stores a connection description, including the network addresses it can be reached on, in our Firebase database. Only the match host can read it. The match is removed when it starts or is closed, and leftover connection descriptions expire within a day. During a match, your browser connects directly to the host's, so players in the same match can see each other's network addresses.</p>
+        <p>To start a direct match, your browser briefly stores a connection description, including the network addresses it can be reached on, in our Firebase database. Only the match host can read it. It is deleted as soon as you are seated in the lobby or turned away, and the match itself is deleted when it starts or is closed. During a match, your browser connects directly to the host's, so players in the same match can see each other's network addresses.</p>
       </section>
       <section>
         <h2>Product feedback</h2>
