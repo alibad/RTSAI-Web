@@ -27,6 +27,7 @@ const documents = new Map<string, Record<string, Value>>();
 const tokenRequests: string[] = [];
 const authorizations = new Set<string>();
 const originalFetch = globalThis.fetch;
+const mailCalls: string[] = [];
 let mock: Awaited<ReturnType<typeof startMockAnthropic>>;
 
 function json(status: number, value: unknown) {
@@ -38,6 +39,11 @@ async function fakeFetch(input: string | URL | Request, init?: RequestInit) {
   if (mock && url.startsWith(mock.url)) return originalFetch(input, init);
   if (url.startsWith("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=")) {
     return json(200, { idToken: "fake-mail-id-token", expiresIn: "3600" });
+  }
+  if (url === "https://europe-west1-demo-rtsai.cloudfunctions.net/sendMail") {
+    // The sendMail function (functions/index.js) sends the queued document; here it only acknowledges.
+    mailCalls.push(JSON.parse(String(init?.body)).id);
+    return json(200, { state: "SUCCESS" });
   }
   if (url === "https://oauth2.googleapis.com/token") {
     const body = new URLSearchParams(String(init?.body));
@@ -155,7 +161,8 @@ test("reservations increment atomically, roll back over the limit and settle to 
 
 const documentsRoot = "projects/demo-rtsai/databases/(default)/documents";
 const mailDocuments = () => [...documents.entries()].filter(([name]) => name.startsWith(`${documentsRoot}/mail/`)).map(([, fields]) => fields);
-type MailFields = { to: { arrayValue: { values: Value[] } }; message: { mapValue: { fields: Record<string, Value> } } };
+const mailDocumentIds = () => [...documents.keys()].filter((name) => name.startsWith(`${documentsRoot}/mail/`)).map((name) => name.split("/").pop());
+type MailFields ={ to: { arrayValue: { values: Value[] } }; message: { mapValue: { fields: Record<string, Value> } } };
 
 test("settlement reports today's global spend, and spend alerts are claimed once per day and threshold", async () => {
   const store = new FirestoreUsageStore();
@@ -208,6 +215,7 @@ test("a chat call that crosses 50% of the cap queues exactly one alert in the Fi
 
     assert.equal((await ask()).status, 200);
     assert.equal(mailDocuments().length, 1);
+    assert.deepEqual(mailCalls, [mailDocumentIds()[0]], "the queued alert is handed to sendMail");
     const mail = mailDocuments()[0] as unknown as MailFields;
     assert.deepEqual(mail.to.arrayValue.values, [{ stringValue: "ops@example.com" }]);
     assert.match(String(mail.message.mapValue.fields.subject.stringValue), /passed 50% of today's cap/);

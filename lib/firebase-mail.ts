@@ -1,11 +1,13 @@
 /**
  * Server-only mail writer for RTS AI's own Firebase project (rtsai-net).
  *
- * Each email is one document in the `mail` collection; our sendMail function on rtsai-net (functions/index.js, the
- * Trigger Email extension's contract) sends it over SMTP and writes its `delivery` state back. firestore.rules ("Outgoing
- * mail") only accepts the extension's exact shape, addressed to the team group, so the writer needs no secret: it
- * writes with the signed-in caller's verified ID token when the route has one, and otherwise (server jobs such as
- * hosted-AI spend alerts) as an anonymous user of the same project. No SMTP credential or service account lives here.
+ * Each email is one document in the `mail` collection, the log of every message; the writer then calls our sendMail
+ * function (functions/index.js, europe-west1) with its id, which sends it over SMTP and writes its `delivery` state
+ * back (the Trigger Email extension's contract). A Firestore trigger can't do it: the database is in me-central2, where
+ * Google offers no functions. firestore.rules ("Outgoing mail") only accepts the extension's exact shape, addressed to
+ * the team group, so the writer needs no secret: it writes and calls with the signed-in caller's verified ID token when
+ * the route has one, and otherwise (server jobs such as hosted-AI spend alerts) as an anonymous user of the project.
+ * No SMTP credential or service account lives here.
  */
 
 const projectId = () => process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "";
@@ -19,6 +21,13 @@ function firestoreBase() {
 function identityBase() {
   const emulator = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   return emulator ? `http://${emulator}/identitytoolkit.googleapis.com` : "https://identitytoolkit.googleapis.com";
+}
+
+/** The sendMail function; tests point MAIL_FUNCTION_URL at the emulator's, or (on the emulators) leave mail queued. */
+function mailFunctionUrl() {
+  if (process.env.MAIL_FUNCTION_URL) return process.env.MAIL_FUNCTION_URL;
+  if (process.env.FIRESTORE_EMULATOR_HOST) return null;
+  return `https://europe-west1-${projectId()}.cloudfunctions.net/sendMail`;
 }
 
 export function mailConfigured() {
@@ -102,5 +111,15 @@ export async function sendFirebaseEmail(input: {
     throw new Error(`Firebase mail write failed (${response.status}): ${detail}`);
   }
   const result = await response.json() as { name?: string };
-  return result.name?.split("/").pop() ?? null;
+  const id = result.name?.split("/").pop() ?? null;
+  const url = mailFunctionUrl();
+  if (id && url) {
+    const sent = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!sent.ok) throw new Error(`Mail ${id} queued but not sent (${sent.status}): ${(await sent.text()).slice(0, 300)}`);
+  }
+  return id;
 }
