@@ -1,8 +1,8 @@
 /**
  * Server-only mail writer for RTS AI's own Firebase project (rtsai-net).
  *
- * Each email is one document in the `mail` collection; the Trigger Email extension (firebase/firestore-send-email,
- * installed on rtsai-net) delivers it over SMTP and writes its `delivery` state back. firestore.rules ("Outgoing
+ * Each email is one document in the `mail` collection; our sendMail function on rtsai-net (functions/index.js, the
+ * Trigger Email extension's contract) sends it over SMTP and writes its `delivery` state back. firestore.rules ("Outgoing
  * mail") only accepts the extension's exact shape, addressed to the team group, so the writer needs no secret: it
  * writes with the signed-in caller's verified ID token when the route has one, and otherwise (server jobs such as
  * hosted-AI spend alerts) as an anonymous user of the same project. No SMTP credential or service account lives here.

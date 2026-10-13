@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // Needs: firebase emulators:start --only auth,firestore --project demo-rtsai. Skipped when they aren't running.
-// The writer puts one document in the project's own `mail` collection, which the Trigger Email extension delivers.
+// The writer puts one document in the project's own `mail` collection, which the sendMail function (functions/) delivers.
 const up = await fetch("http://127.0.0.1:8085/").then(() => true, () => false);
 
 test("sendFirebaseEmail queues team mail in rtsai-net's own mail collection, through firestore.rules", { skip: !up && "Firestore emulator not running" }, async () => {

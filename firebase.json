@@ -1,9 +1,35 @@
 {
-  "firestore": { "rules": "firestore.rules" },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "emulators": {
-    "auth": { "port": 9099 },
-    "firestore": { "port": 8085 },
-    "ui": { "enabled": false },
-    "singleProjectMode": true
-  }
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8085
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true,
+    "functions": {
+      "port": 5001
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "mail",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log",
+        "*.test.js",
+        ".secret.local",
+        ".env.local"
+      ]
+    }
+  ]
 }

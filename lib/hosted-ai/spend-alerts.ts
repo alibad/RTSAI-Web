@@ -9,7 +9,7 @@ import type { UsageStore } from "./store";
  * When today's settled spend across every install crosses 50% and then 80% of
  * RTSAI_AI_GLOBAL_DAILY_CAP_USD, one email per threshold per UTC day is queued
  * through the Firebase mail path (rtsai-net's `mail` collection, delivered by the
- * Trigger Email extension) to the team group, the first MAIL_GROUP address.
+ * sendMail function, functions/) to the team group, the first MAIL_GROUP address.
  *
  * The usage store deduplicates across server instances (claimSpendAlert); a
  * small in-process memo keeps later calls on the same instance from touching

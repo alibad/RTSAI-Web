@@ -16,7 +16,7 @@ install tokens are issued:
 - `RTSAI_AI_FIREBASE_SERVICE_ACCOUNT` (sensitive)
 
 Spend alerts at 50% and 80% of the daily cap go through the project's own
-`mail` collection (Trigger Email extension on rtsai-net) to the first
+`mail` collection (the `sendMail` function on rtsai-net, `functions/`) to the first
 `MAIL_GROUP` address. They write anonymously, so Anonymous sign-in must be
 enabled on rtsai-net; feedback and event notices write as the signed-in player.
 

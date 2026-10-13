@@ -1,0 +1,21 @@
+{
+  "name": "rtsai-mail",
+  "private": true,
+  "description": "RTS AI's mail sender: Firestore mail/{id} documents, sent over SMTP (replaces the Trigger Email extension).",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0",
+    "nodemailer": "^10.1.0"
+  },
+  "devDependencies": {
+    "smtp-server": "^3.19.21"
+  }
+}

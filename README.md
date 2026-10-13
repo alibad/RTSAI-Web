@@ -84,9 +84,10 @@ Copy the server-only feedback variables from `.env.example` into the hosting
 environment:
 
 - Email goes through rtsai-net itself: each message is a document in its `mail`
-  collection, delivered by the Trigger Email extension installed on rtsai-net
-  (`firebase/firestore-send-email`). SMTP credentials live only in that
-  extension's secret. `firestore.rules` accepts mail to the team group only.
+  collection, sent over SMTP by our own function on rtsai-net (`functions/`,
+  `sendMail`, which replaced the Trigger Email extension: Firebase Extensions
+  shut down in March 2027). The SMTP password lives only in its Secret Manager
+  secret. `firestore.rules` accepts mail to the team group only.
 - `MAIL_GROUP` is that group (`rtsai@googlegroups.com`): feedback, event notices
   and spend alerts all go there, its searchable archive of every event.
 - `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and

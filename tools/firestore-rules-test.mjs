@@ -164,7 +164,7 @@ await expect("another player deletes it", false, () => call(b, "DELETE", `/maps/
 await expect("owner deletes the map", true, () => call(a, "DELETE", `/maps/${M}`));
 await expect("owner deletes its data", true, () => call(a, "DELETE", `/mapData/${M}`));
 
-// ---- outgoing mail (lib/firebase-mail.ts): the Trigger Email extension's exact shape, to the team group only
+// ---- outgoing mail (lib/firebase-mail.ts): sendMail's exact shape (the Trigger Email contract), to the team group only
 const mail = (to, message = {}) => ({ fields: { to: { arrayValue: { values: to.map(str) } }, message: { mapValue: { fields: { subject: str("[RTS AI] New player"), html: str("<p>Hi</p>"), text: str("Hi"), ...message } } } } });
 await expect("player's request mails the team group", true, () => call(a, "POST", "/mail", mail(["rtsai@googlegroups.com"])));
 await expect("server job mails the team group anonymously", true, () => call(anon, "POST", "/mail", mail(["rtsai@googlegroups.com"])));

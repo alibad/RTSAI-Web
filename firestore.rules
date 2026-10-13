@@ -104,7 +104,7 @@ service cloud.firestore {
       allow delete: if member() && resource.data.owner == request.auth.uid;
     }
 
-    // ---- Outgoing mail (lib/firebase-mail.ts): the Trigger Email extension (firebase/firestore-send-email) delivers
+    // ---- Outgoing mail (lib/firebase-mail.ts): our sendMail function (functions/index.js, the Trigger Email contract) delivers
     // each new mail/{id} over SMTP and writes its delivery state back. Create-only, in the extension's exact shape
     // and sizes, and only to the team group: a signed-in or anonymous caller can never mail anyone else through it.
     match /mail/{mailId} {
