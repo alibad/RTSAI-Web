@@ -47,7 +47,7 @@ export default async function FactionPage({ params, searchParams }: Props) {
         <h1>{name}</h1>
         {faction ? <p className="faction-hero-tagline">{faction.tagline}</p> : <p className="faction-hero-tagline">The original {side === "Allies" ? "Allied" : "Soviet"} arsenal, as the game builds it.</p>}
         {roster && <CountChips counts={rosterCounts(roster)} />}
-        {faction && VIEWER_READY && mode === "ra2" && <Link className="primary-action" href={viewerHref(faction.id)}>Open in the Faction viewer →</Link>}
+        {VIEWER_READY && mode === "ra2" && roster && <Link className="primary-action" href={viewerHref(faction?.id ?? id)}>Open in the Faction viewer →</Link>}
       </div>
       {faction && <div className="faction-hero-stage"><LineupImage factionId={faction.id} alt={`${faction.name} lineup: infantry, armor, aircraft, ships and defenses`} sizes="(min-width: 1100px) 760px, 100vw" priority /></div>}
     </header>

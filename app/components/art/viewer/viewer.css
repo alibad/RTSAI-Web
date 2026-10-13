@@ -26,6 +26,10 @@
 .viewer-factions a { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .viewer-factions a:hover { background: var(--raised); color: var(--paper); }
 .viewer-factions a[aria-current="page"] { background: var(--raised); color: var(--paper); box-shadow: inset 0 -2px 0 var(--accent); }
+.viewer-factions-sep { flex: none; align-self: stretch; width: 1px; margin: 4px 6px; background: var(--line); }
+/* The original countries take their flag only (the name on hover and on the current one), so all sixteen fit. */
+.viewer-factions a.is-original { padding: 6px 7px; }
+.viewer-factions a.is-original:not([aria-current="page"]) span { display: none; }
 .viewer-title { flex: none; color: var(--faint); font: 560 11px/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; }
 
 .viewer-body { display: grid; grid-template-columns: 268px minmax(0, 1fr) 340px; min-height: 0; }
@@ -47,6 +51,7 @@
 .viewer-rail li img { flex: none; width: 60px; height: 48px; image-rendering: pixelated; border-radius: 3px; }
 .viewer-rail li b { font-size: 13px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .viewer-nocameo { flex: none; width: 60px; height: 48px; border-radius: 3px; background: var(--raised); }
+.viewer-rail-note { margin: 4px 10px 0; color: var(--faint); font-size: 11px; line-height: 1.45; }
 .viewer-shared p { margin: 0 10px 6px; color: var(--faint); font-size: 11px; line-height: 1.45; }
 .viewer-shared li a { padding: 6px 10px; }
 .viewer-shared li b { color: var(--muted); font-weight: 600; }
@@ -99,6 +104,8 @@
 .viewer-hero-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
 .viewer-hero-pick a { display: block; border-radius: 3px; box-shadow: 0 0 0 1px var(--line); }
 .viewer-hero-pick a:hover { box-shadow: 0 0 0 2px var(--accent); }
+.viewer-hero-pick a > span { display: grid; place-items: center; min-height: 48px; padding: 0 10px; color: var(--muted); font-size: 12px; }
+.viewer-hero-flag { width: min(360px, 70%); height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); }
 .viewer-hero-pick img { display: block; width: 60px; height: 48px; image-rendering: pixelated; border-radius: 3px; }
 
 /* Info: who the unit is, how it fights, what to watch for. */

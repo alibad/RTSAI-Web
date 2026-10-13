@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { ArrowLeft, BookOpen, Crosshair, Eye, Footprints, Pause, Play, Quote, ShieldAlert, Swords, Users, Volume2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ADMIN_BUILD } from "../../../../lib/admin";
 import type { ViewerCampaign, ViewerFaction, ViewerFactionLink, ViewerUnit } from "../../../../lib/viewer";
 import { FrameStore, type StageItem } from "../review/frames";
@@ -23,8 +23,8 @@ const hrefFor = (faction: string, unit: string | null) => (unit ? `/viewer/${fac
 /**
  * The public Faction viewer: a faction's units as the game draws them (turn them, play their actions), their stats
  * and doctrine, and the faction's campaigns. Read-only and player-facing: no candidates, checks, decisions or
- * provenance. Shared original units are drawn with Westwood's art from the Faction Studio's published snapshot (with
- * EA's notice). The admin build adds a tucked-away History per unit.
+ * provenance. Shared original units, and the nine original countries' whole rosters, are drawn with Westwood's art from
+ * the Faction Studio's published snapshot (with EA's notice). The admin build adds a tucked-away History per unit.
  */
 export function FactionViewer({ faction, factions, initial, marks, lineup, artFactionId }: {
   faction: ViewerFaction;
@@ -80,7 +80,9 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   }, []);
   useEffect(() => { document.title = `${unit ? `${unit.name} · ` : ""}${faction.name} · Faction viewer | RTS AI`; }, [unit, faction.name]);
 
-  const project = units.filter(u => u.art), shared = units.filter(u => !u.art);
+  // An original country lists its whole roster by build tab; a modern faction its own units, then the shared ones.
+  const project = faction.original ? units : units.filter(u => u.art), shared = faction.original ? [] : units.filter(u => !u.art);
+  const cameoOf = (u: ViewerUnit) => u.cameo ?? original[u.id.toLowerCase()]?.spec.cameo ?? null;
   const identity = faction.narrative?.identity ?? null;
   const link = (u: ViewerUnit) => (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); select(u.id); };
 
@@ -89,7 +91,10 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
       <header className="viewer-top">
         <a className="viewer-back" href={`/factions/${faction.id}?mode=ra2`}><ArrowLeft size={15} aria-hidden="true" />{faction.name}</a>
         <nav className="viewer-factions" aria-label="Factions">
-          {factions.map(f => <a key={f.id} href={hrefFor(f.id, null)} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>)}
+          {factions.map((f, i) => <Fragment key={f.id}>
+            {f.original && !factions[i - 1]?.original && <span className="viewer-factions-sep" title="The original countries" aria-hidden="true" />}
+            <a href={hrefFor(f.id, null)} className={f.original ? "is-original" : undefined} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>
+          </Fragment>)}
         </nav>
         <SoundControls />
         <span className="viewer-title">Faction viewer</span>
@@ -104,10 +109,11 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
             if (!list.length) return null;
             return <section key={category}><h2>{label}<small>{list.length}</small></h2><ul>
               {list.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}>
-                {u.cameo ? <img src={u.cameo} width={60} height={48} alt="" loading="lazy" decoding="async" /> : <i className="viewer-nocameo" />}
+                {cameoOf(u) ? <img src={cameoOf(u)!} width={60} height={48} alt="" loading="lazy" decoding="async" /> : <i className="viewer-nocameo" />}
                 <span><b>{u.name}</b><small>{u.role}</small></span></a></li>)}
             </ul></section>;
           })}
+          {faction.original && <p className="viewer-rail-note">Westwood’s original art. {EA_NOTICE}</p>}
           {shared.length > 0 && <section className="viewer-shared"><h2>Shared units<small>{shared.length}</small></h2>
             <p>{faction.classicLabel} units the faction also builds, in Westwood’s original art. {EA_NOTICE}</p>
             <ul>{shared.map(u => { const cameo = original[u.id.toLowerCase()]?.spec.cameo; return <li key={u.id}><a href={hrefFor(faction.id, u.id)} aria-current={u.id === selected ? "page" : undefined} onClick={link(u)}>
@@ -137,14 +143,14 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
                 {identity?.motto && <blockquote className="viewer-motto">“{identity.motto}”</blockquote>}
                 {identity && identity.keywords.length > 0 && <ul className="viewer-keywords" aria-label="In three words">{identity.keywords.map(k => <li key={k}>{k}</li>)}</ul>}
                 <p>{faction.story}</p>
-                <div className="viewer-hero-pick">{project.slice(0, 12).map(u => <a key={u.id} href={hrefFor(faction.id, u.id)} onClick={link(u)} title={u.name}>{u.cameo && <img src={u.cameo} width={60} height={48} alt={u.name} loading="lazy" decoding="async" />}</a>)}</div>
+                <div className="viewer-hero-pick">{(faction.original ? units.filter(u => faction.unique.includes(u.id)) : project.slice(0, 12)).map(u => <a key={u.id} href={hrefFor(faction.id, u.id)} onClick={link(u)} title={u.name}>{cameoOf(u) ? <img src={cameoOf(u)!} width={60} height={48} alt={u.name} loading="lazy" decoding="async" /> : <span>{u.name}</span>}</a>)}</div>
               </div>
             </div>
           )}
         </main>
 
         <aside className="viewer-info" aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
-          {infoUnit ? <UnitInfo unit={infoUnit} classicLabel={faction.classicLabel} /> : <FactionInfo faction={faction} />}
+          {infoUnit ? <UnitInfo unit={infoUnit} classicLabel={faction.classicLabel} /> : faction.original ? <CountryInfo faction={faction} link={link} /> : <FactionInfo faction={faction} />}
           {ADMIN_BUILD && infoUnit?.art && <ViewerAdmin key={infoUnit.id} unit={infoUnit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
         </aside>
       </div>
@@ -206,6 +212,20 @@ function UnitInfo({ unit, classicLabel }: { unit: ViewerUnit; classicLabel: stri
       <p className="viewer-note">Synthetic voices and sounds made for this project ({[...new Set(unit.sounds.flatMap(g => g.clips.map(c => c.license.split(" ")[0])))].join(", ")}). {classicLabel} sounds are not published.</p>
     </section>}
     {unit.dossier && <a className="viewer-link" href={unit.dossier}>Read the full dossier →</a>}
+  </>;
+}
+
+/** An original country: what only it builds, where the rest of its roster comes from, and EA's notice. */
+function CountryInfo({ faction, link }: { faction: ViewerFaction; link: (u: ViewerUnit) => (e: React.MouseEvent) => void }) {
+  const own = faction.units.filter(u => faction.unique.includes(u.id));
+  const side = faction.side === "Allies" ? "Allied" : "Soviet";
+  return <>
+    <header className="viewer-info-head"><span className="eyebrow">{faction.side} · Original country</span><h2>{faction.name}</h2></header>
+    <p className="viewer-lead">One of Red Alert 2’s nine countries, playable in the browser game alongside the modern factions. It builds the {side} roster{own.length ? ", plus its own:" : "."}</p>
+    {own.length > 0 && <section className="viewer-block"><h3><Swords size={15} aria-hidden="true" />Only {faction.name}</h3><ul className="viewer-weapons">
+      {own.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} onClick={link(u)}><b>{u.name}</b></a>{u.description && <span>{u.description}</span>}</li>)}
+    </ul></section>}
+    <p className="viewer-note">{faction.units.length} units and buildings, in Westwood’s original art. {faction.classicLabel} sounds are not published. EA has not endorsed and does not support this product.</p>
   </>;
 }
 

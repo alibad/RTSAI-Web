@@ -73,11 +73,30 @@ test("a unit in the viewer: stats, weapons and doctrine; original units are text
   assert.match(index.headers.get("location") ?? "", /\/viewer\/china$/);
 });
 
+test("the Faction viewer covers the nine original countries, their whole rosters in Westwood's art", async () => {
+  const html = (await (await render("/viewer/china")).text()).replace(/&#x27;|&#39;/g, "'");
+  for (const id of ["america", "germany", "england", "france", "korea", "cuba", "libya", "iraq", "russia"]) assert.match(html, new RegExp(`href="/viewer/${id}"`), `the faction rail offers ${id}`);
+  for (const [id, own] of [["america", "American Airfield"], ["korea", "Strike Fighter"], ["russia", "Arc Tank"], ["iraq", "Area Denial Trooper"]]) {
+    const response = await render(`/viewer/${id}`);
+    assert.equal(response.status, 200, id);
+    const page = (await response.text()).replace(/&#x27;|&#39;/g, "'").replace(/<!-- -->/g, "");
+    assert.match(page, /Original country/, `${id} is introduced as an original country`);
+    assert.match(page, new RegExp(own), `${id} lists what only it builds`);
+    assert.match(page, /EA has not endorsed and does not support this product/, `${id} carries EA's notice`);
+    assert.doesNotMatch(page, /Shared units/, `${id} lists its whole roster by build tab, not as shared units`);
+    if (!adminBuild) assert.doesNotMatch(page, adminOnly);
+  }
+  const unit = await render("/viewer/russia/ttnk");
+  assert.equal(unit.status, 200);
+  assert.match(await unit.text(), /Arc Tank/);
+  assert.match(await (await render("/factions/russia?mode=ra2")).text(), /href="\/viewer\/russia"/, "an original country's page opens it in the viewer");
+});
+
 test("faction and unit pages link into the viewer, and it is in the sitemap", async () => {
   assert.match(await (await render("/factions/china?mode=ra2")).text(), /href="\/viewer\/china/);
   assert.match(await (await render("/units/cnqilin?mode=ra2")).text(), /href="\/viewer\/china\/r2qilin"/);
   const sitemap = await (await render("/sitemap.xml")).text();
-  for (const id of ["china", "saudi-arabia", "hezbollah"]) assert.match(sitemap, new RegExp(`/viewer/${id}<`));
+  for (const id of ["china", "saudi-arabia", "hezbollah", "america", "russia"]) assert.match(sitemap, new RegExp(`/viewer/${id}<`));
 });
 
 test("public builds carry no admin viewer code", { skip: adminBuild }, () => {

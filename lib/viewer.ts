@@ -3,8 +3,9 @@
  *
  * Players see what the game ships: the project's committed art (data/art-lab.json and public/art-lab, synced from the
  * mod by `npm run sync:art`), the approved build-menu cameos (public/faction-art), rules-derived stats, the faction's
- * doctrine, its narrative (identity and rivals' views, never the game-only flavour lines) and its campaigns. Nothing here reads the art workspace, candidates, checks, decisions or provenance, and
- * original EA units carry text only: their art is never published.
+ * doctrine, its narrative (identity and rivals' views, never the game-only flavour lines) and its campaigns. Nothing here reads the art workspace, candidates, checks, decisions or provenance.
+ * Original EA units, and Red Alert 2's nine countries, carry text only here: the browser draws them with Westwood's art
+ * from the Faction Studio's published snapshot (lib/original-art.ts), never bundled with the site.
  */
 import { artFactionByCatalogId, artLab, renderSpec, spriteWithUrls } from "./art-lab/manifest";
 import type { RenderSpec } from "./art-lab/spec";
@@ -14,7 +15,7 @@ import { factionNarrative, type FactionIdentity } from "./faction-narrative";
 import { roleLabel } from "./art-lab/labels";
 import { unitArt, unitStats, flagSrc, type UnitStat } from "./faction-art";
 import { unitSounds, type PublicSoundGroup } from "./faction-audio";
-import { CLASSIC_ADDON, factionById, rosterActors, rosterFactionById, units as catalogUnits, unitLabel } from "./game-content";
+import { CLASSIC_ADDON, dossierForRoster, factionById, rosterActors, rosterFactionById, rosterFactions, units as catalogUnits, unitLabel, type RosterFaction } from "./game-content";
 
 export type ViewerWeapon = { projectile: string; range: number | null; reloadSeconds: number | null; damage: number | null; targets: string[] };
 export type ViewerUnit = {
@@ -54,8 +55,12 @@ export type ViewerFaction = {
   narrative: ViewerNarrative | null;
   /** The public name for the original units ("Classic add-on"), passed as data so the client never bundles the catalog. */
   classicLabel: string;
+  /** One of Red Alert 2's nine countries: every unit is an original one, drawn with Westwood's art. */
+  original: boolean;
+  /** The units only this country builds among its side's original countries (original countries only). */
+  unique: string[];
 };
-export type ViewerFactionLink = { id: string; name: string; accent: string; flag: string | null };
+export type ViewerFactionLink = { id: string; name: string; accent: string; flag: string | null; original?: boolean };
 /** A rival's in-world view of this faction: propaganda or a grievance, voiced by the rival, never a factual claim. */
 export type ViewerRivalView = { rival: ViewerFactionLink; kind: "propaganda" | "grievance" | null; text: string[] };
 /** The faction in its own voice and through its rivals' eyes (lib/faction-narrative.ts); framing is the in-world disclaimer. */
@@ -64,36 +69,54 @@ export type ViewerNarrative = { identity: FactionIdentity | null; rivalViews: Vi
 const ORDER = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
 
 /** The modern factions the viewer covers, by catalog id (china, …, saudi-arabia), in catalog order. */
-export function viewerFactionIds(): string[] {
+function modernIds(): string[] {
   return artLab.factions.flatMap(f => (f.catalogId && factionById(f.catalogId) ? [f.catalogId] : []));
+}
+/** Red Alert 2's nine countries (america, …, russia), Allies first, as the Factions page lists them. */
+function originalRosters(): RosterFaction[] {
+  const all = rosterFactions("ra2").filter(f => !dossierForRoster(f));
+  return ["Allies", "Soviet"].flatMap(side => all.filter(f => f.side.startsWith(side)));
+}
+const originalAccent = (f: RosterFaction) => (f.side === "Allies" ? "#85afcc" : "#ce8779");
+
+/** Every faction the viewer covers: the modern factions, then the original countries. */
+export function viewerFactionIds(): string[] {
+  return [...modernIds(), ...originalRosters().map(f => f.id)];
 }
 
 export function viewerFactionLinks(): ViewerFactionLink[] {
-  return viewerFactionIds().map(id => { const f = factionById(id)!; return { id, name: f.name, accent: f.accent, flag: flagSrc(id) }; });
+  return [
+    ...modernIds().map(id => { const f = factionById(id)!; return { id, name: f.name, accent: f.accent, flag: flagSrc(id) }; }),
+    ...originalRosters().map(f => ({ id: f.id, name: f.name, accent: originalAccent(f), flag: flagSrc(f.id), original: true })),
+  ];
+}
+
+type RosterActor = ReturnType<typeof rosterActors>[number];
+function viewerUnit(actor: RosterActor, dossier: (typeof catalogUnits)[number] | undefined, own: (typeof artLab.actors)[string] | undefined, role = ""): ViewerUnit {
+  const id = actor.id.toLowerCase();
+  const label = dossier ? unitLabel(dossier, "ra2") : null;
+  const b = actor.behavior;
+  return {
+    id, name: label?.name ?? actor.name, role: label?.role ?? (own ? roleLabel(own) : role), category: actor.category, cost: actor.cost ?? null,
+    description: label?.description ?? b.description?.split("\n")[0] ?? "",
+    strengths: dossier?.strengths ?? null, counterplay: dossier?.counterplay ?? null, dossier: dossier ? `/units/${dossier.id}?mode=ra2` : null,
+    stats: unitStats(actor),
+    weapons: b.weapons.map(w => ({ projectile: w.projectile ?? "Weapon", range: w.range ?? null, reloadSeconds: w.reload ? Math.round((w.reload * 40) / 100) / 10 : null, damage: w.damage ?? null, targets: w.targets ?? [] })),
+    cameo: own ? unitArt(id)?.cameo.src ?? null : null,
+    art: own ? { spec: renderSpec(own), sprite: spriteWithUrls(own) } : null,
+    sounds: own ? unitSounds(id) : [],
+  };
 }
 
 export function viewerFaction(catalogId: string): ViewerFaction | null {
   const faction = factionById(catalogId), art = artFactionByCatalogId(catalogId), roster = rosterFactionById(catalogId, "ra2");
-  if (!faction || !art || !roster) return null;
+  if (!faction || !art || !roster) {
+    const country = originalRosters().find(f => f.id === catalogId);
+    return country ? originalFaction(country) : null;
+  }
   const modern = new Set(art.actors);
   const dossiers = new Map(catalogUnits.filter(u => u.factionId === catalogId && u.variants.ra2).map(u => [u.variants.ra2!.actorId.toLowerCase(), u]));
-  const list: ViewerUnit[] = rosterActors(roster).map(actor => {
-    const id = actor.id.toLowerCase();
-    const dossier = dossiers.get(id);
-    const label = dossier ? unitLabel(dossier, "ra2") : null;
-    const own = modern.has(id) ? artLab.actors[id] : undefined;
-    const b = actor.behavior;
-    return {
-      id, name: label?.name ?? actor.name, role: label?.role ?? (own ? roleLabel(own) : ""), category: actor.category, cost: actor.cost ?? null,
-      description: label?.description ?? b.description?.split("\n")[0] ?? "",
-      strengths: dossier?.strengths ?? null, counterplay: dossier?.counterplay ?? null, dossier: dossier ? `/units/${dossier.id}?mode=ra2` : null,
-      stats: unitStats(actor),
-      weapons: b.weapons.map(w => ({ projectile: w.projectile ?? "Weapon", range: w.range ?? null, reloadSeconds: w.reload ? Math.round((w.reload * 40) / 100) / 10 : null, damage: w.damage ?? null, targets: w.targets ?? [] })),
-      cameo: own ? unitArt(id)?.cameo.src ?? null : null,
-      art: own ? { spec: renderSpec(own), sprite: spriteWithUrls(own) } : null,
-      sounds: own ? unitSounds(id) : [],
-    };
-  });
+  const list = rosterActors(roster).map(actor => { const id = actor.id.toLowerCase(); return viewerUnit(actor, dossiers.get(id), modern.has(id) ? artLab.actors[id] : undefined); });
   // Project units first in build-tab order; the shared original units after them.
   const rank = (u: ViewerUnit) => (u.art ? 0 : 1) * 100 + ORDER.indexOf(u.category);
   const order = (u: ViewerUnit) => artLab.actors[u.id]?.buildPaletteOrder ?? 9999;
@@ -106,6 +129,28 @@ export function viewerFaction(catalogId: string): ViewerFaction | null {
     otherCampaigns: allCampaigns("ra2").filter(c => !campaignsForFaction(catalogId, "ra2").includes(c)).map(slimCampaign),
     narrative: viewerNarrative(catalogId),
     classicLabel: CLASSIC_ADDON,
+    original: false,
+    unique: [],
+  };
+}
+
+/** An original country: its whole roster (Westwood's units), its own units marked, and no doctrine or campaigns. */
+function originalFaction(country: RosterFaction): ViewerFaction {
+  const peers = originalRosters().filter(f => f.side === country.side && f.id !== country.id);
+  const actors = rosterActors(country);
+  const unique = new Set(actors.filter(a => !peers.some(p => p.actors.includes(a.key))).map(a => a.id.toLowerCase()));
+  const list = actors.map(actor => viewerUnit(actor, undefined, undefined, unique.has(actor.id.toLowerCase()) ? `${country.name} only` : ""));
+  // Build-tab order with the country's own units leading, then the cheaper units first (as the build menus list them).
+  list.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category) || Number(unique.has(b.id)) - Number(unique.has(a.id)) || (a.cost ?? 0) - (b.cost ?? 0) || a.name.localeCompare(b.name));
+  const allied = country.side === "Allies";
+  const own = list.filter(u => unique.has(u.id)).map(u => u.name);
+  return {
+    id: country.id, name: country.name, title: `Original country · ${country.side}`,
+    tagline: `The original ${allied ? "Allied" : "Soviet"} arsenal, as the game builds it.`,
+    story: `${country.name} builds the ${allied ? "Allied" : "Soviet"} roster${own.length ? `, plus what only ${country.name} fields: ${own.join(", ")}` : ""}. Playable in the browser game alongside the modern factions, in Westwood’s original art.`,
+    playstyle: "", strengths: "", counterplay: "", accent: originalAccent(country), flag: flagSrc(country.id), side: country.side,
+    units: list, campaigns: [], otherCampaigns: [], narrative: null, classicLabel: CLASSIC_ADDON,
+    original: true, unique: [...unique],
   };
 }
 

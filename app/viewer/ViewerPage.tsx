@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "../components/SiteChrome";
 import { FactionFlag, LineupImage } from "../components/FactionVisuals";
+import { flagSrc } from "../../lib/faction-art";
 import { FactionViewer } from "../components/art/viewer/FactionViewer";
 import { artFactionByCatalogId } from "../../lib/art-lab/manifest";
 import { viewerFaction, viewerFactionLinks } from "../../lib/viewer";
@@ -26,7 +27,11 @@ export function ViewerPage({ factionId, actorId }: { factionId: string; actorId:
     <SiteHeader />
     <main id="main-content" className="viewer-page">
       <FactionViewer faction={faction} factions={factions} initial={actorId} marks={marks} artFactionId={artFactionByCatalogId(factionId)?.id ?? factionId}
-        lineup={<LineupImage factionId={faction.id} alt={`The ${faction.name} lineup`} sizes="(min-width: 1200px) 760px, 92vw" priority />} />
+        lineup={faction.original
+          // An original country has no lineup render: its flag leads (a static, pre-sized SVG; next/image adds nothing).
+          // eslint-disable-next-line @next/next/no-img-element
+          ? flagSrc(faction.id) && <img className="viewer-hero-flag" src={flagSrc(faction.id)!} width={640} height={480} alt={`Flag of ${faction.name}`} decoding="async" />
+          : <LineupImage factionId={faction.id} alt={`The ${faction.name} lineup`} sizes="(min-width: 1200px) 760px, 92vw" priority />} />
     </main>
   </>;
 }
