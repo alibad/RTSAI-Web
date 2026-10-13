@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// rtsai-net Firestore. Browsers (signed in, never anonymous) may only touch the paths below. Everything else,
+// including the hosted AI's aiInstalls / aiUsage / aiSpend documents, stays server-only (service account).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function member() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function soon(t) {
+      return t is timestamp && t > request.time && t < request.time + duration.value(2, 'h');
+    }
+
+    // ---- Usage counters (lib/player-stats.ts): exactly one counter goes up by exactly 1 per write.
+    function changed() {
+      return resource == null ? request.resource.data.keys().toSet() : request.resource.data.diff(resource.data).affectedKeys();
+    }
+    function up(f) {
+      return !changed().hasAny([f]) || request.resource.data.get(f, 0) == (resource == null ? 0 : resource.data.get(f, 0)) + 1;
+    }
+    match /players/{uid} {
+      allow read: if member() && request.auth.uid == uid;
+      allow create, update: if member() && request.auth.uid == uid
+        && changed().hasOnly(['joined', 'matches', 'multiplayer', 'aiAssists', 'errors', 'lastSeen'])
+        && changed().difference(['lastSeen'].toSet()).size() == 1
+        && up('joined') && up('matches') && up('multiplayer') && up('aiAssists') && up('errors')
+        && request.resource.data.lastSeen == request.time;
+    }
+    match /stats/global {
+      allow read: if member();
+      allow create, update: if member()
+        && changed().hasOnly(['players', 'matches', 'multiplayer', 'aiAssists']) && changed().size() == 1
+        && up('players') && up('matches') && up('multiplayer') && up('aiAssists');
+    }
+
+    // ---- Matchmaking for direct multiplayer (RTSAI-WebGame web/src/net/matchmaker.ts). Only introductions:
+    // a guest's WebRTC offer and the host's answer. Expired documents are removed by TTL on `expires`.
+    match /p2pMatches/{code} {
+      function host() { return get(/databases/$(database)/documents/p2pMatches/$(code)).data.host; }
+      allow get: if member();
+      allow list, update: if false;
+      allow create: if member() && code.matches('^[A-Z2-9]{6}$')
+        && request.resource.data.keys().hasOnly(['host', 'version', 'expires'])
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.version is string && request.resource.data.version.size() <= 300
+        && soon(request.resource.data.expires);
+      allow delete: if member() && resource.data.host == request.auth.uid;
+
+      match /joins/{joinId} {
+        allow create: if member() && exists(/databases/$(database)/documents/p2pMatches/$(code))
+          && request.resource.data.keys().hasOnly(['guest', 'offer', 'expires'])
+          && request.resource.data.guest == request.auth.uid
+          && request.resource.data.offer is string && request.resource.data.offer.size() <= 24000
+          && soon(request.resource.data.expires);
+        allow get: if member() && (resource.data.guest == request.auth.uid || host() == request.auth.uid);
+        allow list: if member() && host() == request.auth.uid;
+        allow update: if member() && host() == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answer'])
+          && request.resource.data.answer is string && request.resource.data.answer.size() <= 24000;
+        allow delete: if member() && (resource.data.guest == request.auth.uid || host() == request.auth.uid);
+      }
+    }
+  }
+}

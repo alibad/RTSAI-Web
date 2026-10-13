@@ -13,6 +13,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { firebaseIsConfigured, getFirebaseAuth, trackAnalyticsEvent } from "../../lib/firebase-client";
+import { track } from "../../lib/track";
 
 function friendlyAuthError(cause: unknown) {
   const code = typeof cause === "object" && cause && "code" in cause ? String(cause.code) : "";
@@ -62,10 +63,10 @@ export function AuthDialog({ reason, onClose }: { reason: string; onClose: () =>
         const displayName = name.trim();
         if (displayName) await updateProfile(credential.user, { displayName });
         void sendEmailVerification(credential.user).catch(() => undefined);
-        await trackAnalyticsEvent("sign_up", { method: "password" });
+        await track("sign_up", { method: "password" });
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password);
-        await trackAnalyticsEvent("login", { method: "password" });
+        void track("login", { method: "password" });
       }
       onClose();
     } catch (cause) {
@@ -90,7 +91,7 @@ export function AuthDialog({ reason, onClose }: { reason: string; onClose: () =>
       provider.setCustomParameters({ prompt: "select_account" });
       const credential = await signInWithPopup(auth, provider);
       const isNewUser = getAdditionalUserInfo(credential)?.isNewUser ?? mode === "signup";
-      await trackAnalyticsEvent(isNewUser ? "sign_up" : "login", { method: "google" });
+      await track(isNewUser ? "sign_up" : "login", { method: "google" });
       onClose();
     } catch (cause) {
       setError(friendlyAuthError(cause));
@@ -126,7 +127,7 @@ export function AuthDialog({ reason, onClose }: { reason: string; onClose: () =>
           <span className="auth-emblem"><LockKeyhole size={23} /></span>
           <span className="eyebrow">Commander account</span>
           <h2 id="auth-title">{mode === "signup" ? "Create your free profile." : "Welcome back, Commander."}</h2>
-          <p>{reason}. Explore and download publicly; an account is required only when you ask RTS AI to do work for you.</p>
+          <p>{reason}. One free account opens the browser game, multiplayer, the Workshop, the Faction viewer and Earth Studio. Downloads stay public.</p>
         </div>
 
         <div className="auth-tabs" role="tablist" aria-label="Account action">

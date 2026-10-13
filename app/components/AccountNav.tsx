@@ -32,7 +32,7 @@ export function AccountNav() {
   const { user, loading, openAuth, signOutUser } = useAuth();
 
   if (loading) return <span className="nav-account is-loading">Account</span>;
-  if (!user) return <button type="button" className="nav-account" onClick={() => openAuth("Sign in to use AI mission generation and companion tools")}>Sign in</button>;
+  if (!user) return <button type="button" className="nav-account" onClick={() => openAuth("Sign in to play and build with RTS AI")}>Sign in</button>;
 
   const displayName = user.displayName?.trim() || user.email?.split("@")[0] || "Commander";
   const firstName = displayName.split(/\s+/)[0];

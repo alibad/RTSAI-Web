@@ -35,8 +35,17 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>Usage analytics</h2>
-        <p>Website events such as play-link and download-link clicks can be associated with your pseudonymous Firebase user ID. A click does not establish a completed download, successful game start or connected peer. A bounded game-start adapter is prepared for a future integrated browser build; current website listeners do not measure the separate play document.</p>
-        <p>We do not send your name, email, free-text mission prompt, search query, exact latitude and longitude, lobby IDs or peer IDs to Google Analytics. The prepared game event carries only its version, mode and transport.</p>
+        <p>Website and game events can be associated with your pseudonymous Firebase user ID in Google Analytics: sign-ups and sign-ins, play and download clicks, the game loading, matches starting and ending (mode, map, faction, result), multiplayer matches (number of players and AI), applied AI co-commander suggestions, and game errors.</p>
+        <p>We do not send your name, email, free-text mission prompt, search query, exact latitude and longitude, match codes or connection details to Google Analytics.</p>
+        <p>Our Firebase database keeps a few counts for your account (matches, multiplayer matches, applied suggestions and errors) and overall totals.</p>
+      </section>
+      <section>
+        <h2>Activity notices to the team</h2>
+        <p>A sign-up, your first match, each multiplayer match start, game errors and product milestones send a private email to the RTS AI team. It includes your account name and email, an approximate location derived from your network address (country, region and city), your browser and operating system, and the page you came from. These notices are never sent to Google Analytics.</p>
+      </section>
+      <section>
+        <h2>Multiplayer</h2>
+        <p>To start a direct match, your browser briefly stores a connection description, including the network addresses it can be reached on, in our Firebase database. Only the match host can read it. The match is removed when it starts or is closed, and leftover connection descriptions expire within a day. During a match, your browser connects directly to the host's, so players in the same match can see each other's network addresses.</p>
       </section>
       <section>
         <h2>Product feedback</h2>
@@ -49,7 +58,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>Public downloads</h2>
-        <p>Browsing the site and downloading public game builds do not require an RTS AI account. Interactive website AI features require sign-in. That website account does not enable a hosted in-game model service.</p>
+        <p>Browsing the site and downloading public game builds do not require an RTS AI account. Playing in the browser, the Map Workshop, the Faction viewer and the Earth Mission Studio require a free account, as do interactive website AI features. That website account does not enable a hosted in-game model service.</p>
       </section>
     </main><SiteFooter /></>
   );

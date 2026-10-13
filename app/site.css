@@ -153,3 +153,16 @@ footer > div { flex-wrap: wrap; gap: 12px 20px; }
   .planned-setup { width: calc(100% - 40px); }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .faction-tile { transition: none; } .hero .sweep, .hero .mini-map .unit, .route-hero .sweep, .route-hero .mini-map .unit { animation: none; } }
+
+/* Members-only gate (SignInGate). */
+.signin-gate { min-height: 70vh; display: grid; place-items: center; padding: 64px 20px; }
+.signin-gate-card { width: min(460px, 100%); display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: 36px 32px; border: 1px solid #2c3326; border-radius: 14px; background: linear-gradient(160deg, #1b2316, #0f130e); }
+.signin-gate-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #2a3322; color: var(--gold); }
+.signin-gate-card h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.2; margin: 0; }
+.signin-gate-card > p { color: #b8bfae; margin: 0; }
+.signin-gate-card ul { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 10px; color: #d7d5ca; font-size: 14px; }
+.signin-gate-card li { display: flex; align-items: center; gap: 10px; }
+.signin-gate-card li svg { color: var(--gold); flex: none; }
+.signin-gate-card .primary-action { width: 100%; }
+.signin-gate-card .text-action { align-self: center; background: none; border: 0; cursor: pointer; }
+.signin-gate-continue { color: #b8bfae; }

@@ -47,3 +47,5 @@ yarn-error.log*
 
 # Original RA2 files extracted for the dev-only Review (EA copyright; never committed or published)
 /.cache/
+firebase-debug.log
+firestore-debug.log
