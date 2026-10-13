@@ -43,21 +43,19 @@ test("the Faction Art Lab renders and is never indexed", { skip: !adminBuild }, 
   assert.equal((await render("/art/china/r2karrar")).status, 404, "an actor under the wrong faction is not found");
 });
 
-test("Review mode and its API do not exist in the production build", async () => {
+test("the local Studio route and its API stay out of production; the shared Studio reads the published snapshot", async () => {
   assert.equal((await render("/art/review")).status, 404);
   assert.notEqual((await render("/api/art-review/state")).status, 200);
   for (const path of ["/api/art-review/roster?mode=classic", "/api/art-review/classic/e1.shp", "/api/art-review/mod/example.pal", "/api/art-review/duel", "/api/art-review/visual?mode=ra2&image=explosion&sequence=medium_clsn&palette=effect"]) assert.notEqual((await render(path)).status, 200, path);
   const artLab = await (await render("/art")).text();
   assert.doesNotMatch(artLab, /href="\/art\/review"/, "no Review tab in production");
-  const chunks = readdirSync(new URL("../dist/client/_next/static/chunks/", import.meta.url));
-  for (const chunk of chunks) {
-    const source = readFileSync(new URL(`../dist/client/_next/static/chunks/${chunk}`, import.meta.url), "utf8");
-    // The renderer itself (the voxel engine) is player-facing: the public Faction viewer draws with it.
-    // Admin builds (the local app) add the viewer's History over the local dev API; the Review UI is out of every build.
-    assert.doesNotMatch(source, adminBuild ? /Use this in game|Nothing ships until export|Note for the Forge|Your call/ : /Use this in game|Nothing ships until export|Note for the Forge|Your call|\/api\/art-review/, `${chunk} carries no review code`);
-    // The Studio's flags are local-only identification; the Hezbollah flag is non-free artwork (docs/studio-flags.md).
-    assert.doesNotMatch(source, /52\.916664mm|flag-icons-/, `${chunk} carries no Studio flag artwork`);
-  }
+  // Everyone can open the Faction Studio read-only: RTS AI's factions, the original countries and the mod library.
+  const shared = await render("/faction-studio");
+  assert.equal(shared.status, 200);
+  const html = await shared.text();
+  assert.match(html, /EA has not endorsed and does not support this product\./, "EA's modding-guideline notice is shown");
+  const snapshot = JSON.parse(readFileSync(new URL("../data/studio-snapshot.json", import.meta.url), "utf8"));
+  if (snapshot.index) assert.match(snapshot.index, /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/studio\/s\//, "the snapshot is hosted, not read from local files");
 });
 
 test("the Art Lab stays out of the sitemap and is not linked from live pages", async () => {

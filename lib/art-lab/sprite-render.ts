@@ -47,6 +47,10 @@ export function drawShpFrame(shp: Shp, index: number, palette: Palette, out?: Ui
   const data = out ?? new Uint8ClampedArray(4 * shp.width * shp.height);
   const frame = shp.frames[index];
   if (!frame) return data;
+  if (frame.rgba) {
+    for (let i = 0; i < frame.pixels.length; i++) if (frame.rgba[4 * i + 3]) data.set(frame.rgba.subarray(4 * i, 4 * i + 4), 4 * i);
+    return data;
+  }
   for (let i = 0; i < frame.pixels.length; i++) {
     const c = frame.pixels[i];
     if (c === 0) continue;

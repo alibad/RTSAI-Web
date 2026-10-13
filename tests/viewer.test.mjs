@@ -80,6 +80,9 @@ test("faction and unit pages link into the viewer, and it is in the sitemap", as
 test("public builds carry no admin viewer code", { skip: adminBuild }, () => {
   const dir = new URL("../dist/client/_next/static/chunks/", import.meta.url);
   for (const chunk of readdirSync(dir)) {
+    // The shared Faction Studio (/faction-studio) ships its own chunks: it reads the Studio API from the published
+    // snapshot (lib/art-lab/studio-snapshot.ts), read-only. The public Faction viewer stays free of admin code.
+    if (/^(ReviewApp|SharedStudio|mesh-view)-/.test(chunk)) continue;
     const source = readFileSync(new URL(chunk, dir), "utf8");
     assert.doesNotMatch(source, /Open in the Studio|Historical only|history\.css|\/api\/art-review/, `${chunk} carries no admin viewer code`);
   }

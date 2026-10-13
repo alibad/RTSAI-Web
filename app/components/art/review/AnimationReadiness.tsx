@@ -1,8 +1,9 @@
 "use client";
 import { useEffect,useState } from "react";
+import type { StudioMode } from "../../../../lib/art-lab/review-ui";
 type Audit={measuredAt:string|null;current:{actions:{label:string;status:string;missingFrames?:number[]}[];newDesign:{animationClips:number;rig:string}|null}|null;motionStudy:{frames:number;actions:Record<string,unknown>}|null};
 /** Resource validity is measured separately from motion quality or gameplay approval. */
-export function AnimationReadiness({actor,mode}:{actor:string;mode:"ra2"|"classic"}){
+export function AnimationReadiness({actor,mode}:{actor:string;mode:StudioMode}){
   const [audit,setAudit]=useState<{key:string;data:Audit}|null>(null),key=`${mode}:${actor}`;
   useEffect(()=>{let alive=true;fetch(`/api/art-review/animations?mode=${mode}&actor=${encodeURIComponent(actor)}`).then(r=>r.ok?r.json():null).then(data=>{if(alive&&data)setAudit({key,data});}).catch(()=>undefined);return()=>{alive=false;};},[key,actor,mode]);
   const data=audit?.key===key?audit.data:null;if(!data?.current)return null;

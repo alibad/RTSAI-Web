@@ -147,18 +147,19 @@ function mergeSelfPartial(nodes: YamlNode[]): YamlNode[] {
 
 type Tree = Map<string, Yaml>;
 
-function mergeIntoResolved(override: YamlNode, existingNodes: YamlNode[], existingKeys: Set<string>, tree: Tree, inherited: Map<string, string>) {
+function mergeIntoResolved(override: YamlNode, existingNodes: YamlNode[], existingKeys: Set<string>, tree: Tree, inherited: Map<string, string>, lenient = false) {
   let existingIndex = -1;
   if (existingKeys.has(override.key)) existingIndex = existingNodes.findIndex(n => n.key === override.key);
   else existingKeys.add(override.key);
   let value = mergePartial(existingIndex >= 0 ? existingNodes[existingIndex].value : null, override.value);
-  const nodes = resolveInherits(value, tree, inherited);
+  const nodes = resolveInherits(value, tree, inherited, lenient);
   if (nodes !== value.nodes) value = { value: value.value, nodes };
   if (existingIndex >= 0) existingNodes[existingIndex] = withValue(existingNodes[existingIndex], value);
   else existingNodes.push(withValue(override, value));
 }
 
-function resolveInherits(node: Yaml, tree: Tree, inheritedIn: Map<string, string>): YamlNode[] {
+/** `lenient` (another project's mod read without its engine): a parent or removal it cannot find is skipped. */
+function resolveInherits(node: Yaml, tree: Tree, inheritedIn: Map<string, string>, lenient = false): YamlNode[] {
   if (node.nodes.length === 0) return node.nodes;
   let inherited = inheritedIn;
   const resolved: YamlNode[] = [];
@@ -167,36 +168,36 @@ function resolveInherits(node: Yaml, tree: Tree, inheritedIn: Map<string, string
     if (n.key === "Inherits" || n.key.startsWith("Inherits@")) {
       const parentName = n.value.value ?? "";
       const parent = tree.get(parentName);
-      if (!parent) throw new YamlError(`${n.location}: Parent type \`${parentName}\` not found`);
-      if (inherited.has(parentName)) throw new YamlError(`${n.location}: Parent type \`${parentName}\` was already inherited by this yaml tree at ${inherited.get(parentName)}`);
+      if (!parent) { if (lenient) continue; throw new YamlError(`${n.location}: Parent type \`${parentName}\` not found`); }
+      if (inherited.has(parentName)) { if (lenient) continue; throw new YamlError(`${n.location}: Parent type \`${parentName}\` was already inherited by this yaml tree at ${inherited.get(parentName)}`); }
       inherited = new Map(inherited).set(parentName, n.location);
-      for (const r of resolveInherits(parent, tree, inherited)) mergeIntoResolved(r, resolved, keys, tree, inherited);
+      for (const r of resolveInherits(parent, tree, inherited, lenient)) mergeIntoResolved(r, resolved, keys, tree, inherited, lenient);
     } else if (n.key.startsWith("-")) {
       const removed = n.key.slice(1);
       let count = 0;
       for (let i = resolved.length - 1; i >= 0; i--) if (resolved[i].key === removed) { resolved.splice(i, 1); count++; }
-      if (count === 0) throw new YamlError(`${n.location}: There are no elements with key \`${removed}\` to remove`);
+      if (count === 0 && !lenient) throw new YamlError(`${n.location}: There are no elements with key \`${removed}\` to remove`);
       keys.delete(removed);
-    } else mergeIntoResolved(n, resolved, keys, tree, inherited);
+    } else mergeIntoResolved(n, resolved, keys, tree, inherited, lenient);
   }
   return resolved;
 }
 
 /** MiniYaml.Merge: later sources override earlier ones; inheritance and removals are resolved. */
-export function mergeMiniYaml(sources: YamlNode[][]): YamlNode[] {
+export function mergeMiniYaml(sources: YamlNode[][], lenient = false): YamlNode[] {
   if (sources.length === 0) return [];
   const merged = sources.map(mergeSelfPartial).reduce((a, b) => mergePartialNodes(a, b));
   const tree: Tree = new Map();
   for (const n of merged) {
-    if (tree.has(n.key)) throw new YamlError(`Duplicate top-level key ${n.key} at ${n.location}`);
+    if (tree.has(n.key)) { if (lenient) continue; throw new YamlError(`Duplicate top-level key ${n.key} at ${n.location}`); }
     tree.set(n.key, n.value);
   }
   const resolved: YamlNode[] = [];
   for (const [key, value] of tree) {
-    const children = resolveInherits(value, tree, new Map([[key, ""]]));
+    const children = resolveInherits(value, tree, new Map([[key, ""]]), lenient);
     resolved.push({ key, value: { value: value.value, nodes: children }, location: key });
   }
-  return resolveInherits({ value: "", nodes: resolved }, tree, new Map());
+  return resolveInherits({ value: "", nodes: resolved }, tree, new Map(), lenient);
 }
 
 export function child(yaml: Yaml | undefined, key: string): YamlNode | undefined {

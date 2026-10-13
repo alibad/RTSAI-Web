@@ -29,7 +29,8 @@ import { createHash } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { applyReviewAction, migrateEntry, validateAction, type Candidate, type CandidateMeta, type ReviewAction, type ReviewFile, type ReviewState, type UnitWorkspace } from "./review";
-import { cachedFile, classicConfig, rosterPayload, visualPayload, SAFE_NAME, type OriginalsConfig } from "./originals";
+import { cachedFile, classicConfig, rosterPayload, visualPayload, yrConfig, SAFE_NAME, type OriginalsConfig } from "./originals";
+import { availableMods, modConfig, modLibraryConfig, modRosterPayload } from "./mod-library";
 import { fireRules } from "./fire-server";
 import { reviewEnabled } from "./review-gate";
 import { duelJob, startDuel } from "./duel-server";
@@ -192,6 +193,7 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
   const web = resolve(webRoot);
   const stateCache = new Map<string, { stamp: string; body: string }>();
   const preview = previewMod ? resolve(previewMod) : null;
+  const mods = modLibraryConfig(web);
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (!reviewEnabled(env)) return send(res, 404, { error: "Not found" });
     try {
@@ -210,6 +212,24 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         return send(res, 200, summary);
       }
       const reviewMode = url.searchParams.get("mode") ?? "ra2";
+      // The mod library: other projects' mods, read in place and read-only (no workspace, decisions or preview copy).
+      if (req.method === "GET" && path === "/mods") return send(res, 200, { mods: availableMods(mods) });
+      const modId = /^mod:([a-z0-9-]{1,32})$/.exec(reviewMode)?.[1] ?? null;
+      if (modId) {
+        if (req.method !== "GET") return send(res, 405, { error: "Mods are read-only in the Studio" });
+        if (path === "/state") return send(res, 200, readState(join(workspace, "modes", `mod-${modId}`)));
+        if (path === "/stamp") return send(res, 200, { stamp: reviewMode });
+        if (path === "/preview") return send(res, 200, { available: false, branch: null, head: null, actors: {}, unmatched: [] });
+        if (path === "/animations") return send(res, 200, { measuredAt: null, current: null, motionStudy: null });
+        if (!originals) return send(res, 404, { error: "Local art is not configured" });
+        if (path === "/roster") return send(res, 200, await modRosterPayload(originals, mods, modId, url.searchParams.has("refresh")));
+        if (path.startsWith("/mod/")) {
+          const name = decodeURIComponent(path.slice(5));
+          const file = SAFE_NAME.test(name) ? cachedFile(modConfig(originals, modId), `owned/${name}`) : null;
+          return file ? send(res, 200, readFileSync(file), name.endsWith(".png") ? "image/png" : "application/octet-stream") : send(res, 404, { error: "No such mod file" });
+        }
+        if (!/^\/(ra2|ra2yr|classic)\//.test(path)) return send(res, 404, { error: "Not available for mods" });
+      }
       if (["/state", "/action", "/models", "/animations", "/stamp", "/preview", "/prompt"].includes(path) && !["ra2", "classic"].includes(reviewMode)) return send(res, 400, { error: "Unknown game mode" });
       if(req.method==="GET"&&path==="/animations"){
         const actor=url.searchParams.get("actor")??"";
@@ -288,10 +308,12 @@ export function createArtReviewMiddleware({ root, env = process.env.NODE_ENV, or
         if (!["ra2", "classic"].includes(mode)) return send(res, 400, { error: "Unknown game mode" });
         return send(res, 200, await rosterPayload(mode === "classic" ? classicConfig(originals) : originals, url.searchParams.has("refresh")));
       }
-      if (req.method === "GET" && (path.startsWith("/ra2/") || path.startsWith("/classic/"))) {
-        const classic = path.startsWith("/classic/");
-        const name = decodeURIComponent(path.slice(classic ? 9 : 5));
-        const file = originals && SAFE_NAME.test(name) ? cachedFile(classic ? classicConfig(originals) : originals, name) : null;
+      if (req.method === "GET" && /^\/(ra2|ra2yr|classic)\//.test(path)) {
+        // The player's own files, extracted locally: RA2, RA2 with Yuri's Revenge (their install), or Red Alert.
+        const route = path.slice(1, path.indexOf("/", 1));
+        const name = decodeURIComponent(path.slice(route.length + 2));
+        const cfg = !originals ? null : route === "classic" ? classicConfig(originals) : route === "ra2yr" ? yrConfig(originals) : originals;
+        const file = cfg && SAFE_NAME.test(name) ? cachedFile(cfg, name) : null;
         if (!file) return send(res, 404, { error: "No such file" });
         res.setHeader("Cache-Control", "private, max-age=3600");
         res.statusCode = 200;

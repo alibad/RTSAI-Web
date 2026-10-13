@@ -5,6 +5,7 @@
  * u16 length; 3: rows prefixed by a u16 length and RLE-zero encoded (0, n = n transparent pixels).
  */
 import { decodeShpTd } from "./shp-td";
+import { decodePngSheet, isPng } from "./png-sheet";
 
 export type ShpFrame = {
   /** Position and size of the cropped data inside the full frame. */
@@ -17,6 +18,8 @@ export type ShpFrame = {
   dataOffset: number;
   /** Full-frame palette indices (frame width * height); 0 = transparent. */
   pixels: Uint8Array;
+  /** True-colour frames (RGB(A) PNG sheets): full-frame RGBA, drawn as is; `pixels` then only marks opaque pixels. */
+  rgba?: Uint8ClampedArray;
 };
 
 export type Shp = { width: number; height: number; frames: ShpFrame[] };
@@ -44,6 +47,8 @@ export function isShpTs(bytes: Uint8Array) {
 
 export function decodeShp(input: ArrayBuffer | Uint8Array): Shp {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+  // OpenRA mods also draw sprites from PNG sheets (PngSheet sprite format).
+  if (isPng(bytes)) return decodePngSheet(bytes);
   if (!isShpTs(bytes)) return decodeShpTd(bytes);
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const width = view.getUint16(2, true);

@@ -1,10 +1,11 @@
 /**
  * Original RA2 art for the dev-only Review (Node only; imported solely by review-server.ts).
  *
- * Original Westwood files are EA copyright and stay LOCAL: they are extracted from the player's own RA2 content
- * by the mod's engine (`OpenRA.Utility rtsai-classic --extract`, which reads the encrypted MIX headers and mounts the
- * classic add-on's packages exactly as the game does) into a gitignored cache, and served only by the dev review API,
- * which answers 404 in production. Nothing here is imported by any page, and nothing is copied into public/.
+ * Original Westwood files are EA copyright: they are extracted from the player's own RA2 content by the mod's engine
+ * (`OpenRA.Utility rtsai-classic --extract`, which reads the encrypted MIX headers and mounts the classic add-on's
+ * packages exactly as the game does) into a gitignored cache and served by the dev review API (404 in production).
+ * Nothing here is imported by any page or committed. The shared Studio shows them from a snapshot the owner publishes
+ * (scripts/publish-studio.ts), free and non-commercial under EA's C&C modding guidelines, with EA's notice.
  *
  * The standalone game (`mods/rtsai`) mounts no RA2 file: its stand-ins carry the EA file names, so its own art is
  * read from the mod's folders, never from this cache. The original countries are drawn as the classic add-on
@@ -30,7 +31,7 @@ import { decodeShp } from "./shp";
 import type { PaletteSpec, RenderSpec } from "./spec";
 import { drawShpFrame } from "./sprite-render";
 import type { PaletteRef, SpriteArt, SpriteSequence } from "./types";
-import { combineSources, type ActorSources } from "./asset-source";
+import { combineSources, type ActorSources, type AssetSource } from "./asset-source";
 import { localAssetSource } from "./asset-source-server";
 import type { ProvenanceRecord } from "./provenance";
 
@@ -39,12 +40,60 @@ const run = promisify(execFile);
 export type OriginalsConfig = {
   /** RTSAI-Mod checkout (rules, sequences, the engine and its OpenRA.Utility). */
   modRoot: string;
-  mode?: "ra2" | "classic";
+  /** `ra2yr`: Red Alert 2 with Yuri's Revenge, read from the player's own install (`contentDir`). */
+  mode?: "ra2" | "classic" | "ra2yr";
   /** Directory holding Content/ra2 (ra2.mix, language.mix): the player's RA2 data. */
   supportDir: string;
   /** Gitignored cache for extracted files. */
   cacheDir: string;
+  /** `ra2yr`: the installed game folder holding ra2.mix and ra2md.mix (e.g. Steam's). */
+  contentDir?: string;
 };
+
+/** The player's Yuri's Revenge install: RTSAI_YR_DIR, else the usual Steam folders. Null when there is none. */
+export function findYrDir(env: NodeJS.ProcessEnv = process.env) {
+  const game = "steamapps/common/Command & Conquer Red Alert II";
+  const candidates = [env.RTSAI_YR_DIR, `D:/SteamLibrary/${game}`, `C:/Program Files (x86)/Steam/${game}`, `C:/SteamLibrary/${game}`].filter((p): p is string => Boolean(p));
+  return candidates.find(p => existsSync(join(p, "ra2md.mix")) && existsSync(join(p, "ra2.mix"))) ?? null;
+}
+
+/** RA2 + Yuri's Revenge from the player's own install, extracted into its own private cache. */
+export function yrConfig(cfg: OriginalsConfig, env: NodeJS.ProcessEnv = process.env): OriginalsConfig | null {
+  const contentDir = findYrDir(env);
+  if (!contentDir) return null;
+  const cacheDir = resolve(cfg.cacheDir, "..", "ra2yr-originals");
+  return { ...cfg, mode: "ra2yr", cacheDir, supportDir: join(cacheDir, "support"), contentDir };
+}
+
+/** Yuri's Revenge archives, then Red Alert 2's, in the order Romanov's Vengeance mounts them (last mounted wins). */
+const YR_PACKAGES = [
+  "content|langmd.mix: langmd", "content|ra2md.mix: ra2md", "langmd|cameomd.mix: cameomd", "ra2md|cachemd.mix", "ra2md|conqmd.mix: conqmd",
+  "ra2md|des.mix", "ra2md|desert.mix", "ra2md|genermd.mix", "ra2md|isodesmd.mix", "ra2md|isodes.mix", "ra2md|isogenmd.mix", "ra2md|isolunmd.mix",
+  "ra2md|isolun.mix", "ra2md|isosnomd.mix", "ra2md|isotemmd.mix", "ra2md|isoubnmd.mix", "ra2md|isoubn.mix", "ra2md|isourbmd.mix", "ra2md|loadmd.mix",
+  "ra2md|localmd.mix: localmd", "ra2md|lun.mix", "ra2md|lunar.mix", "ra2md|ntrlmd.mix", "ra2md|snowmd.mix", "ra2md|ubn.mix", "ra2md|urbann.mix",
+  "content|language.mix: lang", "content|ra2.mix: ra2base", "lang|cameo.mix: cameo", "ra2base|cache.mix: cache", "ra2base|conquer.mix: conquer",
+  "ra2base|generic.mix", "ra2base|isogen.mix", "ra2base|isosnow.mix", "ra2base|isotemp.mix", "ra2base|isourb.mix", "ra2base|load.mix",
+  "ra2base|local.mix: local", "ra2base|neutral.mix", "ra2base|sidec01.mix", "ra2base|sidec02.mix", "ra2base|sno.mix", "ra2base|snow.mix",
+  "ra2base|tem.mix", "ra2base|temperat.mix", "ra2base|urb.mix", "ra2base|urban.mix",
+];
+
+/**
+ * The extraction mod for `ra2yr`: the classic add-on's manifest with a file system that mounts the player's install
+ * (linked into a private support folder, never copied). Only plain files are ever removed from the cache.
+ */
+function ensureYrMod(cfg: OriginalsConfig) {
+  const content = join(cfg.supportDir, "Content");
+  mkdirSync(content, { recursive: true });
+  if (!existsSync(join(content, "ra2yr"))) symlinkSync(cfg.contentDir!, join(content, "ra2yr"), process.platform === "win32" ? "junction" : "dir");
+  const packages = ["^EngineDir", "$rtsai: ra2", "$rtsai-classic: classic", "^EngineDir|mods/common: common", "^SupportDir|Content/ra2yr: content", ...YR_PACKAGES.map(p => `~${p}`)];
+  const fileSystem = `FileSystem: DefaultFileSystem\n\tPackages:\n${packages.map(p => `\t\t${p}\n`).join("")}\n`;
+  const classic = readFileSync(join(cfg.modRoot, CLASSIC_DIR, "mod.yaml"), "utf8").replace(/\r\n/g, "\n");
+  const manifest = classic.replace(/^FileSystem:[\s\S]*?(?=^[A-Za-z])/m, fileSystem);
+  const dir = join(cfg.cacheDir, "mods", "studio-ra2yr");
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, "mod.yaml");
+  if (!existsSync(file) || readFileSync(file, "utf8") !== manifest) writeFileSync(file, manifest);
+}
 
 export const RA2_ROUTE = "/api/art-review/ra2/";
 export const SAFE_NAME = /^[a-z0-9][a-z0-9_.-]{0,63}$/;
@@ -69,6 +118,8 @@ export type RosterPayload = {
   originals?: Record<string, StockArt>;
   /** RA2: the original countries (faction ids) that `originals` draws. */
   countries?: string[];
+  /** Another project's mod (the Studio's mod library), read in place from its checkout. */
+  mod?: { id: string; name: string; gaps: string | null; url: string; commit: string | null };
   extraction: { requested: number; cached: number; missing: string[]; error: string | null; ms: number };
 };
 
@@ -104,7 +155,7 @@ function ensureShim(cfg: OriginalsConfig) {
 }
 
 /** The mod whose file system mounts the player's own files: the classic add-on (the standalone game mounts none). */
-const extractMod = (cfg: OriginalsConfig) => (cfg.mode === "classic" ? "ra" : "rtsai-classic");
+const extractMod = (cfg: OriginalsConfig) => (cfg.mode === "classic" ? "ra" : cfg.mode === "ra2yr" ? "studio-ra2yr" : "rtsai-classic");
 
 const checkedCaches = new Set<string>();
 /**
@@ -146,11 +197,12 @@ export async function extractOriginals(cfg: OriginalsConfig, names: string[]): P
   const known = new Set<string>(existsSync(missingFile) ? JSON.parse(readFileSync(missingFile, "utf8")) : []);
   const todo = names.filter(n => SAFE_NAME.test(n) && !cached(cfg, n) && !known.has(n));
   if (!todo.length) return names.filter(n => known.has(n));
-  if (!existsSync(join(cfg.supportDir, "Content", cfg.mode === "classic" ? "ra/v2" : "ra2", cfg.mode === "classic" ? "conquer.mix" : "ra2.mix"))) throw new Error(`No RA2 content at ${join(cfg.supportDir, "Content", "ra2")} (set RTSAI_RA2_SUPPORT)`);
+  if (cfg.mode === "ra2yr") { if (!cfg.contentDir || !existsSync(join(cfg.contentDir, "ra2md.mix"))) throw new Error("No Yuri's Revenge install (set RTSAI_YR_DIR)"); ensureYrMod(cfg); }
+  else if (!existsSync(join(cfg.supportDir, "Content", cfg.mode === "classic" ? "ra/v2" : "ra2", cfg.mode === "classic" ? "conquer.mix" : "ra2.mix"))) throw new Error(`No RA2 content at ${join(cfg.supportDir, "Content", "ra2")} (set RTSAI_RA2_SUPPORT)`);
   const shim = ensureShim(cfg);
   const bin = join(cfg.modRoot, cfg.mode === "classic" ? "bin" : "engine/bin");
   const [cmd, pre] = process.platform === "win32" ? [join(bin, "OpenRA.Utility.exe"), []] : ["dotnet", [join(bin, "OpenRA.Utility.dll")]];
-  const env = { ...process.env, ENGINE_DIR: shim, MOD_SEARCH_PATHS: join(cfg.modRoot, "mods") };
+  const env = { ...process.env, ENGINE_DIR: shim, MOD_SEARCH_PATHS: [join(cfg.modRoot, "mods"), ...(cfg.mode === "ra2yr" ? [join(cfg.cacheDir, "mods")] : [])].join(",") };
   const extract = (batch: string[]) => run(cmd, [...pre, extractMod(cfg), "--extract", ...batch], { cwd: out, env, windowsHide: true, timeout: 120_000 });
   // The utility extracts in order and stops at the first file it cannot find: that file is the first one still
   // missing, so note it and carry on with the rest (one extra launch per missing file).
@@ -186,11 +238,14 @@ export function encodePng(width: number, height: number, rgba: Uint8Array | Uint
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 
+/** Palettes read from a file: Westwood .pal, or a mod's text palettes (PaletteFromGimpOrJascFile, e.g. OpenHV). */
+const paletteTraits = (world: Parameters<typeof traits>[0]) => [...traits(world, "PaletteFromFile"), ...traits(world, "PaletteFromGimpOrJascFile")];
+
 /** The temperate player palette and the cameo palette, read from the World rules as the game resolves them. */
 function stockPalettes(data: ReturnType<typeof loadModData>) {
   const world = data.rules.get("world")!;
   const list = (v: string | null) => (v ?? "").split(",").map(x => x.trim()).filter(Boolean).map(Number);
-  const fromFile = (name: string) => traits(world, "PaletteFromFile").map(([, n]) => n.value).find(v => childValue(v, "Name") === name && (!childValue(v, "Tileset") || childValue(v, "Tileset") === "TEMPERATE"));
+  const fromFile = (name: string) => paletteTraits(world).map(([, n]) => n.value).find(v => childValue(v, "Name") === name && (!childValue(v, "Tileset") || childValue(v, "Tileset") === "TEMPERATE"));
   const player = fromFile("player");
   const remap = traits(world, "PlayerColorPalette").map(([, n]) => n.value).find(v => childValue(v, "BasePalette") === "player");
   const chrome = fromFile("chrome");
@@ -260,7 +315,7 @@ async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequenc
   if (!img || !seq) throw new Error("No such effect sequence");
   const data = { ...loaded, sequences: new Map([[image, { ...img, nodes: img.nodes.filter(n => n.key === "Defaults" || n.key === sequence) }]]) };
   const world = loaded.rules.get("world")!;
-  const pal = traits(world, "PaletteFromFile").map(([, n]) => n.value).find(v => childValue(v, "Name") === palette && (!childValue(v, "Tileset") || ["TEMPERATE", "TEMPERAT"].includes(childValue(v, "Tileset")!)));
+  const pal = paletteTraits(world).map(([, n]) => n.value).find(v => childValue(v, "Name") === palette && (!childValue(v, "Tileset") || ["TEMPERATE", "TEMPERAT"].includes(childValue(v, "Tileset")!)));
   // Classic palettes also come from the current tileset. The existing temperate player palette is identical.
   const palFile = childValue(pal, "Filename") ?? stockPalettes(loaded).player?.file;
   if (!palFile) throw new Error("No local effect palette");
@@ -341,8 +396,8 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const run: StockRun = { cfg, reader, provenance, ownedPaths: new Map(), extraction: { requested: 0, cached: 0, missing: [], error: null } };
   // RA2: the game as it ships reads no player file, so its art (the stand-ins under EA names included) is the mod's own.
   const stock = await resolveStock(run, data, ids, stockInfo, factions, cfg.mode === "classic"
-    ? { dirs: ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"].map(d => `mods/ra/${d}`), extract: true, rules: "RTS AI Classic · OpenRA fork" }
-    : { dirs: mountedDirs(reader, `${MOD_DIR}/mod.yaml`), extract: false, rules: "RTS AI · RTSAI-Mod" });
+    ? { dirs: ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"].map(d => `mods/ra/${d}`), content: cfg, rules: "RTS AI Classic · OpenRA fork" }
+    : { dirs: mountedDirs(reader, `${MOD_DIR}/mod.yaml`), content: null, rules: "RTS AI · RTSAI-Mod" });
   // The original countries as the classic add-on plays them: Westwood's art from the player's own files.
   let originals: Pick<RosterPayload, "originals" | "countries"> = {};
   if (cfg.mode !== "classic" && reader.exists(`${CLASSIC_DIR}/mod.yaml`)) {
@@ -352,23 +407,48 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
     const countryIds = new Set(countries.flatMap(f => f.units.map(u => u.id)));
     originals = {
       countries: countries.map(f => f.id),
-      originals: await resolveStock(run, classic, countryIds, rosters.stock, rosters.factions, { dirs: mountedDirs(reader, `${CLASSIC_DIR}/mod.yaml`), extract: true, rules: "RTS AI Classic add-on · RTSAI-Mod" }),
+      originals: await resolveStock(run, classic, countryIds, rosters.stock, rosters.factions, { dirs: mountedDirs(reader, `${CLASSIC_DIR}/mod.yaml`), content: cfg, rules: "RTS AI Classic add-on · RTSAI-Mod" }),
     };
   }
-  return { mode: cfg.mode ?? "ra2", factions, stock, ...originals, unresolved: [...ids].filter(id => !stock[id]), extraction: { ...run.extraction, ms: Date.now() - started } };
+  return { mode: cfg.mode === "classic" ? "classic" : "ra2", factions, stock, ...originals, unresolved: [...ids].filter(id => !stock[id]), extraction: { ...run.extraction, ms: Date.now() - started } };
 }
 
-type StockRun = {
+export type StockRun = {
+  /** Where the mod's own files are copied (owned-files) and which mode serves them. */
   cfg: OriginalsConfig; reader: ModReader; provenance: ProvenanceRecord | null; ownedPaths: Map<string, string>;
   extraction: Omit<RosterPayload["extraction"], "ms">;
+};
+export type StockOptions = {
+  /** Mod folders that override the player's files, last mounted first. */
+  dirs: string[];
+  /** Mod folders mounted before the player's files: used only for names those files lack. */
+  low?: string[];
+  /** The player's own files a bare name falls back to (extracted into that config's cache), or none. */
+  content: OriginalsConfig | null;
+  rules: string;
+  /** `alias|path` file references; RTS AI's own packages by default. */
+  packages?: (ref: string) => string | null;
+  /** True for `alias|name` where the alias is an archive of the owned game (RV's `conquer|gi.shp`): read as `name`. */
+  archive?: (ref: string) => boolean;
+  /** The `mode` the owned-file route needs to find this run's cache (default: the config's mode). */
+  modeParam?: string;
+  /** A palette the rules name but define in the mod's own code (Cameo's player_rgba): drawn with this one instead. */
+  paletteFallback?: string;
+  /** Credits for a file: the default reads RTS AI's provenance record. */
+  source?: (file: string, path: string | undefined, bytes: () => Uint8Array) => AssetSource;
 };
 
 /**
  * Resolves `ids` with one game's rules. A bare file name is read from `dirs` (the mod folders that game mounts, last
- * mounted first) and, when `extract`, otherwise from the player's own files.
+ * mounted first), then from the player's own files (`content`), then from `low`.
  */
-async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stockInfo: Record<string, RosterUnit>, factions: FactionRoster[], opts: { dirs: string[]; extract: boolean; rules: string }): Promise<Record<string, StockArt>> {
+export async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stockInfo: Record<string, RosterUnit>, factions: FactionRoster[], opts: StockOptions): Promise<Record<string, StockArt>> {
   const { cfg, reader, ownedPaths, provenance } = run;
+  const content = opts.content;
+  if (content) checkCacheSource(content);
+  // Owned files live in this run's cache; bare names are the player's files in the content cache.
+  const pathOf = (n: string) => (n.startsWith("owned/") ? cachePath(cfg, n) : content ? cachePath(content, n) : null);
+  const has = (n: string) => { const p = pathOf(n); return Boolean(p && existsSync(p)); };
   const palettes = stockPalettes(data);
   const paletteRefs: Record<string, PaletteRef> = {};
   const world = data.rules.get("world")!;
@@ -381,29 +461,36 @@ async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stoc
     writeFileSync(join(cfg.cacheDir, "owned-files", name), reader.bytes(path));
     return `owned/${name}`;
   };
+  const packages = opts.packages ?? ((n: string) => n.replace(/^ra\|/, "mods/ra/").replace(/^ra2\|/, "mods/rtsai/").replace(/^classic\|/, `${CLASSIC_DIR}/`).replace(/^common\|/, "engine/mods/common/"));
+  const inDirs = (dirs: string[], n: string) => dirs.map(d => `${d}/${n}`).find(p => reader.exists(p));
   const local = new Map<string, string | null>();
-  const localRef = (n: string): string | null => {
+  const bareOf = (n: string) => (n.includes("|") && opts.archive?.(n) ? n.slice(n.indexOf("|") + 1) : n);
+  const localRef = (ref: string): string | null => {
+    const n = bareOf(ref);
     if (n.startsWith("owned/")) return n;
     if (!local.has(n)) {
-      const path = n.includes("|")
-        ? n.replace(/^ra\|/, "mods/ra/").replace(/^ra2\|/, "mods/rtsai/").replace(/^classic\|/, `${CLASSIC_DIR}/`).replace(/^common\|/, "engine/mods/common/")
-        : opts.dirs.map(d => `${d}/${n}`).find(p => reader.exists(p));
+      const path = n.includes("|") ? packages(n) : inDirs(opts.dirs, n);
       local.set(n, path && reader.exists(path) ? ownFile(path) : null);
     }
     return local.get(n)!;
   };
+  // Below the player's files: a mod folder mounted before them answers only what they lack.
+  const lowRef = (ref: string) => { const n = bareOf(ref); if (n.includes("|") || !opts.low?.length) return null; const p = inDirs(opts.low, n); return p ? ownFile(p) : null; };
   // The resolver reads some files back by the name the rules use (voxels): the mod's own copy when it has one.
-  const keyOf = (n: string) => localRef(n) ?? n;
-  for (const [, node] of traits(world, "PaletteFromFile")) {
-    if (childValue(node.value, "Tileset") && childValue(node.value, "Tileset") !== "TEMPERATE") continue;
+  const keyOf = (ref: string) => { const n = bareOf(ref); return localRef(n) ?? (has(n) ? n : lowRef(n) ?? n); };
+  for (const [, node] of paletteTraits(world)) {
+    if (childValue(node.value, "Tileset") && !["TEMPERATE", "TEMPERAT"].includes(childValue(node.value, "Tileset")!)) continue;
     const name = childValue(node.value, "Name") ?? "", ref = (childValue(node.value, "Filename") ?? "").toLowerCase();
     const file = localRef(ref) ?? ref;
     if (!SAFE_NAME.test(file.replace(/^owned\//, ""))) continue;
     paletteRefs[name] = { name, file, basePalette: name, remap: [], transparent: child(node.value, "TransparentIndex") ? numbers(childValue(node.value, "TransparentIndex")) : [0], shadow: numbers(childValue(node.value, "ShadowIndex")), definedBy: "Merged World rules" };
   }
-  for (const [, node] of traits(world, "PlayerColorPalette")) {
+  // Player-colour palettes, mods' own kinds included (CA's OverlayPlayerColorPalette); alpha variants keep the base colours.
+  for (const node of world.nodes) {
+    const remap = /^[A-Za-z]*PlayerColorPalette(@|$)/.test(node.key), alpha = /^PaletteFromPlayerPaletteWithAlpha(@|$)/.test(node.key);
+    if (!remap && !alpha) continue;
     const base = paletteRefs[childValue(node.value, "BasePalette") ?? ""];
-    if (base) paletteRefs[childValue(node.value, "BaseName") ?? childValue(node.value, "Name") ?? base.name] = { ...base, remap: numbers(childValue(node.value, "RemapIndex")) };
+    if (base) paletteRefs[childValue(node.value, "BaseName") ?? childValue(node.value, "Name") ?? base.name] = remap ? { ...base, remap: numbers(childValue(node.value, "RemapIndex")) } : { ...base };
   }
   // The default player remap may retain its base name.
   if (palettes.player && paletteRefs.player) paletteRefs.player.remap = palettes.player.remap;
@@ -421,23 +508,26 @@ async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stoc
 
   // Pass 1: which of the player's files the game would read for these actors.
   const wanted = new Set<string>([...Object.values(paletteRefs).map(p => p.file!), chromeFile ?? ""].filter(f => f && !f.startsWith("owned/")));
-  resolveAll({ record: n => localRef(n) ?? (wanted.add(n), null), bytes: n => cached(cfg, keyOf(n)) ? new Uint8Array(readFileSync(cachePath(cfg, keyOf(n))!)) : new Uint8Array(0) });
+  resolveAll({ record: n => localRef(n) ?? (wanted.add(bareOf(n)), null), bytes: n => has(keyOf(n)) ? new Uint8Array(readFileSync(pathOf(keyOf(n))!)) : new Uint8Array(0) });
   let missing = [...wanted];
-  if (opts.extract) {
-    try { missing = await extractOriginals(cfg, [...wanted]); } catch (e) { run.extraction.error = e instanceof Error ? e.message : String(e); }
+  if (content) {
+    try { missing = await extractOriginals(content, [...wanted]); } catch (e) { run.extraction.error = e instanceof Error ? e.message : String(e); }
   }
   run.extraction.requested += wanted.size;
-  run.extraction.cached += [...wanted].filter(n => cached(cfg, n)).length;
-  run.extraction.missing.push(...missing.filter(n => !run.extraction.missing.includes(n)));
+  run.extraction.cached += [...wanted].filter(n => has(n)).length;
+  run.extraction.missing.push(...missing.filter(n => !lowRef(n) && !run.extraction.missing.includes(n)));
 
   // Pass 2: resolve with the extracted bytes.
-  const bytes = (n: string) => new Uint8Array(readFileSync(cachePath(cfg, keyOf(n))!));
-  const resolved = resolveAll({ record: n => localRef(n) ?? (opts.extract && cached(cfg, n) ? n : null), bytes });
-  const url = (key: string | null | undefined) => (key ? key.startsWith("owned/") ? `/api/art-review/mod/${encodeURIComponent(key.slice(6))}?mode=${cfg.mode ?? "ra2"}` : `${cfg.mode === "classic" ? "/api/art-review/classic/" : RA2_ROUTE}${encodeURIComponent(key)}` : null);
-  const paletteSpec = (p: PaletteRef | null): PaletteSpec | null => (p && cached(cfg, p.file!) ? { name: p.name, url: url(p.file)!, remap: p.remap, transparent: p.transparent, shadow: p.shadow } : null);
-  const chromePal = palettes.chrome && chromeFile && cached(cfg, chromeFile) ? decodePal(bytes(chromeFile), palettes.chrome.transparent, palettes.chrome.shadow) : null;
+  const bytes = (n: string) => new Uint8Array(readFileSync(pathOf(keyOf(n))!));
+  const resolved = resolveAll({ record: ref => { const n = bareOf(ref); return localRef(n) ?? (has(n) ? n : lowRef(n)); }, bytes });
+  const ownedMode = encodeURIComponent(opts.modeParam ?? cfg.mode ?? "ra2");
+  const url = (key: string | null | undefined) => (key ? key.startsWith("owned/") ? `/api/art-review/mod/${encodeURIComponent(key.slice(6))}?mode=${ownedMode}` : `${content?.mode === "classic" ? "/api/art-review/classic/" : content?.mode === "ra2yr" ? "/api/art-review/ra2yr/" : RA2_ROUTE}${encodeURIComponent(key)}` : null);
+  const paletteFile = (p: PaletteRef) => (has(p.file!) ? p.file! : lowRef(p.file!));
+  const paletteSpec = (p: PaletteRef | null): PaletteSpec | null => { const file = p && paletteFile(p); return p && file ? { name: p.name, url: url(file)!, remap: p.remap, transparent: p.transparent, shadow: p.shadow } : null; };
+  const chromeKey = chromeFile && (has(chromeFile) ? chromeFile : lowRef(chromeFile));
+  const chromePal = palettes.chrome && chromeKey ? decodePal(bytes(chromeKey), palettes.chrome.transparent, palettes.chrome.shadow) : null;
   const bitsFiles = new Set<string>();
-  for (const dir of ["bits", "bits/cameos", "bits/structures", "bits/animations", "bits/projectiles"]) {
+  if (!opts.packages) for (const dir of ["bits", "bits/cameos", "bits/structures", "bits/animations", "bits/projectiles"]) {
     try { for (const f of readdirSync(join(cfg.modRoot, MOD_DIR, dir))) bitsFiles.add(f.toLowerCase()); } catch { /* absent */ }
   }
 
@@ -448,13 +538,13 @@ async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stoc
     if (art.cameo.file?.endsWith(".png")) cameoUrl = url(art.cameo.file);
     else if (art.cameo.file && chromePal) {
       const png = `${art.cameo.file.replace(/\.shp$/, "")}.png`;
-      if (!cached(cfg, png)) {
+      if (!has(png)) {
         try {
           const shp = decodeShp(bytes(art.cameo.file));
-          writeFileSync(cachePath(cfg, png)!, encodePng(shp.width, shp.height, drawShpFrame(shp, 0, chromePal)));
+          writeFileSync(pathOf(png)!, encodePng(shp.width, shp.height, drawShpFrame(shp, 0, chromePal)));
         } catch { /* leave without a cameo */ }
       }
-      if (cached(cfg, png)) cameoUrl = url(png);
+      if (has(png)) cameoUrl = url(png);
     }
     // Stock sequences arrive through templates (^ArmedInfantry); every one an always-on trait uses is what the
     // game draws. Turrets, overlays and bodies behind a condition that is off by default (a GI's sandbagged
@@ -477,12 +567,14 @@ async function resolveStock(run: StockRun, data: ModData, ids: Set<string>, stoc
       sequences: art.sprite.sequences.map(q => (q.file && q.name !== "icon" ? { ...q, inherited: false } : q)),
     } : null;
     const owned = { ...art, sprite, factionId: "" };
-    const spec = buildRenderSpec(owned, url, name => paletteSpec(paletteRefs[name ?? "player"] ?? null), cameoUrl);
-    const sourceOf = (file: string) => localAssetSource(file, cfg.mode ?? "ra2", ownedPaths.get(file), () => bytes(file), provenance);
+    const spec = buildRenderSpec(owned, url, name => paletteSpec(paletteRefs[name ?? "player"] ?? (opts.paletteFallback ? paletteRefs[opts.paletteFallback] ?? null : null)), cameoUrl);
+    const sourceOf = (file: string) => (opts.source ?? ((f, path, read) => localAssetSource(f, (content?.mode ?? cfg.mode) === "classic" ? "classic" : "ra2", path, read, provenance)))(file, ownedPaths.get(file), () => bytes(file));
     const files = art.files.map(sourceOf);
     // The model is the unit's own files: shared effects drawn over it (muzzle flashes, the mind-control overlay) are
     // credited in the file list, not to the model, once the actor has art of its own.
-    const modelFiles = art.files.filter(f => /\.(vxl|hva|shp)$/.test(f) && f !== art.cameo.file);
+    // PNG sheets are the model only for a unit drawn without SHP or voxels (OpenHV); elsewhere they are shared effects.
+    const native = art.files.filter(f => /\.(vxl|hva|shp)$/.test(f) && f !== art.cameo.file);
+    const modelFiles = native.length ? native : art.files.filter(f => /\.png$/.test(f) && f !== art.cameo.file);
     const own = modelFiles.filter(f => ownedPaths.has(f));
     const model = combineSources((own.length ? own : modelFiles).map(sourceOf), "Current model");
     const icon = art.cameo.file ? sourceOf(art.cameo.file) : combineSources([], "Current icon");

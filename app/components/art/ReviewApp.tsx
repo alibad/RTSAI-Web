@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { candidatesForSlot, emptyEntry, needsDecision, slotIds, voxelBaseSpec, type ReviewAction, type ReviewEntry, type ReviewState, type SlotId, type UnitWorkspace } from "../../../lib/art-lab/review";
-import { kindTags, reviewProgress, versionLabels } from "../../../lib/art-lab/review-ui";
+import { isModMode, kindTags, reviewProgress, versionLabels, type ModListing, type StudioMode } from "../../../lib/art-lab/review-ui";
 import { actionCoverage, candidateChecks, chainSteps, decisionState, defaultModelFocus, designFor, fromModel, glbOptions, isChainStep, meshCandidate, nativeCandidates, rosterCounts, type ChainStep, type PreviewAnimation, type PreviewStatus } from "../../../lib/art-lab/chain";
 import type { ModelLibrary } from "../../../lib/art-lab/models";
 import { houseColors } from "../../../lib/art-lab/remap";
@@ -52,7 +52,7 @@ const roleText = (roles: string[], category: string) => {
 };
 const railKey = "rtsai-art-review-rail";
 
-async function post(action: ReviewAction, mode: "ra2" | "classic"): Promise<ReviewEntry> {
+async function post(action: ReviewAction, mode: StudioMode): Promise<ReviewEntry> {
   const response = await fetch(`${API}/action?mode=${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action) });
   const payload = await response.json() as { entry?: ReviewEntry; error?: string };
   if (!response.ok || !payload.entry) throw new Error(payload.error ?? `HTTP ${response.status}`);
@@ -64,8 +64,16 @@ async function post(action: ReviewAction, mode: "ra2" | "classic"): Promise<Revi
  * 3D model, game model, animations, checks and your call. Each step opens on the stage. Choices go to
  * RTSAI-Art/review.json through the dev-only API; nothing reaches the mod until a separate export.
  */
-export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTint[] }) {
-  const [mode, setMode] = useState<"ra2" | "classic">("ra2");
+/** `shared`: the public, read-only Studio (rtsai.net/faction-studio): browse art; decisions stay in the owner's local app. */
+export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[]; tints: MapTint[]; shared?: boolean }) {
+  const [mode, setMode] = useState<StudioMode>("ra2");
+  // The mod library: other projects' mods the Studio can read from this machine.
+  const [mods, setMods] = useState<ModListing[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API}/mods`, { cache: "no-store" }).then(r => (r.ok ? r.json() as Promise<{ mods: ModListing[] }> : null)).then(r => { if (!cancelled && r) setMods(r.mods); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [surface, setSurface] = useState<"art" | "arena" | "board">("art");
   const [linkReady, setLinkReady] = useState(false);
   const [state, setState] = useState<ReviewState | null>(null);
@@ -185,7 +193,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     const v = params.get("v");
     const factionParam = params.get("faction");
     const id = setTimeout(() => {
-      if (params.get("mode") === "classic") setMode("classic");
+      const modeParam = params.get("mode") ?? "";
+      if (modeParam === "classic" || isModMode(modeParam)) setMode(modeParam);
       const surface = params.get("view");
       if (surface === "arena" || surface === "board") setSurface(surface);
       if (params.get("authored") === "1") { setAuthored(true); setFilter("new"); }
@@ -390,7 +399,8 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const selectSound = useRef<string | null>(null);
   const takeSelect = useCallback((actor: string) => { if (selectSound.current !== actor) return false; selectSound.current = null; return true; }, []);
 
-  const chain: ChainData | null = unit && isNew ? {
+  // The asset chain walks the owner's drafts and decisions: the shared Studio shows what is in the game instead.
+  const chain: ChainData | null = unit && isNew && !shared ? {
     current: { item: currentItem, tag: unit.spec.voxel ? "VXL" : "SHP" },
     design,
     glb: { options: glb },
@@ -502,7 +512,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
     }
   };
   const label = (id: string) => (id === "current" ? "Current" : labels.get(id) ?? id);
-  const decide: Decide | null = unit ? {
+  const decide: Decide | null = unit && !shared ? {
     choose: c => void send({ type: "choose", actor: unit.id, slot, candidate: c, view: view() },
       c === "current" ? "Keeping current" : slot === "concept" ? `${label(c)} is the reference` : `${label(c)} chosen for the game (applies at the next export)`),
     clear: () => void send({ type: "clear", actor: unit.id, slot }, "Decision undone"),
@@ -567,28 +577,30 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
   const showFilm = Boolean(unit && focused && surface === "art" && !lineupOnly && !(slot === "model" && chain && (versions.length <= 2 || !["now", "game"].includes(chainStep))));
   const showShelf = Boolean(unit && surface === "art" && slot === "model" && (!chain || chainStep === "anim" || chainStep === "sounds"));
   const inspector = chain && !iconMode && chainStep === "checks" ? "checks" : "facts";
-  const board = surface === "board" && mode === "ra2";
+  const board = surface === "board" && mode === "ra2" && !shared;
 
   return (
     <div className={`lab${surface === "arena" ? " is-encounter" : ""}${board ? " is-board" : ""}${authored ? " is-authored" : ""}`}>
-      {sourcesOpen && <SourceLibrary mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
+      {sourcesOpen && <SourceLibrary shared={shared} mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" && !shared ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
       {unit && <UnitSounds soundsKey={unitSoundKey} frames={frames} item={focused?.item ?? null} takeSelect={takeSelect} />}
       {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
-      <StudioBar viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <StudioBar shared={shared} viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} mods={mods} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
-        tally={mode === "ra2" ? <RosterTally counts={counts} /> : null} />
+        tally={mode === "ra2" && !shared ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
-          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" ? openSounds : undefined} />}
+          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" && !shared ? openSounds : undefined} />}
         <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface === "art" ? " has-chain" : ""}`} id="main-content">
           {chain && surface === "art" && state && <AssetChain soundsKey={unitSoundKey} data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>
             : !state ? <p className="lab-empty">Loading the workspace…</p>
-            : !unit ? <p className="lab-empty">No units.</p>
+            : !unit ? <p className="lab-empty">{roster ? "No units." : isModMode(mode) ? "Reading the mod’s rules and art… a large mod takes up to a minute the first time." : "Reading the game roster…"}</p>
             : board ? <ReviewBoard factions={boardFactions} factionId={boardFaction} onFaction={changeFaction} unitsFor={boardUnitsFor} allUnits={boardUnits} workspace={workspace} review={state.review} preview={preview}
                 frames={frames} tints={tints} decide={send} onOpen={id => { selectUnit(id); setSurface("art"); }} />
             : surface === "arena" ? (encounterLink
               ? <p className="lab-empty">The Encounter is the browser game’s battle sandbox now: the game’s own simulation, with results, a replay and a native check. <a href={encounterLink} target="_blank" rel="noreferrer">Open it with {unit.name} →</a></p>
+              : isModMode(mode) ? <p className="lab-empty">The Encounter runs RTS AI’s own game; other projects’ mods are for browsing their art.</p>
+              : shared ? <p className="lab-empty">Classic encounters run in the RTS AI desktop app.</p>
               : <Arena key={mode} mode={mode} units={[...unitIndex.values()]} selected={unit} roster={roster} frames={frames} onSelect={selectUnit} />) : stage}
           {showFilm && focused && (
             <Filmstrip versions={versions} focus={focus} decision={decision} frames={frames} tints={tints} thumbZoom={thumbZoom} radius={radius}
@@ -606,7 +618,7 @@ export function ReviewApp({ units, tints }: { units: ReviewUnit[]; tints: MapTin
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />
         </details>}
-        {unit && mode === "ra2" && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} showable={e => Boolean(e.release || e.candidate)} />}
+        {unit && mode === "ra2" && !shared && unit.origin !== "original" && <UnitHistory key={unit.id} unit={unit} ws={ws} entry={preview?.actors[unit.id]} frames={frames} tints={tints} onShow={showHistory} showable={e => Boolean(e.release || e.candidate)} />}
         </aside>}
       </div>
     </div>
