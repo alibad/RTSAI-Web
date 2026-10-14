@@ -14,10 +14,11 @@ import { allCampaigns, campaignsForFaction, type Campaign } from "./faction-camp
 import { factionNarrative, type FactionIdentity } from "./faction-narrative";
 import { roleLabel } from "./art-lab/labels";
 import { unitArt, unitStats, flagSrc, type UnitStat } from "./faction-art";
-import { unitSounds, type PublicSoundGroup } from "./faction-audio";
-import { CLASSIC_ADDON, dossierForRoster, factionById, rosterActors, rosterFactionById, rosterFactions, units as catalogUnits, unitLabel, type RosterFaction } from "./game-content";
+import { projectEffects, unitSounds, type PublicClip, type PublicSoundGroup } from "./faction-audio";
+import { CLASSIC_ADDON, dossierForRoster, factionById, rosterActors, rosterFactionById, rosterFactions, rosters, units as catalogUnits, unitLabel, type RosterFaction } from "./game-content";
+import { demoWeapons, DUMMY_ACTORS, DUMMY_NAMES, type DemoWeapon, type DummyKind, type ViewerDummy } from "./weapon-demo";
 
-export type ViewerWeapon = { projectile: string; range: number | null; reloadSeconds: number | null; damage: number | null; targets: string[] };
+export type ViewerWeapon = { id: string; projectile: string; range: number | null; reloadSeconds: number | null; damage: number | null; targets: string[] };
 export type ViewerUnit = {
   id: string;
   name: string;
@@ -37,6 +38,8 @@ export type ViewerUnit = {
   art: { spec: RenderSpec; sprite: SpriteArt | null } | null;
   /** The unit's own, licensed sounds (voice lines, its weapon and death sounds where the project made them). */
   sounds: PublicSoundGroup[];
+  /** What the stage's Attack demo fires: the armaments the unit uses as it stands, and a switchable mode or two. */
+  attack: DemoWeapon[];
 };
 export type ViewerCampaign = {
   id: string; title: string; synopsis: string; setting: string;
@@ -59,6 +62,12 @@ export type ViewerFaction = {
   original: boolean;
   /** The units only this country builds among its side's original countries (original countries only). */
   unique: string[];
+  /** The roster faction whose voice prefixes the game uses (the published sounds are keyed by it). */
+  soundFaction: string;
+  /** The Attack demo's training targets: each kind with a real roster unit's health and armor. */
+  dummies: ViewerDummy[];
+  /** The project's own effects by mod path (explosions the snapshot's sound lists name for original units too). */
+  effects: Record<string, PublicClip>;
 };
 export type ViewerFactionLink = { id: string; name: string; accent: string; flag: string | null; original?: boolean };
 /** A rival's in-world view of this faction: propaganda or a grievance, voiced by the rival, never a factual claim. */
@@ -101,11 +110,21 @@ function viewerUnit(actor: RosterActor, dossier: (typeof catalogUnits)[number] |
     description: label?.description ?? b.description?.split("\n")[0] ?? "",
     strengths: dossier?.strengths ?? null, counterplay: dossier?.counterplay ?? null, dossier: dossier ? `/units/${dossier.id}?mode=ra2` : null,
     stats: unitStats(actor),
-    weapons: b.weapons.map(w => ({ projectile: w.projectile ?? "Weapon", range: w.range ?? null, reloadSeconds: w.reload ? Math.round((w.reload * 40) / 100) / 10 : null, damage: w.damage ?? null, targets: w.targets ?? [] })),
+    weapons: b.weapons.map(w => ({ id: w.id, projectile: w.projectile ?? "Weapon", range: w.range ?? null, reloadSeconds: w.reload ? Math.round((w.reload * 40) / 100) / 10 : null, damage: w.damage ?? null, targets: w.targets ?? [] })),
     cameo: own ? unitArt(id)?.cameo.src ?? null : null,
     art: own ? { spec: renderSpec(own), sprite: spriteWithUrls(own) } : null,
     sounds: own ? unitSounds(id) : [],
+    attack: demoWeapons(b.weapons),
   };
+}
+
+/** The Attack demo's targets: infantry, a tank, a building, an aircraft, a ship and a submarine, as the game rates them. */
+export function viewerDummies(): ViewerDummy[] {
+  return (Object.keys(DUMMY_ACTORS) as DummyKind[]).flatMap(kind => {
+    const actor = rosters.actors.find(a => a.mode === "ra2" && a.id.toLowerCase() === DUMMY_ACTORS[kind]);
+    const health = actor?.behavior.health;
+    return actor && health ? [{ kind, name: DUMMY_NAMES[kind], health, armor: actor.behavior.armor ?? "None" }] : [];
+  });
 }
 
 export function viewerFaction(catalogId: string): ViewerFaction | null {
@@ -131,6 +150,9 @@ export function viewerFaction(catalogId: string): ViewerFaction | null {
     classicLabel: CLASSIC_ADDON,
     original: false,
     unique: [],
+    soundFaction: roster.id,
+    dummies: viewerDummies(),
+    effects: projectEffects(),
   };
 }
 
@@ -150,7 +172,7 @@ function originalFaction(country: RosterFaction): ViewerFaction {
     story: `${country.name} builds the ${allied ? "Allied" : "Soviet"} roster${own.length ? `, plus what only ${country.name} fields: ${own.join(", ")}` : ""}. Playable in the browser game alongside the modern factions, in Westwood’s original art.`,
     playstyle: "", strengths: "", counterplay: "", accent: originalAccent(country), flag: flagSrc(country.id), side: country.side,
     units: list, campaigns: [], otherCampaigns: [], narrative: null, classicLabel: CLASSIC_ADDON,
-    original: true, unique: [...unique],
+    original: true, unique: [...unique], soundFaction: country.id, dummies: viewerDummies(), effects: projectEffects(),
   };
 }
 

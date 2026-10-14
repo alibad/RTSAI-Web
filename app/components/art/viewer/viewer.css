@@ -18,18 +18,23 @@
 }
 .viewer a { color: inherit; text-decoration: none; }
 
-.viewer-top { display: flex; align-items: center; gap: 18px; min-width: 0; padding: 10px 20px; box-shadow: inset 0 -1px 0 var(--line); }
+.viewer-top { display: flex; align-items: center; gap: 8px 18px; min-width: 0; padding: 8px 20px; box-shadow: inset 0 -1px 0 var(--line); }
 .viewer-back { display: inline-flex; align-items: center; gap: 6px; flex: none; color: var(--muted); font-size: 13px; }
 .viewer-back:hover { color: var(--paper); }
-.viewer-factions { display: flex; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.viewer-factions::-webkit-scrollbar { display: none; }
-.viewer-factions a { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+/* All sixteen factions at a glance: the modern ones by name, the original countries as flag chips (the current one
+   named). The two groups sit side by side and wrap onto a second row on narrower screens; nothing scrolls. */
+.viewer-factions { flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.viewer-factions-group { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
+.viewer-factions-group.is-original { padding-left: 10px; box-shadow: inset 1px 0 0 var(--line); }
+.viewer-factions a { flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 6px; color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .viewer-factions a:hover { background: var(--raised); color: var(--paper); }
+.viewer-factions a:active { transform: translateY(1px); }
 .viewer-factions a[aria-current="page"] { background: var(--raised); color: var(--paper); box-shadow: inset 0 -2px 0 var(--accent); }
-.viewer-factions-sep { flex: none; align-self: stretch; width: 1px; margin: 4px 6px; background: var(--line); }
-/* The original countries take their flag only (the name on hover and on the current one), so all sixteen fit. */
-.viewer-factions a.is-original { padding: 6px 7px; }
+.viewer-factions .faction-flag { box-shadow: 0 0 0 1px rgba(240, 238, 230, 0.2); }
+.viewer-factions a.is-original { padding: 5px 6px; }
 .viewer-factions a.is-original:not([aria-current="page"]) span { display: none; }
+.viewer-factions a.is-original:not([aria-current="page"]) .faction-flag { opacity: 0.82; }
+.viewer-factions a.is-original:hover .faction-flag { opacity: 1; }
 .viewer-title { flex: none; color: var(--faint); font: 560 11px/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; }
 
 .viewer-body { display: grid; grid-template-columns: 268px minmax(0, 1fr) 340px; min-height: 0; }
@@ -78,6 +83,21 @@
 .viewer-actions button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); color: var(--paper); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .viewer-actions button:hover { background: var(--raised-2); }
 .viewer-actions button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 22%, var(--raised)); box-shadow: inset 0 0 0 1px var(--accent); }
+.viewer-actions button:active, .viewer-picks button:active, .viewer-chip:active, .viewer-clip:active { transform: translateY(1px); }
+/* Attack leads the row: the stage's headline action. */
+.viewer-actions .viewer-attack { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); cursor: crosshair; }
+.viewer-actions .viewer-attack:hover { background: color-mix(in srgb, var(--accent) 42%, var(--raised)); }
+.viewer-actions .viewer-attack[aria-pressed="true"] { background: var(--accent); color: var(--ink); box-shadow: none; }
+.viewer-actions .viewer-attack[aria-pressed="true"]:hover { background: color-mix(in srgb, var(--accent) 86%, #fff); }
+/* Picture choices: which weapon (what it fires, at what) and which target. */
+.viewer-attack-picks { position: absolute; left: 18px; bottom: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; cursor: default; }
+.viewer-picks { display: flex; gap: 4px; padding: 3px; border-radius: 8px; background: rgba(14, 17, 14, 0.9); box-shadow: inset 0 0 0 1px var(--line); }
+.viewer-picks button { position: relative; display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 7px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.viewer-picks button:hover { background: var(--raised-2); color: var(--paper); }
+.viewer-picks button[aria-checked="true"] { background: color-mix(in srgb, var(--accent) 24%, var(--raised)); color: var(--paper); box-shadow: inset 0 0 0 1px var(--accent); }
+.viewer-pick-at { display: inline-flex; color: var(--faint); transform: scale(0.8); }
+.viewer-picks button[aria-checked="true"] .viewer-pick-at { color: var(--accent); }
+.viewer-pick-mode { margin-left: 3px; font: 600 10px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; }
 .viewer-tools { display: flex; align-items: center; gap: 10px; }
 .viewer-colors { display: flex; gap: 6px; }
 .viewer-colors button { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4); }
@@ -125,7 +145,9 @@
 .viewer-block h4 { margin: 18px 0 8px; color: var(--faint); font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
 .viewer-weapons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .viewer-weapons li { display: grid; gap: 2px; padding: 8px 10px; border-radius: 6px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
-.viewer-weapons b { font-size: 13px; }
+.viewer-weapons b { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.viewer-weapons b svg { flex: none; color: var(--accent); }
+.viewer-weapons em { margin-left: auto; padding: 1px 6px; border-radius: 4px; background: var(--raised-2); color: var(--muted); font: 600 10px/1.5 var(--font-mono); font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; }
 .viewer-weapons span { color: #c9cac1; font-size: 12px; }
 .viewer-weapons small { color: var(--faint); font-size: 11px; }
 .viewer-doctrine { display: grid; gap: 12px; }
@@ -159,7 +181,8 @@
   .viewer { height: auto; min-height: 0; }
   .viewer-top { flex-wrap: wrap; gap: 8px 14px; padding: 10px 16px; }
   .viewer-title { display: none; }
-  .viewer-factions { order: 3; width: 100%; }
+  .viewer-factions { order: 3; flex-basis: 100%; }
+  .viewer-factions-group.is-original { padding-left: 6px; }
   .viewer-factions a span { display: none; }
   .viewer-factions a[aria-current="page"] span { display: inline; }
   .viewer-body { grid-template-columns: minmax(0, 1fr); }
@@ -191,7 +214,13 @@ body:has(.viewer) .feedback-launcher { backdrop-filter: none; box-shadow: none; 
 .viewer .studio-sound input { width: 72px; accent-color: var(--accent); }
 .viewer .studio-sound + .viewer-title { margin-left: 4px; }
 .viewer-sounds { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.viewer-sounds li { display: grid; gap: 4px; }
+.viewer-sounds li { display: grid; gap: 5px; }
+.viewer-lines { display: grid; gap: 4px; }
+.viewer-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.viewer-chip { display: inline-flex; align-items: center; gap: 4px; height: 26px; min-width: 40px; padding: 0 9px 0 7px; border: 0; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--paper); font: 600 11px/1 var(--font-mono); cursor: pointer; }
+.viewer-chip svg { color: var(--accent); }
+.viewer-chip:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.viewer-chip[data-playing], .viewer-clip[data-playing] { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
 .viewer-sounds li > small { color: var(--faint); font: 600 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
 .viewer-clip { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--paper); text-align: left; cursor: pointer; }
 .viewer-clip:hover { box-shadow: inset 0 0 0 1px var(--accent); }
@@ -213,3 +242,5 @@ body:has(.viewer) .feedback-launcher { backdrop-filter: none; box-shadow: none; 
 .viewer-rivals small::before { content: "· "; }
 .viewer-rivals blockquote { margin: 6px 0 0; color: #c9cac1; font-size: 13px; font-style: italic; line-height: 1.5; }
 .viewer-rivals blockquote p { margin: 0; }
+/* Below this the title gives its room to the faction bar. */
+@media (max-width: 1240px) { .viewer-title { display: none; } }

@@ -79,3 +79,30 @@ export function groundStrip(kind: GroundKind, tint: readonly number[], width: nu
   }
   return s;
 }
+
+const paths = new Map<string, Ground>();
+/**
+ * Terrain along a line: a soft-edged band from the actor (the anchor) to a point (dx, dy) 1x pixels away, `half`
+ * pixels either side, its RA2 cell grid drawn in so distances read in cells (the viewer's Attack demo).
+ */
+export function groundPath(kind: GroundKind, tint: readonly number[], dx: number, dy: number, half: number): Ground {
+  const key = `${kind}|${tint.join(",")}|${Math.round(dx)},${Math.round(dy)}|${half}`;
+  let g = paths.get(key);
+  if (!g) {
+    if (paths.size > 12) paths.clear();
+    const pad = half * 1.7;
+    const left = Math.floor(Math.min(0, dx) - pad), top = Math.floor(Math.min(0, dy) - pad / 2);
+    const width = Math.ceil(Math.max(0, dx) + pad) - left, height = Math.ceil(Math.max(0, dy) + pad / 2) - top;
+    const ax = -left, ay = -top, len2 = dx * dx + 4 * dy * dy || 1;
+    // Distance from the segment in ground space (a screen pixel down is two across), so the band lies flat.
+    const canvas = paint(kind, tint, width, height, ax, ay, (x, y) => {
+      const px = x + 0.5 - ax, py = y + 0.5 - ay;
+      const k = Math.max(0, Math.min(1, (px * dx + 4 * py * dy) / len2));
+      const d = Math.hypot(px - k * dx, 2 * (py - k * dy)) / half;
+      return d >= 1.7 ? 0 : d < 0.9 ? 1 : 1 - (d - 0.9) / 0.8;
+    });
+    g = { canvas, width, height, anchorX: ax, anchorY: ay };
+    paths.set(key, g);
+  }
+  return g;
+}

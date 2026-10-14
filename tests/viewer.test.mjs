@@ -92,6 +92,47 @@ test("the Faction viewer covers the nine original countries, their whole rosters
   assert.match(await (await render("/factions/russia?mode=ra2")).text(), /href="\/viewer\/russia"/, "an original country's page opens it in the viewer");
 });
 
+test("the stage's Attack demo: armed units fire their real weapons at their real range; unarmed ones have none", async () => {
+  const qilin = await (await render("/viewer/china/r2qilin")).text();
+  assert.match(qilin, /class="viewer-attack"/, "an armed unit offers Attack");
+  assert.match(qilin, /<span>Range<\/span>/, "and its weapons' range on the ground");
+  const data = qilin.replace(/\\"/g, '"');
+  assert.match(data, /"attack":\[\{"id":"R2QilinGun","label":"Qilin Gun","effect":"shell","range":5.75,"minRange":0,"reloadTicks":65,"burst":1,"damage":68/, "the main gun, at its real range, reload and damage");
+  assert.match(data, /"id":"R2QilinCoax","label":"Qilin Coax","effect":"tracer","range":5,/, "and the coaxial gun as a second choice");
+  assert.match(data, /"versus":\{"None":25,/, "with the versus table the target's armor is read against");
+  assert.match(data, /"dummies":\[\{"kind":"infantry","name":"Infantry","health":125,"armor":"None"\},\{"kind":"vehicle","name":"Tank","health":400,"armor":"Heavy"\}/, "training targets carry real units' health and armor");
+  const dog = (await (await render("/viewer/america/dog")).text()).replace(/\\"/g, '"');
+  assert.match(dog, /"attack":\[\{"id":"DogJaw","label":"Dog Jaw","effect":"bite","range":3,/, "the dog attacks with its bite");
+  const gi = (await (await render("/viewer/america/e1")).text()).replace(/\\"/g, '"');
+  assert.match(gi, /"id":"para","label":"Para","effect":"tracer","range":5,[\s\S]{0,400}?"mode":"deployed"\}/, "a deployed mode is a second choice; elite variants are not offered");
+  assert.doesNotMatch(gi, /"id":"M60E","label"/);
+  const kunlun = await (await render("/viewer/china/r2kunlun")).text();
+  assert.match(kunlun, /viewer-canvas-box/, "the unarmed unit is on the stage");
+  assert.doesNotMatch(kunlun, /viewer-attack/, "with no Attack control");
+});
+
+test("the faction bar offers all sixteen factions at once: the modern ones by name, the original countries by flag", async () => {
+  const html = await (await render("/viewer/russia/ttnk")).text();
+  const nav = /<nav class="viewer-factions"[^>]*>([\s\S]*?)<\/nav>/.exec(html)?.[1] ?? "";
+  const links = [...nav.matchAll(/href="\/viewer\/([a-z-]+)"/g)].map(m => m[1]);
+  assert.deepEqual(links, ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah", "america", "germany", "england", "france", "korea", "cuba", "libya", "iraq", "russia"]);
+  assert.match(nav, /class="viewer-factions-group is-original" role="group" aria-label="Original countries"/, "the original countries are one compact group");
+  assert.match(nav, /aria-current="page" title="Russia"/, "the current one is marked (and named)");
+  const cssDir = new URL("../dist/client/_next/static/css/", import.meta.url);
+  const css = readdirSync(cssDir).filter(f => f.endsWith(".css")).map(f => readFileSync(new URL(f, cssDir), "utf8")).join("\n");
+  assert.match(css, /\.viewer-factions\{[^}]*flex-wrap:wrap/, "the bar wraps instead of scrolling");
+  assert.doesNotMatch(css, /\.viewer-factions\{[^}]*overflow-x:auto/);
+});
+
+test("a unit's sounds: voice lines, and its weapon and death sounds, each playable", async () => {
+  const html = (await (await render("/viewer/china/r2mantis")).text()).replace(/<!-- -->/g, "");
+  assert.match(html, /Voice and sound/);
+  for (const label of ["Selected", "Move order", "Attack order", "Weapon fire"]) assert.match(html, new RegExp(`<small>${label}</small>`), `${label} is listed`);
+  assert.match(html, /\/faction-audio\/rtsai-aa-launch\.[0-9a-f]{12}\.mp3/, "the weapon's own report is published and playable");
+  assert.match(html, /aria-label="Play sound 1"/, "effects are compact play chips");
+  assert.doesNotMatch(html, /sounds are not published/, "no stale note");
+});
+
 test("faction and unit pages link into the viewer, and it is in the sitemap", async () => {
   assert.match(await (await render("/factions/china?mode=ra2")).text(), /href="\/viewer\/china/);
   assert.match(await (await render("/units/cnqilin?mode=ra2")).text(), /href="\/viewer\/china\/r2qilin"/);

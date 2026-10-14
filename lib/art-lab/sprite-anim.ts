@@ -33,7 +33,10 @@ export function spriteAnimations(sprite: SpriteArt | null): SpriteAnimation[] {
     const stand = by("WithInfantryBody stand");
     out.push({ id: "stand", label: "Stand", body: stand, note: null });
     out.push({ id: "move", label: "Walk", body: by("WithInfantryBody move"), note: null });
-    out.push({ id: "attack", label: "Fire", body: by("WithInfantryBody attack"), note: null });
+    // The attack sequence the rules name; an actor whose WithInfantryBody leaves it to the default (RA2's dog, whose
+    // attack is its leap) attacks with the sequence of that name.
+    const attack = by("WithInfantryBody attack") ?? seqs.find(s => /^(shoot|attack|fire|jump|bite)$/.test(s.name)) ?? null;
+    out.push({ id: "attack", label: attack?.name === "jump" ? "Leap" : "Fire", body: attack, note: null });
     out.push({ id: "idle", label: "Idle", body: by("WithInfantryBody idle"), note: null });
     // Prone is lying still (prone-stand); crawling (prone-run) is its own action.
     const prone = seqs.find(s => s.name === "prone-stand") ?? seqs.find(s => s.name.startsWith("prone-")) ?? null;

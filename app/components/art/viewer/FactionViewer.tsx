@@ -3,16 +3,19 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { ArrowLeft, BookOpen, Crosshair, Eye, Footprints, Pause, Play, Quote, ShieldAlert, Swords, Users, Volume2 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ADMIN_BUILD } from "../../../../lib/admin";
 import type { ViewerCampaign, ViewerFaction, ViewerFactionLink, ViewerUnit } from "../../../../lib/viewer";
 import { FrameStore, type StageItem } from "../review/frames";
 import { ViewerStage } from "./ViewerStage";
+import { EffectGlyph } from "./attack-icons";
+import { modeLabel } from "../../../../lib/weapon-demo";
 import { ViewerAdmin, type ShownVersion } from "./ViewerAdmin";
 import { soundEngine } from "../review/sound";
 import { SoundControls } from "../review/SoundControls";
 import type { PublicClip } from "../../../../lib/faction-audio";
 import { EA_NOTICE, useOriginalArt } from "../../../../lib/original-art";
+import { isProjectClip, useFactionSounds, type SnapshotSounds } from "../../../../lib/original-sounds";
 import "./viewer.css";
 
 const groups: [string, string][] = [["infantry", "Infantry"], ["vehicle", "Vehicles"], ["aircraft", "Aircraft"], ["ship", "Naval"], ["defense", "Defenses"], ["structure", "Buildings"]];
@@ -59,6 +62,12 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
     return art ? [[u.id, { key: u.id, spec: art.spec, sprite: art.sprite } as StageItem]] : [];
   })), [units, original]);
   const item = unit ? items.get(unit.id) ?? null : null;
+  // Westwood's voices and effects (and every unit's weapon sounds) from the published snapshot, once a unit is shown.
+  const [wantSounds, setWantSounds] = useState(Boolean(initial));
+  if (unit && !wantSounds) setWantSounds(true);
+  const snapSounds = useFactionSounds(faction.soundFaction, wantSounds);
+  const sounds = useMemo(() => (unit ? shownSounds(unit, snapSounds, faction.effects) : []), [unit, snapSounds, faction.effects]);
+  const infoSounds = useAfterPaint(sounds);
   // The last unit with art stays on the (hidden) stage while the overview or a text-only unit is shown.
   const [stageItem, setStageItem] = useState<StageItem | null>(item);
   if (item && item !== stageItem) setStageItem(item);
@@ -68,11 +77,11 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
     setSelected(id); setShown(null);
     // Picking a unit plays one of its select lines, as in game (after a click, never on page load).
     const picked = id ? units.find(u => u.id === id) : null;
-    if (picked) void soundEngine.playAny(groupSrcs(picked, "voice:Select"));
+    if (picked) void soundEngine.playAny(groupSrcs(shownSounds(picked, snapSounds, faction.effects), "voice:Select"));
     const href = hrefFor(faction.id, id);
     if (window.location.pathname !== href) window.history.pushState({ unit: id }, "", href);
     window.scrollTo({ top: 0 });
-  }, [faction.id, units]);
+  }, [faction.id, faction.effects, units, snapSounds]);
   useEffect(() => {
     const onPop = () => { const m = /^\/viewer\/[^/]+\/([^/?#]+)/.exec(window.location.pathname); setSelected(m ? decodeURIComponent(m[1]) : null); setShown(null); };
     window.addEventListener("popstate", onPop);
@@ -90,11 +99,13 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
     <div className="viewer" style={{ "--faction-accent": faction.accent } as CSSProperties}>
       <header className="viewer-top">
         <a className="viewer-back" href={`/factions/${faction.id}?mode=ra2`}><ArrowLeft size={15} aria-hidden="true" />{faction.name}</a>
+        {/* Every faction at a glance: the modern ones by name, the nine original countries as flags (the current one
+            named). The two groups wrap onto a second row rather than scroll. */}
         <nav className="viewer-factions" aria-label="Factions">
-          {factions.map((f, i) => <Fragment key={f.id}>
-            {f.original && !factions[i - 1]?.original && <span className="viewer-factions-sep" title="The original countries" aria-hidden="true" />}
-            <a href={hrefFor(f.id, null)} className={f.original ? "is-original" : undefined} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>
-          </Fragment>)}
+          {[factions.filter(f => !f.original), factions.filter(f => f.original)].map((group, i) => group.length > 0 &&
+            <div key={i} className={`viewer-factions-group${i ? " is-original" : ""}`} role="group" aria-label={i ? "Original countries" : "Modern factions"}>
+              {group.map(f => <a key={f.id} href={hrefFor(f.id, null)} className={f.original ? "is-original" : undefined} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>)}
+            </div>)}
         </nav>
         <SoundControls />
         <span className="viewer-title">Faction viewer</span>
@@ -127,7 +138,8 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
               come back without a new compositor layer. */}
           {stageItem && (
             <div className="viewer-stage-slot" hidden={!(unit && item)}>
-              <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor} onAction={id => { if (unit) playAction(unit, id); }}
+              <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor} onAction={id => playAction(sounds, id)}
+                weapons={unit && item && !shown ? unit.attack : NO_WEAPONS} dummies={faction.dummies} sounds={weaponId => (unit ? weaponSounds(unit, sounds, snapSounds, faction.effects, weaponId) : { report: [], impact: [] })}
                 tag={shown ? <span className="viewer-historical"><b>{shown.label}</b><button type="button" onClick={() => setShown(null)}>Back to the game’s art</button></span> : undefined}>
                 {unit && item && <div className="viewer-stage-name"><h1>{unit.name}</h1><span>{unit.role}</span></div>}
               </ViewerStage>
@@ -150,7 +162,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
         </main>
 
         <aside className="viewer-info" aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
-          {infoUnit ? <UnitInfo unit={infoUnit} classicLabel={faction.classicLabel} /> : faction.original ? <CountryInfo faction={faction} link={link} /> : <FactionInfo faction={faction} />}
+          {infoUnit ? <UnitInfo unit={infoUnit} sounds={infoUnit === unit ? infoSounds : shownSounds(infoUnit, snapSounds, faction.effects)} /> : faction.original ? <CountryInfo faction={faction} link={link} withSounds={Boolean(snapSounds)} /> : <FactionInfo faction={faction} />}
           {ADMIN_BUILD && infoUnit?.art && <ViewerAdmin key={infoUnit.id} unit={infoUnit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
         </aside>
       </div>
@@ -158,22 +170,61 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   );
 }
 
-const groupSrcs = (unit: ViewerUnit, ...ids: string[]) => {
-  for (const id of ids) { const g = unit.sounds.find(x => x.id === id); if (g?.clips.length) return g.clips.map(c => c.src); }
+const NO_WEAPONS: ViewerUnit["attack"] = [];
+/** A clip the info panel lists: the project's own (with what it says) or one of Westwood's originals. */
+type ShownClip = PublicClip & { original: boolean };
+type ShownGroup = { id: string; label: string; kind: string; clips: ShownClip[] };
+
+/**
+ * Every sound the unit has, as the game plays it: the snapshot's lists (originals and the project's clips together,
+ * in the game's order) when they are loaded, else the project's own published clips.
+ */
+function shownSounds(unit: ViewerUnit, snap: SnapshotSounds | null, effects: Record<string, PublicClip>): ShownGroup[] {
+  const own = (g: ViewerUnit["sounds"][number]): ShownGroup => ({ ...g, clips: g.clips.map(c => ({ ...c, original: false })) });
+  const lists = snap?.units[unit.id];
+  if (!snap || !lists) return unit.sounds.map(own);
+  const byFile = new Map([...Object.values(effects), ...unit.sounds.flatMap(g => g.clips)].flatMap(c => (c.file ? [[c.file, c] as const] : [])));
+  const out: ShownGroup[] = lists.map(g => ({
+    id: g.id, label: g.label, kind: g.kind,
+    clips: [...new Map(g.clips.flatMap((ref): ShownClip[] => {
+      if (isProjectClip(ref)) { const c = byFile.get(ref); return c ? [{ ...c, original: false }] : []; }
+      const o = snap.clips[ref];
+      return o ? [{ src: o.src, language: null, text: null, english: null, license: "Westwood", original: true }] : [];
+    }).map(c => [c.src, c] as const)).values()],
+  })).filter(g => g.clips.length);
+  for (const g of unit.sounds) if (!out.some(x => x.id === g.id)) out.push(own(g));
+  return out;
+}
+const groupSrcs = (groups: ShownGroup[], ...ids: string[]) => {
+  for (const id of ids) { const g = groups.find(x => x.id === id); if (g?.clips.length) return g.clips.map(c => c.src); }
   return [];
 };
-/** An action's sound: a weapon report when it fires, the death sound when it dies (the project's own clips only). */
-function playAction(unit: ViewerUnit, action: string) {
-  if (/^die/.test(action)) void soundEngine.playAny(groupSrcs(unit, "voice:Die", "death:explosion", "damage:destroyed"));
-  else if (/^(attack|fire|shoot|prone-shoot)$/.test(action)) void soundEngine.playAny(groupSrcs(unit, "weapon:report"));
+/** A weapon's own report and impact (the snapshot knows each weapon's), else the unit's weapon sounds. */
+function weaponSounds(unit: ViewerUnit, groups: ShownGroup[], snap: SnapshotSounds | null, effects: Record<string, PublicClip>, weaponId: string) {
+  const w = snap?.weapons[unit.id]?.[weaponId.toLowerCase()];
+  if (snap && w) {
+    const byFile = new Map([...Object.values(effects), ...unit.sounds.flatMap(g => g.clips)].flatMap(c => (c.file ? [[c.file, c.src] as const] : [])));
+    const resolve = (refs: string[]) => refs.flatMap(ref => { const src = isProjectClip(ref) ? byFile.get(ref) : snap.clips[ref]?.src; return src ? [src] : []; });
+    const report = resolve(w.report), impact = resolve(w.impact);
+    if (report.length || impact.length) return { report, impact };
+  }
+  return { report: groupSrcs(groups, "weapon:report"), impact: groupSrcs(groups, "weapon:impact") };
+}
+/** An action's sound: the attack order's acknowledgement, a weapon report when it fires, the death sound when it dies. */
+function playAction(groups: ShownGroup[], action: string) {
+  if (action === "attack-order") void soundEngine.playAny(groupSrcs(groups, "voice:Attack", "voice:Action"));
+  else if (/^die/.test(action)) void soundEngine.playAny(groupSrcs(groups, "voice:Die", "death:explosion", "damage:destroyed"));
+  else if (/^(attack|fire|shoot|prone-shoot)$/.test(action)) void soundEngine.playAny(groupSrcs(groups, "weapon:report"));
 }
 
-function ClipButton({ clip }: { clip: PublicClip }) {
+function ClipButton({ clip, n }: { clip: ShownClip; n: number }) {
   const [playing, setPlaying] = useState(false);
   const play = async () => { setPlaying(true); const s = await soundEngine.play(clip.src); window.setTimeout(() => setPlaying(false), (s ?? 0) * 1000); };
-  return <button type="button" className="viewer-clip" onClick={play} aria-label={`Play${clip.text ? `: ${clip.english ?? clip.text}` : " sound"}`}>
-    {playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
-    {clip.text ? <span><b dir="auto" lang={clip.language ?? undefined}>{clip.text}</b>{clip.english && clip.english !== clip.text && <small>{clip.english}</small>}</span> : <span><b>Play</b></span>}
+  const icon = playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />;
+  // A line with words shows them; an effect or an original line is a small numbered play chip.
+  if (!clip.text) return <button type="button" className="viewer-chip" data-playing={playing || undefined} onClick={play} aria-label={`Play sound ${n}`}>{icon}<span>{n}</span></button>;
+  return <button type="button" className="viewer-clip" data-playing={playing || undefined} onClick={play} aria-label={`Play: ${clip.english ?? clip.text}`}>
+    {icon}<span><b dir="auto" lang={clip.language ?? undefined}>{clip.text}</b>{clip.english && clip.english !== clip.text && <small>{clip.english}</small>}</span>
   </button>;
 }
 
@@ -193,30 +244,38 @@ function Stats({ unit }: { unit: ViewerUnit }) {
   return <dl className="viewer-stats">{unit.stats.map(s => <div key={s.id}><dt>{s.label}</dt><dd><i style={{ "--value": s.value } as CSSProperties} aria-hidden="true" /><span>{s.display}</span></dd></div>)}</dl>;
 }
 
-function UnitInfo({ unit, classicLabel }: { unit: ViewerUnit; classicLabel: string }) {
+function UnitInfo({ unit, sounds }: { unit: ViewerUnit; sounds: ShownGroup[] }) {
+  const licences = [...new Set(sounds.flatMap(g => g.clips.filter(c => !c.original).map(c => c.license.split(" ")[0])))];
+  const originals = sounds.some(g => g.clips.some(c => c.original));
   return <>
     <header className="viewer-info-head"><span className="eyebrow">{unit.role || groups.find(g => g[0] === unit.category)?.[1]}</span><h2>{unit.name}</h2>
       {unit.cost != null && <span className="viewer-cost">${unit.cost.toLocaleString("en")}</span>}</header>
     {unit.description && <p className="viewer-lead">{unit.description}</p>}
     <Stats unit={unit} />
-    {unit.weapons.length > 0 && <section className="viewer-block"><h3><Crosshair size={15} aria-hidden="true" />Weapons</h3><ul className="viewer-weapons">
+    {unit.attack.length > 0 ? <section className="viewer-block"><h3><Crosshair size={15} aria-hidden="true" />Weapons</h3><ul className="viewer-weapons">
+      {/* What the unit fires (and a switchable mode), as the Attack demo plays it; elite variants are left out. */}
+      {unit.attack.map(w => <li key={w.id}><b><EffectGlyph effect={w.effect} />{w.label}{w.mode && <em>{modeLabel(w.mode)}</em>}</b>
+        <span>{[`${w.damage} damage`, w.burst > 1 ? `bursts of ${w.burst}` : null, `${Number.isInteger(w.range) ? w.range : w.range.toFixed(1)} cells`, `${(w.reloadTicks * 0.04).toFixed(1)}s reload`].filter(Boolean).join(" · ")}</span>
+        <small>Hits {w.targets.filter(t => t !== "MicroDrone").join(", ").toLowerCase()}</small></li>)}
+    </ul></section> : unit.weapons.length > 0 && <section className="viewer-block"><h3><Crosshair size={15} aria-hidden="true" />Weapons</h3><ul className="viewer-weapons">
       {unit.weapons.map((w, i) => <li key={i}><b>{w.projectile}</b><span>{[w.damage != null ? `${w.damage} damage` : null, w.range != null ? `${w.range} cells` : null, w.reloadSeconds != null ? `${w.reloadSeconds}s reload` : null].filter(Boolean).join(" · ")}</span>{w.targets.length > 0 && <small>Hits {w.targets.join(", ").toLowerCase()}</small>}</li>)}
     </ul></section>}
     {(unit.strengths || unit.counterplay) && <section className="viewer-block viewer-doctrine">
       {unit.strengths && <p><Footprints size={15} aria-hidden="true" /><span><b>Use it to</b>{unit.strengths}</span></p>}
       {unit.counterplay && <p><ShieldAlert size={15} aria-hidden="true" /><span><b>Watch for</b>{unit.counterplay}</span></p>}
     </section>}
-    {unit.sounds.length > 0 && <section className="viewer-block"><h3><Volume2 size={15} aria-hidden="true" />Voice and sound</h3>
-      <ul className="viewer-sounds">{unit.sounds.filter(g => g.kind === "voice").slice(0, 4).map(g => <li key={g.id}><small>{g.label}</small>{g.clips.map(c => <ClipButton key={c.src} clip={c} />)}</li>)}
-        {unit.sounds.filter(g => g.kind !== "voice").map(g => <li key={g.id}><small>{g.label}</small>{g.clips.map(c => <ClipButton key={c.src} clip={c} />)}</li>)}</ul>
-      <p className="viewer-note">Synthetic voices and sounds made for this project ({[...new Set(unit.sounds.flatMap(g => g.clips.map(c => c.license.split(" ")[0])))].join(", ")}). {classicLabel} sounds are not published.</p>
+    {sounds.length > 0 && <section className="viewer-block"><h3><Volume2 size={15} aria-hidden="true" />Voice and sound</h3>
+      <ul className="viewer-sounds">{sounds.map(g => <li key={g.id} data-kind={g.kind}><small>{g.label}</small>
+        <div className={g.clips.some(c => c.text) ? "viewer-lines" : "viewer-chips"}>{g.clips.map((c, i) => <ClipButton key={c.src} clip={c} n={i + 1} />)}</div></li>)}</ul>
+      {licences.length > 0 && <p className="viewer-note">Synthetic voices and sounds made for this project ({licences.join(", ")}).</p>}
+      {originals && <p className="viewer-note">Westwood’s original voices and sound effects. {EA_NOTICE}</p>}
     </section>}
     {unit.dossier && <a className="viewer-link" href={unit.dossier}>Read the full dossier →</a>}
   </>;
 }
 
 /** An original country: what only it builds, where the rest of its roster comes from, and EA's notice. */
-function CountryInfo({ faction, link }: { faction: ViewerFaction; link: (u: ViewerUnit) => (e: React.MouseEvent) => void }) {
+function CountryInfo({ faction, link, withSounds }: { faction: ViewerFaction; link: (u: ViewerUnit) => (e: React.MouseEvent) => void; withSounds: boolean }) {
   const own = faction.units.filter(u => faction.unique.includes(u.id));
   const side = faction.side === "Allies" ? "Allied" : "Soviet";
   return <>
@@ -225,7 +284,7 @@ function CountryInfo({ faction, link }: { faction: ViewerFaction; link: (u: View
     {own.length > 0 && <section className="viewer-block"><h3><Swords size={15} aria-hidden="true" />Only {faction.name}</h3><ul className="viewer-weapons">
       {own.map(u => <li key={u.id}><a href={hrefFor(faction.id, u.id)} onClick={link(u)}><b>{u.name}</b></a>{u.description && <span>{u.description}</span>}</li>)}
     </ul></section>}
-    <p className="viewer-note">{faction.units.length} units and buildings, in Westwood’s original art. {faction.classicLabel} sounds are not published. EA has not endorsed and does not support this product.</p>
+    <p className="viewer-note">{faction.units.length} units and buildings, in Westwood’s original art{withSounds ? " and sound" : ""}. {EA_NOTICE}</p>
   </>;
 }
 
