@@ -3,8 +3,9 @@
  *
  * Project audio (the mod's own licensed clips) is read in place from the mod checkout. Original RA2 sounds are
  * extracted on demand from the player's own RA2 content into the private, gitignored originals cache, exactly like
- * the original art; nothing here is ever published or bundled. Both are served as 16-bit PCM WAV (the game's IMA
- * ADPCM is not something browsers decode).
+ * the original art; nothing here is bundled (the published Studio snapshot carries the original units' voices and
+ * effects for the Faction viewer, see sounds-snapshot.ts). Both are served as 16-bit PCM WAV (the game's IMA ADPCM is
+ * not something browsers decode).
  */
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

@@ -4,14 +4,19 @@
  *   node --import tsx scripts/publish-studio.ts              # resolve, write the static site, deploy it, write data/studio-snapshot.json
  *   node --import tsx scripts/publish-studio.ts --dry-run    # resolve and count only
  *   node --import tsx scripts/publish-studio.ts --no-deploy  # write the static site (.cache/studio-cdn) without deploying
+ *   node --import tsx scripts/publish-studio.ts --no-deploy --site=D:/studio-cdn   # write it somewhere else
+ *   node --import tsx scripts/publish-studio.ts --no-sounds  # art only (no original voices and sound effects)
  *
  * It resolves every roster the local Studio shows (RTS AI's factions; the original countries with Westwood art from the
  * player's own RA2 / Yuri's Revenge / Red Alert files; every mod of the mod library) and writes a static site: each
  * referenced art file once under its content hash (a/<sha>.<ext>), and the snapshot's rosters and index under s/<time>/.
  * The site is served by the Cloudflare Pages project STUDIO_CDN_PROJECT (default rtsai-studio) at STUDIO_CDN_URL
  * (default https://rtsai-studio.pages.dev): free, no transfer cap, and an edge in Doha, close to the players in Qatar.
- * Deploying needs `npx wrangler login` once. Commit and push data/studio-snapshot.json to publish. No C&C music is
- * published: the Studio's art is sprites, models, palettes and icons only.
+ * Deploying needs `npx wrangler login` once. Commit and push data/studio-snapshot.json to publish.
+ *
+ * Next to the art it publishes the original units' voices and sound effects for the Faction viewer
+ * (lib/art-lab/sounds-snapshot.ts): one sound list per faction (s/<time>/sounds-<faction>.json) and each original clip
+ * once as MP3 (a/<sha>.mp3), named in the index under `sounds`. Never music, and nothing EA's in the repository.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -20,14 +25,18 @@ import { dirname, extname, join, resolve } from "node:path";
 import { cachedFile, classicConfig, rosterPayload, yrConfig, originalsConfig, type OriginalsConfig } from "../lib/art-lab/originals";
 import { availableMods, modConfig, modLibraryConfig, modRosterPayload } from "../lib/art-lab/mod-library";
 import { readState } from "../lib/art-lab/review-server";
+import { buildSoundSnapshot, SOUND_ENCODER_LABEL } from "../lib/art-lab/sounds-snapshot";
+import { EA_NOTICE } from "../lib/ea-notice";
 
 const web = resolve(process.cwd());
 const dryRun = process.argv.includes("--dry-run");
 const deploy = !process.argv.includes("--no-deploy");
+const sounds = !process.argv.includes("--no-sounds");
+const arg = (name: string) => process.argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
 const project = process.env.STUDIO_CDN_PROJECT ?? "rtsai-studio";
 const cdn = (process.env.STUDIO_CDN_URL ?? `https://${project}.pages.dev`).replace(/\/$/, "");
 /** Kept between publishes: every deploy uploads the whole site, and older snapshots stay valid. */
-const site = join(web, ".cache", "studio-cdn");
+const site = resolve(arg("site") ?? join(web, ".cache", "studio-cdn"));
 
 const base = originalsConfig(web), lib = modLibraryConfig(web);
 const yr = yrConfig(base), classic = classicConfig(base);
@@ -103,7 +112,14 @@ const writeJson = (name: string, body: unknown) => {
 const rosterUrls: Record<string, string> = {};
 for (const [mode, payload] of Object.entries(rosters)) rosterUrls[mode] = writeJson(`roster-${mode.replace(":", "-")}.json`, rewrite(payload));
 const state = readState(join(web, ".cache", "shared-studio-empty-workspace"));
-const index = writeJson("index.json", { publishedAt, rosters: rosterUrls, mods, state });
+// The original units' voices and effects for the Faction viewer, one list per faction.
+let soundIndex: { notice: string; encoder: string; factions: Record<string, string> } | undefined;
+if (sounds) {
+  const built = await buildSoundSnapshot({ modRoot: base.modRoot, originals: base, site, cdn, log });
+  soundIndex = { notice: EA_NOTICE, encoder: SOUND_ENCODER_LABEL, factions: Object.fromEntries(Object.entries(built.factions).map(([id, payload]) => [id, writeJson(`sounds-${id}.json`, payload)])) };
+  log(`sounds: ${built.stats.clips} original clips (${(built.stats.bytes / 1048576).toFixed(1)} MB, ${built.stats.added} new) for ${built.stats.units} units; ${built.stats.missing.length} not in the game files${built.stats.missing.length ? `: ${built.stats.missing.slice(0, 8).join(" ")}` : ""}`);
+}
+const index = writeJson("index.json", { publishedAt, rosters: rosterUrls, mods, state, ...(soundIndex ? { sounds: soundIndex } : {}) });
 
 // 5. Deploy, then record the snapshot for the site.
 if (deploy) {
