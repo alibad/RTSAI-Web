@@ -19,7 +19,7 @@ const bundle = await build({ configFile: false, root, publicDir: false, base: "/
 const outputs = (Array.isArray(bundle) ? bundle : [bundle]).flatMap(r => "output" in r ? r.output : []);
 const entry = outputs.find(o => o.type === "chunk" && o.isEntry)!;
 const css = outputs.filter(o => o.type === "asset" && o.fileName.endsWith(".css")).map(o => `<link rel="stylesheet" href="/${o.fileName}">`).join("");
-const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Faction Viewer · Local audio preview</title>${css}</head><body><div id="local-viewer-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
+const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Faction Viewer · Local audio preview</title>${css}</head><body data-local-viewer style="--font-geist:Arial;--font-mono:monospace"><div id="local-viewer-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
 const api = createArtReviewMiddleware({ root: resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, "../RTSAI-Mod-wt-art-preview") });
 const mime: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".webp": "image/webp", ".wasm": "application/wasm", ".jpg": "image/jpeg" };
 const port = Number(process.env.RTSAI_VIEWER_PORT ?? 3463);

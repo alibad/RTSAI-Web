@@ -246,3 +246,6 @@ body:has(.viewer) .feedback-launcher { backdrop-filter: none; box-shadow: none; 
 @media (max-width: 1240px) { .viewer-title { display: none; } }
 
 .viewer-hangar-preview{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;background:#28251b;color:#edd9a6;border-bottom:1px solid #665431;font:13px/1.5 system-ui}.viewer-hangar-preview>span{flex:1}.viewer-hangar-preview button{padding:6px 10px;border:1px solid #806a40;border-radius:5px;color:inherit;cursor:pointer;background:transparent}
+
+.viewer.has-hangar-preview{grid-template-rows:auto auto minmax(0,1fr)}
+body[data-local-viewer] .viewer{height:100dvh}

@@ -99,7 +99,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   const link = (u: ViewerUnit) => (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); select(u.id); };
 
   return (
-    <div className="viewer" style={{ "--faction-accent": faction.accent } as CSSProperties}>
+    <div className={`viewer${hangar.savedPreview || hangar.error ? " has-hangar-preview" : ""}`} style={{ "--faction-accent": faction.accent } as CSSProperties}>
       <header className="viewer-top">
         <a className="viewer-back" href={`/factions/${faction.id}?mode=ra2`}><ArrowLeft size={15} aria-hidden="true" />{faction.name}</a>
         {/* Every faction at a glance: the modern ones by name, the nine original countries as flags (the current one
