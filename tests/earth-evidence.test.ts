@@ -5,6 +5,8 @@ import {
   MAX_BUILDINGS,
   classifyTerrain,
   overpassFailure,
+  seaFromCoastlines,
+  terrainBox,
   terrainFeatures,
   terrainQuery,
   type OverpassElement,
@@ -48,6 +50,10 @@ test("the terrain query covers the workshop's box and tags, with buildings as ce
   for (const tag of ['[natural~"water|bay|coastline|wood|scrub|sand|beach|bare_rock|cliff"]', "[waterway]", '[highway~"motorway|trunk|primary|secondary|tertiary|residential"]', "[landuse]", '[leisure~"park|garden|nature_reserve"]'])
     assert.ok(query.includes(tag), tag);
   assert.ok(query.endsWith(`);out tags geom;way(${box})[building];out tags center;`));
+  // Lakes, forests and sands mapped as multipolygon relations, up to a lake's size, with the ways.
+  assert.ok(query.includes(`relation(${box})[type=multipolygon][natural~"water|bay|wood|scrub|sand|beach|bare_rock"](if:count_members()<2000);`));
+  assert.ok(query.includes(`relation(${box})[type=multipolygon][landuse~"forest|meadow|orchard|quarry|reservoir|basin"](if:count_members()<2000);`));
+  assert.deepEqual(terrainBox(60, 10, 2226.4), { s: 60 - dy, w: 10 - dx, n: 60 + dy, e: 10 + dx });
   // Near the poles the box stops widening (cos is clamped at 0.15, as in the workshop).
   assert.ok(terrainQuery(89, 0, 1000).includes(`,${-(1000 / 111320) / 0.15},`));
 });
@@ -114,4 +120,60 @@ test("terrain evidence keeps the route's validation and sign-in checks", async (
   const anonymous = await post({ latitude: 24.7, longitude: 46.7, radiusM: 3500, detail: "terrain" });
   assert.equal(anonymous.status, 401);
   assert.deepEqual(await anonymous.json(), { error: "Sign in required" });
+});
+
+// ------------------------------------------------------------------------------------------------ areas
+const unit = { s: 0, w: 0, n: 1, e: 1 };
+const area = (ring: [number, number][]) => Math.abs(ring.reduce((sum, p, i) => { const q = ring[(i + 1) % ring.length]; return sum + p[1] * q[0] - q[1] * p[0]; }, 0) / 2);
+
+test("a coastline across the box makes the sea on its right", () => {
+  // West to east with the land on the left (north): the south half is sea.
+  const [sea] = seaFromCoastlines([[[0.5, -0.5], [0.5, 0.4], [0.5, 1.5]]], unit);
+  assert.deepEqual(sea, [[0.5, 0], [0.5, 0.4], [0.5, 1], [0, 1], [0, 0], [0.5, 0]]);
+  // The other way round, the land is south and the sea north.
+  const [north] = seaFromCoastlines([[[0.5, 1.5], [0.5, -0.5]]], unit);
+  assert.ok(north.every(([lat]) => lat >= 0.5) && Math.abs(area(north) - 0.5) < 1e-9);
+});
+
+test("a canal mapped as coastline (the Suez Canal) is the water between its banks", () => {
+  // The west bank runs north (Africa on its left), the east bank south (Sinai on its left); each is split in two ways.
+  const west: [number, number][][] = [[[-0.5, 0.4], [0.5, 0.4]], [[0.5, 0.4], [1.5, 0.4]]];
+  const east: [number, number][][] = [[[1.5, 0.6], [0.3, 0.6]], [[0.3, 0.6], [-0.5, 0.6]]];
+  const seas = seaFromCoastlines([...east, ...west], unit);
+  assert.equal(seas.length, 1);
+  assert.ok(Math.abs(area(seas[0]) - 0.2) < 1e-9, "the strip between the banks");
+  assert.ok(seas[0].every(([, lon]) => lon >= 0.4 - 1e-9 && lon <= 0.6 + 1e-9));
+});
+
+test("islands stay land, and a coastline that stops inside the box adds no sea", () => {
+  // A counter-clockwise ring (land on the left, inside) is an island.
+  assert.deepEqual(seaFromCoastlines([[[0.4, 0.4], [0.4, 0.6], [0.6, 0.6], [0.6, 0.4], [0.4, 0.4]]], unit), []);
+  // Missing data: the coast ends in the box, so which side is sea is unknown.
+  assert.deepEqual(seaFromCoastlines([[[0.5, -0.5], [0.5, 0.5]]], unit), []);
+});
+
+test("multipolygon relations become their outer rings, joined and clipped; coastline seas come first", () => {
+  const p = (lat: number, lon: number) => ({ lat, lon });
+  const elements: OverpassElement[] = [
+    { type: "way", id: 7, tags: { highway: "primary" }, geometry: [p(0.1, 0.1), p(0.9, 0.9)] },
+    {
+      type: "relation", id: 5809452, tags: { type: "multipolygon", natural: "water" },
+      members: [
+        // Lake Timsah's outer ring in two ways, the second reversed, half of it outside the box; an island inside.
+        { type: "way", role: "outer", geometry: [p(0.2, 0.2), p(0.2, 1.4), p(0.6, 1.4)] },
+        { type: "way", role: "outer", geometry: [p(0.2, 0.2), p(0.6, 0.2), p(0.6, 1.4)] },
+        { type: "way", role: "inner", geometry: [p(0.3, 0.3), p(0.3, 0.4), p(0.4, 0.4), p(0.3, 0.3)] },
+      ],
+    },
+    // East to west: the land on its left is south, the sea north.
+    { type: "way", id: 9, tags: { natural: "coastline" }, geometry: [p(0.95, 1.5), p(0.95, -0.5)] },
+  ];
+  const features = terrainFeatures({ elements }, unit);
+  assert.deepEqual(features.map(f => f.kind), ["water", "road", "coastline", "water"]);
+  assert.ok(features[0].points.every(([lat]) => lat >= 0.95), "the sea north of the coast, painted first");
+  const lake = features[3];
+  assert.ok(lake.closed && lake.points.every(([lat, lon]) => lat >= 0.2 && lat <= 0.6 && lon >= 0.2 && lon <= 1));
+  assert.ok(Math.abs(area(lake.points) - 0.4 * 0.8) < 1e-9, "the part of the lake in the box");
+  // Without a box (the desktop workshop's evidence) the rings are kept whole and no sea is inferred.
+  assert.deepEqual(terrainFeatures({ elements }).map(f => f.kind), ["road", "coastline", "water"]);
 });
