@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "source": {
-    "modIdentity": "b153198307187e65de2f5019ce44e5d840644e17984baaebcf9974f9dbdb5602",
-    "engineIdentity": "df46c27413508cf1a9c91c9ee08cfbd1f2496deaa56ab93be1a6239d7f163394",
+    "modIdentity": "cb3614f9c846f2142c0e44e089316955e55d9eacd5b05b944f581a46e75f00a1",
+    "engineIdentity": "6356cacd12e2caead26804fd12847529f7c196efca0865192587789d144124e7",
     "catalogSha256": "e41571fcd9391c919f8186fdc1564d262ee21795c33fafdf051df63b01fb2a62",
-    "modHead": "99048bc99b7b6bbd4d991c3b375da7106399af95",
-    "enginePin": "aed51fe4b1c699b487b9f9683dbc79215f3a96be"
+    "modHead": "b6794bd228b52bed0433a24c069e3949223d10eb",
+    "enginePin": "53424ddb7954c9f30f6cb11f4f8163b86595bdf1"
   },
   "scope": "Standalone roster facts; independent of historical Art catalog and human approvals; local acceptance is not publication",
   "profiles": {
@@ -934,7 +934,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -2578,7 +2578,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -4733,7 +4733,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -6535,7 +6535,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -8795,7 +8795,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -10439,7 +10439,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -12539,7 +12539,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -14183,7 +14183,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -16365,7 +16365,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -18009,7 +18009,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -20653,7 +20653,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -20973,7 +20973,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -21263,7 +21263,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -21520,7 +21520,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -24163,7 +24163,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -24604,7 +24604,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -24894,7 +24894,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -25151,7 +25151,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -27965,7 +27965,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -28285,7 +28285,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -28575,7 +28575,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -28832,7 +28832,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -31475,7 +31475,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -31953,7 +31953,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -32243,7 +32243,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -32500,7 +32500,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -60184,7 +60184,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -61828,7 +61828,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -63983,7 +63983,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -65785,7 +65785,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -68045,7 +68045,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -69689,7 +69689,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -71789,7 +71789,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -73433,7 +73433,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -75615,7 +75615,7 @@
             },
             {
               "id": "mtnk",
-              "name": "Medium Tank Battle Tank",
+              "name": "Battle Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -77259,7 +77259,7 @@
             },
             {
               "id": "aegis",
-              "name": "Air Defense Cruiser Cruiser",
+              "name": "Air Defense Cruiser",
               "category": "ship",
               "advanced": true,
               "domain": "naval",
@@ -79903,7 +79903,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -80223,7 +80223,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -80513,7 +80513,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -80770,7 +80770,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -83413,7 +83413,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -83854,7 +83854,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -84144,7 +84144,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -84401,7 +84401,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -87215,7 +87215,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -87535,7 +87535,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -87825,7 +87825,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -88082,7 +88082,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",
@@ -90725,7 +90725,7 @@
             },
             {
               "id": "htnk",
-              "name": "Main Battle Tank Heavy Tank",
+              "name": "Heavy Tank",
               "category": "vehicle",
               "advanced": false,
               "domain": "ground",
@@ -91203,7 +91203,7 @@
             },
             {
               "id": "apoc",
-              "name": "Heavy Assault Tank Tank",
+              "name": "Heavy Assault Tank",
               "category": "vehicle",
               "advanced": true,
               "domain": "ground",
@@ -91493,7 +91493,7 @@
             },
             {
               "id": "zep",
-              "name": "Heavy Airship Airship",
+              "name": "Heavy Airship",
               "category": "aircraft",
               "advanced": true,
               "domain": "air",
@@ -91750,7 +91750,7 @@
             },
             {
               "id": "sub",
-              "name": "Attack Submarine Attack Sub",
+              "name": "Attack Submarine",
               "category": "ship",
               "advanced": false,
               "domain": "naval",

@@ -1,7 +1,8 @@
 /**
  * Every activity RTS AI tracks, defined once. The site and the browser game (same origin, rtsai.net/play) send these
- * names to Google Analytics and to POST /api/event, which counts them per player and overall, and emails the event log
- * group (MAIL_GROUP) when an event is always-notable or a counter reaches a milestone.
+ * names to Google Analytics and to POST /api/event, which adds each to its day's rollup (dailyStats, for the weekly
+ * digest: lib/event-rollup.ts), counts them per player and overall, and emails the event log group (MAIL_GROUP) when
+ * an event is always-notable or a counter reaches a milestone. A new event name also goes into functions/rollup.js.
  */
 
 export type EventCategory = "auth" | "activation" | "engagement" | "social" | "ai" | "feedback" | "error";

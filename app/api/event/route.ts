@@ -1,14 +1,16 @@
 import { COUNTER_LABELS, EVENTS, cleanProps, isEventName, isMilestone, ordinal, type EventName } from "../../../lib/event-registry";
 import { eventEmail } from "../../../lib/event-email";
+import { recordDailyEvent } from "../../../lib/event-rollup";
 import { mailGroup, sendFirebaseEmail } from "../../../lib/firebase-mail";
 import { bearerToken, verifyFirebaseIdentity, type FirebaseIdentity } from "../../../lib/firebase-token";
 import { countEvent, type CountResult } from "../../../lib/player-stats";
 
 /**
- * POST /api/event { name, props } from the signed-in site or game (same origin). Counts the event per player and
- * overall, then emails the event log group (MAIL_GROUP) for always-notable events and milestones. The server adds what
- * the browser can't know about itself: country and city, device, and the page. Analytics never breaks the product:
- * failures are logged and the caller fires and forgets.
+ * POST /api/event { name, props } from the signed-in site or game (same origin). Adds the event to its day's rollup
+ * (lib/event-rollup.ts, for the weekly digest), counts it per player and overall, then emails the event log group
+ * (MAIL_GROUP) for always-notable events and milestones. The server adds what the browser can't know about itself:
+ * country and city, device, and the page. Analytics never breaks the product: failures are logged and the caller
+ * fires and forgets.
  */
 
 const allowedOrigins = ["https://rtsai.net", "https://www.rtsai.net"];
@@ -38,6 +40,8 @@ export function createEventHandler(deps: {
   sendEmail: typeof sendFirebaseEmail;
   recipients: typeof mailGroup;
   reportError: typeof console.error;
+  /** The day's rollup; feedback_sent is rolled up by /api/feedback, which every report passes through. */
+  rollup?: typeof recordDailyEvent;
 }) {
   return async function handleEvent(request: Request) {
     const origin = request.headers.get("origin");
@@ -49,6 +53,13 @@ export function createEventHandler(deps: {
     try { body = await request.json(); } catch { return Response.json({ error: "Invalid request" }, { status: 400 }); }
     if (!isEventName(body.name)) return Response.json({ error: "Unknown event" }, { status: 400 });
     const name = body.name, spec: (typeof EVENTS)[EventName] = EVENTS[name], props = cleanProps(body.props);
+
+    // Runs alongside the counters and the email; awaited at the end so the platform doesn't cut it off.
+    const rolledUp = !deps.rollup || name === "feedback_sent" ? Promise.resolve(false)
+      : deps.rollup({ idToken: bearerToken(request), name, props }).catch((cause: unknown) => {
+        deps.reportError("Daily rollup failed", { event: name, message: cause instanceof Error ? cause.message.slice(0, 300) : "unknown" });
+        return false;
+      });
 
     let counts: CountResult = {};
     try {
@@ -77,7 +88,7 @@ export function createEventHandler(deps: {
         deps.reportError("Event email failed", { event: name, message: cause instanceof Error ? cause.message.slice(0, 300) : "unknown" });
       }
     }
-    return Response.json({ ok: true, counts, emailed });
+    return Response.json({ ok: true, counts, emailed, rolledUp: await rolledUp });
   };
 }
 
@@ -87,4 +98,5 @@ export const POST = createEventHandler({
   sendEmail: sendFirebaseEmail,
   recipients: mailGroup,
   reportError: console.error,
+  rollup: recordDailyEvent,
 });

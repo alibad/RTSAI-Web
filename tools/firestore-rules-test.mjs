@@ -176,5 +176,10 @@ await expect("mail over the size limit", false, () => call(a, "POST", "/mail", m
 await expect("signed-out visitor sends mail", false, () => call(null, "POST", "/mail", mail(["rtsai@googlegroups.com"])));
 await expect("player reads the mail queue", false, () => call(a, "GET", "/mail"));
 
+// ---- daily rollups: only the recordEvent function (admin) writes dailyStats; the weekly digest reads it
+await expect("player reads a day's rollup", false, () => call(a, "GET", "/dailyStats/2026-10-14"));
+await expect("player bumps a day's rollup", false, () => bump(a, "dailyStats/2026-10-14", "players"));
+await expect("player adds themselves to a day", false, () => call(a, "PATCH", `/dailyStats/2026-10-14/players/${a.uid}`, { fields: { events: { integerValue: "1" } } }));
+
 console.log(results.map(r => `${r.ok ? "PASS" : "FAIL"} ${r.label} (${r.status})`).join("\n"));
 console.log(`\n${results.filter(r => r.ok).length}/${results.length} rules checks passed`);

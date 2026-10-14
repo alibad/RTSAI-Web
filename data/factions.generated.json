@@ -3,9 +3,9 @@
   "sha256": "e41571fcd9391c919f8186fdc1564d262ee21795c33fafdf051df63b01fb2a62",
   "derivation": {
     "type": "standalone-frozen-facts",
-    "factsSha256": "a9d215138aae7ad93bb0296bbac2ebfba5e0d02c21a3bdfa7fb727c26aec8c74",
-    "modIdentity": "b153198307187e65de2f5019ce44e5d840644e17984baaebcf9974f9dbdb5602",
-    "engineIdentity": "df46c27413508cf1a9c91c9ee08cfbd1f2496deaa56ab93be1a6239d7f163394",
+    "factsSha256": "79bf2c2b46e4c1766a6c75cbce04c39633239d5686217ebdb1c5a2fc918d0ed9",
+    "modIdentity": "cb3614f9c846f2142c0e44e089316955e55d9eacd5b05b944f581a46e75f00a1",
+    "engineIdentity": "6356cacd12e2caead26804fd12847529f7c196efca0865192587789d144124e7",
     "catalogPreserved": true,
     "humanReview": "not-modified"
   },
@@ -2028,16 +2028,16 @@
   "rosters": {
     "sources": {
       "ra2": {
-        "commit": "99048bc99b7b6bbd4d991c3b375da7106399af95",
-        "snapshotSha256": "a9d215138aae7ad93bb0296bbac2ebfba5e0d02c21a3bdfa7fb727c26aec8c74",
-        "sourceIdentity": "b153198307187e65de2f5019ce44e5d840644e17984baaebcf9974f9dbdb5602",
+        "commit": "b6794bd228b52bed0433a24c069e3949223d10eb",
+        "snapshotSha256": "79bf2c2b46e4c1766a6c75cbce04c39633239d5686217ebdb1c5a2fc918d0ed9",
+        "sourceIdentity": "cb3614f9c846f2142c0e44e089316955e55d9eacd5b05b944f581a46e75f00a1",
         "profile": "rtsai",
         "grid": "RectangularIsometric"
       },
       "ra": {
-        "commit": "99048bc99b7b6bbd4d991c3b375da7106399af95",
-        "snapshotSha256": "a9d215138aae7ad93bb0296bbac2ebfba5e0d02c21a3bdfa7fb727c26aec8c74",
-        "sourceIdentity": "b153198307187e65de2f5019ce44e5d840644e17984baaebcf9974f9dbdb5602",
+        "commit": "b6794bd228b52bed0433a24c069e3949223d10eb",
+        "snapshotSha256": "79bf2c2b46e4c1766a6c75cbce04c39633239d5686217ebdb1c5a2fc918d0ed9",
+        "sourceIdentity": "cb3614f9c846f2142c0e44e089316955e55d9eacd5b05b944f581a46e75f00a1",
         "profile": "rtsai-topdown",
         "grid": "Rectangular"
       }
@@ -4274,7 +4274,7 @@
         "key": "ra2:mtnk",
         "id": "mtnk",
         "mode": "ra2",
-        "name": "Medium Tank Battle Tank",
+        "name": "Battle Tank",
         "category": "vehicle",
         "cost": 700,
         "roles": [
@@ -5858,7 +5858,7 @@
         "key": "ra2:aegis",
         "id": "aegis",
         "mode": "ra2",
-        "name": "Air Defense Cruiser Cruiser",
+        "name": "Air Defense Cruiser",
         "category": "ship",
         "cost": 1200,
         "roles": [
@@ -8695,7 +8695,7 @@
         "key": "ra2:htnk",
         "id": "htnk",
         "mode": "ra2",
-        "name": "Main Battle Tank Heavy Tank",
+        "name": "Heavy Tank",
         "category": "vehicle",
         "cost": 900,
         "roles": [
@@ -9003,7 +9003,7 @@
         "key": "ra2:apoc",
         "id": "apoc",
         "mode": "ra2",
-        "name": "Heavy Assault Tank Tank",
+        "name": "Heavy Assault Tank",
         "category": "vehicle",
         "cost": 1750,
         "roles": [
@@ -9281,7 +9281,7 @@
         "key": "ra2:zep",
         "id": "zep",
         "mode": "ra2",
-        "name": "Heavy Airship Airship",
+        "name": "Heavy Airship",
         "category": "aircraft",
         "cost": 2000,
         "roles": [
@@ -9526,7 +9526,7 @@
         "key": "ra2:sub",
         "id": "sub",
         "mode": "ra2",
-        "name": "Attack Submarine Attack Sub",
+        "name": "Attack Submarine",
         "category": "ship",
         "cost": 1000,
         "roles": [
@@ -27862,7 +27862,7 @@
         "key": "ra:mtnk",
         "id": "mtnk",
         "mode": "ra",
-        "name": "Medium Tank Battle Tank",
+        "name": "Battle Tank",
         "category": "vehicle",
         "cost": 700,
         "roles": [
@@ -29446,7 +29446,7 @@
         "key": "ra:aegis",
         "id": "aegis",
         "mode": "ra",
-        "name": "Air Defense Cruiser Cruiser",
+        "name": "Air Defense Cruiser",
         "category": "ship",
         "cost": 1200,
         "roles": [
@@ -32283,7 +32283,7 @@
         "key": "ra:htnk",
         "id": "htnk",
         "mode": "ra",
-        "name": "Main Battle Tank Heavy Tank",
+        "name": "Heavy Tank",
         "category": "vehicle",
         "cost": 900,
         "roles": [
@@ -32591,7 +32591,7 @@
         "key": "ra:apoc",
         "id": "apoc",
         "mode": "ra",
-        "name": "Heavy Assault Tank Tank",
+        "name": "Heavy Assault Tank",
         "category": "vehicle",
         "cost": 1750,
         "roles": [
@@ -32869,7 +32869,7 @@
         "key": "ra:zep",
         "id": "zep",
         "mode": "ra",
-        "name": "Heavy Airship Airship",
+        "name": "Heavy Airship",
         "category": "aircraft",
         "cost": 2000,
         "roles": [
@@ -33114,7 +33114,7 @@
         "key": "ra:sub",
         "id": "sub",
         "mode": "ra",
-        "name": "Attack Submarine Attack Sub",
+        "name": "Attack Submarine",
         "category": "ship",
         "cost": 1000,
         "roles": [
