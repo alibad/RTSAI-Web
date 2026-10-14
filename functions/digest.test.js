@@ -70,7 +70,7 @@ test("the email is visual and scannable: big numbers, bar charts, errors, links;
   assert.deepEqual(model.factions.map((r) => r.label), ["Russia", "America", "Iran"]);
   assert.equal(model.avgMinutes, 15);
   for (const piece of ["RTS AI · WEEKLY", "Week of 5 Oct", "5–11 Oct 2026", "MATCHES BY MODE", "MATCHES BY FACTION", "HOW MATCHES ENDED", "GAME ERRORS",
-    "ALL TIME", "1,500", "https://rtsai.net", "analytics.google.com/analytics/web/#/p549381181/reports", "bgcolor=\"#d9a93c\"", "Russia", "average match 15.0 min"]) {
+    "ALL TIME", "1,500", "Player accounts", "88", "https://rtsai.net", "analytics.google.com/analytics/web/#/p549381181/reports", "bgcolor=\"#d9a93c\"", "Russia", "average match 15.0 min"]) {
     assert.ok(html.includes(piece), `html has ${piece}`);
   }
   assert.ok(html.includes("WebGL &lt;context&gt; lost &amp; &quot;gone&quot;"), "error messages are escaped");

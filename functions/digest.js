@@ -116,9 +116,9 @@ export function digestModel(input) {
     errors: (input.errors ?? []).slice(0, 5),
     avgMinutes: timed ? n(at(week, "ended.minutes")) / timed : null,
     avgLoadSeconds: loadsTimed ? n(at(week, "loaded.seconds")) / loadsTimed : null,
+    // Firebase Auth's accounts are every player; stats/global's own players counter only began with the sign_up event.
     allTime: [
-      { label: "Players", value: n(input.global?.players) },
-      { label: "Accounts", value: n(input.accounts) },
+      input.accounts ? { label: "Player accounts", value: n(input.accounts) } : { label: "Players", value: n(input.global?.players) },
       { label: "Matches", value: n(input.global?.matches) },
       { label: "Multiplayer", value: n(input.global?.multiplayer) },
       { label: "AI assists", value: n(input.global?.aiAssists) },
@@ -239,7 +239,7 @@ ${m.signups.length || m.feedback.length ? barTable([...m.signups.map((r) => ({ .
 ${heading("GAME ERRORS", `${fmt(m.errorCount)} this week, ${errorsChange.text} vs last week`)}
 ${m.errors.length ? `<tr><td style="padding:0 22px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${m.errors.map((e) => `<tr><td width="46" valign="top" style="padding:5px 8px 5px 0;"><span style="display:inline-block;min-width:24px;padding:2px 7px;border-radius:10px;background:#4a1f1b;color:#ffb3ab;font-size:12px;font-weight:700;text-align:center;">${fmt(e.count)}</span></td><td style="padding:5px 0;font-size:12px;line-height:17px;color:${C.text};font-family:Consolas,Menlo,monospace;word-break:break-word;">${esc(e.message)}${e.where && e.where !== "unknown" ? ` <span style="color:${C.muted};font-family:${font};">· ${esc(e.where)}</span>` : ""}</td></tr>`).join("")}</table></td></tr>` : empty("No game errors reported this week.")}
 ${heading("ALL TIME")}
-<tr><td style="padding:0 17px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${m.allTime.map((t) => `<td width="20%" valign="top" style="padding:5px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel}" style="background:${C.panel};border:1px solid ${C.line};border-radius:10px;"><tr><td align="center" style="padding:10px 4px;"><div style="font-size:20px;font-weight:800;color:${C.text};">${fmt(t.value)}</div><div style="font-size:11px;color:${C.muted};padding-top:2px;">${esc(t.label)}</div></td></tr></table></td>`).join("")}</tr></table></td></tr>
+<tr><td style="padding:0 17px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${m.allTime.map((t) => `<td width="25%" valign="top" style="padding:5px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.panel}" style="background:${C.panel};border:1px solid ${C.line};border-radius:10px;"><tr><td align="center" style="padding:10px 4px;"><div style="font-size:20px;font-weight:800;color:${C.text};">${fmt(t.value)}</div><div style="font-size:11px;color:${C.muted};padding-top:2px;">${esc(t.label)}</div></td></tr></table></td>`).join("")}</tr></table></td></tr>
 <tr><td style="padding:20px 18px 6px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr>${button(SITE, "rtsai.net", true)}${button(`${SITE}/play`, "Play")}${button(ga.reports, "GA4 reports")}${button(ga.realtime, "GA4 realtime")}${button(FIRESTORE_CONSOLE, "Daily stats")}</tr></table></td></tr>
 <tr><td style="padding:10px 22px 20px;font-size:11px;line-height:16px;color:${C.muted};">Days are Doha days (${TIME_ZONE}). Counts are signed-in players; anonymous visitors and page views are in GA4. Sent every Monday at 08:00 by the weeklyDigest function from Firestore dailyStats.</td></tr>
 </table></td></tr></table></body></html>`;
