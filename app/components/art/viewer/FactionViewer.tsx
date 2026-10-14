@@ -17,6 +17,8 @@ import type { PublicClip } from "../../../../lib/faction-audio";
 import { EA_NOTICE, useOriginalArt } from "../../../../lib/original-art";
 import { isProjectClip, useFactionSounds, type SnapshotSounds } from "../../../../lib/original-sounds";
 import "./viewer.css";
+import { useHangarAudio } from "./useHangarAudio";
+import { HANGAR_AUDIO_EVENTS, type HangarAudioPreview } from "../../../../lib/hangar-audio";
 
 const groups: [string, string][] = [["infantry", "Infantry"], ["vehicle", "Vehicles"], ["aircraft", "Aircraft"], ["ship", "Naval"], ["defense", "Defenses"], ["structure", "Buildings"]];
 const COLOR_KEY = "rtsai-viewer-color";
@@ -55,6 +57,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   // The details panel follows one frame after the stage: on a software GPU, repainting both in the frame that answers
   // the click doubles its cost, so the click paints the new unit first and its details right after.
   const infoUnit = useAfterPaint(unit);
+  const hangar = useHangarAudio(unit?.id ?? null, faction.id);
   // Shared original units: Westwood's art, loaded once for factions that build any.
   const original = useOriginalArt(units.some(u => !u.art));
   const items = useMemo(() => new Map(units.flatMap(u => {
@@ -66,7 +69,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   const [wantSounds, setWantSounds] = useState(Boolean(initial));
   if (unit && !wantSounds) setWantSounds(true);
   const snapSounds = useFactionSounds(faction.soundFaction, wantSounds);
-  const sounds = useMemo(() => (unit ? shownSounds(unit, snapSounds, faction.effects) : []), [unit, snapSounds, faction.effects]);
+  const sounds = useMemo(() => (unit ? withHangarPreview(shownSounds(unit, snapSounds, faction.effects), hangar.preview) : []), [unit, snapSounds, faction.effects, hangar.preview]);
   const infoSounds = useAfterPaint(sounds);
   // The last unit with art stays on the (hidden) stage while the overview or a text-only unit is shown.
   const [stageItem, setStageItem] = useState<StageItem | null>(item);
@@ -77,11 +80,11 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
     setSelected(id); setShown(null);
     // Picking a unit plays one of its select lines, as in game (after a click, never on page load).
     const picked = id ? units.find(u => u.id === id) : null;
-    if (picked) void soundEngine.playAny(groupSrcs(shownSounds(picked, snapSounds, faction.effects), "voice:Select"));
+    if (picked) void soundEngine.playAny(groupSrcs(withHangarPreview(shownSounds(picked, snapSounds, faction.effects), picked.id === hangar.preview?.actor ? hangar.preview : null), "voice:Select"));
     const href = hrefFor(faction.id, id);
     if (window.location.pathname !== href) window.history.pushState({ unit: id }, "", href);
     window.scrollTo({ top: 0 });
-  }, [faction.id, faction.effects, units, snapSounds]);
+  }, [faction.id, faction.effects, units, snapSounds, hangar.preview]);
   useEffect(() => {
     const onPop = () => { const m = /^\/viewer\/[^/]+\/([^/?#]+)/.exec(window.location.pathname); setSelected(m ? decodeURIComponent(m[1]) : null); setShown(null); };
     window.addEventListener("popstate", onPop);
@@ -109,7 +112,14 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
         </nav>
         <SoundControls />
         <span className="viewer-title">Faction viewer</span>
+        {hangar.local && unit?.id === "r2m1a2s" && <a className="viewer-chip" href={`http://127.0.0.1:${hangar.port}/#lab-audio`} target="_blank" rel="noreferrer">Edit audio in Hangar</a>}
       </header>
+      {(hangar.savedPreview || hangar.error) && <div className="viewer-hangar-preview" role="status">
+        <span>{hangar.error || `Hangar local preview · ${hangar.savedPreview!.name} · ${hangar.enabled ? "Candidate" : "Current game sounds"}`}</span>
+        {hangar.savedPreview && <button type="button" onClick={() => { soundEngine.stopAll(); hangar.setEnabled(!hangar.enabled); }}>{hangar.enabled ? "Hear current game" : "Hear candidate"}</button>}
+        {hangar.preview?.event === "engine" && <><span>Engine: manual audition; movement binding is not simulated.</span><button type="button" onClick={() => void soundEngine.play(hangar.preview!.url)}>Audition engine</button></>}
+        <button type="button" onClick={() => { soundEngine.stopAll(); hangar.clear(); }}>Clear preview</button>
+      </div>}
       <div className="viewer-body">
         <aside className="viewer-rail" aria-label={`${faction.name} units`}>
           <a className={`viewer-overview${unit ? "" : " is-current"}`} href={hrefFor(faction.id, null)} aria-current={unit ? undefined : "page"} onClick={e => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); select(null); }}>
@@ -172,7 +182,13 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
 
 const NO_WEAPONS: ViewerUnit["attack"] = [];
 /** A clip the info panel lists: the project's own (with what it says) or one of Westwood's originals. */
-type ShownClip = PublicClip & { original: boolean };
+type ShownClip = PublicClip & { original: boolean; hangarPreview?: boolean };
+function withHangarPreview(groups: ShownGroup[], preview: HangarAudioPreview | null): ShownGroup[] {
+  const id = preview ? HANGAR_AUDIO_EVENTS[preview.event] : null;
+  if (!preview || !id) return groups;
+  const candidate: ShownGroup = { id, label: `Hangar preview · ${preview.name}`, kind: id.split(":")[0], clips: [{ src: preview.url, language: null, text: null, english: null, license: "Local candidate", original: false, hangarPreview: true }] };
+  return [...groups.filter(g => g.id !== id), candidate];
+}
 type ShownGroup = { id: string; label: string; kind: string; clips: ShownClip[] };
 
 /**
@@ -200,13 +216,16 @@ const groupSrcs = (groups: ShownGroup[], ...ids: string[]) => {
   return [];
 };
 /** A weapon's own report and impact (the snapshot knows each weapon's), else the unit's weapon sounds. */
-function weaponSounds(unit: ViewerUnit, groups: ShownGroup[], snap: SnapshotSounds | null, effects: Record<string, PublicClip>, weaponId: string) {
+function weaponSounds(unit: ViewerUnit, groups: ShownGroup[], snap: SnapshotSounds | null, effects: Record<string, PublicClip>, weaponId: string): { report: string[]; impact: string[] } {
+  if (groups.some(g => g.clips.some(c => c.hangarPreview)) && weaponId.toLowerCase() !== "r2abramsgun") return weaponSounds(unit, shownSounds(unit, snap, effects), snap, effects, weaponId);
+  const previewReport = groups.find(g => g.id === "weapon:report" && g.clips.some(c => c.hangarPreview));
+  const previewImpact = groups.find(g => g.id === "weapon:impact" && g.clips.some(c => c.hangarPreview));
   const w = snap?.weapons[unit.id]?.[weaponId.toLowerCase()];
   if (snap && w) {
     const byFile = new Map([...Object.values(effects), ...unit.sounds.flatMap(g => g.clips)].flatMap(c => (c.file ? [[c.file, c.src] as const] : [])));
     const resolve = (refs: string[]) => refs.flatMap(ref => { const src = isProjectClip(ref) ? byFile.get(ref) : snap.clips[ref]?.src; return src ? [src] : []; });
     const report = resolve(w.report), impact = resolve(w.impact);
-    if (report.length || impact.length) return { report, impact };
+    if (report.length || impact.length) return { report: previewReport ? groupSrcs(groups, "weapon:report") : report, impact: previewImpact ? groupSrcs(groups, "weapon:impact") : impact };
   }
   return { report: groupSrcs(groups, "weapon:report"), impact: groupSrcs(groups, "weapon:impact") };
 }

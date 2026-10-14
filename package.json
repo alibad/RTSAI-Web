@@ -31,7 +31,8 @@
     "sync:mod-release": "node scripts/sync-mod-release.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run check:content && npm run typecheck && npm run build && node --import tsx --test tests/*.test.*",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .vercel"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .vercel",
+    "preview:viewer": "node --import tsx scripts/preview-viewer.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
