@@ -6,6 +6,7 @@ import {
   isAllowedFeedbackOrigin,
   validateFeedbackPayload,
 } from "../../../lib/feedback";
+import { recordDailyEvent } from "../../../lib/event-rollup";
 import { mailGroup, sendFirebaseEmail } from "../../../lib/firebase-mail";
 import { bearerToken, verifyFirebaseIdentity } from "../../../lib/firebase-token";
 import { createGitHubIssue, GitHubRequestError, isGitHubConfigured } from "../../../lib/github";
@@ -21,6 +22,8 @@ export function createFeedbackHandler(dependencies: {
   sendEmail: typeof sendFirebaseEmail;
   recipients: typeof mailGroup;
   reportError: typeof console.error;
+  /** Every delivered report counts as feedback_sent in its day's rollup (from the site and the game alike). */
+  rollup?: typeof recordDailyEvent;
 }) {
 return async function handleFeedback(request: Request) {
   if (!isAllowedFeedbackOrigin(request)) return Response.json({ error: "Invalid request origin" }, { status: 403 });
@@ -107,6 +110,11 @@ return async function handleFeedback(request: Request) {
     );
   }
 
+  if (dependencies.rollup) {
+    await dependencies.rollup({ idToken: bearerToken(request), name: "feedback_sent", props: { category: parsed.value.category, source: parsed.value.source } })
+      .catch((cause: unknown) => dependencies.reportError("Daily rollup failed", { event: "feedback_sent", message: cause instanceof Error ? cause.message.slice(0, 300) : "unknown" }));
+  }
+
   return Response.json(
     {
       success: true,
@@ -127,4 +135,5 @@ export const POST = createFeedbackHandler({
   sendEmail: sendFirebaseEmail,
   recipients: mailGroup,
   reportError: console.error,
+  rollup: recordDailyEvent,
 });

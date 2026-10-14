@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createEventHandler } from "../app/api/event/route";
-import { MILESTONES, ordinal } from "../lib/event-registry";
+import { EVENTS, MILESTONES, ordinal } from "../lib/event-registry";
+import type { recordDailyEvent } from "../lib/event-rollup";
 import type { CountResult } from "../lib/player-stats";
 
 type Sent = { to: string | string[]; subject: string; text: string };
 const identity = { uid: "u1", email: "ali@example.com", name: "Ali" };
 
-function harness(counts: (input: { player?: string; global?: string }) => CountResult = () => ({})) {
+function harness(counts: (input: { player?: string; global?: string }) => CountResult = () => ({}), rollup?: typeof recordDailyEvent) {
   const sent: Sent[] = [], counted: { player?: string; global?: string }[] = [], errors: unknown[] = [];
   const handle = createEventHandler({
     verifyIdentity: async request => request.headers.get("authorization") ? identity : null,
@@ -15,6 +16,7 @@ function harness(counts: (input: { player?: string; global?: string }) => CountR
     sendEmail: async message => { sent.push(message); return "doc"; },
     recipients: () => ["rtsai@googlegroups.com"],
     reportError: (...args: unknown[]) => { errors.push(args); },
+    rollup,
   });
   const post = (body: unknown, headers: Record<string, string> = {}) => handle(new Request("https://rtsai.net/api/event", {
     method: "POST", body: JSON.stringify(body),
@@ -85,6 +87,32 @@ test("a counter failure still emails always-notable events", async () => {
   assert.equal(response.status, 200);
   assert.equal(h.sent.length, 1);
   assert.equal(h.errors.length, 1);
+});
+
+test("every event goes into its day's rollup with the caller's token and clean props; feedback through its own route", async () => {
+  const rolled: { idToken: string; name: string; props: Record<string, unknown> }[] = [];
+  const h = harness(() => ({}), async input => { rolled.push(input); return true; });
+  for (const name of Object.keys(EVENTS)) await h.post({ name, props: { kind: "skirmish", faction: "russia", nested: { x: 1 } } });
+  assert.deepEqual(rolled.map(r => r.name), Object.keys(EVENTS).filter(name => name !== "feedback_sent"));
+  assert.equal(rolled[0].idToken, "t");
+  assert.deepEqual(rolled[0].props, { kind: "skirmish", faction: "russia" });
+  const signedOut = harness(() => ({}), async input => { rolled.push(input); return true; });
+  await signedOut.post({ name: "match_started" }, { Authorization: "" });
+  assert.equal(rolled.length, Object.keys(EVENTS).length - 1, "signed-out callers are never rolled up");
+});
+
+test("the rollup function knows every event the site and game send", async () => {
+  const { EVENT_NAMES } = await import("../functions/rollup.js");
+  assert.deepEqual([...EVENT_NAMES].sort(), Object.keys(EVENTS).sort());
+});
+
+test("a failed rollup never breaks the event, its counters or its email", async () => {
+  const h = harness(() => ({ player: 1, global: 5 }), async () => { throw new Error("function down"); });
+  const response = await h.post({ name: "match_started", props: { kind: "skirmish" } });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).rolledUp, false);
+  assert.match(h.sent[0].subject, /First match for Ali/);
+  assert.deepEqual(h.errors.map(e => (e as unknown[])[0]), ["Daily rollup failed"]);
 });
 
 test("GA-only events are never counted or emailed", async () => {

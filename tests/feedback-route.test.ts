@@ -56,3 +56,22 @@ test("game feedback is labelled source:game, keeps its other labels if that labe
   assert.deepEqual(calls, ["issue-labels:feedback,source:game,gameplay", "issue-labels:feedback,source:web,gameplay", "queue"]);
   assert.ok(bodies[0].includes(`/feedback/${input.clientSubmissionId})** (RTS AI team sign-in)`));
 });
+
+test("delivered feedback, from the site or the game, counts in its day's rollup; refused feedback doesn't", async () => {
+  const rolled: { name: string; props: Record<string, unknown> }[] = [];
+  const handle = (options: { issue?: boolean; mail?: boolean } = {}, rollup = async (value: { name: string; props: Record<string, string | number | boolean> }) => { rolled.push(value); return true; }) => createFeedbackHandler({
+    verifyIdentity: async () => ({ uid: "mock-user", email: "mock@example.test", name: "Mock" }),
+    issueConfigured: () => true,
+    createIssue: async () => { if (options.issue === false) throw new Error("Mock issue failure"); return { number: 7, htmlUrl: "https://example.test/private/7" }; },
+    recipients: () => ["admin@example.test"],
+    sendEmail: async () => { if (options.mail === false) throw new Error("Mock queue failure"); return "mock-queue"; },
+    reportError: () => undefined,
+    rollup,
+  });
+  assert.equal((await handle()(request(undefined, { ...input, category: "Gameplay", source: "game" }))).status, 200);
+  assert.deepEqual(rolled, [{ idToken: "", name: "feedback_sent", props: { category: "Gameplay", source: "game" } }]);
+  assert.equal((await handle({ issue: false, mail: false })(request())).status, 503);
+  assert.equal(rolled.length, 1, "a report that wasn't delivered isn't counted");
+  const failing = await handle({}, async () => { throw new Error("function down"); })(request());
+  assert.equal(failing.status, 200, "a failed rollup never fails the report");
+});
