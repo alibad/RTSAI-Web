@@ -3,9 +3,9 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "801eaf2192c21cf61f7ff81b174c2e1976c651d1",
+  "commit": "fb71355929ece82daf3bd9064e89d0eda4158524",
   "provenanceGeneratedBy": "tools/art-provenance.py",
-  "provenanceSha256": "04059c7ce7b554f4363770f0b963425ea9a4b6535931201d08768a25f86c4476",
+  "provenanceSha256": "e3320fb073bee8d765561ffb244b67e4adbb2a51e4f39e82847d146346d881a5",
   "commercialRa2Data": "None found. Every unit sprite and cameo is a render of the project's own 3D model (a GLB generated locally from the project's concept picture), installed from a committed RTSAI-Art candidate with the same bytes; original RA2 files were read only locally to measure target statistics, never as input pixels; the flags are drawn from code. See docs/art-provenance.md.",
   "levantBinding": {
    "generatedBy": "scripts/bind-levant-provenance.mjs",
@@ -40415,10 +40415,10 @@
   "icons/r2aras.png": {
    "url": "/art-lab/icons/r2aras.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2aras.png",
-   "bytes": 5459,
-   "sha256": "d8e44564a252121e1811f762097db18acd0feac8ffde4d620f7954a854a58f75",
+   "bytes": 5464,
+   "sha256": "b4d3fc44ce71e4fbfe201f419d966b62775b2a42c5559f4857dabb47140d05a2",
    "provenance": {
-    "sha256": "d8e44564a252121e1811f762097db18acd0feac8ffde4d620f7954a854a58f75",
+    "sha256": "b4d3fc44ce71e4fbfe201f419d966b62775b2a42c5559f4857dabb47140d05a2",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40436,8 +40436,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2aras/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40446,10 +40446,10 @@
   "icons/r2azar.png": {
    "url": "/art-lab/icons/r2azar.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2azar.png",
-   "bytes": 5781,
-   "sha256": "ab7e5bedc0a2f3e1e8a02d82c0a97c5ba77bcbbc403901f0cbbfdf2ce2294912",
+   "bytes": 5788,
+   "sha256": "fc6433d7416d16bc48d2607e2f09230304db1e0d6b5debd471506b13ca7e3a6f",
    "provenance": {
-    "sha256": "ab7e5bedc0a2f3e1e8a02d82c0a97c5ba77bcbbc403901f0cbbfdf2ce2294912",
+    "sha256": "fc6433d7416d16bc48d2607e2f09230304db1e0d6b5debd471506b13ca7e3a6f",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40467,8 +40467,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2azar/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40517,18 +40517,18 @@
   "icons/r2boran.png": {
    "url": "/art-lab/icons/r2boran.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2boran.png",
-   "bytes": 5316,
-   "sha256": "2239a2c9aaa7c394df83b3298736b79065af7704c6616837163ab392c8c2fbe3",
+   "bytes": 5317,
+   "sha256": "a3d18a4281dc177b77fdd9709704fcb84d4c21b8c6226dc7042def55cecf21f3",
    "provenance": {
-    "sha256": "2239a2c9aaa7c394df83b3298736b79065af7704c6616837163ab392c8c2fbe3",
+    "sha256": "a3d18a4281dc177b77fdd9709704fcb84d4c21b8c6226dc7042def55cecf21f3",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2boran/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40537,10 +40537,10 @@
   "icons/r2bozkir.png": {
    "url": "/art-lab/icons/r2bozkir.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2bozkir.png",
-   "bytes": 5441,
-   "sha256": "bd95668ec0b82ed6c6cf66ca0cf55f9cbf32b27a18ed96826148b4f52ee3f3e7",
+   "bytes": 5445,
+   "sha256": "cf1919656033956657ed1fb033b5e5cd71f01ebe6464a59186373ca5e13bab31",
    "provenance": {
-    "sha256": "bd95668ec0b82ed6c6cf66ca0cf55f9cbf32b27a18ed96826148b4f52ee3f3e7",
+    "sha256": "cf1919656033956657ed1fb033b5e5cd71f01ebe6464a59186373ca5e13bab31",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40558,8 +40558,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2bozkir/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40569,9 +40569,9 @@
    "url": "/art-lab/icons/r2bradley.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2bradley.png",
    "bytes": 5163,
-   "sha256": "98785c172b3915179b177a2d635cd5bfcdc50200869975ededfede3dd47b74cf",
+   "sha256": "f845d3a1a41e58fcc5d226433c985ce84ed93ab59ba2812e49f72fa509c81459",
    "provenance": {
-    "sha256": "98785c172b3915179b177a2d635cd5bfcdc50200869975ededfede3dd47b74cf",
+    "sha256": "f845d3a1a41e58fcc5d226433c985ce84ed93ab59ba2812e49f72fa509c81459",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40589,8 +40589,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2bradley/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40599,10 +40599,10 @@
   "icons/r2caesar.png": {
    "url": "/art-lab/icons/r2caesar.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2caesar.png",
-   "bytes": 5402,
-   "sha256": "b2f22620d322a539a4b8508849637f8c23e691898391d6f5690a790484b92c8a",
+   "bytes": 5405,
+   "sha256": "fe906480f82761a9d802dffbbdc153c5f93acea8b18a1685b38b2070b42b7447",
    "provenance": {
-    "sha256": "b2f22620d322a539a4b8508849637f8c23e691898391d6f5690a790484b92c8a",
+    "sha256": "fe906480f82761a9d802dffbbdc153c5f93acea8b18a1685b38b2070b42b7447",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40620,8 +40620,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2caesar/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40701,18 +40701,18 @@
   "icons/r2cnrifle.png": {
    "url": "/art-lab/icons/r2cnrifle.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2cnrifle.png",
-   "bytes": 5174,
-   "sha256": "7a6d1052e653b3974c94a16716ced4122f5be72260edc480ce84ffbca2607930",
+   "bytes": 5177,
+   "sha256": "f4cb7c34adcce9bdcfb5dee23462f8293edf681a00d254469c5a80896c24e708",
    "provenance": {
-    "sha256": "7a6d1052e653b3974c94a16716ced4122f5be72260edc480ce84ffbca2607930",
+    "sha256": "f4cb7c34adcce9bdcfb5dee23462f8293edf681a00d254469c5a80896c24e708",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2cnrifle/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40722,9 +40722,9 @@
    "url": "/art-lab/icons/r2coast.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2coast.png",
    "bytes": 5112,
-   "sha256": "402f854a43482815320c3e7ecfb5f14bc7d4c471b9d5bb93451731a412aefc4d",
+   "sha256": "8d38880d983e84f08f9d16aa7adabb3532c5993aba2fc8886aa65741247c9d04",
    "provenance": {
-    "sha256": "402f854a43482815320c3e7ecfb5f14bc7d4c471b9d5bb93451731a412aefc4d",
+    "sha256": "8d38880d983e84f08f9d16aa7adabb3532c5993aba2fc8886aa65741247c9d04",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40742,8 +40742,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2coast/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40752,10 +40752,10 @@
   "icons/r2crane.png": {
    "url": "/art-lab/icons/r2crane.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2crane.png",
-   "bytes": 5723,
-   "sha256": "0bd0f452fb1e0f3f48a3a80aeb0dc94c83ab6f4bc06434d044a9def967f610f4",
+   "bytes": 5718,
+   "sha256": "6f7251b910b1a67e9be9f01176153d5092705d759324a9836c870face11705e0",
    "provenance": {
-    "sha256": "0bd0f452fb1e0f3f48a3a80aeb0dc94c83ab6f4bc06434d044a9def967f610f4",
+    "sha256": "6f7251b910b1a67e9be9f01176153d5092705d759324a9836c870face11705e0",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40773,8 +40773,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2crane/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40814,18 +40814,18 @@
   "icons/r2dronecontrol.png": {
    "url": "/art-lab/icons/r2dronecontrol.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2dronecontrol.png",
-   "bytes": 4834,
-   "sha256": "e52942c9acce7659caa050e59b055e9912e1b5c9413e2cea67c20aa633cf9da3",
+   "bytes": 4829,
+   "sha256": "c48c660b3e7a4668765fa50cdf6239f454ae76680bd383276bb61a91eeac74b2",
    "provenance": {
-    "sha256": "e52942c9acce7659caa050e59b055e9912e1b5c9413e2cea67c20aa633cf9da3",
+    "sha256": "c48c660b3e7a4668765fa50cdf6239f454ae76680bd383276bb61a91eeac74b2",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2dronecontrol/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40896,10 +40896,10 @@
   "icons/r2fajr.png": {
    "url": "/art-lab/icons/r2fajr.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2fajr.png",
-   "bytes": 5394,
-   "sha256": "3aec19503d6bec49f1ad948088d0242d247cf0868b52e3a78d08acb99af19218",
+   "bytes": 5408,
+   "sha256": "085a337049454a46d1de0948bcb7759951868154ff21da1e820a0aaeae4fe563",
    "provenance": {
-    "sha256": "3aec19503d6bec49f1ad948088d0242d247cf0868b52e3a78d08acb99af19218",
+    "sha256": "085a337049454a46d1de0948bcb7759951868154ff21da1e820a0aaeae4fe563",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40917,8 +40917,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2fajr/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -40947,10 +40947,10 @@
   "icons/r2ghadir.png": {
    "url": "/art-lab/icons/r2ghadir.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ghadir.png",
-   "bytes": 4923,
-   "sha256": "711fdedda3604fbed44204355d09cb20d147f0219e60e183b76aee02dfa8b17a",
+   "bytes": 4924,
+   "sha256": "e80fd60b3f453c179b5d43fabbec9c090a38a5583bf7d4db29f8e75ba9a09ced",
    "provenance": {
-    "sha256": "711fdedda3604fbed44204355d09cb20d147f0219e60e183b76aee02dfa8b17a",
+    "sha256": "e80fd60b3f453c179b5d43fabbec9c090a38a5583bf7d4db29f8e75ba9a09ced",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -40968,8 +40968,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ghadir/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41009,18 +41009,18 @@
   "icons/r2greywolf.png": {
    "url": "/art-lab/icons/r2greywolf.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2greywolf.png",
-   "bytes": 4811,
-   "sha256": "c95dcc81d8702681e7f06702733ce86bbd4c2b2f9e6cd22f969e0d638f4165e4",
+   "bytes": 4820,
+   "sha256": "c007f56226db4215e95999ede89616897817df0dc673ae8a1f4fa7a0f85d25d4",
    "provenance": {
-    "sha256": "c95dcc81d8702681e7f06702733ce86bbd4c2b2f9e6cd22f969e0d638f4165e4",
+    "sha256": "c007f56226db4215e95999ede89616897817df0dc673ae8a1f4fa7a0f85d25d4",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2greywolf/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41091,18 +41091,18 @@
   "icons/r2hisar.png": {
    "url": "/art-lab/icons/r2hisar.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hisar.png",
-   "bytes": 4847,
-   "sha256": "c860d9dcdc2e5683d1d50d98a10d3fa4a7dcd861cafe5dc1a6c1e11c0fde0a66",
+   "bytes": 4846,
+   "sha256": "e8e40c4ba33364cb3b9c6cddd31a63b7ab5a5084358af55fc033f67d178daecf",
    "provenance": {
-    "sha256": "c860d9dcdc2e5683d1d50d98a10d3fa4a7dcd861cafe5dc1a6c1e11c0fde0a66",
+    "sha256": "e8e40c4ba33364cb3b9c6cddd31a63b7ab5a5084358af55fc033f67d178daecf",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hisar/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41182,18 +41182,18 @@
   "icons/r2hzbunker.png": {
    "url": "/art-lab/icons/r2hzbunker.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzbunker.png",
-   "bytes": 5504,
-   "sha256": "bd59d8cf41afc0fbba1aa909616d8fb0e83bee33ce2d50b88338790dc3f40dbe",
+   "bytes": 5515,
+   "sha256": "b65f127519d510307626ffdc059b94f0d58689ca366a59782c59bb74d5be8ef6",
    "provenance": {
-    "sha256": "bd59d8cf41afc0fbba1aa909616d8fb0e83bee33ce2d50b88338790dc3f40dbe",
+    "sha256": "b65f127519d510307626ffdc059b94f0d58689ca366a59782c59bb74d5be8ef6",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzbunker/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41202,18 +41202,18 @@
   "icons/r2hzcoastal.png": {
    "url": "/art-lab/icons/r2hzcoastal.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzcoastal.png",
-   "bytes": 4980,
-   "sha256": "6a842aaf1cb9033408871bf8af8b8e8ff34d226465b470bc3b4d1b70c5eeefbd",
+   "bytes": 4986,
+   "sha256": "fb8c78acbeb9fa15a1c0827bdebf68d07ce890215a7e59dc040f2e089fb18601",
    "provenance": {
-    "sha256": "6a842aaf1cb9033408871bf8af8b8e8ff34d226465b470bc3b4d1b70c5eeefbd",
+    "sha256": "fb8c78acbeb9fa15a1c0827bdebf68d07ce890215a7e59dc040f2e089fb18601",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzcoastal/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41222,10 +41222,10 @@
   "icons/r2hzdrone.png": {
    "url": "/art-lab/icons/r2hzdrone.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzdrone.png",
-   "bytes": 5224,
-   "sha256": "d0af972405cd40caed5a7b10f1fa0a542ea838ef863f7e61bccc50592397d9b2",
+   "bytes": 5226,
+   "sha256": "75f7799ea56ad2cd63223c1ac98e4c2c5803073e380e8b6eb84997b1d60602bb",
    "provenance": {
-    "sha256": "d0af972405cd40caed5a7b10f1fa0a542ea838ef863f7e61bccc50592397d9b2",
+    "sha256": "75f7799ea56ad2cd63223c1ac98e4c2c5803073e380e8b6eb84997b1d60602bb",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41243,8 +41243,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzdrone/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41254,9 +41254,9 @@
    "url": "/art-lab/icons/r2hzescort.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzescort.png",
    "bytes": 4857,
-   "sha256": "63d80fb90e13d4a4b153473ba83a6df28e6ff8f558bcf326e944d4fad664a908",
+   "sha256": "e839fd276088e49bc036fbe1c5bcdd1195f09f14ca743c57aafc7b6300dc8451",
    "provenance": {
-    "sha256": "63d80fb90e13d4a4b153473ba83a6df28e6ff8f558bcf326e944d4fad664a908",
+    "sha256": "e839fd276088e49bc036fbe1c5bcdd1195f09f14ca743c57aafc7b6300dc8451",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41274,8 +41274,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzescort/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41335,10 +41335,10 @@
   "icons/r2hzrail.png": {
    "url": "/art-lab/icons/r2hzrail.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzrail.png",
-   "bytes": 5051,
-   "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12",
+   "bytes": 5043,
+   "sha256": "c86d228e2cc58c680227fd3918951454ef73ebb70dda514d8eeddf2a355d9d14",
    "provenance": {
-    "sha256": "61b30fa64bbfedc4fb441506bedd3c9458a462a522c18ae9c64e877b4e8b5c12",
+    "sha256": "c86d228e2cc58c680227fd3918951454ef73ebb70dda514d8eeddf2a355d9d14",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41350,8 +41350,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzrail/candidates/cameo-v3-render/cameo.png",
-     "commit": "c08a25f8cc14d5cf0ca18ca8198524a8521c72ec",
-     "date": "2026-10-07"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-07"
@@ -41360,10 +41360,10 @@
   "icons/r2hzrecoilless.png": {
    "url": "/art-lab/icons/r2hzrecoilless.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzrecoilless.png",
-   "bytes": 5063,
-   "sha256": "59974f97256f3bfad2f4b93789893417783c14f28602df1f4eb59a1f48a824f8",
+   "bytes": 5065,
+   "sha256": "dc474006cba2099cecb7b8fec2fdf78d698df14deeac4eeda8ce3b3fab78c968",
    "provenance": {
-    "sha256": "59974f97256f3bfad2f4b93789893417783c14f28602df1f4eb59a1f48a824f8",
+    "sha256": "dc474006cba2099cecb7b8fec2fdf78d698df14deeac4eeda8ce3b3fab78c968",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41381,8 +41381,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzrecoilless/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41411,18 +41411,18 @@
   "icons/r2hzrifle.png": {
    "url": "/art-lab/icons/r2hzrifle.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzrifle.png",
-   "bytes": 5025,
-   "sha256": "76cfbf145457a7912eb86dc96cdefb6d650aa274fe6c82a5562fee9b1a562ed8",
+   "bytes": 5029,
+   "sha256": "0d230170823f4bdcbff7085672764916ad285ce82b2dfbf39486f82e3a055d10",
    "provenance": {
-    "sha256": "76cfbf145457a7912eb86dc96cdefb6d650aa274fe6c82a5562fee9b1a562ed8",
+    "sha256": "0d230170823f4bdcbff7085672764916ad285ce82b2dfbf39486f82e3a055d10",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzrifle/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41431,10 +41431,10 @@
   "icons/r2hzrockets.png": {
    "url": "/art-lab/icons/r2hzrockets.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzrockets.png",
-   "bytes": 5422,
-   "sha256": "3cebada3128b969722778e3439ee4cf85f5eb219a461786affc7e547a0123179",
+   "bytes": 5420,
+   "sha256": "9a4abb119145aa4ecce24ece1bf3067026c51d757fcc844380bf0307c0f50bd9",
    "provenance": {
-    "sha256": "3cebada3128b969722778e3439ee4cf85f5eb219a461786affc7e547a0123179",
+    "sha256": "9a4abb119145aa4ecce24ece1bf3067026c51d757fcc844380bf0307c0f50bd9",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41452,8 +41452,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzrockets/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41513,18 +41513,18 @@
   "icons/r2hzspotter.png": {
    "url": "/art-lab/icons/r2hzspotter.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzspotter.png",
-   "bytes": 5184,
-   "sha256": "e6b55917c3c8164d6c7033ed6284a1c364a007aba67dd17b037b26fcc6b4a6ce",
+   "bytes": 5189,
+   "sha256": "0aa3b47f04a2ded71110af4969e0e5f58af8e1e9ccdbe3407e9e9573f31c14d5",
    "provenance": {
-    "sha256": "e6b55917c3c8164d6c7033ed6284a1c364a007aba67dd17b037b26fcc6b4a6ce",
+    "sha256": "0aa3b47f04a2ded71110af4969e0e5f58af8e1e9ccdbe3407e9e9573f31c14d5",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzspotter/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41533,10 +41533,10 @@
   "icons/r2hzsurvey.png": {
    "url": "/art-lab/icons/r2hzsurvey.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzsurvey.png",
-   "bytes": 4923,
-   "sha256": "e5d46da602840a06decad5e6f3781cb9e02487b500b36fcccb8aa7082f4079aa",
+   "bytes": 4914,
+   "sha256": "d2cd1aea5017324e1693ab58d84d3c3c58ad354879e7296ff24e3d3dd52e6be0",
    "provenance": {
-    "sha256": "e5d46da602840a06decad5e6f3781cb9e02487b500b36fcccb8aa7082f4079aa",
+    "sha256": "d2cd1aea5017324e1693ab58d84d3c3c58ad354879e7296ff24e3d3dd52e6be0",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41554,8 +41554,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzsurvey/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41595,18 +41595,18 @@
   "icons/r2hzworkshop.png": {
    "url": "/art-lab/icons/r2hzworkshop.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2hzworkshop.png",
-   "bytes": 4522,
-   "sha256": "759fea0bfa1dcb99347e0f1d9c953827361ee4e20341fa687a85db2e819d9ab1",
+   "bytes": 4528,
+   "sha256": "60e0e0387fe0f78e0fc438cdbfd8e47717619f9e65f28726e4e58b794d40cf06",
    "provenance": {
-    "sha256": "759fea0bfa1dcb99347e0f1d9c953827361ee4e20341fa687a85db2e819d9ab1",
+    "sha256": "60e0e0387fe0f78e0fc438cdbfd8e47717619f9e65f28726e4e58b794d40cf06",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2hzworkshop/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41655,18 +41655,18 @@
   "icons/r2ilbattery.png": {
    "url": "/art-lab/icons/r2ilbattery.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilbattery.png",
-   "bytes": 5085,
-   "sha256": "6a352fa93292e104b64f45e09e4bb470ca05d237a15c91064f2d6bdc921a41b6",
+   "bytes": 5094,
+   "sha256": "e7b3e796e65e29e73bde53717ce272694a8f67465549df67c20026006a533832",
    "provenance": {
-    "sha256": "6a352fa93292e104b64f45e09e4bb470ca05d237a15c91064f2d6bdc921a41b6",
+    "sha256": "e7b3e796e65e29e73bde53717ce272694a8f67465549df67c20026006a533832",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilbattery/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41706,10 +41706,10 @@
   "icons/r2ilfrigate.png": {
    "url": "/art-lab/icons/r2ilfrigate.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilfrigate.png",
-   "bytes": 4807,
-   "sha256": "19ee70964ee0962db4f8e06c6daf0912e45f2d33d4eacea0944704e9e6e95370",
+   "bytes": 4818,
+   "sha256": "dc584883ea64c2c01d53a010cc5e4203fc5f0fc199ff0624f807661f846300cd",
    "provenance": {
-    "sha256": "19ee70964ee0962db4f8e06c6daf0912e45f2d33d4eacea0944704e9e6e95370",
+    "sha256": "dc584883ea64c2c01d53a010cc5e4203fc5f0fc199ff0624f807661f846300cd",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41727,8 +41727,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilfrigate/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41768,10 +41768,10 @@
   "icons/r2ilhowitzer.png": {
    "url": "/art-lab/icons/r2ilhowitzer.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilhowitzer.png",
-   "bytes": 5217,
-   "sha256": "07c66a2cac4761a13d089fa2c0eaa72f8800e60a1fd4e6b850bc7e8e700363ff",
+   "bytes": 5224,
+   "sha256": "319e9d4650aaadeba37b745d572185f0fe92aee45b17b4689de964cbba908eed",
    "provenance": {
-    "sha256": "07c66a2cac4761a13d089fa2c0eaa72f8800e60a1fd4e6b850bc7e8e700363ff",
+    "sha256": "319e9d4650aaadeba37b745d572185f0fe92aee45b17b4689de964cbba908eed",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41789,8 +41789,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilhowitzer/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41799,18 +41799,18 @@
   "icons/r2ilobserver.png": {
    "url": "/art-lab/icons/r2ilobserver.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilobserver.png",
-   "bytes": 4730,
-   "sha256": "eb05e19e650a831c8dffe63b89244cc614b40c74e29f5a21d6c3b8aa636a1bcc",
+   "bytes": 4716,
+   "sha256": "cc1d48295f259b0f73768fb3822377c23c55506696b70332236afb8d71e3ee80",
    "provenance": {
-    "sha256": "eb05e19e650a831c8dffe63b89244cc614b40c74e29f5a21d6c3b8aa636a1bcc",
+    "sha256": "cc1d48295f259b0f73768fb3822377c23c55506696b70332236afb8d71e3ee80",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilobserver/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41819,10 +41819,10 @@
   "icons/r2ilpatrol.png": {
    "url": "/art-lab/icons/r2ilpatrol.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilpatrol.png",
-   "bytes": 4902,
-   "sha256": "fb3a35f0d6fab4f82ad3a8139b8c5ba6c90009701e3a05ae2bcffa1952401936",
+   "bytes": 4898,
+   "sha256": "20fc8bd4f5270eaa1c3cae89beafc4d3d132f8fd5d450908286e1730748a94c4",
    "provenance": {
-    "sha256": "fb3a35f0d6fab4f82ad3a8139b8c5ba6c90009701e3a05ae2bcffa1952401936",
+    "sha256": "20fc8bd4f5270eaa1c3cae89beafc4d3d132f8fd5d450908286e1730748a94c4",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41840,8 +41840,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilpatrol/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41850,18 +41850,18 @@
   "icons/r2ilrecon.png": {
    "url": "/art-lab/icons/r2ilrecon.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilrecon.png",
-   "bytes": 5118,
-   "sha256": "e5a5f207405ffda9a6ecff3348122d28f322fb643d4a816b1444da99ddbd4c86",
+   "bytes": 5112,
+   "sha256": "9708e1f99ee562eaddd1630df988b470cb00768033a291d68b5f8deac186e316",
    "provenance": {
-    "sha256": "e5a5f207405ffda9a6ecff3348122d28f322fb643d4a816b1444da99ddbd4c86",
+    "sha256": "9708e1f99ee562eaddd1630df988b470cb00768033a291d68b5f8deac186e316",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilrecon/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41870,18 +41870,18 @@
   "icons/r2ilrelay.png": {
    "url": "/art-lab/icons/r2ilrelay.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilrelay.png",
-   "bytes": 4648,
-   "sha256": "18b234be82aa9de46ade64701ff1e686e1ab5928fed3a31a2798f5cd8c73513c",
+   "bytes": 4652,
+   "sha256": "c6d5127cca7848b69445ecc3e4044fcce365d52520299e3e6a2e80ea38d35f02",
    "provenance": {
-    "sha256": "18b234be82aa9de46ade64701ff1e686e1ab5928fed3a31a2798f5cd8c73513c",
+    "sha256": "c6d5127cca7848b69445ecc3e4044fcce365d52520299e3e6a2e80ea38d35f02",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilrelay/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41890,18 +41890,18 @@
   "icons/r2ilrifle.png": {
    "url": "/art-lab/icons/r2ilrifle.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilrifle.png",
-   "bytes": 5040,
-   "sha256": "6206ca2f66238c2bc1f126ea734b43d4004ad98d4d6ca2c228f67c8055b9d2f1",
+   "bytes": 5044,
+   "sha256": "7725fd524b5c13ccc7e0f1271e7c72f006263f08af7a7fa01489a3a7329e1447",
    "provenance": {
-    "sha256": "6206ca2f66238c2bc1f126ea734b43d4004ad98d4d6ca2c228f67c8055b9d2f1",
+    "sha256": "7725fd524b5c13ccc7e0f1271e7c72f006263f08af7a7fa01489a3a7329e1447",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilrifle/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41910,18 +41910,18 @@
   "icons/r2ilsentry.png": {
    "url": "/art-lab/icons/r2ilsentry.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilsentry.png",
-   "bytes": 5165,
-   "sha256": "088ede12c80bbbbe4cf5e279d8815e736dd41723ab52e881d642b0542e6d2a27",
+   "bytes": 5170,
+   "sha256": "5d3a44a77b28b27c048460797b170cb17051dc5c08c6f2baac5b91a8c7797563",
    "provenance": {
-    "sha256": "088ede12c80bbbbe4cf5e279d8815e736dd41723ab52e881d642b0542e6d2a27",
+    "sha256": "5d3a44a77b28b27c048460797b170cb17051dc5c08c6f2baac5b91a8c7797563",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilsentry/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41930,10 +41930,10 @@
   "icons/r2ilshield.png": {
    "url": "/art-lab/icons/r2ilshield.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilshield.png",
-   "bytes": 4721,
-   "sha256": "3741e21e0477e11126bbc3b3e08aba5bb40a5903ea3e34c4a8507ea968cffb2f",
+   "bytes": 4719,
+   "sha256": "4f2e090507615d7362122aea5ebd8527e2d6fae8b79ec0195fdc24b099e18ae0",
    "provenance": {
-    "sha256": "3741e21e0477e11126bbc3b3e08aba5bb40a5903ea3e34c4a8507ea968cffb2f",
+    "sha256": "4f2e090507615d7362122aea5ebd8527e2d6fae8b79ec0195fdc24b099e18ae0",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41951,8 +41951,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilshield/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41961,10 +41961,10 @@
   "icons/r2iltender.png": {
    "url": "/art-lab/icons/r2iltender.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2iltender.png",
-   "bytes": 5430,
-   "sha256": "8446fa0f74280fe945be0001fc0bfbaa7402d79048f4a95a84804cd7e3ffc56e",
+   "bytes": 5449,
+   "sha256": "c97faf0311e0d1e3eb9c00f917ebc8f1b3e51c9369e84ccf576f8d0ab6c0626e",
    "provenance": {
-    "sha256": "8446fa0f74280fe945be0001fc0bfbaa7402d79048f4a95a84804cd7e3ffc56e",
+    "sha256": "c97faf0311e0d1e3eb9c00f917ebc8f1b3e51c9369e84ccf576f8d0ab6c0626e",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -41982,8 +41982,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2iltender/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -41992,18 +41992,18 @@
   "icons/r2ilworkshop.png": {
    "url": "/art-lab/icons/r2ilworkshop.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ilworkshop.png",
-   "bytes": 5159,
-   "sha256": "525478dd396a31cbba19318cf1ee257c92f68cccdd9fe27bc1524722215ebaa8",
+   "bytes": 5156,
+   "sha256": "53d3bf4d299accc258d4d4e4b0358db6d07dc132d1d21d6e65382258ae580a89",
    "provenance": {
-    "sha256": "525478dd396a31cbba19318cf1ee257c92f68cccdd9fe27bc1524722215ebaa8",
+    "sha256": "53d3bf4d299accc258d4d4e4b0358db6d07dc132d1d21d6e65382258ae580a89",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ilworkshop/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42012,18 +42012,18 @@
   "icons/r2iraasite.png": {
    "url": "/art-lab/icons/r2iraasite.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2iraasite.png",
-   "bytes": 4861,
-   "sha256": "914f59494286a57aab02518e0cd96082a8d5a917ab8c3a07b2739e85af1f0e64",
+   "bytes": 4869,
+   "sha256": "5b6f8b8ee8061e91dabf7a17ed034d8f712f61e4c10719837b138c9f24e24156",
    "provenance": {
-    "sha256": "914f59494286a57aab02518e0cd96082a8d5a917ab8c3a07b2739e85af1f0e64",
+    "sha256": "5b6f8b8ee8061e91dabf7a17ed034d8f712f61e4c10719837b138c9f24e24156",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2iraasite/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42032,18 +42032,18 @@
   "icons/r2irbunker.png": {
    "url": "/art-lab/icons/r2irbunker.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2irbunker.png",
-   "bytes": 4853,
-   "sha256": "f131a6ad22a22f5ec4b056eeb06eabbf301c7f6c68819c5b9d1ba70b24bc3c1d",
+   "bytes": 4855,
+   "sha256": "86043b11b5f7602027795e7fe39b76e1ee23ed45273566d02b81f9e55746337b",
    "provenance": {
-    "sha256": "f131a6ad22a22f5ec4b056eeb06eabbf301c7f6c68819c5b9d1ba70b24bc3c1d",
+    "sha256": "86043b11b5f7602027795e7fe39b76e1ee23ed45273566d02b81f9e55746337b",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2irbunker/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42134,10 +42134,10 @@
   "icons/r2karrar.png": {
    "url": "/art-lab/icons/r2karrar.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2karrar.png",
-   "bytes": 5313,
-   "sha256": "147855b1410323c7c996786fbfa596b9af0287931471d59becc0ced7449894b0",
+   "bytes": 5318,
+   "sha256": "b4b001f405a5a518947ef725ed90a03fd865e964dd1730fa47797e0fb8f65ecb",
    "provenance": {
-    "sha256": "147855b1410323c7c996786fbfa596b9af0287931471d59becc0ced7449894b0",
+    "sha256": "b4b001f405a5a518947ef725ed90a03fd865e964dd1730fa47797e0fb8f65ecb",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42155,8 +42155,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2karrar/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42227,10 +42227,10 @@
   "icons/r2loiter.png": {
    "url": "/art-lab/icons/r2loiter.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2loiter.png",
-   "bytes": 5223,
-   "sha256": "4a2a9dcb03a9fd9753ac1238b1e251e2282d3e32bd0553ca42b2da0e2fa7d3c2",
+   "bytes": 5232,
+   "sha256": "2e92f1415b6c0bc3a301e85ff513a32bd576e5fd548b6b2a5932d1bf290a432b",
    "provenance": {
-    "sha256": "4a2a9dcb03a9fd9753ac1238b1e251e2282d3e32bd0553ca42b2da0e2fa7d3c2",
+    "sha256": "2e92f1415b6c0bc3a301e85ff513a32bd576e5fd548b6b2a5932d1bf290a432b",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42248,8 +42248,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2loiter/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42383,9 +42383,9 @@
    "url": "/art-lab/icons/r2marmara.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2marmara.png",
    "bytes": 4691,
-   "sha256": "c29db7f099f6bdbc6578ed96566a7e6687cf480073b5ea11ad3e57ea3005a455",
+   "sha256": "b26c57df90805af053e3193e853b0801fa19abdf31e1643f3acd5721f92d9333",
    "provenance": {
-    "sha256": "c29db7f099f6bdbc6578ed96566a7e6687cf480073b5ea11ad3e57ea3005a455",
+    "sha256": "b26c57df90805af053e3193e853b0801fa19abdf31e1643f3acd5721f92d9333",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42403,8 +42403,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2marmara/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42413,10 +42413,10 @@
   "icons/r2merkava.png": {
    "url": "/art-lab/icons/r2merkava.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2merkava.png",
-   "bytes": 5302,
-   "sha256": "2a7de43382279df4604205bf92f5b87c34b5638252d628eedea5358117d1b7a8",
+   "bytes": 5313,
+   "sha256": "8cd589728198e935754eb9028e0c6af185f5c7899a48a3b70bdc2eedc3879be9",
    "provenance": {
-    "sha256": "2a7de43382279df4604205bf92f5b87c34b5638252d628eedea5358117d1b7a8",
+    "sha256": "8cd589728198e935754eb9028e0c6af185f5c7899a48a3b70bdc2eedc3879be9",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42434,8 +42434,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2merkava/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42444,10 +42444,10 @@
   "icons/r2mohajer.png": {
    "url": "/art-lab/icons/r2mohajer.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2mohajer.png",
-   "bytes": 5557,
-   "sha256": "6c28da3c7058827aa2d51add62adc27a2c3c17a57273331932c32bc906c172cc",
+   "bytes": 5561,
+   "sha256": "4f1d4af3ae427ff5ff5f5ef22b3c96638e16ebbec7c7b99d5c7937909fced2ae",
    "provenance": {
-    "sha256": "6c28da3c7058827aa2d51add62adc27a2c3c17a57273331932c32bc906c172cc",
+    "sha256": "4f1d4af3ae427ff5ff5f5ef22b3c96638e16ebbec7c7b99d5c7937909fced2ae",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42465,8 +42465,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2mohajer/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42506,10 +42506,10 @@
   "icons/r2namer.png": {
    "url": "/art-lab/icons/r2namer.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2namer.png",
-   "bytes": 5546,
-   "sha256": "ef8e6046aa0d694941fdee2b3b8698f93ae85bc14e0b68426c701406b57e13ff",
+   "bytes": 5562,
+   "sha256": "502e1cf5d9edc713a694f02668019ae2f23c3fc20994686f98cbf439199a9337",
    "provenance": {
-    "sha256": "ef8e6046aa0d694941fdee2b3b8698f93ae85bc14e0b68426c701406b57e13ff",
+    "sha256": "502e1cf5d9edc713a694f02668019ae2f23c3fc20994686f98cbf439199a9337",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42527,8 +42527,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2namer/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42599,10 +42599,10 @@
   "icons/r2poyraz.png": {
    "url": "/art-lab/icons/r2poyraz.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2poyraz.png",
-   "bytes": 5088,
-   "sha256": "df94aed30468f1f94bff7d092ac041da33616443e102795441d5242e7a567de6",
+   "bytes": 5090,
+   "sha256": "7f7fb670d28997753f3557e880a3618a6f9841e072d655db8cf1adfdbebf1df9",
    "provenance": {
-    "sha256": "df94aed30468f1f94bff7d092ac041da33616443e102795441d5242e7a567de6",
+    "sha256": "7f7fb670d28997753f3557e880a3618a6f9841e072d655db8cf1adfdbebf1df9",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42620,8 +42620,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2poyraz/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42661,10 +42661,10 @@
   "icons/r2raad.png": {
    "url": "/art-lab/icons/r2raad.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2raad.png",
-   "bytes": 5107,
-   "sha256": "e14d4c7e1f19d3fb73b713c507b7bd71668622bfcf9c844726140557d721aa5f",
+   "bytes": 5104,
+   "sha256": "3060622eeef484ac70d74b36d582c6b020f40c4c706e3446216964c116eec8c1",
    "provenance": {
-    "sha256": "e14d4c7e1f19d3fb73b713c507b7bd71668622bfcf9c844726140557d721aa5f",
+    "sha256": "3060622eeef484ac70d74b36d582c6b020f40c4c706e3446216964c116eec8c1",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42682,8 +42682,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2raad/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42692,18 +42692,18 @@
   "icons/r2redspear.png": {
    "url": "/art-lab/icons/r2redspear.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2redspear.png",
-   "bytes": 4814,
-   "sha256": "2f98efcc2ab2ab92dbd0ef530a5e84b5b06680cee10ef8fd7748d8dd28f4de23",
+   "bytes": 4820,
+   "sha256": "18af9661e7c035a65337bf9574a12aa4641eae49bfa253d9c31d916df444e7f7",
    "provenance": {
-    "sha256": "2f98efcc2ab2ab92dbd0ef530a5e84b5b06680cee10ef8fd7748d8dd28f4de23",
+    "sha256": "18af9661e7c035a65337bf9574a12aa4641eae49bfa253d9c31d916df444e7f7",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2redspear/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42712,10 +42712,10 @@
   "icons/r2riyadh.png": {
    "url": "/art-lab/icons/r2riyadh.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2riyadh.png",
-   "bytes": 5099,
-   "sha256": "4a482f317471b879940f11ada4fed0be76498731fc5fcee7ac6803afcea7b5e0",
+   "bytes": 5100,
+   "sha256": "1987a51bfbb8d9117ccb98d2ab7ba2dd0447fbde477b90c6a90b50fba5fd65d7",
    "provenance": {
-    "sha256": "4a482f317471b879940f11ada4fed0be76498731fc5fcee7ac6803afcea7b5e0",
+    "sha256": "1987a51bfbb8d9117ccb98d2ab7ba2dd0447fbde477b90c6a90b50fba5fd65d7",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -42733,8 +42733,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2riyadh/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42825,18 +42825,18 @@
   "icons/r2saguard.png": {
    "url": "/art-lab/icons/r2saguard.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2saguard.png",
-   "bytes": 4694,
-   "sha256": "a747f4cb0d4d7cac15b11d62e26ee81612993027bf8cc54038e3bff8bf4f622a",
+   "bytes": 4700,
+   "sha256": "385dc73f4ab050c46fd6283e90e68eb05371cf664e9643fa5ce61b67e5c54cc5",
    "provenance": {
-    "sha256": "a747f4cb0d4d7cac15b11d62e26ee81612993027bf8cc54038e3bff8bf4f622a",
+    "sha256": "385dc73f4ab050c46fd6283e90e68eb05371cf664e9643fa5ce61b67e5c54cc5",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2saguard/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -42989,18 +42989,18 @@
   "icons/r2sang.png": {
    "url": "/art-lab/icons/r2sang.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2sang.png",
-   "bytes": 5260,
-   "sha256": "23a83c53523a191dfa46f8143548e4003cee24ff3cadaeab730f4a30c87fbfbf",
+   "bytes": 5255,
+   "sha256": "99e5a677fae7e111a265258400d59ff4d92772ad9b72105d4dc36969caa4dfd6",
    "provenance": {
-    "sha256": "23a83c53523a191dfa46f8143548e4003cee24ff3cadaeab730f4a30c87fbfbf",
+    "sha256": "99e5a677fae7e111a265258400d59ff4d92772ad9b72105d4dc36969caa4dfd6",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2sang/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43009,18 +43009,18 @@
   "icons/r2sapatriot.png": {
    "url": "/art-lab/icons/r2sapatriot.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2sapatriot.png",
-   "bytes": 5212,
-   "sha256": "48d70e0816a5050a6a264055773d351e95de7c489ca19a238f55abce3aaf1e8b",
+   "bytes": 5222,
+   "sha256": "84533506367572909e29ebefa4b39b010cc2a4b7706e93209c461008f56d7652",
    "provenance": {
-    "sha256": "48d70e0816a5050a6a264055773d351e95de7c489ca19a238f55abce3aaf1e8b",
+    "sha256": "84533506367572909e29ebefa4b39b010cc2a4b7706e93209c461008f56d7652",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2sapatriot/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43070,17 +43070,17 @@
    "url": "/art-lab/icons/r2siper.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2siper.png",
    "bytes": 5116,
-   "sha256": "a9ee33a4595c9f05260b0ee15de9a810c10d00912be5702314ece8b267714a20",
+   "sha256": "3959a3ef28434c2eb3f762bf9d2b1288e0c4b299fc08c284c33de6059645b6ad",
    "provenance": {
-    "sha256": "a9ee33a4595c9f05260b0ee15de9a810c10d00912be5702314ece8b267714a20",
+    "sha256": "3959a3ef28434c2eb3f762bf9d2b1288e0c4b299fc08c284c33de6059645b6ad",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2siper/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43109,10 +43109,10 @@
   "icons/r2skyspear.png": {
    "url": "/art-lab/icons/r2skyspear.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2skyspear.png",
-   "bytes": 5055,
-   "sha256": "6d1f4b66d48063f6cfee48c01e3580f26a9a4e66cf2dd399b026368127e5ba6d",
+   "bytes": 5063,
+   "sha256": "897481e65de92082ee209a012a903530fd2a3f3b1ddaca09a40793576efb831a",
    "provenance": {
-    "sha256": "6d1f4b66d48063f6cfee48c01e3580f26a9a4e66cf2dd399b026368127e5ba6d",
+    "sha256": "897481e65de92082ee209a012a903530fd2a3f3b1ddaca09a40793576efb831a",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -43130,8 +43130,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2skyspear/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43140,18 +43140,18 @@
   "icons/r2spectrum.png": {
    "url": "/art-lab/icons/r2spectrum.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2spectrum.png",
-   "bytes": 4672,
-   "sha256": "19b73a8cffa1ff206b43a9cd45a8c7f3a132fa4c93594313009c188fc33ad2b8",
+   "bytes": 4668,
+   "sha256": "95a4cdf025d4d16597b1441564f841f209903af97570d78670bca79a0772af58",
    "provenance": {
-    "sha256": "19b73a8cffa1ff206b43a9cd45a8c7f3a132fa4c93594313009c188fc33ad2b8",
+    "sha256": "95a4cdf025d4d16597b1441564f841f209903af97570d78670bca79a0772af58",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2spectrum/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43262,18 +43262,18 @@
   "icons/r2trdroneop.png": {
    "url": "/art-lab/icons/r2trdroneop.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2trdroneop.png",
-   "bytes": 5023,
-   "sha256": "7cfff0ecb3f0914fa787bb4f369a6c4d5da73867d93003d3ac0fdcec86d2d36e",
+   "bytes": 5027,
+   "sha256": "329162921fd1fcb373ed89054437ab3af65756ed92a84bc4fa53d22ea36956d3",
    "provenance": {
-    "sha256": "7cfff0ecb3f0914fa787bb4f369a6c4d5da73867d93003d3ac0fdcec86d2d36e",
+    "sha256": "329162921fd1fcb373ed89054437ab3af65756ed92a84bc4fa53d22ea36956d3",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2trdroneop/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43282,18 +43282,18 @@
   "icons/r2trrifle.png": {
    "url": "/art-lab/icons/r2trrifle.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2trrifle.png",
-   "bytes": 5025,
-   "sha256": "4dc13b119fbf3519c724bae11c7a4334f9051d2739eb23fae1550500666c8ce3",
+   "bytes": 5024,
+   "sha256": "9fdbe4b56cb4d7be740c45615c54455a45d1f26fe086ab3ee5e619d796a8befd",
    "provenance": {
-    "sha256": "4dc13b119fbf3519c724bae11c7a4334f9051d2739eb23fae1550500666c8ce3",
+    "sha256": "9fdbe4b56cb4d7be740c45615c54455a45d1f26fe086ab3ee5e619d796a8befd",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2trrifle/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43302,10 +43302,10 @@
   "icons/r2turna.png": {
    "url": "/art-lab/icons/r2turna.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2turna.png",
-   "bytes": 5873,
-   "sha256": "0ef554abe6bde59625931f4f04cb149f689fcfc6ea109e45ebe27e8da31cdd5d",
+   "bytes": 5874,
+   "sha256": "a80e198e1f9d2614176700be42a84b5ca3243387c6dc2a6bf07fb389073bf9ed",
    "provenance": {
-    "sha256": "0ef554abe6bde59625931f4f04cb149f689fcfc6ea109e45ebe27e8da31cdd5d",
+    "sha256": "a80e198e1f9d2614176700be42a84b5ca3243387c6dc2a6bf07fb389073bf9ed",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -43323,8 +43323,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2turna/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43353,18 +43353,18 @@
   "icons/r2ybunker.png": {
    "url": "/art-lab/icons/r2ybunker.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ybunker.png",
-   "bytes": 4968,
-   "sha256": "15d053e683162343f10f2514af35f29e10968c6d1d15be059e9637a878e25ee0",
+   "bytes": 4971,
+   "sha256": "f431ef2790c8a1c7729d45e2222945093ae0461d3ed83c7062158e67317b1873",
    "provenance": {
-    "sha256": "15d053e683162343f10f2514af35f29e10968c6d1d15be059e9637a878e25ee0",
+    "sha256": "f431ef2790c8a1c7729d45e2222945093ae0461d3ed83c7062158e67317b1873",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ybunker/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43373,18 +43373,18 @@
   "icons/r2ycoastal.png": {
    "url": "/art-lab/icons/r2ycoastal.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ycoastal.png",
-   "bytes": 4963,
-   "sha256": "6908e1bef04d511b8293d92ab5d7864a2945e6850072b702354d7ed933025df2",
+   "bytes": 4961,
+   "sha256": "4bcf58669f5c7abe301dc1153f8d4193edd2c128a28b48c5871540ba43846998",
    "provenance": {
-    "sha256": "6908e1bef04d511b8293d92ab5d7864a2945e6850072b702354d7ed933025df2",
+    "sha256": "4bcf58669f5c7abe301dc1153f8d4193edd2c128a28b48c5871540ba43846998",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ycoastal/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43393,10 +43393,10 @@
   "icons/r2yildirim.png": {
    "url": "/art-lab/icons/r2yildirim.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2yildirim.png",
-   "bytes": 5258,
-   "sha256": "211634e4259bdd6736091cd7bcb0317829dcdf3e6503ba5cc265a4c7f2195dc0",
+   "bytes": 5267,
+   "sha256": "3f19bc1e4dcebc77328273d7cc075a9e1332289fee1cf8988af7ccff85b6dae3",
    "provenance": {
-    "sha256": "211634e4259bdd6736091cd7bcb0317829dcdf3e6503ba5cc265a4c7f2195dc0",
+    "sha256": "3f19bc1e4dcebc77328273d7cc075a9e1332289fee1cf8988af7ccff85b6dae3",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -43414,8 +43414,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2yildirim/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43424,10 +43424,10 @@
   "icons/r2ymlr.png": {
    "url": "/art-lab/icons/r2ymlr.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ymlr.png",
-   "bytes": 5133,
-   "sha256": "383e6639bef699e8cc7496103fbc2daf871fb39d71c143703a97042d54190c8e",
+   "bytes": 5148,
+   "sha256": "518ac875b54f132ba9b4a2ce8ea7d6db61c8d3439352fd2fa2f91a67f7057b9e",
    "provenance": {
-    "sha256": "383e6639bef699e8cc7496103fbc2daf871fb39d71c143703a97042d54190c8e",
+    "sha256": "518ac875b54f132ba9b4a2ce8ea7d6db61c8d3439352fd2fa2f91a67f7057b9e",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -43445,8 +43445,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ymlr/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43455,18 +43455,18 @@
   "icons/r2ymr.png": {
    "url": "/art-lab/icons/r2ymr.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ymr.png",
-   "bytes": 5323,
-   "sha256": "cedb166906dbcd7cf3f847a6b98a3256cc6cfa6e4978bd3c251c2cb3447e0751",
+   "bytes": 5331,
+   "sha256": "ceca6c624dacc5b68374ab51332ac5cae75cb72be97ac078e8ee92c43130c469",
    "provenance": {
-    "sha256": "cedb166906dbcd7cf3f847a6b98a3256cc6cfa6e4978bd3c251c2cb3447e0751",
+    "sha256": "ceca6c624dacc5b68374ab51332ac5cae75cb72be97ac078e8ee92c43130c469",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ymr/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43475,18 +43475,18 @@
   "icons/r2yrpg.png": {
    "url": "/art-lab/icons/r2yrpg.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2yrpg.png",
-   "bytes": 4982,
-   "sha256": "edaad2f96afef5dc96fb0b47d4a6f7d7b1364137c644dcb815504784501ed6a0",
+   "bytes": 4984,
+   "sha256": "032665d3cf559dfc8bcda2ef24f7a346971684562679a98b80bd06b63b94d07a",
    "provenance": {
-    "sha256": "edaad2f96afef5dc96fb0b47d4a6f7d7b1364137c644dcb815504784501ed6a0",
+    "sha256": "032665d3cf559dfc8bcda2ef24f7a346971684562679a98b80bd06b63b94d07a",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2yrpg/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43495,18 +43495,18 @@
   "icons/r2yspot.png": {
    "url": "/art-lab/icons/r2yspot.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2yspot.png",
-   "bytes": 5105,
-   "sha256": "1b775d0bf4c24592f4e22925265fdbb54fb5d23f6961963bb1fccfaf5d28fa02",
+   "bytes": 5103,
+   "sha256": "b423621c1cdc94a34d61d2b6fe7884b9115c67006baf59d68896f005dac8907e",
    "provenance": {
-    "sha256": "1b775d0bf4c24592f4e22925265fdbb54fb5d23f6961963bb1fccfaf5d28fa02",
+    "sha256": "b423621c1cdc94a34d61d2b6fe7884b9115c67006baf59d68896f005dac8907e",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2yspot/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43516,9 +43516,9 @@
    "url": "/art-lab/icons/r2ytechrr.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2ytechrr.png",
    "bytes": 5006,
-   "sha256": "b7849ff73ae89483d0ceeeef2a8709df105d18d1a44fa7a122d73ab5cb342902",
+   "sha256": "b37bc28083ebc14e401c3baff1301006e1e1310ef0114cd4ba4b007f18c23710",
    "provenance": {
-    "sha256": "b7849ff73ae89483d0ceeeef2a8709df105d18d1a44fa7a122d73ab5cb342902",
+    "sha256": "b37bc28083ebc14e401c3baff1301006e1e1310ef0114cd4ba4b007f18c23710",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -43536,8 +43536,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2ytechrr/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
@@ -43597,10 +43597,10 @@
   "icons/r2zbd.png": {
    "url": "/art-lab/icons/r2zbd.png",
    "modPath": "mods/rtsai/modern-factions/icons/r2zbd.png",
-   "bytes": 5552,
-   "sha256": "acb80cd73eb9489e8a6aa7642df3944a7b0a0f61dac3c340cb9d3da3be5ca7d9",
+   "bytes": 5556,
+   "sha256": "f42814c135bb4f0c3cbf67b329212caa799a2bfaca7d7a0a13c27a476d3d9693",
    "provenance": {
-    "sha256": "acb80cd73eb9489e8a6aa7642df3944a7b0a0f61dac3c340cb9d3da3be5ca7d9",
+    "sha256": "f42814c135bb4f0c3cbf67b329212caa799a2bfaca7d7a0a13c27a476d3d9693",
     "type": "build-palette cameo, 60x48 RGB PNG with a name bar",
     "origin": "rendered-from-project-geometry",
     "generator": "project-geometry",
@@ -43618,8 +43618,8 @@
     "source": {
      "repo": "RTSAI-Art (local)",
      "path": "units/r2zbd/candidates/cameo-v3-render/cameo.png",
-     "commit": "e5e0e8d155d72465c0e0f7c0591143a09404c40b",
-     "date": "2026-10-06"
+     "commit": "ddba372f2591d152b93f972078a0b5909df90060",
+     "date": "2026-10-15"
     },
     "tool": "Blender 5.2 Cycles (CPU); tools/cameo_render.py",
     "date": "2026-10-06"
