@@ -3,7 +3,7 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "fb71355929ece82daf3bd9064e89d0eda4158524",
+  "commit": "535175c7a497a927484733cc87882ac91bcc10de",
   "provenanceGeneratedBy": "tools/art-provenance.py",
   "provenanceSha256": "e3320fb073bee8d765561ffb244b67e4adbb2a51e4f39e82847d146346d881a5",
   "commercialRa2Data": "None found. Every unit sprite and cameo is a render of the project's own 3D model (a GLB generated locally from the project's concept picture), installed from a committed RTSAI-Art candidate with the same bytes; original RA2 files were read only locally to measure target statistics, never as input pixels; the flags are drawn from code. See docs/art-provenance.md.",
