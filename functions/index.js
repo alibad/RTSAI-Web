@@ -7,7 +7,7 @@
 //   weeklyDigest   every Monday 08:00 Doha time, one email to the team group: last week's players, matches by mode and
 //                  faction, sign-ups, feedback and errors (weekly.js, digest.js), delivered like any other mail document.
 //   sendDigestNow  the digest on demand, for the project's owners only (Cloud Run IAM, not public):
-//                    curl -X POST -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+//                    curl -X POST -d "" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
 //                      https://europe-west1-rtsai-net.cloudfunctions.net/sendDigestNow
 //                  ?preview=1 returns the email's HTML without sending; ?window=lastWeek covers last Monday to Sunday
 //                  (default: the last 7 days up to now).
