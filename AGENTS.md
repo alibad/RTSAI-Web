@@ -11,3 +11,19 @@
 - Preserve server/client component boundaries and validate changes with local lint, tests, and production builds.
 - Treat Vercel as the canonical production host. GitHub `main` deploys through Vercel's native Git integration to `rtsai.net` and `www.rtsai.net`.
 - Never add GitHub Actions or hosted workflow files.
+
+## Branches: commit on main, always from the latest main
+
+Several sessions change RTS AI at the same time; work left on a branch or built from a checkout that is behind gets
+lost or ships half-done (14 October 2026).
+
+- `main` is the only long-lived branch and `origin/main` is the truth. Commit on main.
+- Before you start, before every commit and before any build you test: `git fetch`, then bring your checkout to the
+  latest `origin/main` (`git pull --ff-only`, or `git pull --rebase` with local commits). Never build on a checkout
+  that is behind main.
+- When another session already uses the main checkout, work in a worktree started from the latest main
+  (`git worktree add -b <topic> <dir> origin/main`), keep rebasing it onto `origin/main`, and land it on main as soon
+  as it works. Don't stack branches on branches.
+- Pushing `main` here deploys production (rtsai.net), so it needs the owner's approval. Until then, keep finished work
+  as commits on top of the latest `origin/main`, not on a long-lived branch.
+- Never force-push, hard-reset or rebase commits that are already on `origin/main` or that belong to another session.
