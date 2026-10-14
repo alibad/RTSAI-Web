@@ -5,6 +5,7 @@ import {
   MAX_TERRAIN_RESPONSE_CHARS,
   TOO_DENSE,
   overpassFailure,
+  terrainBox,
   terrainFeatures,
   terrainQuery,
   type OverpassPayload,
@@ -90,7 +91,7 @@ way(around:${radiusM},${latitude},${longitude})[highway~"motorway|trunk|primary|
         return Response.json({ error: TOO_DENSE }, { status: 413 });
       return Response.json({ error: "Earth data is temporarily unavailable" }, { status: 503 });
     }
-    const features = terrainFeatures(payload);
+    const features = terrainFeatures(payload, terrainBox(latitude, longitude, radiusM));
     if (features.length > MAX_EVIDENCE_FEATURES) return Response.json({ error: TOO_DENSE }, { status: 413 });
     return Response.json(
       { features, provider: "OpenStreetMap / Overpass", featureCount: features.length },
