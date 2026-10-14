@@ -2,3 +2,5 @@
 public/art-lab/** binary
 # Faction art files are byte-exact; their SHA-256s are recorded in data/faction-art-provenance.json.
 public/faction-art/** binary
+# Frozen content digests cover the generated LF bytes, including on Windows checkouts.
+data/*.generated.json text eol=lf
