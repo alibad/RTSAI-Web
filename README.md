@@ -213,6 +213,22 @@ npm run check:art    # fail if the committed copy is stale
   version-1 entries are migrated when read and fields the Forge adds are kept.
   Nothing reaches the mod until a separate export step. Production builds
   contain neither the tab, the UI nor the API.
+- Sound desk (`npm run sound-desk`, then http://localhost:3470/viewer/china?desk=1;
+  also the local app's admin viewer): the admin Faction viewer's switch in the top
+  bar turns the details column into a desk for the seven modern factions. A unit
+  shows every sound slot (voice lines, each weapon's fire and impact, death,
+  deploy and movement); the faction overview shows the announcer (each Speech
+  notification, its clip and words). Each slot A/Bs the current sound against a
+  pick from the bake-off (never its RA2 references), the mod's own sounds or the
+  CC0 library, fires weapon picks in the stage's Attack demo, says lines again
+  with the faction's own voice (`tools/sound-desk-voice.py`, OpenRA-AI's
+  generators; GPU etiquette via `AI\logs\gpu-claim.txt`/`gpu-yield.txt`), and
+  decides with U / N / R. Shared (stand-ins many units fire, e.g. `igiat1a–c`)
+  and By size (death explosions by unit size) decide many slots at once.
+  Decisions go to `RTSAI-Art/sound-review.json` through the dev-only
+  `/api/sound-review` (`lib/sound-desk/`), retakes to `RTSAI-Art/sounds/`;
+  RTSAI-Mod's `tools/apply-sound-decisions.py` applies them to the mod on a
+  branch. Public builds stub the desk out (`vite.config.ts`).
 
 ## UI kit (shadcn/ui)
 

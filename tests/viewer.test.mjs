@@ -16,7 +16,7 @@ async function render(pathname) {
 }
 const adminBuild = process.env.RTSAI_ADMIN === "1";
 // What only the admin build may show: the Studio, History, candidates and the dev API.
-const adminOnly = /Open in the Studio|Historical|History<\/summary>|candidate|\/api\/art-review/;
+const adminOnly = /Open in the Studio|Historical|History<\/summary>|candidate|\/api\/art-review|\/api\/sound-review|Sound desk/;
 
 test("the Faction viewer: every modern faction, its units drawn from the game's art, doctrine and campaigns", async () => {
   for (const id of ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah"]) {
@@ -147,10 +147,15 @@ test("public builds carry no admin viewer code", { skip: adminBuild }, () => {
     // snapshot (lib/art-lab/studio-snapshot.ts), read-only. The public Faction viewer stays free of admin code.
     if (/^(ReviewApp|SharedStudio|mesh-view)-/.test(chunk)) continue;
     const source = readFileSync(new URL(chunk, dir), "utf8");
-    assert.doesNotMatch(source, /Open in the Studio|Historical only|history\.css|\/api\/art-review/, `${chunk} carries no admin viewer code`);
+    assert.doesNotMatch(source, /Open in the Studio|Historical only|history\.css|\/api\/art-review|\/api\/sound-review|Sound desk|sd-wave/, `${chunk} carries no admin viewer code`);
   }
+  // Nor its styles: the Sound desk's stylesheet comes with its module, which public builds replace with a stub.
+  const cssDir = new URL("../dist/client/_next/static/css/", import.meta.url);
+  for (const file of readdirSync(cssDir)) assert.doesNotMatch(readFileSync(new URL(file, cssDir), "utf8"), /\.sd-wave|\.sd-toggle/, `${file} carries no Sound desk styles`);
 });
 
 test("the admin build adds the Studio link (History loads from the local dev API)", { skip: !adminBuild }, async () => {
-  assert.match(await (await render("/viewer/china/r2qilin")).text(), /Open in the Studio/);
+  const html = await (await render("/viewer/china/r2qilin")).text();
+  assert.match(html, /Open in the Studio/);
+  assert.match(html, /Sound desk/, "and the Sound desk switch");
 });

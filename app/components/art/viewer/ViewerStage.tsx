@@ -85,7 +85,7 @@ export type AttackSounds = (weaponId: string) => { report: string[]; impact: str
  * at the weapon's real range and fires at it at the weapon's real cadence; Range draws the weapons' reach on the
  * ground at true scale. Draws only when something changes; nothing loops while it is still.
  */
-export function ViewerStage({ frames, item, color, onColor, tag, children, onAction, weapons = [], dummies = [], sounds }: {
+export function ViewerStage({ frames, item, color, onColor, tag, children, onAction, weapons = [], dummies = [], sounds, fire = null }: {
   frames: FrameStore; item: StageItem; color: string; onColor: (hex: string) => void;
   /** Called when the player starts an action (its sound plays with it). */
   onAction?: (id: string) => void;
@@ -98,6 +98,8 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   dummies?: ViewerDummy[];
   /** A weapon's report and impact clips, played with each shot and hit. */
   sounds?: AttackSounds;
+  /** Fires one weapon in the Attack demo now (each new `n`), as if its button were pressed. */
+  fire?: { weapon: string; n: number } | null;
 }) {
   const actions = useMemo(() => actionsFor(item), [item]);
   const firstAction = actions[0]?.id ?? "stand";
@@ -347,6 +349,15 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   const canTurn = turns(item) && !running;
   const choose = (id: string) => { if (attack) stopAttack(); setAnimation(id); view.current.time = 0; setPlaying(true); onAction?.(id); };
   const pickWeapon = (i: number) => startAttack({ weapon: i, target: dummyTargets(weapons[i], dummies, item.spec.category)[0]?.kind ?? "infantry" });
+  const fired = useRef(fire?.n ?? 0);
+  useEffect(() => {
+    if (!fire || fire.n === fired.current) return;
+    fired.current = fire.n;
+    const i = weapons.findIndex(w => w.id.toLowerCase() === fire.weapon.toLowerCase());
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a request from outside (the Sound desk's Fire)
+    if (i >= 0) pickWeapon(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per request
+  }, [fire]);
 
   return (
     <div className="viewer-stage">

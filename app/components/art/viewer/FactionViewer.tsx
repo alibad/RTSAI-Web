@@ -11,6 +11,7 @@ import { ViewerStage } from "./ViewerStage";
 import { EffectGlyph } from "./attack-icons";
 import { modeLabel } from "../../../../lib/weapon-demo";
 import { ViewerAdmin, type ShownVersion } from "./ViewerAdmin";
+import { SoundDesk, SoundDeskToggle, type Audition } from "./SoundDesk";
 import { soundEngine } from "../review/sound";
 import { SoundControls } from "../review/SoundControls";
 import type { PublicClip } from "../../../../lib/faction-audio";
@@ -20,6 +21,7 @@ import "./viewer.css";
 
 const groups: [string, string][] = [["infantry", "Infantry"], ["vehicle", "Vehicles"], ["aircraft", "Aircraft"], ["ship", "Naval"], ["defense", "Defenses"], ["structure", "Buildings"]];
 const COLOR_KEY = "rtsai-viewer-color";
+const DESK_KEY = "rtsai-viewer-desk";
 
 const hrefFor = (faction: string, unit: string | null) => (unit ? `/viewer/${faction}/${unit}` : `/viewer/${faction}`);
 
@@ -49,6 +51,15 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   useEffect(() => { try { const c = localStorage.getItem(COLOR_KEY); if (c && /^[0-9A-F]{6}$/i.test(c)) setColor(c); } catch { /* storage unavailable */ } }, []);
   const pickColor = useCallback((hex: string) => { setColor(hex); try { localStorage.setItem(COLOR_KEY, hex); } catch { /* storage unavailable */ } }, []);
   const [shown, setShown] = useState<ShownVersion | null>(null);
+  // Admin builds: the Sound desk takes the details column; it can make the stage's Attack demo fire a weapon with a
+  // candidate sound (`audition`, `fire`). Public builds never turn it on (its module is an empty stub there).
+  const [desk, setDeskState] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration (?desk=1 or the last choice)
+  useEffect(() => { if (!ADMIN_BUILD) return; try { if (new URLSearchParams(window.location.search).has("desk") || localStorage.getItem(DESK_KEY) === "1") setDeskState(true); } catch { /* storage unavailable */ } }, []);
+  const setDesk = useCallback((on: boolean) => { setDeskState(on); try { localStorage.setItem(DESK_KEY, on ? "1" : "0"); } catch { /* storage unavailable */ } }, []);
+  const [audition, setAudition] = useState<Audition | null>(null);
+  const [fire, setFire] = useState<{ weapon: string; n: number } | null>(null);
+  const fireWeapon = useCallback((weapon: string) => setFire(f => ({ weapon, n: (f?.n ?? 0) + 1 })), []);
 
   const units = faction.units;
   const unit = units.find(u => u.id === selected) ?? null;
@@ -107,10 +118,11 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
               {group.map(f => <a key={f.id} href={hrefFor(f.id, null)} className={f.original ? "is-original" : undefined} aria-current={f.id === faction.id ? "page" : undefined} title={f.name}>{marks[f.id]}<span>{f.name}</span></a>)}
             </div>)}
         </nav>
+        {ADMIN_BUILD && <SoundDeskToggle on={desk} onChange={setDesk} />}
         <SoundControls />
         <span className="viewer-title">Faction viewer</span>
       </header>
-      <div className="viewer-body">
+      <div className={`viewer-body${desk ? " is-desk" : ""}`}>
         <aside className="viewer-rail" aria-label={`${faction.name} units`}>
           <a className={`viewer-overview${unit ? "" : " is-current"}`} href={hrefFor(faction.id, null)} aria-current={unit ? undefined : "page"} onClick={e => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); select(null); }}>
             {marks[faction.id]}<span><b>{faction.name}</b><small>{faction.title}</small></span>
@@ -139,7 +151,12 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
           {stageItem && (
             <div className="viewer-stage-slot" hidden={!(unit && item)}>
               <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor} onAction={id => playAction(sounds, id)}
-                weapons={unit && item && !shown ? unit.attack : NO_WEAPONS} dummies={faction.dummies} sounds={weaponId => (unit ? weaponSounds(unit, sounds, snapSounds, faction.effects, weaponId) : { report: [], impact: [] })}
+                weapons={unit && item && !shown ? unit.attack : NO_WEAPONS} dummies={faction.dummies} fire={desk ? fire : null}
+                sounds={weaponId => {
+                  const base = unit ? weaponSounds(unit, sounds, snapSounds, faction.effects, weaponId) : { report: [], impact: [] };
+                  // The Sound desk auditions one weapon's fire or impact with the sound it is comparing.
+                  return audition && desk && audition.weapon.toLowerCase() === weaponId.toLowerCase() ? { report: audition.report ?? base.report, impact: audition.impact ?? base.impact } : base;
+                }}
                 tag={shown ? <span className="viewer-historical"><b>{shown.label}</b><button type="button" onClick={() => setShown(null)}>Back to the game’s art</button></span> : undefined}>
                 {unit && item && <div className="viewer-stage-name"><h1>{unit.name}</h1><span>{unit.role}</span></div>}
               </ViewerStage>
@@ -161,9 +178,10 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
           )}
         </main>
 
-        <aside className="viewer-info" aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
-          {infoUnit ? <UnitInfo unit={infoUnit} sounds={infoUnit === unit ? infoSounds : shownSounds(infoUnit, snapSounds, faction.effects)} /> : faction.original ? <CountryInfo faction={faction} link={link} withSounds={Boolean(snapSounds)} /> : <FactionInfo faction={faction} />}
-          {ADMIN_BUILD && infoUnit?.art && <ViewerAdmin key={infoUnit.id} unit={infoUnit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
+        <aside className={`viewer-info${desk ? " is-desk" : ""}`} aria-label={unit ? `${unit.name} details` : `${faction.name} doctrine`}>
+          {desk ? <SoundDesk faction={artFactionId} factionName={faction.name} unit={unit ? { id: unit.id, name: unit.name, weapons: unit.attack.map(w => w.id), modern: Boolean(unit.art) } : null} onAudition={setAudition} onFire={fireWeapon} />
+            : infoUnit ? <UnitInfo unit={infoUnit} sounds={infoUnit === unit ? infoSounds : shownSounds(infoUnit, snapSounds, faction.effects)} /> : faction.original ? <CountryInfo faction={faction} link={link} withSounds={Boolean(snapSounds)} /> : <FactionInfo faction={faction} />}
+          {ADMIN_BUILD && !desk && infoUnit?.art && <ViewerAdmin key={infoUnit.id} unit={infoUnit} factionId={artFactionId} factionName={faction.name} frames={frames} onShow={setShown} />}
         </aside>
       </div>
     </div>

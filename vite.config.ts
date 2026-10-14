@@ -55,6 +55,9 @@ function artReviewDevApi(): Plugin {
       const originals = originalsConfig(fileURLToPath(new URL(".", import.meta.url)));
       const webRoot = fileURLToPath(new URL(".", import.meta.url));
       server.middlewares.use("/api/art-review", createArtReviewMiddleware({ root, originals, webRoot, previewMod: fileURLToPath(new URL(process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview", import.meta.url)) }));
+      // The admin viewer's Sound desk: decisions to RTSAI-Art/sound-review.json, the mod read in place (dev only).
+      const { createSoundReviewMiddleware, soundDeskConfig } = await import("./lib/sound-desk/server");
+      server.middlewares.use("/api/sound-review", createSoundReviewMiddleware(soundDeskConfig(webRoot)));
     },
   };
 }
@@ -81,20 +84,22 @@ function artReviewLocalRouteStub(): Plugin {
 // Public builds swap the admin-only Workshop tools (Campaign studio, AI testing) for empty stubs, so their code never
 // reaches an rtsai.net bundle; their pages answer 404 there (lib/admin.ts). Admin builds and dev keep them.
 function adminToolsProductionStub(): Plugin {
-  // ViewerAdmin: the Faction viewer's admin additions (a Studio link, History over the dev API).
-  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab", ViewerAdmin: "\0rtsai-admin-stub:ViewerAdmin" };
+  // ViewerAdmin: the Faction viewer's admin additions (a Studio link, History over the dev API). SoundDesk: the
+  // viewer's Sound desk (audition, choose and regenerate sounds over /api/sound-review).
+  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab", ViewerAdmin: "\0rtsai-admin-stub:ViewerAdmin", SoundDesk: "\0rtsai-admin-stub:SoundDesk" };
+  const stubExports: Record<string, string[]> = { SoundDesk: ["SoundDesk", "SoundDeskToggle"] };
   return {
     name: "rtsai-admin-tools-production-stub",
     apply: (_, env) => env.command === "build" && !adminBuild,
     enforce: "pre",
     resolveId(source) {
       const name = /(?:^|[\\/])components[\\/](CampaignStudio|BehaviorLab)(?:\.tsx)?$/.exec(source)?.[1]
-        ?? /(?:^|[\\/])(?:components[\\/]art[\\/]viewer[\\/]|\.[\\/])(ViewerAdmin)(?:\.tsx)?$/.exec(source)?.[1];
+        ?? /(?:^|[\\/])(?:components[\\/]art[\\/]viewer[\\/]|\.[\\/])(ViewerAdmin|SoundDesk)(?:\.tsx)?$/.exec(source)?.[1];
       return name ? stubs[name] : null;
     },
     load(id) {
       const name = Object.keys(stubs).find(key => stubs[key] === id);
-      return name ? `export function ${name}() { return null; }\n` : null;
+      return name ? (stubExports[name] ?? [name]).map(fn => `export function ${fn}() { return null; }\n`).join("") : null;
     },
   };
 }
