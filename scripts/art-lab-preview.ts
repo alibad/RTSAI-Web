@@ -7,6 +7,7 @@ import { build } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createArtReviewMiddleware } from "../lib/art-lab/review-server";
+import { createSoundReviewMiddleware, soundDeskConfig } from "../lib/sound-desk/server";
 import { originalsConfig } from "../lib/art-lab/originals";
 import { isPlayPath, proxyTo } from "../lib/play-proxy";
 
@@ -57,6 +58,8 @@ const manifest = JSON.stringify({
 const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#111411"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
 const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });
+// The admin Faction viewer's Sound desk (decisions to RTSAI-Art/sound-review.json; the mod is read in place).
+const desk = createSoundReviewMiddleware({ ...soundDeskConfig(root), env: "development" });
 const port = Number(process.env.RTSAI_STUDIO_PORT ?? 3461);
 const mime: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".vxl": "application/octet-stream", ".hva": "application/octet-stream", ".pal": "application/octet-stream", ".shp": "application/octet-stream", ".wasm": "application/wasm" };
 /** Everything the Studio does not serve goes to the website; its redirects stay on this origin. */
@@ -81,6 +84,7 @@ const toGame = proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0
 
 createServer((req, res) => {
   if (req.url?.startsWith("/api/art-review/")) { void api(req, res); return; }
+  if (req.url?.startsWith("/api/sound-review/")) { void desk(req, res); return; }
   if (isPlayPath(req.url)) { toGame(req, res); return; }
   const path = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
   if (req.method === "GET") {

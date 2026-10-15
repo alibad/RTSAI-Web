@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vinext dev",
     "preview:art": "node --import tsx scripts/art-lab-preview.ts",
+    "sound-desk": "node scripts/sound-desk.mjs",
     "build": "vinext build",
     "vercel-build": "vite build",
     "start": "vinext start",

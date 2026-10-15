@@ -70,7 +70,8 @@ const MAX_WEAPONS = 4;
 
 /** "R2QilinGun" -> "Qilin Gun"; "DogJaw" -> "Dog Jaw"; "M60" stays. */
 export function weaponLabel(id: string): string {
-  const bare = id.replace(/^R2(?=[A-Z])/, "");
+  // `<Weapon>__sd_<hash>` is a Sound desk variant (RTSAI-Mod tools/apply-sound-decisions.py): the same weapon, its own sound.
+  const bare = id.replace(/__sd_[0-9a-f]+$/, "").replace(/^R2(?=[A-Z])/, "");
   const words = bare.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || id;
   return words[0].toUpperCase() + words.slice(1);
 }
