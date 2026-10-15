@@ -21,9 +21,16 @@ lost or ships half-done (14 October 2026).
 - Before you start, before every commit and before any build you test: `git fetch`, then bring your checkout to the
   latest `origin/main` (`git pull --ff-only`, or `git pull --rebase` with local commits). Never build on a checkout
   that is behind main.
-- When another session already uses the main checkout, work in a worktree started from the latest main
-  (`git worktree add -b <topic> <dir> origin/main`), keep rebasing it onto `origin/main`, and land it on main as soon
-  as it works. Don't stack branches on branches.
+- If another session uses main, coordinate or wait. Worktrees require an explicit owner request; see the policy below.
 - Pushing `main` here deploys production (rtsai.net), so it needs the owner's approval. Until then, keep finished work
   as commits on top of the latest `origin/main`, not on a long-lived branch.
 - Never force-push, hard-reset or rebase commits that are already on `origin/main` or that belong to another session.
+
+## Worktrees require an explicit owner request (15 October 2026)
+
+- Use the existing canonical checkout. Do not create a Git worktree or a parallel clone unless the owner explicitly asks for it in the current task. This supersedes older instructions permitting worktrees for concurrency, isolation, convenience, or risk.
+- Another session using the checkout is not permission to create a worktree. Coordinate non-overlapping changes, wait, or report the specific blocker; preserve all in-progress work.
+- In the OpenRA/RTS AI repositories, work and commit on canonical `main`. Fetch the correct owner remote and safely incorporate its main before starting, committing, or validating a build. Never reset, force-push, or rewrite another session's commits.
+- If the owner explicitly authorizes a worktree, keep it temporary, start from current main, and integrate validated work back into canonical main. Do not leave the only copy of finished work on a branch or worktree.
+- Before retiring an existing branch or worktree, verify that its unique commits, uncommitted files, and user artifacts are preserved and integrated where appropriate. Never delete unique work to make a checkout look clean.
+- Keep this policy change and local consolidation local. A request to consolidate on main does not by itself authorize a push, deployment, release, or deletion of branches/worktrees.
