@@ -137,8 +137,13 @@ export function cachedFile(cfg: OriginalsConfig, name: string) {
   return cached(cfg, name) ? cachePath(cfg, name) : null;
 }
 
-function modReader(root: string): ModReader {
-  const path = (p: string) => join(root, existsSync(join(root, "engine")) ? p : p.replace(/^engine\//, ""));
+function modReader(root: string, classic = false): ModReader {
+  const product = resolve(root, '../RTSAI-Mod');
+  const recovered = classic && existsSync(join(product, 'mods/rtsai-classic-core/mod.yaml'));
+  const path = (p: string) => recovered && p.startsWith('mods/ra/')
+    ? join(product, p.replace(/^mods\/ra\//, 'mods/rtsai-classic-core/'))
+    : recovered && p.startsWith('mods/rtsai/') ? join(product, p)
+    : join(root, existsSync(join(root, "engine")) ? p : p.replace(/^engine\//, ""));
   return { text: p => readFileSync(path(p), "utf8"), bytes: p => new Uint8Array(readFileSync(path(p))), exists: p => existsSync(path(p)) };
 }
 
@@ -309,7 +314,7 @@ export function visualPayload(cfg: OriginalsConfig, image: string, sequence: str
 async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequence: string, palette: string) {
   if (![image, sequence, palette].every(s => SAFE_NAME.test(s))) throw new Error("Invalid effect reference");
   checkCacheSource(cfg);
-  const reader = modReader(cfg.modRoot);
+  const reader = modReader(cfg.modRoot, cfg.mode === 'classic');
   const loaded = cfg.mode === "classic" ? loadClassicData(reader) : loadDefaultExperienceData(reader);
   const img = loaded.sequences.get(image), seq = img && child(img, sequence);
   if (!img || !seq) throw new Error("No such effect sequence");
@@ -386,7 +391,7 @@ export function rosterPayload(cfg: OriginalsConfig, refresh = false): Promise<Ro
 async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const started = Date.now();
   checkCacheSource(cfg);
-  const reader = modReader(cfg.modRoot);
+  const reader = modReader(cfg.modRoot, cfg.mode === 'classic');
   let provenance: ProvenanceRecord | null = null;
   try { provenance = JSON.parse(reader.text(`mods/${cfg.mode === "classic" ? "ra" : "rtsai"}/modern-factions/ART-PROVENANCE.json`)); } catch { /* Unknown authorship stays unknown. */ }
   const data = cfg.mode === "classic" ? loadClassicData(reader) : loadDefaultExperienceData(reader);
@@ -396,7 +401,7 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const run: StockRun = { cfg, reader, provenance, ownedPaths: new Map(), extraction: { requested: 0, cached: 0, missing: [], error: null } };
   // RA2: the game as it ships reads no player file, so its art (the stand-ins under EA names included) is the mod's own.
   const stock = await resolveStock(run, data, ids, stockInfo, factions, cfg.mode === "classic"
-    ? { dirs: ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"].map(d => `mods/ra/${d}`), content: cfg, rules: "RTS AI Classic · OpenRA fork" }
+    ? { dirs: ["bits", "bits/structures", "bits/animations", "bits/projectiles", "uibits"].map(d => `mods/ra/${d}`), content: cfg, rules: "Recovered Classic · RTSAI-Mod" }
     : { dirs: mountedDirs(reader, `${MOD_DIR}/mod.yaml`), content: null, rules: "RTS AI · RTSAI-Mod" });
   // The original countries as the classic add-on plays them: Westwood's art from the player's own files.
   let originals: Pick<RosterPayload, "originals" | "countries"> = {};
