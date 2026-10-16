@@ -45,7 +45,7 @@ export function createUnitStudioService(webRoot: string) {
         if (request.method === 'POST') {
           if (job.state === 'building') return json(job);
           job = { state: 'building' };
-          void run(python, [resolve(modRoot, 'tools/build-unit-preview.py'), '--web-root', webRoot], { maxBuffer: 256 * 1024, timeout: 300000 }).then(() => {
+          void run(python, [resolve(modRoot, 'tools/build-unit-preview.py'), '--web-root', webRoot], { maxBuffer: 256 * 1024, timeout: 900000 }).then(() => {
             preview = JSON.parse(readFileSync(latest, 'utf8')); job = { state: 'ready' };
           }).catch(() => { job = { state: 'failed', error: 'The preview build failed. Your saved modification is preserved.', log: '.cache/unit-preview-build.log' }; });
           return json(job, 202);
