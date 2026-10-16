@@ -184,9 +184,13 @@ function resolveInherits(node: Yaml, tree: Tree, inheritedIn: Map<string, string
 }
 
 /** MiniYaml.Merge: later sources override earlier ones; inheritance and removals are resolved. */
+export function mergeMiniYamlRaw(sources: YamlNode[][]): YamlNode[] {
+  return sources.length ? sources.map(mergeSelfPartial).reduce((a, b) => mergePartialNodes(a, b)) : [];
+}
+
 export function mergeMiniYaml(sources: YamlNode[][], lenient = false): YamlNode[] {
   if (sources.length === 0) return [];
-  const merged = sources.map(mergeSelfPartial).reduce((a, b) => mergePartialNodes(a, b));
+  const merged = mergeMiniYamlRaw(sources);
   const tree: Tree = new Map();
   for (const n of merged) {
     if (tree.has(n.key)) { if (lenient) continue; throw new YamlError(`Duplicate top-level key ${n.key} at ${n.location}`); }

@@ -94,9 +94,10 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
       <details className="ug-affected"><summary>Affects {content.unit.factions.length} {content.unit.factions.length === 1 ? 'faction' : 'factions'} · {loaded.length} targets</summary>
         <p>{content.unit.factions.map(f => f.name).join(', ')}</p>
         {loaded.map(([id, t]) => <p key={id}><b>{id.endsWith('web') ? 'Web' : 'Desktop'}</b><code>{t.actor}</code><span>{t.effective.cost} cr · {t.effective.health} HP · {t.effective.speed ?? 'stationary'}</span></p>)}
+        {!!content.relatedUnits?.length && <p>Inherited by: {content.relatedUnits.map(u => `${u.name} (${u.fields.join(', ')})`).join('; ')}. Their own overrides take precedence.</p>}
       </details>
-      {!webSupported && <p className="ug-gap">Desktop editing is available. This Classic unit has no verified equivalent in the current web adapter yet.</p>}
-      {mode === 'classic' && webSupported && <p className="ug-gap">Classic web uses the existing top-down adapter. This binding shares the edit; complete Classic gameplay parity is still pending.</p>}
+      {!webSupported && <p className="ug-gap">This unit is not included in the current web rules.</p>}
+      {mode === 'classic' && webSupported && <p className="ug-gap">Uses the recovered Classic rules and actor IDs on both platforms. Each desktop experience keeps its own settings and enabled factions.</p>}
       <div className="ug-preview"><div><span>LOCAL PREVIEWS</span><b className={`ug-status is-${preview.state}`}>{preview.state === 'ready' ? <Check size={12} /> : null}{preview.state === 'unbuilt' ? 'Not built' : preview.state === 'outdated' ? 'Outdated' : preview.state === 'building' ? 'Building…' : preview.state === 'failed' ? 'Build failed' : 'Up to date'}</b></div>
         <button type="button" className="ug-build" disabled={busy || dirty || preview.state === 'building'} onClick={() => void build()}><RefreshCw size={14} />Build & test locally</button>
         {dirty && <small>Save your modification before building.</small>}

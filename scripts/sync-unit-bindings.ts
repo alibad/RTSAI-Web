@@ -28,16 +28,25 @@ for (const mode of ['classic', 'ra2'] as const) {
     const number = (trait: string, field: string) => { const v = childValue(child(actor, trait)?.value, field); return v && /^\d+$/.test(v) ? Number(v) : null; };
     const speedTrait = traits(actor, 'Mobile').length === 1 ? 'Mobile' : traits(actor, 'Aircraft').length === 1 ? 'Aircraft' : null;
     const baseline = { cost: number('Valued', 'Cost'), health: number('Health', 'HP'), speed: speedTrait ? number(speedTrait, 'Speed') : null };
-    const binding = { actor: data.ruleKeys.get(unit.id), baseline, speedTrait };
-    // The top-down browser adapter shares RA2 actors. Only the Engineer mapping has been verified for Classic.
+    const ancestors = (id: string, trait: string, field: string, seen = new Set<string>()): string[] => {
+      if (seen.has(id)) throw new Error(`Rule inheritance cycle: ${id}`);
+      seen.add(id);
+      const leaf = child(child(data.rules.get(id), trait)?.value, field);
+      if (!leaf) return [];
+      const parents = (data.rawRules?.get(id)?.nodes ?? []).filter(n => n.key === 'Inherits' || n.key.startsWith('Inherits@')).map(n => n.value.value?.toLowerCase()).filter((v): v is string => !!v);
+      for (const parent of parents.reverse()) {
+        if (child(child(data.rules.get(parent), trait)?.value, field)?.location === leaf.location)
+          return [parent, ...ancestors(parent, trait, field, seen)];
+      }
+      return [];
+    };
+    const inheritance = { cost: ancestors(unit.id, 'Valued', 'Cost'), health: ancestors(unit.id, 'Health', 'HP'), speed: speedTrait ? ancestors(unit.id, speedTrait, 'Speed') : [] };
+    const binding = { actor: data.ruleKeys.get(unit.id), baseline, speedTrait, inheritance };
+    // Recovered Classic uses its own real actors on both platforms, without RA2 aliases.
     const bindings = mode === 'ra2' ? { 'ra2-desktop': binding, 'ra2-web': binding }
-      : { 'classic-desktop': binding, ...(unit.id === 'e6' ? { 'classic-web': { actor: 'engineer', baseline: { cost: 500, health: 10000, speed: 60 }, speedTrait: 'Mobile' } } : {}) };
+      : { 'classic-desktop': binding, 'classic-web': binding };
     registry[`${mode}:${unit.id}`] = { mode, actor: unit.id, name: unit.name, factions: roster.factions.filter(f => f.units.some(u => u.id === unit.id)).map(f => ({ id: f.id, name: f.name })), bindings };
   }
 }
-// Resolve the reviewed Classic web mapping's values from the actual RA2 adapter rules as well.
-const engineer = registry['ra2:engineer'] as { bindings: Record<string, unknown> };
-const classicEngineer = registry['classic:e6'] as { bindings: Record<string, unknown> };
-if (engineer && classicEngineer) classicEngineer.bindings['classic-web'] = engineer.bindings['ra2-web'];
 writeFileSync(resolve(mod, 'content/unit-bindings.json'), JSON.stringify({ schema: 1, units: registry }, null, 2) + '\n');
 console.log(`Bound ${Object.keys(registry).length} units to explicit desktop/web targets.`);

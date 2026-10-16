@@ -4,7 +4,7 @@
  * Pure: all file access goes through a ModReader, so tests can run it on fixtures.
  */
 import { decodeHva } from "./hva";
-import { child, childValue, mergeMiniYaml, parseMiniYaml, traits, type Yaml, type YamlNode } from "./miniyaml";
+import { child, childValue, mergeMiniYaml, mergeMiniYamlRaw, parseMiniYaml, traits, type Yaml, type YamlNode } from "./miniyaml";
 import { parseFluent } from "./fluent";
 import { checkVxl, decodeVxl } from "./vxl";
 import { decodeShp } from "./shp";
@@ -82,6 +82,7 @@ const floats3 = (value: string | null | undefined, fallback: Vec3): Vec3 => {
 export type ModData = {
   manifest: Yaml;
   rules: Map<string, Yaml>;
+  rawRules?: Map<string, Yaml>;
   ruleKeys: Map<string, string>;
   sequences: Map<string, Yaml>;
   rawSequenceKeys: Map<string, Set<string>>;
@@ -107,7 +108,7 @@ export function loadModData(reader: ModReader, options: { manifestPath?: string;
   });
   const toMap = (nodes: YamlNode[], lower: boolean) => new Map(nodes.map(n => [lower ? n.key.toLowerCase() : n.key, n.value]));
 
-  const ruleFiles = load([...manifestList(manifest, "Rules"), ...(options.extra?.Rules ?? [])]);
+  const ruleFiles = load([...manifestList(manifest, "Rules"), ...(options.extra?.Rules ?? []), ...manifestList(manifest, 'FinalRules')]);
   const mergedRules = mergeMiniYaml(ruleFiles.map(f => f.nodes), options.lenient);
   const rules = toMap(mergedRules, true);
   const ruleKeys = new Map(mergedRules.map(n => [n.key.toLowerCase(), n.key]));
@@ -130,7 +131,7 @@ export function loadModData(reader: ModReader, options: { manifestPath?: string;
     const { path } = resolvePackage(ref);
     if (path && reader.exists(path)) parseFluent(reader.text(path), messages);
   }
-  return { manifest, rules, ruleKeys, sequences, rawSequenceKeys, modelSequences, messages, ruleSources, weapons };
+  return { manifest, rules, rawRules: toMap(mergeMiniYamlRaw(ruleFiles.map(f => f.nodes)), true), ruleKeys, sequences, rawSequenceKeys, modelSequences, messages, ruleSources, weapons };
 }
 
 type FileUse = { modPath: string; key: string };
