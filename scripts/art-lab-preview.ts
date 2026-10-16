@@ -10,6 +10,7 @@ import { createArtReviewMiddleware } from "../lib/art-lab/review-server";
 import { createSoundReviewMiddleware, soundDeskConfig } from "../lib/sound-desk/server";
 import { originalsConfig } from "../lib/art-lab/originals";
 import { isPlayPath, proxyTo } from "../lib/play-proxy";
+import { studioContentHandler } from "../lib/studio-content-server";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
@@ -83,6 +84,19 @@ const toGame = proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0
   "The browser game is not running (RTSAI-WebGame on port 3490). Start it, or restart the local app.");
 
 createServer((req, res) => {
+  if (req.url?.split('?')[0] === '/api/studio/content') {
+    void (async () => {
+      const parts: Buffer[] = []; let size = 0;
+      for await (const chunk of req) { size += chunk.length; if (size > 4096) { res.writeHead(413).end(); return; } parts.push(Buffer.from(chunk)); }
+      const headers = new Headers();
+      for (const [key, value] of Object.entries(req.headers)) if (typeof value === 'string') headers.set(key, value);
+      const method = req.method ?? 'GET';
+      const reply = await studioContentHandler(new Request(`http://${req.headers.host}${req.url}`, { method, headers,
+        ...(['GET', 'HEAD'].includes(method) ? {} : { body: Buffer.concat(parts).toString('utf8') }) }));
+      res.writeHead(reply.status, Object.fromEntries(reply.headers)); res.end(await reply.text());
+    })().catch(() => { if (!res.headersSent) res.writeHead(500); res.end(); });
+    return;
+  }
   if (req.url?.startsWith("/api/art-review/")) { void api(req, res); return; }
   if (req.url?.startsWith("/api/sound-review/")) { void desk(req, res); return; }
   if (isPlayPath(req.url)) { toGame(req, res); return; }

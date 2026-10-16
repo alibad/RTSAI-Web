@@ -1,0 +1,17 @@
+.shared-content-editor { max-width: 1050px; margin: 64px auto; padding: 32px; color: var(--foreground, #eee9da); }
+.shared-content-editor h1 { font-size: clamp(28px, 4vw, 46px); margin: 12px 0; }
+.shared-content-eyebrow { color: #d7ae5f; font-size: 12px; letter-spacing: .15em; }
+.shared-content-editor > p { max-width: 760px; line-height: 1.6; }
+.shared-content-editor button { padding: 11px 18px; border: 1px solid #8e805d; border-radius: 6px; background: #e9dfc5; color: #191b18; font: inherit; cursor: pointer; }
+.shared-content-editor button:disabled { opacity: .5; cursor: wait; }
+.shared-content-editor button:focus-visible, .shared-content-editor input:focus-visible { outline: 2px solid #dfad49; outline-offset: 3px; }
+.shared-content-revision { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 0; border-top: 1px solid #55594d; }
+.shared-content-revision span { color: #a9b2a1; }
+.shared-content-editor label { display: block; margin-bottom: 10px; }
+.shared-content-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.shared-content-actions input { width: 150px; border: 1px solid #8e805d; border-radius: 6px; padding: 10px; background: #171c17; color: #eee9da; font: inherit; }
+.shared-content-editor table { width: 100%; margin-top: 32px; border-collapse: collapse; font-size: 14px; }
+.shared-content-editor caption { text-align: start; margin-bottom: 12px; font-weight: 600; }
+.shared-content-editor th, .shared-content-editor td { padding: 12px 8px; text-align: start; border-bottom: 1px solid #41483c; }
+.shared-content-note { color: #a9b2a1; font-size: 13px; }
+@media (max-width: 600px) { .shared-content-editor { margin: 20px auto; padding: 16px; } .shared-content-editor th, .shared-content-editor td { padding: 10px 3px; font-size: 11px; } }

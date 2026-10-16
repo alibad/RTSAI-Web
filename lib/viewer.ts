@@ -8,6 +8,7 @@
  * from the Faction Studio's published snapshot (lib/original-art.ts), never bundled with the site.
  */
 import { artFactionByCatalogId, artLab, renderSpec, spriteWithUrls } from "./art-lab/manifest";
+import { sharedUnitCost } from "./shared-content";
 import type { RenderSpec } from "./art-lab/spec";
 import type { SpriteArt } from "./art-lab/types";
 import { allCampaigns, campaignsForFaction, type Campaign } from "./faction-campaigns";
@@ -106,7 +107,7 @@ function viewerUnit(actor: RosterActor, dossier: (typeof catalogUnits)[number] |
   const label = dossier ? unitLabel(dossier, "ra2") : null;
   const b = actor.behavior;
   return {
-    id, name: label?.name ?? actor.name, role: label?.role ?? (own ? roleLabel(own) : role), category: actor.category, cost: actor.cost ?? null,
+    id, name: label?.name ?? actor.name, role: label?.role ?? (own ? roleLabel(own) : role), category: actor.category, cost: sharedUnitCost('ra2', id, actor.cost ?? null),
     description: label?.description ?? b.description?.split("\n")[0] ?? "",
     strengths: dossier?.strengths ?? null, counterplay: dossier?.counterplay ?? null, dossier: dossier ? `/units/${dossier.id}?mode=ra2` : null,
     stats: unitStats(actor),
