@@ -1,21 +1,31 @@
 "use client";
 
 import { useState } from 'react';
-import { useAuth } from './AuthProvider';
 import type { SharedContent } from '../../lib/studio-content-server';
 
-export function SharedContentEditor() {
-  const { user, openAuth } = useAuth();
+export function LocalSharedContentEditor() {
+  return <ContentEditor localOwner signedIn authorize={async () => {
+    const response = await fetch('/api/studio/session', { headers: { 'X-RTSAI-Local': '1' } });
+    if (!response.ok) throw new Error('Open this editor from the local Studio.');
+    const session = await response.json();
+    return { 'X-RTSAI-Owner': session.capability };
+  }} />;
+}
+
+export function ContentEditor({ authorize, signedIn, localOwner = false }: {
+  authorize(): Promise<Record<string, string> | null>; signedIn: boolean; localOwner?: boolean;
+}) {
   const [content, setContent] = useState<SharedContent | null>(null);
   const [cost, setCost] = useState('');
-  const [notice, setNotice] = useState('Sign in, then load the shared revision. Only configured Studio administrators can edit.');
+  const [notice, setNotice] = useState(localOwner ? 'Local owner access. Load the shared revision to begin.' : 'Sign in, then load the shared revision. Only configured Studio administrators can edit.');
   const [busy, setBusy] = useState(false);
   async function request(save: boolean, inherit = false) {
-    if (!user) { openAuth('Sign in as a Studio administrator'); return; }
     setBusy(true);
     try {
+      const authorization = await authorize();
+      if (!authorization) return;
       const response = await fetch('/api/studio/content', {
-        method: save ? 'POST' : 'GET', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
+        method: save ? 'POST' : 'GET', headers: { ...authorization, 'Content-Type': 'application/json' },
         ...(save ? { body: JSON.stringify({ entity: content?.entity, baseRevision: content?.revision, cost: inherit ? null : Number(cost) }) } : {}),
       });
       const next = await response.json();
@@ -26,10 +36,10 @@ export function SharedContentEditor() {
     finally { setBusy(false); }
   }
   return <section className="shared-content-editor">
-    <p className="shared-content-eyebrow">STUDIO · ADMIN AUTHORING</p>
+    <p className="shared-content-eyebrow">STUDIO · {localOwner ? 'LOCAL OWNER' : 'ADMIN AUTHORING'}</p>
     <h1>One edit. Both foundations.</h1>
     <p>Edit the shared unit cost, with explicit Classic and RA2 bindings. Original rules, artwork and review history stay preserved.</p>
-    <button type="button" disabled={busy} onClick={() => void request(false)}>{user ? 'Load shared content' : 'Sign in to edit'}</button>
+    <button type="button" disabled={busy} onClick={() => void request(false)}>{signedIn ? 'Load shared content' : 'Sign in to edit'}</button>
     <p role="status" aria-live="polite">{notice}</p>
     {content && <>
       <div className="shared-content-revision"><strong>{content.entity}</strong><span>Revision {content.revision.slice(0, 12)}</span><span>Local · not published</span></div>

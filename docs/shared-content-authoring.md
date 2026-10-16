@@ -12,20 +12,26 @@ evidence is described in `RTSAI-Mod/docs/shared-content-pilot.md`.
 
 ## Access
 
-- Verify the existing Firebase sign-in ID token on the server.
-- Require its UID in server-only `RTSAI_STUDIO_ADMIN_UIDS` (comma-separated).
-- Require local non-production execution and `RTSAI_STUDIO_LOCAL_WRITES=1`.
-- Refuse foreign origins, unauthenticated callers, non-admins and stale revisions.
-- `RTSAI_ADMIN=1` makes the UI available; it does **not** authorize writes.
-- An empty admin allowlist denies everyone. The owner must identify the intended
-  account; never grant editing to an email asserted by a browser or to all members.
+The owner chose local administration without a sign-in on 16 October 2026.
+Run `npm run preview:art`, then open
+`http://127.0.0.1:3461/studio/content` (or choose Shared content in Studio).
+No account, Firebase configuration or admin environment flags are required for
+this local gateway. It binds only to 127.0.0.1 and treats access from this machine
+as owner access. Other local programs/users with access to this machine can also
+act as owner; this is not a multi-user security boundary.
 
-Run the existing website development server with these server settings and its
-usual Firebase project configuration. The local app's Studio gateway also mounts
-the same protected handler. If using that separate Node gateway, supply the same
-`NEXT_PUBLIC_FIREBASE_PROJECT_ID` and admin settings to its process. No token or
-administrator UID is embedded in the public snapshot. Do not expose the local
-filesystem server as an online authoring backend.
+The gateway checks the actual loopback peer, exact host/origin and cross-site
+request metadata. A same-origin bootstrap with a custom header obtains an
+in-memory, per-launch capability, required for content reads and writes. No CORS
+access is granted, and the editor cannot be embedded in another site's frame.
+Restarting Studio invalidates its capabilities. No capability enters a URL,
+public snapshot or persistent account configuration.
+
+The separate website development editor retains verified Firebase UID
+allowlisting (`RTSAI_STUDIO_ADMIN_UIDS`, `RTSAI_STUDIO_LOCAL_WRITES=1`). It is
+optional. `RTSAI_ADMIN=1` only enables its page, never write authorization.
+The normal production website's editor and filesystem API still return 404.
+The local-owner handler is mounted only by the local Node gateway.
 
 The editor currently saves to canonical local Git-backed files. Durable cloud
 drafts, private uploaded assets, remote builds and online publishing are not part
@@ -42,8 +48,8 @@ public viewer export is still separate work; the editor shows all four bindings.
 
 ## Validation
 
-Six focused Node tests cover authorization, foreign origins, invalid payloads,
-conflict handling, the real Python compiler/store round trip, restore-to-inherit,
+Seven focused Node tests cover authorization, foreign origins, invalid payloads,
+conflict handling, local-owner capability/peer/host protection, the real Python compiler/store round trip, restore-to-inherit,
 mode-specific viewer bindings and the unchanged public read-only boundary.
 TypeScript, targeted ESLint and the production build pass. Local production HTTP
 checks confirm public Studio 200, editor and editing API 404 (including POST),

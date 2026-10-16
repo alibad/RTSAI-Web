@@ -4,6 +4,7 @@
 import { execFile } from 'node:child_process';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { verifyFirebaseIdentity, type FirebaseIdentity } from './firebase-token';
 
 const run = promisify(execFile);
@@ -73,3 +74,28 @@ export const studioContentHandler = createStudioContentHandler({
   administratorIds: () => (process.env.RTSAI_STUDIO_ADMIN_UIDS ?? '').split(',').map(id => id.trim()).filter(Boolean),
   store: localContentStore(),
 });
+
+/** Only mounted by the loopback Node gateway, never by a website route. */
+export function createLocalOwnerContentHandler(origin: string, store = localContentStore()) {
+  const capability = randomBytes(32).toString('hex');
+  const handler = createStudioContentHandler({ enabled: () => true,
+    verifyIdentity: async () => ({ uid: 'local-owner', email: null, name: null }),
+    administratorIds: () => ['local-owner'], store });
+  return async (request: Request, peer: string | undefined): Promise<Response> => {
+    const url = new URL(request.url);
+    if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(peer ?? '') || url.origin !== origin
+      || (request.headers.has('origin') && request.headers.get('origin') !== origin)
+      || request.headers.get('sec-fetch-site') === 'cross-site') return json({ error: 'Local owner access only' }, 403);
+    if (url.pathname === '/api/studio/session') {
+      if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+      // A foreign page cannot send this header without a CORS preflight, which we do not allow.
+      if (request.headers.get('x-rtsai-local') !== '1') return json({ error: 'Local session required' }, 403);
+      return json({ capability });
+    }
+    const supplied = Buffer.from(request.headers.get('x-rtsai-owner') ?? '');
+    const expected = Buffer.from(capability);
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected))
+      return json({ error: 'Reload the local Studio session' }, 403);
+    return handler(request);
+  };
+}

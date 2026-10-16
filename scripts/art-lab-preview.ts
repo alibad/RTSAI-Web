@@ -10,7 +10,7 @@ import { createArtReviewMiddleware } from "../lib/art-lab/review-server";
 import { createSoundReviewMiddleware, soundDeskConfig } from "../lib/sound-desk/server";
 import { originalsConfig } from "../lib/art-lab/originals";
 import { isPlayPath, proxyTo } from "../lib/play-proxy";
-import { studioContentHandler } from "../lib/studio-content-server";
+import { createLocalOwnerContentHandler } from "../lib/studio-content-server";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
@@ -37,12 +37,14 @@ const result = await build({
   // "@/..." resolves as in tsconfig.json and components.json, for files the shadcn CLI adds.
   resolve: { alias: [...Object.entries(aliases).map(([find, replacement]) => ({ find, replacement })), { find: /^@\//, replacement: `${root.replaceAll("\\", "/")}/` }] },
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
-  build: { outDir: output, emptyOutDir: false, rollupOptions: { input: resolve(root, "app/art/review/local-entry.tsx") } },
+  build: { outDir: output, emptyOutDir: false, rollupOptions: { input: { studio: resolve(root, "app/art/review/local-entry.tsx"), content: resolve(root, "app/studio/content/local-entry.tsx") } } },
 });
 const bundles = Array.isArray(result) ? result : [result];
 const files = bundles.flatMap(r => "output" in r ? r.output : []);
-const entry = files.find(f => f.type === "chunk" && f.isEntry);
+const entry = files.find(f => f.type === "chunk" && f.isEntry && f.name === "studio");
 if (!entry) throw new Error("Studio entry was not compiled");
+const contentEntry = files.find(f => f.type === "chunk" && f.isEntry && f.name === "content");
+if (!contentEntry) throw new Error("Shared content entry was not compiled");
 const styles = files.filter(f => f.type === "asset" && f.fileName.endsWith(".css")).map(f => `<link rel="stylesheet" href="/${f.fileName}">`).join("");
 // The installed local app (scripts/local-app.ps1) puts the production website behind the Studio on one origin.
 const site = process.env.RTSAI_SITE_ORIGIN ? new URL(process.env.RTSAI_SITE_ORIGIN) : null;
@@ -58,10 +60,12 @@ const manifest = JSON.stringify({
 });
 const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#111411"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
+const contentHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shared content - Local Studio</title>${head}${styles}</head><body style="background:#111411;font-family:Arial"><div id="shared-content-root"></div><script type="module" src="/${contentEntry.fileName}"></script></body></html>`;
 const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });
 // The admin Faction viewer's Sound desk (decisions to RTSAI-Art/sound-review.json; the mod is read in place).
 const desk = createSoundReviewMiddleware({ ...soundDeskConfig(root), env: "development" });
 const port = Number(process.env.RTSAI_STUDIO_PORT ?? 3461);
+const ownerContent = createLocalOwnerContentHandler(`http://127.0.0.1:${port}`);
 const mime: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".vxl": "application/octet-stream", ".hva": "application/octet-stream", ".pal": "application/octet-stream", ".shp": "application/octet-stream", ".wasm": "application/wasm" };
 /** Everything the Studio does not serve goes to the website; its redirects stay on this origin. */
 function toSite(req: IncomingMessage, res: ServerResponse, target: URL) {
@@ -84,15 +88,15 @@ const toGame = proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0
   "The browser game is not running (RTSAI-WebGame on port 3490). Start it, or restart the local app.");
 
 createServer((req, res) => {
-  if (req.url?.split('?')[0] === '/api/studio/content') {
+  if (['/api/studio/content', '/api/studio/session'].includes(req.url?.split('?')[0] ?? '')) {
     void (async () => {
       const parts: Buffer[] = []; let size = 0;
       for await (const chunk of req) { size += chunk.length; if (size > 4096) { res.writeHead(413).end(); return; } parts.push(Buffer.from(chunk)); }
       const headers = new Headers();
       for (const [key, value] of Object.entries(req.headers)) if (typeof value === 'string') headers.set(key, value);
       const method = req.method ?? 'GET';
-      const reply = await studioContentHandler(new Request(`http://${req.headers.host}${req.url}`, { method, headers,
-        ...(['GET', 'HEAD'].includes(method) ? {} : { body: Buffer.concat(parts).toString('utf8') }) }));
+      const reply = await ownerContent(new Request(`http://${req.headers.host}${req.url}`, { method, headers,
+        ...(['GET', 'HEAD'].includes(method) ? {} : { body: Buffer.concat(parts).toString('utf8') }) }), req.socket.remoteAddress);
       res.writeHead(reply.status, Object.fromEntries(reply.headers)); res.end(await reply.text());
     })().catch(() => { if (!res.headersSent) res.writeHead(500); res.end(); });
     return;
@@ -102,6 +106,7 @@ createServer((req, res) => {
   if (isPlayPath(req.url)) { toGame(req, res); return; }
   const path = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
   if (req.method === "GET") {
+    if (path === "/studio/content") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "frame-ancestors 'none'" }).end(contentHtml); return; }
     // One manifest for the installed app, whichever page it is installed from.
     if (path === "/studio.webmanifest" || (site && path === "/manifest.webmanifest")) { res.writeHead(200, { "Content-Type": "application/manifest+json", "Cache-Control": "no-store" }).end(manifest); return; }
     if (path === "/art/review" || path === "/") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }).end(html); return; }
