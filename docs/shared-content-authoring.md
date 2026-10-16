@@ -9,10 +9,18 @@ primary editing workflow.
 
 Edits are mode-specific: an RA2 unit's modification reaches its RA2 desktop and
 web targets. It does not implicitly change Classic. The reviewed registry covers
-392 units including the preserved modern faction profiles. Most Classic units
-currently have only a desktop binding. The explicitly reviewed Classic Engineer
-also binds to the older browser adapter; this is not complete Classic parity.
+392 units including the preserved modern faction profiles: all 195 Classic units
+across 12 factions and 197 RA2 units across 16 factions have both bindings.
+Classic web now runs `rtsai-classic-core`, the recovered Classic foundation, with
+the same actor IDs, rules, custom modules and art as desktop. The old rectangular
+RA2 adapter remains preserved separately. Classic Studio reads canonical
+RTSAI-Mod content; it does not maintain another editable copy of the roster.
 The affected-target disclosure shows each target's actual actor and values.
+
+OpenRA inheritance remains authoritative. An E1 speed override also reaches a
+derived unit that inherits E1's speed; a derived unit's own stat overrides win.
+Studio lists these dependencies and resolves their current effective values.
+FinalRules load saved Classic overrides after the selected experience modules.
 
 Save modification writes `RTSAI-Mod/content/unit-modifications.json`, preserves
 both revisions, checks conflicts and compiles four separate overlay files. Drafts
@@ -20,18 +28,36 @@ survive unit switches within this browser session. Restore removes this unit's
 new overrides and inherits the existing game and earlier modifications, including
 the previous 625-credit shared Engineer pilot. It does not erase that earlier work.
 
-Build & test locally creates a fresh artifact directory, validates merged desktop
+Build & test locally creates a fresh directory under
+`%LOCALAPPDATA%/RTSAI/StudioPreviews`, validates every bound desktop unit's stats,
 rules, packs both web modes, refreshes sprite sheets, and builds the current
 committed web interface. An unchanged verified WASM simulation can be reused;
 when simulation code changes, the browser runtime is rebuilt and integrity checked.
 Preview status distinguishes not built, building, failed, outdated and up to date.
 Launch desktop and Web game appear for the current saved revision. Running matches
 retain their rules. No builds, commits, pushes or deployments happen on Save.
+Preview ports, map outputs and native comparison runners are isolated so another
+running local game or AI companion is not replaced. Classic and RA2 retain
+separate web skirmish preferences. Incompatible saved maps stay in storage and
+are offered in their own mode.
 
 The initial integrated demonstration is reversible: Classic Engineer costs 650;
 RA2 Engineer costs 700, has 100 HP and speed 66. All four engine targets were
 checked. Real native and WASM matches trained Engineers at their respective prices.
 Evidence lives under `../artifacts/unit-studio-proof-20261016`.
+The expanded Classic acceptance evidence is under
+`../artifacts/classic-web-support-20261016`: all 392 actual WASM rule bindings,
+stock/custom Classic production, RA2 regression, and native OpenRA.exe production
+logs. The temporary Rifle Infantry and Chinese rifleman test edits were restored;
+the earlier Engineer customizations remain.
+
+The recovered Classic web build uses already installed Classic content for local
+previews, indexed by hash outside Git. This work does not publish those archives
+or change an installer. Native Lua campaigns, desktop menus and installed desktop
+community packs remain preserved desktop features; the unit-editing acceptance
+does not certify browser campaign parity. Online editing and AI generation remain
+deferred. Publishing requires the separate release workflow and a resolvable
+engine pin supporting FinalRules; the local engine commit is recorded per preview.
 
 Regenerate reviewed actor bindings after changing baseline rules with
 `node --import tsx scripts/sync-unit-bindings.ts`, then compile with the mod's
