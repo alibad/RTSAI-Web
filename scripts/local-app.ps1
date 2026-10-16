@@ -19,7 +19,7 @@ $State = Join-Path $App ".cache\local-app"
 New-Item -ItemType Directory -Force $State | Out-Null
 Start-Transcript -Path (Join-Path $State "start.log") -Force | Out-Null
 
-$AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462; $WebGamePort = 3490
+$AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462
 $Python = Join-Path $Games "OpenRA-AI\.venv\Scripts\python.exe"
 $Node = (Get-Command node).Source
 
@@ -83,18 +83,16 @@ try {
   else { Start-Server "runner" $Python @("`"$App\tools\native-eval-server.py`"") }
   if (Get-PortOwner $SitePort) { throw "Port $SitePort is already used by PID $(Get-PortOwner $SitePort)." }
   Start-Server "site" $Node @("`"$App\node_modules\vinext\dist\cli.js`"", "start", "-p", "$SitePort", "-H", "127.0.0.1")
-  # The browser game (RTSAI-WebGame), served on this origin under /play by the Studio gateway. It is its own checkout
-  # and keeps running across app restarts; it is started only when nothing answers its health check.
+  # The Studio uses the exact accepted game, verified by the shared launcher. A healthy wrong server is insufficient.
   $WebGame = Join-Path $Games "RTSAI-WebGame"
-  $gameUp = $false
-  try { $gameUp = (Invoke-WebRequest "http://127.0.0.1:$WebGamePort/api/health" -UseBasicParsing -TimeoutSec 3).StatusCode -eq 200 } catch { $gameUp = $false }
-  if ($gameUp) { Write-Host "The browser game already answers on $WebGamePort." }
-  elseif (Test-Path (Join-Path $WebGame "server\serve.mjs")) {
-    $env:RTSAI_WEBGAME_PORT = "$WebGamePort"
-    $game = Start-Process -FilePath $Node -ArgumentList @("`"$WebGame\server\serve.mjs`"") -WorkingDirectory $WebGame -WindowStyle Hidden -PassThru `
-      -RedirectStandardOutput (Join-Path $State "webgame.log") -RedirectStandardError (Join-Path $State "webgame.err")
-    Write-Host "Started webgame (PID $($game.Id))"
-  } else { Write-Host "No RTSAI-WebGame checkout beside the app; /play stays unavailable." }
+  $launcher = Join-Path $WebGame 'tools/local-game.mjs'
+  if (!(Test-Path -LiteralPath $launcher)) { throw 'The verified web-game launcher is missing; refusing an unverified /play server.' }
+  $gameOutput = & $Node $launcher start
+  if ($LASTEXITCODE -ne 0) { throw 'The accepted web game could not be verified; see the launcher error.' }
+  $game = ($gameOutput -join "`n") | ConvertFrom-Json
+  $env:RTSAI_WEBGAME_ORIGIN = ([uri]$game.url).GetLeftPart([System.UriPartial]::Authority)
+  $env:RTSAI_WEBGAME_PORT = [string]([uri]$game.url).Port
+  Write-Host "Verified webgame $($game.buildId) at $env:RTSAI_WEBGAME_ORIGIN"
   Start-Server "studio" $Node @("--import", "tsx", "`"$App\scripts\art-lab-preview.ts`"")
 
   $deadline = (Get-Date).AddMinutes(4)
