@@ -1,8 +1,8 @@
 /** Reviewed local editing registry. Actor IDs and trait paths never come from a browser. */
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadModData } from '../lib/art-lab/resolve';
-import { child, childValue, traits, parseMiniYaml } from '../lib/art-lab/miniyaml';
+import { loadDefaultExperienceData } from '../lib/art-lab/classic';
+import { child, childValue, traits } from '../lib/art-lab/miniyaml';
 import { computeRosters } from '../lib/art-lab/roster';
 
 const mod = resolve('../RTSAI-Mod');
@@ -21,19 +21,7 @@ for (const mode of ['classic', 'ra2'] as const) {
       : pkg === 'common' ? `${engine}/mods/common/${rest}` : null;
     return { path, reason: path ? null : 'not a local rules package' };
   };
-  const extra: Partial<Record<'Rules' | 'Weapons' | 'Sequences', string[]>> = {};
-  if (mode === 'classic') {
-    const catalog = parseMiniYaml(reader.text(`${core}/experiences.yaml`))[0].value;
-    const components = child(catalog, 'Components')?.value;
-    const profile = child(child(catalog, 'Profiles')?.value, childValue(catalog, 'DefaultProfile')!)?.value;
-    const selected = new Set<string>();
-    const list = (s: string | null) => (s ?? '').split(',').map(s => s.trim()).filter(Boolean);
-    const visit = (id: string) => { if (selected.has(id)) return; selected.add(id); for (const dep of list(childValue(child(components, id)?.value, 'Dependencies'))) visit(dep); };
-    for (const id of list(childValue(profile, 'Components'))) visit(id);
-    for (const key of ['Rules', 'Weapons', 'Sequences'] as const)
-      extra[key] = (components?.nodes ?? []).filter(n => selected.has(n.key)).flatMap(n => list(childValue(n.value, key)));
-  }
-  const data = loadModData(reader, { manifestPath: mode === 'classic' ? `${core}/mod.yaml` : 'mods/rtsai/mod.yaml', resolvePackage: mapPackage, extra });
+  const data = loadDefaultExperienceData(reader, { manifestPath: mode === 'classic' ? `${core}/mod.yaml` : 'mods/rtsai/mod.yaml', resolvePackage: mapPackage });
   const roster = computeRosters(data);
   for (const unit of new Map(roster.factions.flatMap(f => f.units.map(u => [u.id, u] as const))).values()) {
     const actor = data.rules.get(unit.id)!;

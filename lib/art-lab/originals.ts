@@ -25,7 +25,7 @@ import { decodePal } from "./pal";
 import { buildRenderSpec, spriteWithUrlsOf } from "./render-spec";
 import { CLASSIC_DIR, loadModData, MOD_DIR, MODERN_FACTIONS, resolveActor, worldNormals, type ModData, type ModReader, type Ra2Hook } from "./resolve";
 import { behaviorFacts, type BehaviorFacts } from "./behavior";
-import { loadClassicData } from "./classic";
+import { loadClassicData, loadDefaultExperienceData } from "./classic";
 import { computeRosters, type FactionRoster, type RosterUnit } from "./roster";
 import { decodeShp } from "./shp";
 import type { PaletteSpec, RenderSpec } from "./spec";
@@ -310,7 +310,7 @@ async function resolveVisualPayload(cfg: OriginalsConfig, image: string, sequenc
   if (![image, sequence, palette].every(s => SAFE_NAME.test(s))) throw new Error("Invalid effect reference");
   checkCacheSource(cfg);
   const reader = modReader(cfg.modRoot);
-  const loaded = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
+  const loaded = cfg.mode === "classic" ? loadClassicData(reader) : loadDefaultExperienceData(reader);
   const img = loaded.sequences.get(image), seq = img && child(img, sequence);
   if (!img || !seq) throw new Error("No such effect sequence");
   const data = { ...loaded, sequences: new Map([[image, { ...img, nodes: img.nodes.filter(n => n.key === "Defaults" || n.key === sequence) }]]) };
@@ -389,7 +389,7 @@ async function buildPayload(cfg: OriginalsConfig): Promise<RosterPayload> {
   const reader = modReader(cfg.modRoot);
   let provenance: ProvenanceRecord | null = null;
   try { provenance = JSON.parse(reader.text(`mods/${cfg.mode === "classic" ? "ra" : "rtsai"}/modern-factions/ART-PROVENANCE.json`)); } catch { /* Unknown authorship stays unknown. */ }
-  const data = cfg.mode === "classic" ? loadClassicData(reader) : loadModData(reader);
+  const data = cfg.mode === "classic" ? loadClassicData(reader) : loadDefaultExperienceData(reader);
   const { factions, stock: stockInfo } = computeRosters(data);
   const ids = new Set<string>();
   for (const f of factions) for (const u of f.units) { ids.add(u.id); if (u.reference) ids.add(u.reference); }

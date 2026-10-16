@@ -2,8 +2,11 @@
 import { child, childValue, parseMiniYaml } from "./miniyaml";
 import { loadModData, type ModReader } from "./resolve";
 
-export function loadClassicData(reader: ModReader) {
-  const catalog = parseMiniYaml(reader.text("mods/ra/experiences.yaml"))[0].value;
+export function loadDefaultExperienceData(reader: ModReader, options: Parameters<typeof loadModData>[1] = {}) {
+  const manifestPath = options.manifestPath ?? 'mods/rtsai/mod.yaml';
+  const catalogPath = manifestPath.replace(/mod\.yaml$/, 'experiences.yaml');
+  if (!reader.exists(catalogPath)) return loadModData(reader, options);
+  const catalog = parseMiniYaml(reader.text(catalogPath))[0].value;
   const components = child(catalog, "Components")?.value;
   const profile = child(child(catalog, "Profiles")?.value, childValue(catalog, "DefaultProfile") ?? "world-war-iii")?.value;
   const selected = new Set<string>();
@@ -15,5 +18,9 @@ export function loadClassicData(reader: ModReader) {
   for (const id of list(childValue(profile, "Components"))) visit(id);
   const extra = Object.fromEntries((["Rules", "Weapons", "Sequences"] as const).map(key => [key,
     (components?.nodes ?? []).filter(q => selected.has(q.key)).flatMap(q => list(childValue(q.value, key)))]));
-  return loadModData(reader, { manifestPath: "mods/ra/mod.yaml", extra });
+  return loadModData(reader, { ...options, extra });
+}
+
+export function loadClassicData(reader: ModReader) {
+  return loadDefaultExperienceData(reader, { manifestPath: 'mods/ra/mod.yaml' });
 }

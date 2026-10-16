@@ -615,7 +615,9 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
         {surface === "art" && <aside className="studio-inspector" aria-label="Actor details">
         {unit && !shared && (mode === 'classic' || mode === 'ra2') && <UnitGameplayPanel key={`${mode}:${unit.id}`} mode={mode} actor={unit.id} name={unit.name} />}
         {unit && inspector === "checks" && chain && <ChecksPanel checks={chain.checks} actions={chain.actions} candidate={chain.game.candidate} label={chain.game.candidate ? label(chain.game.candidate.id) : null} />}
-        {unit && inspector === "facts" && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
+        {unit && inspector === "facts" && (!shared && (mode === 'classic' || mode === 'ra2')
+          ? <details className="studio-reference-rules"><summary>Reference rules & behavior</summary><BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} /></details>
+          : <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />)}
         {unit && focused && decide && <details className="studio-review-notes" open={chain && !iconMode && chainStep === "call" ? true : undefined} key={`${unit.id}:${chainStep === "call"}`}><summary>Your call & notes{slotCounts[slot] ? ` · ${slotCounts[slot]} alternatives` : ""}</summary>
           <DecisionPanel key={unit.id} unit={unit} slot={slot} version={focused} decision={decision} comments={comments} labelFor={c => (c ? label(c) : "Current")}
             busy={busy} decide={decide} noteRef={noteRef} all={ws?.candidates ?? []} now={now} forgePick={forgePick} referenceOnly={referenceOnly} reference={reference} />

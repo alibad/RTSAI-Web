@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { artLab } from "../lib/art-lab/manifest";
 import { conditionHolds, encodePng, mountedDirs } from "../lib/art-lab/originals";
 import { loadModData, type ModReader } from "../lib/art-lab/resolve";
+import { loadDefaultExperienceData } from "../lib/art-lab/classic";
 import { buildableFor, computeRosters, pickReference, type RosterUnit } from "../lib/art-lab/roster";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -91,7 +92,7 @@ test("every faction's real roster from the sibling RTSAI-Mod (skipped without th
   const reader: ModReader = {
     text: p => readFileSync(join(modRoot, p), "utf8"), bytes: p => new Uint8Array(readFileSync(join(modRoot, p))), exists: p => existsSync(join(modRoot, p)),
   };
-  const { factions, stock } = computeRosters(loadModData(reader));
+  const { factions, stock } = computeRosters(loadDefaultExperienceData(reader));
   const without: string[] = [];
   assert.equal(factions.length, 16, "all nine original and seven modern selectable countries");
   for (const f of factions) {
