@@ -76,7 +76,7 @@ export const studioContentHandler = createStudioContentHandler({
 });
 
 /** Only mounted by the loopback Node gateway, never by a website route. */
-export function createLocalOwnerContentHandler(origin: string, store = localContentStore()) {
+export function createLocalOwnerContentHandler(origin: string, store = localContentStore(), unitStudio?: (request: Request) => Promise<Response>) {
   const capability = randomBytes(32).toString('hex');
   const handler = createStudioContentHandler({ enabled: () => true,
     verifyIdentity: async () => ({ uid: 'local-owner', email: null, name: null }),
@@ -96,6 +96,8 @@ export function createLocalOwnerContentHandler(origin: string, store = localCont
     const expected = Buffer.from(capability);
     if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected))
       return json({ error: 'Reload the local Studio session' }, 403);
+    if (['/api/studio/unit', '/api/studio/previews', '/api/studio/launch'].includes(url.pathname))
+      return unitStudio ? unitStudio(request) : json({ error: 'Not found' }, 404);
     return handler(request);
   };
 }

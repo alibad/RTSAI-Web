@@ -31,3 +31,17 @@ test('local owner needs a loopback peer, exact origin and per-launch capability;
   assert.equal((await restarted(request('/api/studio/content', auth, 'POST'), '127.0.0.1')).status, 403);
   assert.equal(saves, 1);
 });
+
+test('unit editing, preview builds and game launch share the same owner boundary', async () => {
+  const origin = 'http://127.0.0.1:3525';
+  let calls = 0;
+  const handler = createLocalOwnerContentHandler(origin, undefined, async () => { calls++; return Response.json({ ok: true }); });
+  const session = await handler(new Request(origin + '/api/studio/session', { headers: { 'X-RTSAI-Local': '1' } }), '127.0.0.1');
+  const { capability } = await session.json();
+  for (const path of ['/api/studio/unit', '/api/studio/previews', '/api/studio/launch']) {
+    assert.equal((await handler(new Request(origin + path, { method: 'POST' }), '127.0.0.1')).status, 403);
+    assert.equal((await handler(new Request(origin + path, { method: 'POST', headers: { 'X-RTSAI-Owner': capability, origin: 'https://evil.example' } }), '127.0.0.1')).status, 403);
+    assert.equal((await handler(new Request(origin + path, { method: 'POST', headers: { 'X-RTSAI-Owner': capability } }), '127.0.0.1')).status, 200);
+  }
+  assert.equal(calls, 3);
+});

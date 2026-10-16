@@ -33,6 +33,7 @@ import { encounterHref } from "../../../lib/art-lab/sandbox";
 import { UnitHistory } from "./review/History";
 import { GlbStage } from "./review/GlbStage";
 import { ReviewBoard } from "./review/ReviewBoard";
+import { UnitGameplayPanel } from "./review/UnitGameplayPanel";
 import type { MapTint } from "./viewSettings";
 import "./review/review.css";
 
@@ -612,6 +613,7 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
         {surface === "art" && <aside className="studio-inspector" aria-label="Actor details">
+        {unit && !shared && (mode === 'classic' || mode === 'ra2') && <UnitGameplayPanel key={`${mode}:${unit.id}`} mode={mode} actor={unit.id} name={unit.name} />}
         {unit && inspector === "checks" && chain && <ChecksPanel checks={chain.checks} actions={chain.actions} candidate={chain.game.candidate} label={chain.game.candidate ? label(chain.game.candidate.id) : null} />}
         {unit && inspector === "facts" && <BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} />}
         {unit && focused && decide && <details className="studio-review-notes" open={chain && !iconMode && chainStep === "call" ? true : undefined} key={`${unit.id}:${chainStep === "call"}`}><summary>Your call & notes{slotCounts[slot] ? ` · ${slotCounts[slot]} alternatives` : ""}</summary>

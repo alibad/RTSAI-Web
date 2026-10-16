@@ -11,6 +11,7 @@ import { createSoundReviewMiddleware, soundDeskConfig } from "../lib/sound-desk/
 import { originalsConfig } from "../lib/art-lab/originals";
 import { isPlayPath, proxyTo } from "../lib/play-proxy";
 import { createLocalOwnerContentHandler } from "../lib/studio-content-server";
+import { createUnitStudioService } from "../lib/unit-studio-server";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
@@ -65,7 +66,7 @@ const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resol
 // The admin Faction viewer's Sound desk (decisions to RTSAI-Art/sound-review.json; the mod is read in place).
 const desk = createSoundReviewMiddleware({ ...soundDeskConfig(root), env: "development" });
 const port = Number(process.env.RTSAI_STUDIO_PORT ?? 3461);
-const ownerContent = createLocalOwnerContentHandler(`http://127.0.0.1:${port}`);
+const ownerContent = createLocalOwnerContentHandler(`http://127.0.0.1:${port}`, undefined, createUnitStudioService(root));
 const mime: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".vxl": "application/octet-stream", ".hva": "application/octet-stream", ".pal": "application/octet-stream", ".shp": "application/octet-stream", ".wasm": "application/wasm" };
 /** Everything the Studio does not serve goes to the website; its redirects stay on this origin. */
 function toSite(req: IncomingMessage, res: ServerResponse, target: URL) {
@@ -88,7 +89,7 @@ const toGame = proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0
   "The browser game is not running (RTSAI-WebGame on port 3490). Start it, or restart the local app.");
 
 createServer((req, res) => {
-  if (['/api/studio/content', '/api/studio/session'].includes(req.url?.split('?')[0] ?? '')) {
+  if (['/api/studio/content', '/api/studio/session', '/api/studio/unit', '/api/studio/previews', '/api/studio/launch'].includes(req.url?.split('?')[0] ?? '')) {
     void (async () => {
       const parts: Buffer[] = []; let size = 0;
       for await (const chunk of req) { size += chunk.length; if (size > 4096) { res.writeHead(413).end(); return; } parts.push(Buffer.from(chunk)); }
