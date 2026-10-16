@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { UnitPreview } from './unit-content-types';
@@ -12,6 +12,7 @@ export function createUnitStudioService(webRoot: string) {
   let job: UnitPreview = { state: 'unbuilt' };
   let preview: { revision: string; webUrl: string; native: string; support: string; webPid: number } | null = null;
   if (existsSync(latest)) { try { preview = JSON.parse(readFileSync(latest, 'utf8')); } catch { /* no valid preview */ } }
+  let receiptStamp = existsSync(latest) ? statSync(latest).mtimeMs : 0;
   const python = process.env.RTSAI_CONTENT_PYTHON ?? 'python';
   function command(args: string[], input?: unknown): Promise<unknown> {
     return new Promise((accept, reject) => {
@@ -23,6 +24,10 @@ export function createUnitStudioService(webRoot: string) {
     });
   }
   const status = async (): Promise<UnitPreview> => {
+    if (job.state !== 'building' && existsSync(latest) && statSync(latest).mtimeMs !== receiptStamp) {
+      try { preview = JSON.parse(readFileSync(latest, 'utf8')); receiptStamp = statSync(latest).mtimeMs; job = { state: 'ready' }; }
+      catch { /* Atomic receipt replacement may be in progress; keep the last valid preview. */ }
+    }
     if (job.state === 'building' || job.state === 'failed') return job;
     if (!preview) return { state: 'unbuilt' };
     try { process.kill(preview.webPid, 0); } catch { return { state: 'outdated', revision: preview.revision, error: 'Restart local previews to open the web game.' }; }
