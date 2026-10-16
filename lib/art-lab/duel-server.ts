@@ -11,7 +11,7 @@ export type DuelRequest = { mode: "ra2" | "classic"; a: DuelSide; b: DuelSide; g
 export type DuelSample = { tick: number; actors: { side: number; index: number; actor?: number; turretFacing?: number; x: number; y: number; z: number; facing: number; health: number; maxHealth: number }[]; wrecks?: { side: number; type: string; x: number; y: number; z: number; facing: number }[] };
 export type DuelShot = { tick: number; actor: number; weapon: string; projectile: string; x: number; y: number; z: number; tx: number; ty: number; tz: number; facing: number; muzzle?: string | null; palette?: string };
 export type DuelVisual = { tick: number; id: number; kind: "projectile" | "effect"; actor?: number; type: string; x: number; y: number; z: number; tx?: number | null; ty?: number | null; tz?: number | null; facing: number; image?: string; sequence?: string; frame: number; palette: string };
-export type DuelResult = { evidence: "measured"; engine: string; request: DuelRequest; ticksPerSecond: number; samples: DuelSample[]; shots?: DuelShot[]; visuals?: DuelVisual[]; events?: { tick: number; kind: string; side: number; index: number; attackerSide: number; attackerIndex: number; damage: number }[]; effects?: { kind: "crash"; tick: number; side: number; type: string; x: number; y: number; z: number }[]; limitations: string };
+export type DuelResult = { evidence: "measured"; engine: string; contentRevision?: string; request: DuelRequest; ticksPerSecond: number; samples: DuelSample[]; shots?: DuelShot[]; visuals?: DuelVisual[]; events?: { tick: number; kind: string; side: number; index: number; attackerSide: number; attackerIndex: number; damage: number }[]; effects?: { kind: "crash"; tick: number; side: number; type: string; x: number; y: number; z: number }[]; limitations: string };
 type Job = { id: string; status: "running" | "complete" | "failed"; error?: string; result?: DuelResult };
 const jobs = new Map<string, Job>();
 let running = false;
@@ -86,18 +86,25 @@ export async function startDuel(webRoot: string, cfg: OriginalsConfig, input: un
   if (running) throw new Error("An engine match is already running. Wait for it to finish.");
   const id = randomUUID(), dir = resolve(webRoot, ".cache/studio-jobs", id);
   mkdirSync(dir, { recursive: true });
+  const previewFile = resolve(webRoot, '.cache/unit-preview-latest.json');
+  if (!existsSync(previewFile)) throw new Error('Build a local Studio preview before running an Encounter.');
+  const preview = JSON.parse(readFileSync(previewFile, 'utf8')) as { native: string; revision: string };
+  const current = JSON.parse(readFileSync(resolve(cfg.modRoot, 'mods/rtsai/unit-overrides/manifest.json'), 'utf8')) as { revision: string };
+  if (preview.revision !== current.revision) { running = false; throw new Error('Build the current Studio revision before running an Encounter. Your saved edits are preserved.'); }
   writeFileSync(resolve(dir, "request.json"), JSON.stringify(request));
   const job: Job = { id, status: "running" }; jobs.set(id, job); running = true;
   // Keep memory bounded; prior results remain in the ignored local cache.
   for (const [key, value] of jobs) if (jobs.size > 40 && value.status !== "running") jobs.delete(key);
-  const proc = spawn(process.env.RTSAI_STUDIO_PYTHON ?? "python", [resolve(webRoot, "../RTSAI-Art/tools/studio_duel.py"), resolve(dir, "request.json")], { cwd: webRoot, windowsHide: true, stdio: "ignore" });
+  const proc = spawn(process.env.RTSAI_STUDIO_PYTHON ?? "python", [resolve(webRoot, "../RTSAI-Art/tools/studio_duel.py"), resolve(dir, "request.json")], { cwd: webRoot, windowsHide: true, stdio: "ignore",
+    env: { ...process.env, RTSAI_MOD_ROOT: cfg.modRoot, RTSAI_ENGINE_ROOT: preview.native, RTSAI_STUDIO_GAME_ROOT: preview.native,
+      RTSAI_STUDIO_RUNTIME_RECEIPT: resolve(preview.native, '../receipt.json') } });
   const fail = (error: string) => { job.status = "failed"; job.error = error; running = false; };
   proc.once("error", e => fail(e.message));
   proc.once("exit", code => {
     running = false;
     const result = resolve(dir, "result.json"), error = resolve(dir, "error.json");
     try {
-      if (code === 0 && existsSync(result)) { job.status = "complete"; job.result = JSON.parse(readFileSync(result, "utf8")); }
+      if (code === 0 && existsSync(result)) { job.status = "complete"; job.result = { ...JSON.parse(readFileSync(result, "utf8")), contentRevision: preview.revision }; }
       else fail(existsSync(error) ? JSON.parse(readFileSync(error, "utf8")).error : `Engine job exited ${code}. Inspect .cache/studio-jobs/${id}.`);
     } catch { fail(`Unreadable engine result. Inspect .cache/studio-jobs/${id}.`); }
   });

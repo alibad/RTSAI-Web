@@ -40,6 +40,9 @@ Preview ports, map outputs and native comparison runners are isolated so another
 running local game or AI companion is not replaced. Classic and RA2 retain
 separate web skirmish preferences. Incompatible saved maps stay in storage and
 are offered in their own mode.
+The Studio’s measured Encounter also uses the current frozen preview, including
+the recovered Classic mod and its saved overrides. Build the current revision
+first; exploratory per-encounter health settings still override it explicitly.
 
 The initial integrated demonstration is reversible: Classic Engineer costs 650;
 RA2 Engineer costs 700, has 100 HP and speed 66. All four engine targets were
