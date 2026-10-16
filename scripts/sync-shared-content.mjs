@@ -14,3 +14,10 @@ if (process.argv.includes('--check')) {
   if (fs.readFileSync(output, 'utf8').replaceAll('\r\n', '\n') !== data) throw new Error('Shared viewer revision is stale; run scripts/sync-shared-content.mjs');
 } else fs.writeFileSync(output, data);
 console.log(`Shared viewer content ${manifest.revision.slice(0, 12)}`);
+const units = JSON.parse(execFileSync(process.env.RTSAI_CONTENT_PYTHON ?? 'python',
+  [path.join(mod, 'tools/unit-content.py'), 'check', '--root', mod], { encoding: 'utf8' }));
+const unitData = JSON.stringify({ schema: 1, revision: units.revision, units: units.units }, null, 2) + '\n';
+const unitOutput = path.join(web, 'data/unit-modifications.generated.json');
+if (process.argv.includes('--check')) {
+  if (!fs.existsSync(unitOutput) || fs.readFileSync(unitOutput, 'utf8').replaceAll('\r\n', '\n') !== unitData) throw new Error('Unit viewer revision is stale; run scripts/sync-shared-content.mjs');
+} else fs.writeFileSync(unitOutput, unitData);

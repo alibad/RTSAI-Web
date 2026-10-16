@@ -77,11 +77,12 @@ function maxFor(mode: GameMode, category: string) {
   return statMax.get(key)!;
 }
 export type UnitStat = { id: "health" | "speed" | "range" | "firepower"; label: string; value: number; display: string };
-export function unitStats(actor: { mode: string; category: string; behavior: Behavior }): UnitStat[] {
+export function unitStats(actor: { mode: string; category: string; behavior: Behavior }, overrides: Partial<Record<'health' | 'speed', number>> = {}): UnitStat[] {
   const max = maxFor(actor.mode as GameMode, actor.category);
   const b = actor.behavior;
-  const out: UnitStat[] = [{ id: "health", label: "Armor", value: (b.health ?? 0) / max.health, display: `${b.health ?? 0} HP${b.armor ? ` · ${b.armor}` : ""}` }];
-  if (b.speed) out.push({ id: "speed", label: "Speed", value: b.speed / max.speed, display: `${b.speed}` });
+  const health = overrides.health ?? b.health, speed = overrides.speed ?? b.speed;
+  const out: UnitStat[] = [{ id: "health", label: "Armor", value: (health ?? 0) / max.health, display: `${health ?? 0} HP${b.armor ? ` · ${b.armor}` : ""}` }];
+  if (speed) out.push({ id: "speed", label: "Speed", value: speed / max.speed, display: `${speed}` });
   if (b.weapons.length) {
     out.push({ id: "range", label: "Range", value: reach(b) / max.range, display: `${reach(b)} cells` });
     out.push({ id: "firepower", label: "Firepower", value: firepower(b) / max.firepower, display: `${Math.round(firepower(b))} per second` });

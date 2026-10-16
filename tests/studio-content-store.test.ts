@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { createStudioContentHandler, localContentStore } from '../lib/studio-content-server';
 import { sharedUnitCost, sharedContentRevision } from '../lib/shared-content';
+import { viewerFaction } from '../lib/viewer';
 
 test('a verified administrator edit crosses the real Python compiler boundary and preserves foundation values', async () => {
   const root = await mkdtemp(join(tmpdir(), 'rtsai-shared-content-'));
@@ -40,8 +41,12 @@ test('a verified administrator edit crosses the real Python compiler boundary an
 
 test('viewer uses explicit mode bindings without changing unrelated units', () => {
   assert.match(sharedContentRevision, /^[a-f0-9]{64}$/);
-  assert.equal(sharedUnitCost('classic', 'E6', 400), 625);
-  assert.equal(sharedUnitCost('ra2', 'engineer', 500), 625);
+  assert.equal(sharedUnitCost('classic', 'E6', 400), 650);
+  assert.equal(sharedUnitCost('ra2', 'engineer', 500), 700);
   assert.equal(sharedUnitCost('classic', 'engineer', 123), 123);
   assert.equal(sharedUnitCost('ra2', 'e1', 100), 100);
+  const engineer = viewerFaction('america')?.units.find(unit => unit.id === 'engineer');
+  assert.equal(engineer?.cost, 700);
+  assert.match(engineer?.stats.find(stat => stat.id === 'health')?.display ?? '', /^100 HP/);
+  assert.equal(engineer?.stats.find(stat => stat.id === 'speed')?.display, '66');
 });
