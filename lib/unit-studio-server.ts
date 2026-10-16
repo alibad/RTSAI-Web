@@ -32,7 +32,8 @@ export function createUnitStudioService(webRoot: string) {
     if (!saved.browserFrontendCommit || !saved.browserHostCommit) codeCurrent = false;
     else {
       try {
-        await run('git', ['diff', '--quiet', saved.browserFrontendCommit, 'HEAD', '--', 'web/src', 'web/package.json', 'web/vite.config.ts'], { cwd: resolve(webRoot, '../RTSAI-WebGame') });
+        // Freshness here is the saved gameplay revision and simulation. A frozen
+        // preview remains usable when unrelated web interface work lands later.
         await run('git', ['diff', '--quiet', saved.browserHostCommit, 'HEAD', '--', 'sim'], { cwd: resolve(webRoot, '../RTSAI-WebGame') });
       } catch { codeCurrent = false; }
     }
