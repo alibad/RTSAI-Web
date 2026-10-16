@@ -27,7 +27,16 @@ export function createUnitStudioService(webRoot: string) {
     if (!preview) return { state: 'unbuilt' };
     try { process.kill(preview.webPid, 0); } catch { return { state: 'outdated', revision: preview.revision, error: 'Restart local previews to open the web game.' }; }
     const current = await command(['check']) as { revision: string };
-    return { state: current.revision === preview.revision ? 'ready' : 'outdated', revision: preview.revision, webUrl: preview.webUrl };
+    let codeCurrent = true;
+    const saved = preview as typeof preview & { browserFrontendCommit?: string; browserHostCommit?: string };
+    if (!saved.browserFrontendCommit || !saved.browserHostCommit) codeCurrent = false;
+    else {
+      try {
+        await run('git', ['diff', '--quiet', saved.browserFrontendCommit, 'HEAD', '--', 'web'], { cwd: resolve(webRoot, '../RTSAI-WebGame') });
+        await run('git', ['diff', '--quiet', saved.browserHostCommit, 'HEAD', '--', 'sim'], { cwd: resolve(webRoot, '../RTSAI-WebGame') });
+      } catch { codeCurrent = false; }
+    }
+    return { state: current.revision === preview.revision && codeCurrent ? 'ready' : 'outdated', revision: preview.revision, webUrl: preview.webUrl };
   };
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);

@@ -1,4 +1,45 @@
-# Shared content authoring pilot
+# Shared unit editing in Faction Studio
+
+The local Faction Studio now edits the selected unit in its own inspector at
+`/art/review`. Choose Classic or RA2, a faction, and a unit. The Gameplay
+Modification panel shows inherited and modified cost, health and movement speed.
+Unsupported traits stay disabled. Art, sounds, reviews and source rules are
+preserved. The former Engineer-only page remains a historical pilot, not the
+primary editing workflow.
+
+Edits are mode-specific: an RA2 unit's modification reaches its RA2 desktop and
+web targets. It does not implicitly change Classic. The reviewed registry covers
+392 units including the preserved modern faction profiles. Most Classic units
+currently have only a desktop binding. The explicitly reviewed Classic Engineer
+also binds to the older browser adapter; this is not complete Classic parity.
+The affected-target disclosure shows each target's actual actor and values.
+
+Save modification writes `RTSAI-Mod/content/unit-modifications.json`, preserves
+both revisions, checks conflicts and compiles four separate overlay files. Drafts
+survive unit switches within this browser session. Restore removes this unit's
+new overrides and inherits the existing game and earlier modifications, including
+the previous 625-credit shared Engineer pilot. It does not erase that earlier work.
+
+Build & test locally creates a fresh artifact directory, validates merged desktop
+rules, packs both web modes, refreshes sprite sheets, and builds the current
+committed web interface. An unchanged verified WASM simulation can be reused;
+when simulation code changes, the browser runtime is rebuilt and integrity checked.
+Preview status distinguishes not built, building, failed, outdated and up to date.
+Launch desktop and Web game appear for the current saved revision. Running matches
+retain their rules. No builds, commits, pushes or deployments happen on Save.
+
+The initial integrated demonstration is reversible: Classic Engineer costs 650;
+RA2 Engineer costs 700, has 100 HP and speed 66. All four engine targets were
+checked. Real native and WASM matches trained Engineers at their respective prices.
+Evidence lives under `../artifacts/unit-studio-proof-20261016`.
+
+Regenerate reviewed actor bindings after changing baseline rules with
+`node --import tsx scripts/sync-unit-bindings.ts`, then compile with the mod's
+`python tools/unit-content.py compile`. The local preview refreshes the public
+viewer's generated stat snapshot for its local web build; publishing remains a
+separate operation. Weapon editing and AI generation are deferred.
+
+## Original shared-cost pilot
 
 The canonical content source and compiled gameplay overlays live in sibling
 RTSAI-Mod. This website supplies the authenticated editor at `/studio/content` in
@@ -14,7 +55,7 @@ evidence is described in `RTSAI-Mod/docs/shared-content-pilot.md`.
 
 The owner chose local administration without a sign-in on 16 October 2026.
 Run `npm run preview:art`, then open
-`http://127.0.0.1:3461/studio/content` (or choose Shared content in Studio).
+`http://127.0.0.1:3461/art/review` and select a unit.
 No account, Firebase configuration or admin environment flags are required for
 this local gateway. It binds only to 127.0.0.1 and treats access from this machine
 as owner access. Other local programs/users with access to this machine can also

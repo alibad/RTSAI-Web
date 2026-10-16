@@ -493,7 +493,7 @@
 @media (max-width: 960px) { .arena.enc-layout { grid-template-columns: 220px minmax(0,1fr); } .enc-workspace { padding: 16px; } .enc-toolbar, .enc-orders { flex-wrap: wrap; } .enc-teams { flex-wrap: wrap; } .enc-team-summary { min-width: 220px; } .enc-unit-card img { width: 44px; height: 36px; } }
 @media (max-width: 620px) { .arena.enc-layout { display: flex; flex-direction: column; overflow: auto; } .enc-library { max-height: 330px; flex-shrink: 0; border-right: 0; border-bottom: 1px solid var(--line); } .enc-palette header { display: none; } .enc-workspace { overflow: visible; } .enc-order-buttons { flex-wrap: wrap; } .enc-field .arena-caption { max-width: calc(100% - 24px); } }
 @media(max-width:760px) {
-  .lab { height:auto; min-height:100dvh; grid-template-rows:auto auto auto; overflow:visible; }
+  .lab { position:relative; inset:auto; height:auto; min-height:100dvh; grid-template-rows:auto auto auto; overflow:visible; }
   .studio-bar { flex-wrap:wrap; padding:12px; gap:12px; }
   .studio-title { flex:1; font-size:14px; }
   .studio-mode { min-width:0; max-width:160px; }

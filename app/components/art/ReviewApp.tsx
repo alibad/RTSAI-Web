@@ -419,7 +419,7 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
 
   // Keep the address bar in step for deep links.
   useEffect(() => {
-    if (!linkReady || !unitKey) return;
+    if (!linkReady || !unitKey || !roster || !state) return;
     const url = new URL(window.location.href);
     url.searchParams.set("faction", factionId);
     url.searchParams.set("unit", unitKey);
@@ -430,7 +430,7 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
     if (step !== AUTO) url.searchParams.set("step", step); else url.searchParams.delete("step");
     if (focusKey !== AUTO && focusKey !== "current") url.searchParams.set("v", focusKey); else url.searchParams.delete("v");
     window.history.replaceState(null, "", url);
-  }, [linkReady, unitKey, factionId, slot, focusKey, mode, surface, step]);
+  }, [linkReady, unitKey, factionId, slot, focusKey, mode, surface, step, roster, state]);
 
   // Comparing a candidate opens side by side with what ships now; the in-game and animation steps show one.
   const stepKey = `${unitKey}:${chainStep}:${gameCandidate?.id ?? ""}`;
