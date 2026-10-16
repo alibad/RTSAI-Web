@@ -55,7 +55,8 @@ export function createUnitStudioService(webRoot: string) {
         const body = await request.json();
         if (!body || Object.keys(body).join(',') !== 'mode' || !['classic', 'ra2'].includes(body.mode)) return json({ error: 'Invalid game mode' }, 400);
         if (!preview || (await status()).state !== 'ready') return json({ error: 'Build the current revision first' }, 409);
-        const game = spawn(resolve(preview.native, 'bin/OpenRA.Game.exe'), [`Game.Mod=${body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2'}`, `Engine.EngineDir=${preview.native}`, `Engine.SupportDir=${preview.support}`], { cwd: preview.native, detached: true, stdio: 'ignore', windowsHide: false });
+        const game = spawn(resolve(preview.native, 'bin/OpenRA.exe'), [`Game.Mod=${body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2'}`, `Engine.EngineDir=${preview.native}`, `Engine.ModSearchPaths=${resolve(preview.native, 'mods')}`, `Engine.SupportDir=${preview.support}`, 'Game.FetchNews=false'], { cwd: preview.native, detached: true, stdio: 'ignore', windowsHide: false });
+        await new Promise<void>((accept, reject) => { game.once('spawn', accept); game.once('error', reject); });
         game.unref();
         return json({ launched: true });
       }
