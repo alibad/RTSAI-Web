@@ -1,6 +1,6 @@
 {
   "source": "RTSAI-Mod mods/rtsai/standalone/tilesets/temperat.yaml",
-  "sha256": "c1c3cc693827c2654b1cbaf92c4b96d7645970732691b1560fb81e28ed460c14",
+  "sha256": "39fe3f78349bda704c2808f9b8ba79d98af40fdddd7c2bdaab8a40577ab9568f",
   "templates": {
     "0": ["Clear", "5d813b", "64893e"],
     "1001": ["Clear", "547850", "8b9863"],

@@ -16,6 +16,7 @@ import { strToU8, zipSync, zlibSync } from "fflate";
 import terrainData from "../data/earth-terrain.json";
 
 export type EarthKind =
+  | "land"
   | "water"
   | "coastline"
   | "river"
@@ -40,6 +41,8 @@ export type BattlefieldRequest = {
   title: string;
   /** Recorded in the report as earth.json's sourceStatus (Python's request.get('sourceStatus')). */
   sourceStatus?: string;
+  /** Preserve shorelines; choose bases on existing land without adding land corridors. */
+  preserveCoast?: boolean;
 };
 export type BattlefieldReport = {
   id: string;
@@ -51,11 +54,11 @@ export type BattlefieldReport = {
   radius: number;
   size: number;
   features: Record<string, number>;
-  source: "OpenStreetMap";
-  license: "ODbL-1.0";
-  attribution: "© OpenStreetMap contributors";
+  source: string;
+  license: string;
+  attribution: string;
   sourceStatus: string;
-  validation: { connectedBases: true; clearBaseZones: true; homeMines: number; reachableCells: number };
+  validation: { connectedBases: boolean; clearBaseZones: true; homeMines: number; reachableCells: number };
   adaptations: string[];
 };
 export type Battlefield = {
@@ -85,7 +88,7 @@ const ROUGH = 3;
 const SAND = 4;
 const SET_INDEX = [-1, 0, 1, 2, 3];
 const PRIORITY = [WATER, DIRT, SAND, ROUGH];
-const FILL = new Map([["water", WATER], ["forest", ROUGH], ["urban", DIRT], ["rough", ROUGH], ["sand", SAND]]);
+const FILL = new Map([["land", GRASS], ["water", WATER], ["forest", ROUGH], ["urban", DIRT], ["rough", ROUGH], ["sand", SAND]]);
 const STROKE = new Set(["river", "water", "road", "local-road", "dry-river", "rail"]);
 const ROUTE_TYPES = new Set(["Clear", "Road", "Rough", "DirtRoad"]);
 const RESOURCE_TYPES = new Set(["Clear", "Rough", "Road"]);
@@ -512,7 +515,7 @@ export async function compileBattlefield(
   const size = Math.trunc(Number(request.size ?? 64));
   const seats = Math.trunc(Number(request.players ?? 2));
   if (
-    !(lat >= -85 && lat <= 85 && lon >= -180 && lon <= 180 && radius >= 500 && radius <= 10000) ||
+    !(lat >= -85 && lat <= 85 && lon >= -180 && lon <= 180 && radius >= 500 && radius <= (request.preserveCoast ? 60000 : 10000)) ||
     ![48, 64, 80].includes(size) ||
     ![2, 4].includes(seats) ||
     !(seed >= 0 && seed <= 2147483647)
@@ -568,15 +571,36 @@ export async function compileBattlefield(
     [Math.trunc(size * 0.77), Math.trunc(size * 1.35)],
   ];
   if (seats === 4) homes.push([Math.trunc(size * 0.77), Math.trunc(size * 0.65)], [Math.trunc(size * 0.23), Math.trunc(size * 1.35)]);
+  if (request.preserveCoast) {
+    const before = grid.tiles();
+    const candidates: [number, number][] = [];
+    for (let u = 4; u < w - 4; u++) for (let v = 8; v < h - 8; v++) {
+      let clear = true;
+      for (let du = -3; du <= 3 && clear; du++) for (let dv = -6; dv <= 6; dv++) {
+        if (du * du + dv * dv / 4 <= 9 && !ROUTE_TYPES.has(template(before[(u + du) * h + v + dv]).type)) { clear = false; break; }
+      }
+      if (clear) candidates.push([u, v]);
+    }
+    const chosen: [number, number][] = [];
+    for (const target of homes) {
+      const available = candidates.filter(p => chosen.every(q => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 / 4 >= (size * .3) ** 2));
+      available.sort((a, b) => (a[0] - target[0]) ** 2 + (a[1] - target[1]) ** 2 / 4 - (b[0] - target[0]) ** 2 - (b[1] - target[1]) ** 2 / 4);
+      if (!available.length) throw Error("This area has too little usable land for two bases. Move the area toward the coast or choose a larger size.");
+      chosen.push(available[0]);
+    }
+    homes.splice(0, homes.length, ...chosen);
+  }
   const homeP = homes.map(([u, v]) => [2 * u, v / 2] as [number, number]);
   const center: [number, number] = [size, size / 2];
   for (const home of homeP) {
-    grid.disc(home[0], home[1], 9, GRASS);
-    const path = cleanPath(home, center);
-    grid.polyline(path.map(p => p[0]), path.map(p => p[1]), 2.1, DIRT);
+    grid.disc(home[0], home[1], request.preserveCoast ? 2.5 : 9, GRASS);
+    if (!request.preserveCoast) {
+      const path = cleanPath(home, center);
+      grid.polyline(path.map(p => p[0]), path.map(p => p[1]), 2.1, DIRT);
+    }
   }
   // Keep border corners on land: avoids half-water cells outside bounds.
-  grid.forAll((index, px, py) => {
+  if (!request.preserveCoast) grid.forAll((index, px, py) => {
     if (px < 3 || px > size * 2 - 3 || py < 2 || py > size - 2) grid.cls[index] = GRASS;
   });
   const resources: Resources = new Map();
@@ -584,7 +608,7 @@ export async function compileBattlefield(
   for (const home of homeP)
     for (const [ox, oy] of [[10, -5], [-10, 5]]) {
       const point: [number, number] = [home[0] + ox, home[1] + oy];
-      grid.disc(point[0], point[1], 5, GRASS);
+      if (!request.preserveCoast) grid.disc(point[0], point[1], 5, GRASS);
       field(resources, point, 4.0, 1);
       mines.push(cellAt(point));
     }
@@ -594,7 +618,20 @@ export async function compileBattlefield(
   const legal = new Uint8Array(w * h);
   for (let u = 1; u < w - 1; u++) for (let v = 1; v < h - 1; v++) legal[u * h + v] = ROUTE_TYPES.has(template(tiles[u * h + v]).type) ? 1 : 0;
   // Validate conservatively against the actual tile classes after transitions.
-  const { starts, reachable } = connectBases(legal, w, h, homes);
+  let connected = true;
+  let checked;
+  try { checked = connectBases(legal, w, h, homes); }
+  catch (error) {
+    if (!request.preserveCoast) throw error;
+    connected = false;
+    checked = { starts: homes, reachable: connectBases(legal, w, h, [homes[0]]).reachable };
+  }
+  const { starts, reachable } = checked;
+  // Do not put an ore-mine actor offshore (ore fields themselves are filtered below).
+  if (request.preserveCoast) for (let i = mines.length - 1; i >= 0; i--) {
+    const [u, v] = cposToMpos(...mines[i]);
+    if (!legal[u * h + v]) mines.splice(i, 1);
+  }
 
   // write_map(): a mine is a building, so no ore under it; resources only on Clear/Rough/Road cells in bounds.
   for (const [x, y] of mines) resources.delete(`${x},${y}`);
@@ -646,6 +683,8 @@ export async function compileBattlefield(
       .join("Enemies: Multi0, Multi1, Multi2, Multi3");
   }
   yaml = yaml.split("Author: RTS AI (generated by tools/standalone-maps.py)").join("Author: RTS AI; geography © OpenStreetMap contributors (ODbL)");
+  const regional = features.some(f => f.kind === "land");
+  if (regional) yaml = yaml.replace("geography © OpenStreetMap contributors (ODbL)", "Natural Earth (public domain); details © OpenStreetMap contributors (ODbL)");
 
   // Preview, as Map.SavePreview draws it: two pixels per cell, odd rows shifted right by one; unset pixels transparent.
   const bw = 2 * (w - 2) - 1;
@@ -683,12 +722,12 @@ export async function compileBattlefield(
     radius,
     size,
     features: Object.fromEntries(counts),
-    source: "OpenStreetMap",
-    license: "ODbL-1.0",
-    attribution: "© OpenStreetMap contributors",
+    source: regional ? "Natural Earth; OpenStreetMap" : "OpenStreetMap",
+    license: regional ? "Public domain; ODbL-1.0" : "ODbL-1.0",
+    attribution: regional ? "Made with Natural Earth; © OpenStreetMap contributors" : "© OpenStreetMap contributors",
     sourceStatus: request.sourceStatus ?? "Preserved geographic evidence",
-    validation: { connectedBases: true, clearBaseZones: true, homeMines: mines.length, reachableCells: reachable },
-    adaptations: [...ADAPTATIONS],
+    validation: { connectedBases: connected, clearBaseZones: true, homeMines: mines.length, reachableCells: reachable },
+    adaptations: request.preserveCoast ? ["Coastlines preserved; no land corridors or land border added.", "Bases cleared on existing land; separated coasts may require sea or air units.", "Regional geography compressed to the game grid; Natural Earth coastlines are generalized at 1:10,000,000."] : [...ADAPTATIONS],
   };
   // A fixed local timestamp keeps the package bytes reproducible (zip stores local DOS time).
   const oramap = zipSync(

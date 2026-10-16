@@ -55,6 +55,8 @@ export function terrainQuery(latitude: number, longitude: number, radiusM: numbe
   const b = terrainBox(latitude, longitude, radiusM);
   const box = [b.s, b.w, b.n, b.e].join(",");
   const small = `(if:count_members()<${MAX_RELATION_MEMBERS})`;
+  // Regional maps need coastlines and major roads, not every building in a 120 km square.
+  if (radiusM > 10000) return `[out:json][timeout:${timeoutS}];(way(${box})[natural=coastline];way(${box})[natural=water];way(${box})[highway~"^(motorway|trunk|primary)$"];);out tags geom;`;
   return (
     `[out:json][timeout:${timeoutS}];(` +
     `way(${box})[natural~"water|bay|coastline|wood|scrub|sand|beach|bare_rock|cliff"];` +
