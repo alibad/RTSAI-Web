@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { UnitPreview } from './unit-content-types';
-import { localContentBuild, contentCodeCurrent } from './local-content-build';
+import { localContentBuild, contentCodeCurrent, contentInterfaceCurrent } from './local-content-build';
 
 const run = promisify(execFile);
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -24,13 +24,14 @@ export function createUnitStudioService(webRoot: string) {
     const current = await command(['check']) as { revision: string };
     const build = localContentBuild(webRoot);
     const identity = { savedRevision: current.revision, revision: build?.revision, buildId: build?.buildId,
-      builtAt: build?.builtAt, verifiedAt: build?.verifiedAt, verified: build?.verified ?? false, targets: build?.verification?.targets };
+      builtAt: build?.builtAt, verifiedAt: build?.verifiedAt, verified: build?.verified ?? false, targets: build?.verification?.targets,
+      interfaceUpdateAvailable: build ? !contentInterfaceCurrent(webRoot, build) : false };
     if (job.state === 'building' || job.state === 'failed') return { ...job, ...identity };
     if (existsSync(resolve(modRoot, 'content/unit-preview.lock'))) return { state: 'building', ...identity };
     if (!build) return { state: 'unbuilt', ...identity };
     const ready = current.revision === build.revision && contentCodeCurrent(webRoot, build);
     return { state: ready ? 'ready' : 'outdated', ...identity, webUrl: '/play/',
-      ...(!ready ? { error: 'Saved content or game code has changed. Build and verify all four targets again.' } : {}) };
+      ...(!ready ? { error: 'Saved content or simulation has changed. Build and verify all four targets again.' } : {}) };
 
   };
   return async (request: Request): Promise<Response> => {

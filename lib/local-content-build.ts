@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 
 export type ContentBuild = { schema: number; buildId: string; revision: string; native: string; support: string;
   webUrl: string; verified: boolean; builtAt: string; verifiedAt?: string; sourceCommit: string; engineCommit: string;
-  browserFrontendCommit: string; verification?: { passed: boolean; targets: string[]; scope: string } };
+  browserHostCommit: string; browserFrontendCommit: string; verification?: { passed: boolean; targets: string[]; scope: string } };
 
 /** The pointer is promoted only after native and browser acceptance pass. */
 export function localContentBuild(webRoot: string): ContentBuild | null {
@@ -24,11 +24,17 @@ export function contentCodeCurrent(webRoot: string, build: ContentBuild) {
     for (const [repo, commit, paths] of [
       ['../RTSAI-Mod', build.sourceCommit, ['OpenRA.Mods.RA2', 'OpenRA.Mods.RTSAI', 'mods']],
       ['../OpenRA', build.engineCommit, []],
-      // Native ContentTest is the CLI acceptance suite, not loaded by the game or browser runtime.
-      ['../RTSAI-WebGame', build.browserFrontendCommit, ['sim', 'web', 'server', ':!sim/OpenRA.WebSim.Native/ContentTest.cs']],
+      ['../RTSAI-WebGame', build.browserHostCommit, ['sim/OpenRA.WebSim', 'sim/OpenRA.WebSim.Browser', 'sim/OpenRA.Mods.RA2', 'sim/OpenRA.Mods.RTSAI']],
     ] as [string, string, string[]][]) {
       execFileSync('git', ['diff', '--quiet', commit, 'HEAD', '--', ...paths], { cwd: resolve(webRoot, repo), windowsHide: true });
     }
+    return true;
+  } catch { return false; }
+}
+
+export function contentInterfaceCurrent(webRoot: string, build: ContentBuild) {
+  try {
+    execFileSync('git', ['diff', '--quiet', build.browserFrontendCommit, 'HEAD', '--', 'web', 'server'], { cwd: resolve(webRoot, '../RTSAI-WebGame'), windowsHide: true });
     return true;
   } catch { return false; }
 }

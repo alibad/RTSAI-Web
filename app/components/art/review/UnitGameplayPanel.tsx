@@ -107,6 +107,7 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
         <button type="button" className="ug-build" disabled={busy || dirty || preview.state === 'building'} onClick={() => void build()}><RefreshCw size={14} />Build & test locally</button>
         {dirty && <small>Save your modification before building.</small>}
         {preview.error && <p className="ug-gap">{preview.error}</p>}
+        {preview.interfaceUpdateAvailable && <p className="ug-gap">Newer interface work is preserved on main. This verified content build keeps its recorded interface; rebuild to include the newer interface too.</p>}
         {preview.state === 'ready' && !dirty && <div className="ug-launch"><button type="button" onClick={() => void launch()}><Play size={13} />Desktop</button>{webSupported && preview.webUrl && <a href={`${preview.webUrl}?profile=${mode === 'classic' ? 'public-classic' : 'public'}&runtime=interp&private=0`} target="_blank" rel="noreferrer"><Globe size={13} />Web game</a>}</div>}
         <small>Studio, local Play and desktop use one tested build. Existing matches keep their rules. Nothing is published.</small>
       </div>
