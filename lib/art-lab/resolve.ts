@@ -233,7 +233,7 @@ export function resolveActor(reader: ModReader, data: ModData, name: string, act
   const buildable = child(actor, "Buildable")?.value;
 
   const message = (key: string | null) => (key ? data.messages.get(key) ?? key : "");
-  const tooltip = child(actor, "Tooltip")?.value;
+  const tooltip = child(actor, "Tooltip")?.value ?? child(actor, "DisguiseTooltip")?.value;
   const queue = list(childValue(buildable, "Queue"));
   const category = categorize(actor, queue);
   const strategic = child(actor, "StrategicRole")?.value;

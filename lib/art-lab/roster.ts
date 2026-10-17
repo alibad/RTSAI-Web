@@ -5,7 +5,8 @@
  * - it has every prerequisite its Player/World provide for it, plus those provided by actors it owns
  *   (`ProvidesPrerequisite` with no `Factions` or with this faction listed; tech level unrestricted);
  * - an actor is buildable when its positive `Buildable.Prerequisites` are all available and none of its negated
- *   ones (`~!faction.china`) is always on for the faction. Owned actors provide more prerequisites, to a fixed point.
+ *   ones (`~!faction.china`) is always on for the faction, including country gates from its own production buildings.
+ *   Conditional providers require their own prerequisites. Owned actors provide more prerequisites, to a fixed point.
  *
  * Modern units are the faction's own actors (gated `~faction.<id>`); everything else it can build is stock RA2.
  * A stock unit gated off with `~!faction.<id>` is one the faction replaced. Each new unit's Reference is an
@@ -62,11 +63,13 @@ function tokens(actor: Yaml): Token[] {
 }
 
 /** Prerequisites an actor provides for a faction (ProvidesPrerequisite / ProvidesTechPrerequisite). */
-function provided(name: string, actor: Yaml, faction: string) {
+function provided(name: string, actor: Yaml, faction: string, available: ReadonlySet<string> = new Set()) {
   const out: string[] = [];
   for (const [, node] of traits(actor, "ProvidesPrerequisite")) {
     const factions = list(childValue(node.value, "Factions"));
     if (factions.length && !factions.includes(faction)) continue;
+    const requires = list(childValue(node.value, "RequiresPrerequisites"));
+    if (!requires.every(p => p.startsWith('!') ? !available.has(p.slice(1)) : available.has(p))) continue;
     out.push(childValue(node.value, "Prerequisite") ?? name);
   }
   for (const [, node] of traits(actor, "ProvidesTechPrerequisite")) out.push(...list(childValue(node.value, "Prerequisites")));
@@ -96,6 +99,10 @@ export function buildableFor(data: ModData, faction: string) {
   const player = data.rules.get("player");
   const always = new Set<string>([...(player ? provided("player", player, faction) : []), ...provided("world", world, faction)]);
   const available = new Set(always);
+  // Country gates can come from an owned barracks/yard, not only Player/World. Other
+  // temporary negations still describe alternative build states, rather than permanent exclusions.
+  const countries = new Set(factionTraits(world).map(n => childValue(n.value, 'InternalName')));
+  const blocked = (name: string) => always.has(name) || (available.has(name) && countries.has(name.split('.').at(-1) ?? ''));
   const owned = startingActors(world, faction);
   const buildables = [...data.rules].filter(([name, a]) => !name.startsWith("^") && child(a, "Buildable"));
   let changed = true;
@@ -104,7 +111,7 @@ export function buildableFor(data: ModData, faction: string) {
     for (const name of [...owned]) {
       const actor = data.rules.get(name);
       if (!actor) continue;
-      for (const p of provided(name, actor, faction)) if (!available.has(p)) { available.add(p); changed = true; }
+      for (const p of provided(name, actor, faction, available)) if (!available.has(p)) { available.add(p); changed = true; }
       for (const t of TRANSFORMS) for (const [, node] of traits(actor, t)) {
         const into = childValue(node.value, "IntoActor")?.toLowerCase();
         if (into && !owned.has(into)) { owned.add(into); changed = true; }
@@ -113,12 +120,14 @@ export function buildableFor(data: ModData, faction: string) {
     for (const [name, actor] of buildables) {
       if (owned.has(name)) continue;
       const ts = tokens(actor);
-      if (ts.some(t => t.negated && always.has(t.name))) continue;
+      if (ts.some(t => t.negated && blocked(t.name))) continue;
       if (!ts.every(t => t.negated || available.has(t.name))) continue;
       owned.add(name);
       changed = true;
     }
   }
+  // A country gate may have been provided later in the fixed-point traversal.
+  for (const [name, actor] of buildables) if (tokens(actor).some(t => t.negated && blocked(t.name))) owned.delete(name);
   return { owned, always };
 }
 
@@ -146,7 +155,7 @@ function unitOf(data: ModData, id: string, origin: RosterOrigin): RosterUnit | n
   if (!actor || !buildable || !drawable(actor)) return null;
   const queue = list(childValue(buildable, "Queue")).map(baseQueue).filter((q): q is string => q !== null);
   if (!queue.length) return null;
-  const nameKey = childValue(child(actor, "Tooltip")?.value, "Name");
+  const nameKey = childValue(child(actor, "Tooltip")?.value, "Name") ?? childValue(child(actor, "DisguiseTooltip")?.value, "Name");
   const cost = child(actor, "Valued") ? Number(childValue(child(actor, "Valued")!.value, "Cost") ?? 0) : null;
   // Walls, superweapons and the like share the Support queue with defences; only armed ones are defences.
   let category = categorize(actor, queue);

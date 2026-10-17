@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { artLab } from "../lib/art-lab/manifest";
@@ -52,6 +52,22 @@ test("rosters come from the rules: starting units, provided prerequisites and fa
   assert.equal(china.units[0].reference, "e1", "the new rifleman is compared with the GI it replaces");
   assert.equal(china.units[0].name, "Rifleman");
   assert.equal(stock.engineer.name, "Engineer", "names fall back to the capitalised id");
+});
+
+test("Classic England lists its British Spy once, using the game's disguise tooltip", { skip: !existsSync(join(modRoot, "mods/rtsai-classic-core/mod.yaml")) }, () => {
+  const core = 'mods/rtsai-classic-core';
+  const reader: ModReader = { text: p => readFileSync(resolve(modRoot, p), 'utf8'), bytes: p => new Uint8Array(readFileSync(resolve(modRoot, p))), exists: p => existsSync(resolve(modRoot, p)) };
+  const data = loadDefaultExperienceData(reader, { manifestPath: `${core}/mod.yaml`, resolvePackage: ref => {
+    const [pkg, rest] = ref.split('|');
+    const path = pkg === 'ra' ? `${core}/${rest}` : pkg === 'ra2' ? `mods/rtsai/${rest}` : pkg === 'common' ? resolve(modRoot, '../OpenRA/mods/common', rest) : null;
+    return { path, reason: path ? null : 'not local' };
+  } });
+  const { factions } = computeRosters(data);
+  const spies = (faction: string) => factions.find(f => f.id === faction)!.units.filter(u => /^spy(?:\.|$)/.test(u.id)).map(u => [u.id, u.name, u.cost]);
+  assert.deepEqual(spies('england'), [['spy.england', 'British Spy', 250]]);
+  assert.deepEqual(spies('france'), [['spy', 'Spy', 500]]);
+  for (const f of factions.filter(f => f.id !== 'england')) assert(!f.units.some(u => u.id === 'spy.england'), `${f.id} must not inherit England's barracks prerequisite`);
+  assert(data.rules.has('spy') && data.rules.has('spy.england'), 'both game actors remain intact');
 });
 
 test("a Reference prefers the replaced unit of the same role, then the side's standard one", () => {
