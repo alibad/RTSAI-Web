@@ -12,6 +12,7 @@ import { originalsConfig } from "../lib/art-lab/originals";
 import { isPlayPath, proxyTo } from "../lib/play-proxy";
 import { createLocalOwnerContentHandler } from "../lib/studio-content-server";
 import { createUnitStudioService } from "../lib/unit-studio-server";
+import { contentPlayEntry } from "../lib/content-play-entry";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
@@ -85,8 +86,8 @@ function toSite(req: IncomingMessage, res: ServerResponse, target: URL) {
 }
 
 // The browser game (RTSAI-WebGame, `node server/serve.mjs` on 127.0.0.1:3490) under /play on this origin.
-const toGame = proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0.0.1:${process.env.RTSAI_WEBGAME_PORT ?? 3490}`),
-  "The browser game is not running (RTSAI-WebGame on port 3490). Start it, or restart the local app.");
+const toGame = contentPlayEntry(root, proxyTo(new URL(process.env.RTSAI_WEBGAME_ORIGIN ?? `http://127.0.0.1:${process.env.RTSAI_WEBGAME_PORT ?? 3490}`),
+  "The browser game is not running (RTSAI-WebGame on port 3490). Start it, or restart the local app."));
 
 createServer((req, res) => {
   if (['/api/studio/content', '/api/studio/session', '/api/studio/unit', '/api/studio/previews', '/api/studio/launch'].includes(req.url?.split('?')[0] ?? '')) {

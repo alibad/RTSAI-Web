@@ -3,6 +3,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { UnitPreview } from './unit-content-types';
+import { localContentBuild, contentCodeCurrent } from './local-content-build';
 
 const run = promisify(execFile);
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -28,21 +29,16 @@ export function createUnitStudioService(webRoot: string) {
       try { preview = JSON.parse(readFileSync(latest, 'utf8')); receiptStamp = statSync(latest).mtimeMs; job = { state: 'ready' }; }
       catch { /* Atomic receipt replacement may be in progress; keep the last valid preview. */ }
     }
-    if (job.state === 'building' || job.state === 'failed') return job;
-    if (!preview) return { state: 'unbuilt' };
-    try { process.kill(preview.webPid, 0); } catch { return { state: 'outdated', revision: preview.revision, error: 'Restart local previews to open the web game.' }; }
     const current = await command(['check']) as { revision: string };
-    let codeCurrent = true;
-    const saved = preview as typeof preview & { browserFrontendCommit?: string; browserHostCommit?: string };
-    if (!saved.browserFrontendCommit || !saved.browserHostCommit) codeCurrent = false;
-    else {
-      try {
-        // Freshness here is the saved gameplay revision and simulation. A frozen
-        // preview remains usable when unrelated web interface work lands later.
-        await run('git', ['diff', '--quiet', saved.browserHostCommit, 'HEAD', '--', 'sim'], { cwd: resolve(webRoot, '../RTSAI-WebGame') });
-      } catch { codeCurrent = false; }
-    }
-    return { state: current.revision === preview.revision && codeCurrent ? 'ready' : 'outdated', revision: preview.revision, webUrl: preview.webUrl };
+    const build = localContentBuild(webRoot);
+    const identity = { savedRevision: current.revision, revision: build?.revision, buildId: build?.buildId,
+      builtAt: build?.builtAt, verifiedAt: build?.verifiedAt, verified: build?.verified ?? false, targets: build?.verification?.targets };
+    if (job.state === 'building' || job.state === 'failed') return { ...job, ...identity };
+    if (!build) return { state: 'unbuilt', ...identity };
+    const ready = current.revision === build.revision && contentCodeCurrent(webRoot, build);
+    return { state: ready ? 'ready' : 'outdated', ...identity, webUrl: '/play/',
+      ...(!ready ? { error: 'Saved content or game code has changed. Build and verify all four targets again.' } : {}) };
+
   };
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
@@ -69,8 +65,9 @@ export function createUnitStudioService(webRoot: string) {
       if (url.pathname === '/api/studio/launch' && request.method === 'POST') {
         const body = await request.json();
         if (!body || Object.keys(body).join(',') !== 'mode' || !['classic', 'ra2'].includes(body.mode)) return json({ error: 'Invalid game mode' }, 400);
-        if (!preview || (await status()).state !== 'ready') return json({ error: 'Build the current revision first' }, 409);
-        const game = spawn(resolve(preview.native, 'bin/OpenRA.exe'), [`Game.Mod=${body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2'}`, `Engine.EngineDir=${preview.native}`, `Engine.ModSearchPaths=${resolve(preview.native, 'mods')}`, `Engine.SupportDir=${preview.support}`, 'Game.FetchNews=false'], { cwd: preview.native, detached: true, stdio: 'ignore', windowsHide: false });
+        if ((await status()).state !== 'ready') return json({ error: 'Build the current revision first' }, 409);
+        const build = localContentBuild(webRoot)!;
+        const game = spawn(resolve(build.native, 'bin/OpenRA.exe'), [`Game.Mod=${body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2'}`, `Engine.EngineDir=${build.native}`, `Engine.ModSearchPaths=${resolve(build.native, 'mods')}`, `Engine.SupportDir=${build.support}`, 'Game.FetchNews=false'], { cwd: build.native, detached: true, stdio: 'ignore', windowsHide: false });
         await new Promise<void>((accept, reject) => { game.once('spawn', accept); game.once('error', reject); });
         game.unref();
         return json({ launched: true });

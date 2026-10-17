@@ -99,11 +99,16 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
       {!webSupported && <p className="ug-gap">This unit is not included in the current web rules.</p>}
       {mode === 'classic' && webSupported && <p className="ug-gap">Uses the recovered Classic rules and actor IDs on both platforms. Each desktop experience keeps its own settings and enabled factions.</p>}
       <div className="ug-preview"><div><span>LOCAL PREVIEWS</span><b className={`ug-status is-${preview.state}`}>{preview.state === 'ready' ? <Check size={12} /> : null}{preview.state === 'unbuilt' ? 'Not built' : preview.state === 'outdated' ? 'Outdated' : preview.state === 'building' ? 'Building…' : preview.state === 'failed' ? 'Build failed' : 'Up to date'}</b></div>
+        <dl className="ug-revisions" aria-label="Content revision status">
+          <div><dt>Saved</dt><dd><code>{(preview.savedRevision ?? content.revision).slice(0, 10)}</code></dd></div>
+          <div><dt>Built</dt><dd>{preview.revision ? <code>{preview.revision.slice(0, 10)}</code> : 'Not built'}</dd></div>
+          <div><dt>Verified</dt><dd>{preview.verified ? <><code>{preview.revision?.slice(0, 10)}</code><small>Classic + RA2 · desktop + web</small></> : 'Not verified'}</dd></div>
+        </dl>
         <button type="button" className="ug-build" disabled={busy || dirty || preview.state === 'building'} onClick={() => void build()}><RefreshCw size={14} />Build & test locally</button>
         {dirty && <small>Save your modification before building.</small>}
         {preview.error && <p className="ug-gap">{preview.error}</p>}
         {preview.state === 'ready' && !dirty && <div className="ug-launch"><button type="button" onClick={() => void launch()}><Play size={13} />Desktop</button>{webSupported && preview.webUrl && <a href={`${preview.webUrl}?profile=${mode === 'classic' ? 'public-classic' : 'public'}&runtime=interp&private=0`} target="_blank" rel="noreferrer"><Globe size={13} />Web game</a>}</div>}
-        <small>Fresh games use this revision. Existing matches keep their rules.</small>
+        <small>Studio, local Play and desktop use one tested build. Existing matches keep their rules. Nothing is published.</small>
       </div>
       <footer>Revision <code>{content.revision.slice(0, 10)}</code> · saved locally</footer>
     </>}
