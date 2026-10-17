@@ -17,9 +17,9 @@ const modes = Object.fromEntries((['classic', 'ra2'] as const).map(mode => {
     return { path, reason: path ? null : 'not local' };
   } });
   const roster = computeRosters(data);
-  const deployments = Object.fromEntries(roster.factions.map(f => [f.id, [...new Set(traits(data.rules.get('world'), 'StartingUnits')
+  const deployments = Object.fromEntries(roster.factions.map(f => [f.id, [...new Set(traits(data.rules.get('world')!, 'StartingUnits')
     .filter(([, n]) => !childValue(n.value, 'Factions') || childValue(n.value, 'Factions')!.split(',').map(x => x.trim()).includes(f.id))
-    .flatMap(([, n]) => traits(data.rules.get((childValue(n.value, 'BaseActor') ?? '').toLowerCase()), 'Transforms')
+    .flatMap(([, n]) => traits(data.rules.get((childValue(n.value, 'BaseActor') ?? '').toLowerCase()) ?? { value: null, nodes: [] }, 'Transforms')
       .map(([, t]) => childValue(t.value, 'IntoActor')?.toLowerCase()).filter((id): id is string => !!id && !!child(data.rules.get(id), 'Building'))))].sort()]));
   const actors = Object.fromEntries([...data.rules].filter(([id]) => !id.startsWith('^')).map(([id, actor]) => {
     const tooltip = traits(actor, 'Tooltip').find(([, n]) => !childValue(n.value, 'RequiresCondition'))?.[1]?.value ?? child(actor, 'DisguiseTooltip')?.value;
