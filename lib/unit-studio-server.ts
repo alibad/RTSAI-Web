@@ -1,5 +1,4 @@
 import { execFile, spawn } from 'node:child_process';
-import { readFileSync, existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { UnitPreview } from './unit-content-types';
@@ -9,11 +8,7 @@ const run = promisify(execFile);
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 export function createUnitStudioService(webRoot: string) {
   const modRoot = resolve(webRoot, '../RTSAI-Mod');
-  const latest = resolve(webRoot, '.cache/unit-preview-latest.json');
   let job: UnitPreview = { state: 'unbuilt' };
-  let preview: { revision: string; webUrl: string; native: string; support: string; webPid: number } | null = null;
-  if (existsSync(latest)) { try { preview = JSON.parse(readFileSync(latest, 'utf8')); } catch { /* no valid preview */ } }
-  let receiptStamp = existsSync(latest) ? statSync(latest).mtimeMs : 0;
   const python = process.env.RTSAI_CONTENT_PYTHON ?? 'python';
   function command(args: string[], input?: unknown): Promise<unknown> {
     return new Promise((accept, reject) => {
@@ -25,10 +20,6 @@ export function createUnitStudioService(webRoot: string) {
     });
   }
   const status = async (): Promise<UnitPreview> => {
-    if (job.state !== 'building' && existsSync(latest) && statSync(latest).mtimeMs !== receiptStamp) {
-      try { preview = JSON.parse(readFileSync(latest, 'utf8')); receiptStamp = statSync(latest).mtimeMs; job = { state: 'ready' }; }
-      catch { /* Atomic receipt replacement may be in progress; keep the last valid preview. */ }
-    }
     const current = await command(['check']) as { revision: string };
     const build = localContentBuild(webRoot);
     const identity = { savedRevision: current.revision, revision: build?.revision, buildId: build?.buildId,
@@ -57,7 +48,7 @@ export function createUnitStudioService(webRoot: string) {
           if (job.state === 'building') return json(job);
           job = { state: 'building' };
           void run(python, [resolve(modRoot, 'tools/build-unit-preview.py'), '--web-root', webRoot], { maxBuffer: 256 * 1024, timeout: 900000 }).then(() => {
-            preview = JSON.parse(readFileSync(latest, 'utf8')); job = { state: 'ready' };
+            job = { state: 'ready' };
           }).catch(() => { job = { state: 'failed', error: 'The preview build failed. Your saved modification is preserved.', log: '.cache/unit-preview-build.log' }; });
           return json(job, 202);
         }
@@ -67,6 +58,7 @@ export function createUnitStudioService(webRoot: string) {
         if (!body || Object.keys(body).join(',') !== 'mode' || !['classic', 'ra2'].includes(body.mode)) return json({ error: 'Invalid game mode' }, 400);
         if ((await status()).state !== 'ready') return json({ error: 'Build the current revision first' }, 409);
         const build = localContentBuild(webRoot)!;
+        await run(process.execPath, [resolve(webRoot, '../RTSAI-WebGame/tools/local-game.mjs'), 'start'], { timeout: 120000 });
         const game = spawn(resolve(build.native, 'bin/OpenRA.exe'), [`Game.Mod=${body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2'}`, `Engine.EngineDir=${build.native}`, `Engine.ModSearchPaths=${resolve(build.native, 'mods')}`, `Engine.SupportDir=${build.support}`, 'Game.FetchNews=false'], { cwd: build.native, detached: true, stdio: 'ignore', windowsHide: false });
         await new Promise<void>((accept, reject) => { game.once('spawn', accept); game.once('error', reject); });
         game.unref();

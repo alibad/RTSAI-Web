@@ -26,7 +26,7 @@ export function contentCodeCurrent(webRoot: string, build: ContentBuild) {
       ['../OpenRA', build.engineCommit, []],
       ['../RTSAI-WebGame', build.browserFrontendCommit, ['sim', 'web', 'server']],
     ] as [string, string, string[]][]) {
-      execFileSync('git', ['diff', '--quiet', commit, '--', ...paths], { cwd: resolve(webRoot, repo), windowsHide: true });
+      execFileSync('git', ['diff', '--quiet', commit, 'HEAD', '--', ...paths], { cwd: resolve(webRoot, repo), windowsHide: true });
     }
     return true;
   } catch { return false; }
