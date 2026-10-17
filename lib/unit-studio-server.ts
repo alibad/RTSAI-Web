@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { UnitPreview } from './unit-content-types';
@@ -25,6 +26,7 @@ export function createUnitStudioService(webRoot: string) {
     const identity = { savedRevision: current.revision, revision: build?.revision, buildId: build?.buildId,
       builtAt: build?.builtAt, verifiedAt: build?.verifiedAt, verified: build?.verified ?? false, targets: build?.verification?.targets };
     if (job.state === 'building' || job.state === 'failed') return { ...job, ...identity };
+    if (existsSync(resolve(modRoot, 'content/unit-preview.lock'))) return { state: 'building', ...identity };
     if (!build) return { state: 'unbuilt', ...identity };
     const ready = current.revision === build.revision && contentCodeCurrent(webRoot, build);
     return { state: ready ? 'ready' : 'outdated', ...identity, webUrl: '/play/',
