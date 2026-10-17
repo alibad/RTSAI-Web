@@ -93,7 +93,7 @@ createServer((req, res) => {
   if (['/api/studio/content', '/api/studio/session', '/api/studio/unit', '/api/studio/previews', '/api/studio/launch'].includes(req.url?.split('?')[0] ?? '')) {
     void (async () => {
       const parts: Buffer[] = []; let size = 0;
-      for await (const chunk of req) { size += chunk.length; if (size > 4096) { res.writeHead(413).end(); return; } parts.push(Buffer.from(chunk)); }
+      for await (const chunk of req) { size += chunk.length; if (size > (req.url?.startsWith('/api/studio/unit') ? 196608 : 4096)) { res.writeHead(413).end(); return; } parts.push(Buffer.from(chunk)); }
       const headers = new Headers();
       for (const [key, value] of Object.entries(req.headers)) if (typeof value === 'string') headers.set(key, value);
       const method = req.method ?? 'GET';

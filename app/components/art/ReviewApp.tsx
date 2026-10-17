@@ -613,7 +613,7 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
           {toast && <p className="lab-toast" role="status">{toast}</p>}
         </main>
         {surface === "art" && <aside className="studio-inspector" aria-label="Actor details">
-        {unit && !shared && (mode === 'classic' || mode === 'ra2') && <UnitGameplayPanel key={`${mode}:${unit.id}`} mode={mode} actor={unit.id} name={unit.name} />}
+        {unit && !shared && (mode === 'classic' || mode === 'ra2') && <UnitGameplayPanel readOnly key={`${mode}:${unit.id}`} mode={mode} actor={unit.id} name={unit.name} />}
         {unit && inspector === "checks" && chain && <ChecksPanel checks={chain.checks} actions={chain.actions} candidate={chain.game.candidate} label={chain.game.candidate ? label(chain.game.candidate.id) : null} />}
         {unit && inspector === "facts" && (!shared && (mode === 'classic' || mode === 'ra2')
           ? <details className="studio-reference-rules"><summary>Reference rules & behavior</summary><BehaviorPanel unit={unit} facts={roster?.stock[unit.id]?.behavior ?? null} /></details>

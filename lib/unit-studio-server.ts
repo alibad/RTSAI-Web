@@ -13,7 +13,7 @@ export function createUnitStudioService(webRoot: string) {
   const python = process.env.RTSAI_CONTENT_PYTHON ?? 'python';
   function command(args: string[], input?: unknown): Promise<unknown> {
     return new Promise((accept, reject) => {
-      const child = execFile(python, [resolve(modRoot, 'tools/unit-content.py'), ...args, '--root', modRoot], { maxBuffer: 1024 * 1024, timeout: 20000 }, (error, stdout, stderr) => {
+      const child = execFile(python, [resolve(modRoot, 'tools/unit-content.py'), ...args, '--root', modRoot], { maxBuffer: 4 * 1024 * 1024, timeout: 180000, windowsHide: true }, (error, stdout, stderr) => {
         if (error) { reject(Object.assign(error, { stderr })); return; }
         try { accept(JSON.parse(stdout)); } catch (e) { reject(e); }
       });
@@ -41,7 +41,7 @@ export function createUnitStudioService(webRoot: string) {
         if (request.method === 'GET') {
           const mode = url.searchParams.get('mode'), actor = url.searchParams.get('actor');
           if (!['classic', 'ra2'].includes(mode ?? '') || !/^[a-z0-9_.-]{1,64}$/.test(actor ?? '')) return json({ error: 'Choose a Classic or RA2 unit' }, 400);
-          return json(await command(['view', '--unit', `${mode}:${actor}`]));
+          return json(await command([url.searchParams.get('workspace') === '1' ? 'workspace' : 'view', '--unit', `${mode}:${actor}`]));
         }
         if (request.method === 'POST') return json(await command(['edit'], await request.json()));
       }
@@ -73,7 +73,7 @@ export function createUnitStudioService(webRoot: string) {
       return json({ error: 'Method not allowed' }, 405);
     } catch (error) {
       const message = (error as { stderr?: string }).stderr ?? '';
-      return json({ error: message.includes('changed since') || message.includes('being edited') ? 'Content changed. Reload before saving.' : 'The unit edit could not be applied. Check the selected unit and stat values.' }, message.includes('changed since') || message.includes('being edited') ? 409 : 400);
+      return json({ error: message.includes('changed since') || message.includes('being edited') ? 'Content changed. Your draft is preserved; reload the saved rules before saving again.' : message.trim().slice(-6000) || 'The unit edit could not be applied. Your saved rules are preserved.' }, message.includes('changed since') || message.includes('being edited') ? 409 : 400);
     }
   };
 }

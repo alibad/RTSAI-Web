@@ -13,7 +13,7 @@ const fields: { id: UnitStat; label: string; max: number; hint: string }[] = [
 const drafts = new Map<string, { revision: string; values: Record<UnitStat, string> }>();
 const title = (mode: string) => mode === 'classic' ? 'Classic' : 'RA2';
 
-export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra2'; actor: string; name: string }) {
+export function UnitGameplayPanel({ mode, actor, name, readOnly = false }: { mode: 'classic' | 'ra2'; actor: string; name: string; readOnly?: boolean }) {
   const key = `${mode}:${actor}`, prefix = useId();
   const [content, setContent] = useState<UnitContent | null>(null);
   const [values, setValues] = useState<Record<UnitStat, string>>({ cost: '', health: '', speed: '' });
@@ -26,6 +26,7 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
   const primary = loaded.find(([id]) => id === `${mode}-desktop`)?.[1];
   const dirty = !!primary && fields.some(f => primary.inherited[f.id] !== null && Number(values[f.id]) !== primary.effective[f.id]);
   const webSupported = loaded.some(([id]) => id === `${mode}-web`);
+  const viewRevision = readOnly ? preview.savedRevision : null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,7 +39,7 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
       setNotice(draft ? 'Your unsaved draft is preserved. Reload to discard it.' : 'Edit this unit. Save when you’re ready.');
     }).catch(error => { if (!controller.signal.aborted) setNotice(error.message); });
     return () => controller.abort();
-  }, [actor, mode, key, reload]);
+  }, [actor, mode, key, reload, viewRevision]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -76,20 +77,20 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
     <header><div><span className="lab-label">GAMEPLAY MODIFICATION</span><h2>{name}</h2></div><span className="ug-mode">{title(mode)}</span></header>
     <p className="ug-scope"><Monitor size={13} /> Desktop {webSupported && <><span>+</span><Globe size={13} /> Web</>}<span className="ug-local">Local owner</span></p>
     {content?.supported && primary && <>
-      <form onSubmit={e => { e.preventDefault(); void save(); }}>
+      <form onSubmit={e => { e.preventDefault(); if (!readOnly) void save(); }}>
         <div className="ug-columns"><span>Stat</span><span>Inherited</span><span>Your value</span></div>
         {fields.map(f => {
           const enabled = loaded.every(([, t]) => t.inherited[f.id] !== null);
           return <div className="ug-field" key={f.id}><label htmlFor={`${prefix}-${f.id}`}>{f.label}<small>{enabled ? f.hint : 'Not applicable'}</small></label>
             <span>{primary.inherited[f.id] ?? '—'}</span>
-            <input id={`${prefix}-${f.id}`} aria-label={f.label} type="number" min="1" max={f.max} step="1" disabled={!enabled || busy} required={enabled} value={values[f.id]} onChange={e => {
+            <input id={`${prefix}-${f.id}`} aria-label={f.label} type="number" min="1" max={f.max} step="1" readOnly={readOnly} disabled={!enabled || busy} required={enabled} value={values[f.id]} onChange={e => {
               const next = { ...values, [f.id]: e.target.value }; setValues(next);
               drafts.set(key, { revision: drafts.get(key)?.revision ?? content.revision, values: next });
             }} />
           </div>;
         })}
-        <div className="ug-save"><button className="ug-primary" disabled={busy || !dirty}><Save size={14} />{busy ? 'Saving…' : 'Save modification'}</button>
-          <button type="button" className="ug-reset" title="Restore inherited game values; earlier work stays preserved" disabled={busy || !Object.keys(content.overrides).length} onClick={() => void save(true)}><RotateCcw size={13} />Restore</button></div>
+        {readOnly ? <div className="ug-save"><a className="ug-primary" href={`/art/review?mode=${mode}&unit=${encodeURIComponent(actor)}&view=edit`} target="_blank" rel="noreferrer">Edit unit ↗</a></div> : <div className="ug-save"><button className="ug-primary" disabled={busy || !dirty}><Save size={14} />{busy ? 'Saving…' : 'Save modification'}</button>
+          <button type="button" className="ug-reset" title="Restore inherited game values; earlier work stays preserved" disabled={busy || !Object.keys(content.overrides).length} onClick={() => void save(true)}><RotateCcw size={13} />Restore</button></div>}
       </form>
       <details className="ug-affected"><summary>Affects {content.unit.factions.length} {content.unit.factions.length === 1 ? 'faction' : 'factions'} · {loaded.length} targets</summary>
         <p>{content.unit.factions.map(f => f.name).join(', ')}</p>
@@ -113,7 +114,7 @@ export function UnitGameplayPanel({ mode, actor, name }: { mode: 'classic' | 'ra
       </div>
       <footer>Revision <code>{content.revision.slice(0, 10)}</code> · saved locally</footer>
     </>}
-    <p className="ug-notice" role="status">{notice}</p>
+    <p className="ug-notice" role="status">{readOnly ? 'Viewing game content. Full editing opens separately and keeps this viewer in place.' : notice}</p>
     <button className="ug-reload" type="button" disabled={busy} onClick={() => { drafts.delete(key); setReload(n => n + 1); }}>Reload saved values</button>
   </section>;
 }
