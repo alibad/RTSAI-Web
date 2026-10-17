@@ -61,7 +61,10 @@ export function createUnitStudioService(webRoot: string) {
         if ((await status()).state !== 'ready') return json({ error: 'Build the current revision first' }, 409);
         const build = localContentBuild(webRoot)!;
         await run(process.execPath, [resolve(webRoot, '../RTSAI-WebGame/tools/local-game.mjs'), 'start'], { timeout: 120000 });
-        const game = spawn(resolve(build.native, 'bin/OpenRA.exe'), [`Game.Mod=${body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2'}`, `Engine.EngineDir=${build.native}`, `Engine.ModSearchPaths=${resolve(build.native, 'mods')}`, `Engine.SupportDir=${build.support}`, 'Game.FetchNews=false'], { cwd: build.native, detached: true, stdio: 'ignore', windowsHide: false });
+        const mod = body.mode === 'classic' ? 'rtsai-classic-core' : 'rtsai-ra2';
+        const profile = JSON.parse((await run(python, [resolve(modRoot, 'tools/prepare-library-profile.py'), '--root', build.support, '--mode', mod])).stdout) as { support: string };
+        const game = spawn(resolve(build.native, 'bin/OpenRA.exe'), [`Game.Mod=${mod}`, `Engine.EngineDir=${build.native}`, `Engine.ModSearchPaths=${resolve(build.native, 'mods')}`, `Engine.SupportDir=${profile.support}`, 'Game.FetchNews=false'], { cwd: build.native, detached: true, stdio: 'ignore', windowsHide: false,
+          env: { ...process.env, OPENRA_AI_ROOT: resolve(webRoot, '../OpenRA-AI'), RTSAI_LIBRARY_SUPPORT: build.support } });
         await new Promise<void>((accept, reject) => { game.once('spawn', accept); game.once('error', reject); });
         game.unref();
         return json({ launched: true });
