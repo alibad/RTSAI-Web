@@ -24,7 +24,8 @@ export function contentCodeCurrent(webRoot: string, build: ContentBuild) {
     for (const [repo, commit, paths] of [
       ['../RTSAI-Mod', build.sourceCommit, ['OpenRA.Mods.RA2', 'OpenRA.Mods.RTSAI', 'mods']],
       ['../OpenRA', build.engineCommit, []],
-      ['../RTSAI-WebGame', build.browserFrontendCommit, ['sim', 'web', 'server']],
+      // Native ContentTest is the CLI acceptance suite, not loaded by the game or browser runtime.
+      ['../RTSAI-WebGame', build.browserFrontendCommit, ['sim', 'web', 'server', ':!sim/OpenRA.WebSim.Native/ContentTest.cs']],
     ] as [string, string, string[]][]) {
       execFileSync('git', ['diff', '--quiet', commit, 'HEAD', '--', ...paths], { cwd: resolve(webRoot, repo), windowsHide: true });
     }
