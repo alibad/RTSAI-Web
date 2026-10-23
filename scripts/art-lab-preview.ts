@@ -55,14 +55,14 @@ const site = process.env.RTSAI_SITE_ORIGIN ? new URL(process.env.RTSAI_SITE_ORIG
 const manifest = JSON.stringify({
   id: "/art/review", name: "Faction Studio", short_name: "Faction Studio",
   description: "Your local Faction Studio: units and factions, art review, encounters, the AI Arena and the admin tools.",
-  start_url: "/art/review", scope: "/", display: "standalone", background_color: "#111411", theme_color: "#111411",
+  start_url: "/art/review", scope: "/", display: "standalone", background_color: "#151719", theme_color: "#151719",
   icons: [
-    { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-    { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-    { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    { src: "/brand/faction-studio/icon-192.png?v=command-red-2531", sizes: "192x192", type: "image/png" },
+    { src: "/brand/faction-studio/icon-512.png?v=command-red-2531", sizes: "512x512", type: "image/png" },
+    { src: "/brand/faction-studio/icon-maskable-512.png?v=command-red-2531", sizes: "512x512", type: "image/png", purpose: "maskable" },
   ],
 });
-const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#111411"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
+const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#151719"><link rel="icon" href="/brand/faction-studio/favicon-32.png?v=command-red-2531" type="image/png"><link rel="apple-touch-icon" href="/brand/faction-studio/apple-touch-icon.png?v=command-red-2531">`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
 const contentHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shared content - Local Studio</title>${head}${styles}</head><body style="background:#111411;font-family:Arial"><div id="shared-content-root"></div><script type="module" src="/${contentEntry.fileName}"></script></body></html>`;
 const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });

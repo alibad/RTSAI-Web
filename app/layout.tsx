@@ -43,11 +43,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.ico?v=command-red-2531", sizes: "any" },
+      { url: "/favicon-32.png?v=command-red-2531", type: "image/png", sizes: "32x32" },
     ],
-    shortcut: "/favicon.ico",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico?v=command-red-2531",
+    apple: [{ url: "/apple-touch-icon.png?v=command-red-2531", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: "#111411", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#151719", colorScheme: "dark" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body className={`${geist.variable} ${mono.variable}`}><AuthProvider>{children}</AuthProvider></body></html>;
