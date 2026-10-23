@@ -81,19 +81,19 @@ function artReviewLocalRouteStub(): Plugin {
   };
 }
 
-// Public builds swap the admin-only Workshop tools (Campaign studio, AI testing) for empty stubs, so their code never
+// Public builds swap the admin-only Workshop tools (Campaign studio, AI testing, AI Arena) for empty stubs, so their code never
 // reaches an rtsai.net bundle; their pages answer 404 there (lib/admin.ts). Admin builds and dev keep them.
 function adminToolsProductionStub(): Plugin {
   // ViewerAdmin: the Faction viewer's admin additions (a Studio link, History over the dev API). SoundDesk: the
   // viewer's Sound desk (audition, choose and regenerate sounds over /api/sound-review).
-  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab", ViewerAdmin: "\0rtsai-admin-stub:ViewerAdmin", SoundDesk: "\0rtsai-admin-stub:SoundDesk" };
+  const stubs: Record<string, string> = { CampaignStudio: "\0rtsai-admin-stub:CampaignStudio", BehaviorLab: "\0rtsai-admin-stub:BehaviorLab", AiArena: "\0rtsai-admin-stub:AiArena", ViewerAdmin: "\0rtsai-admin-stub:ViewerAdmin", SoundDesk: "\0rtsai-admin-stub:SoundDesk" };
   const stubExports: Record<string, string[]> = { SoundDesk: ["SoundDesk", "SoundDeskToggle"] };
   return {
     name: "rtsai-admin-tools-production-stub",
     apply: (_, env) => env.command === "build" && !adminBuild,
     enforce: "pre",
     resolveId(source) {
-      const name = /(?:^|[\\/])components[\\/](CampaignStudio|BehaviorLab)(?:\.tsx)?$/.exec(source)?.[1]
+      const name = /(?:^|[\\/])components[\\/](CampaignStudio|BehaviorLab|AiArena)(?:\.tsx)?$/.exec(source)?.[1]
         ?? /(?:^|[\\/])(?:components[\\/]art[\\/]viewer[\\/]|\.[\\/])(ViewerAdmin|SoundDesk)(?:\.tsx)?$/.exec(source)?.[1];
       return name ? stubs[name] : null;
     },

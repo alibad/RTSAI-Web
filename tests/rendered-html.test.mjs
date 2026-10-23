@@ -24,12 +24,18 @@ async function render(pathname = "/") {
 const adminBuild = process.env.RTSAI_ADMIN === "1";
 
 test("public builds leave the admin Workshop tools out: 404, no nav links, not in the sitemap", { skip: adminBuild }, async () => {
-  for (const path of ["/workshop/campaigns?mode=ra2", "/workshop/evals?mode=ra"]) assert.equal((await render(path)).status, 404, path);
+  for (const path of ["/workshop/campaigns?mode=ra2", "/workshop/evals?mode=ra", "/workshop/arena?mode=ra2"]) assert.equal((await render(path)).status, 404, path);
   const workshop = await (await render("/workshop?mode=ra2")).text();
-  assert.doesNotMatch(workshop, /href="\/workshop\/(?:campaigns|evals)/);
-  assert.doesNotMatch(workshop, /Campaign studio|AI testing/);
+  assert.doesNotMatch(workshop, /href="\/workshop\/(?:campaigns|evals|arena)/);
+  assert.doesNotMatch(workshop, /Campaign studio|AI testing|AI Arena/);
   const sitemap = await (await render("/sitemap.xml")).text();
-  assert.doesNotMatch(sitemap, /workshop\/(?:campaigns|evals)/);
+  assert.doesNotMatch(sitemap, /workshop\/(?:campaigns|evals|arena)/);
+});
+
+test("the AI Arena renders in admin builds and is listed in the Workshop", { skip: !adminBuild }, async () => {
+  const response = await render("/workshop/arena?mode=ra2"), html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /<title>AI Arena/); assert.match(html, /Who wins\?/);
+  assert.match(await (await render("/workshop?mode=ra2")).text(), /href="\/workshop\/arena\?mode=ra2"/);
 });
 
 test("campaign studio renders real editing, local video and fictional civilian starter in both modes", { skip: !adminBuild }, async () => {

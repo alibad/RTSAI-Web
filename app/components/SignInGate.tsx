@@ -1,9 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { Gamepad2, LockKeyhole, Map, Swords } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { firebaseIsConfigured } from "../../lib/firebase-client";
+import { ADMIN_BUILD } from "../../lib/admin";
+
+// The local admin app (an admin build opened on this machine) is the owner's own: it needs no player account.
+// Public builds are never admin builds, so rtsai.net keeps the gate.
+const noop = () => () => {};
+const onThisMachine = () => ADMIN_BUILD && ["127.0.0.1", "localhost", "[::1]"].includes(window.location.hostname);
 
 /**
  * Members-only areas (the game, Workshop, Faction viewer, Earth Studio): a free account unlocks all of them. The gated
@@ -11,7 +17,8 @@ import { firebaseIsConfigured } from "../../lib/firebase-client";
  */
 export function SignInGate({ feature, title, header, footer, children }: { feature: string; title?: string; header: ReactNode; footer: ReactNode; children: ReactNode }) {
   const { user, loading, openAuth } = useAuth();
-  if (user || !firebaseIsConfigured) return <>{children}</>;
+  const local = useSyncExternalStore(noop, onThisMachine, () => false);
+  if (user || !firebaseIsConfigured || local) return <>{children}</>;
   return <>
     {header}
     <main id="main-content" className="signin-gate" aria-busy={loading}>

@@ -8,7 +8,8 @@
   run this hidden at login. -NoUpdate is retained for compatibility with older launch commands.
 
   Ports: 3450 the app (Studio, plus a proxy to the website), 3451 the production website (loopback only),
-  3462 the native OpenRA runner used by Workshop experiments. Logs: .cache\local-app\.
+  3462 the native OpenRA runner used by Workshop experiments, 3463 the AI Arena runner (RTSAI-WebGame
+  tools/arena, with the live game's twin page on 3464). Logs: .cache\local-app\.
 #>
 param([switch]$NoUpdate, [string]$Branch = "main")
 $ErrorActionPreference = "Stop"
@@ -19,7 +20,7 @@ $State = Join-Path $App ".cache\local-app"
 New-Item -ItemType Directory -Force $State | Out-Null
 Start-Transcript -Path (Join-Path $State "start.log") -Force | Out-Null
 
-$AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462
+$AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462; $ArenaPort = 3463
 $Python = Join-Path $Games "OpenRA-AI\.venv\Scripts\python.exe"
 $Node = (Get-Command node).Source
 
@@ -81,6 +82,11 @@ try {
 
   if (Get-PortOwner $RunnerPort) { Write-Host "Port $RunnerPort already has a native runner; using it." }
   else { Start-Server "runner" $Python @("`"$App\tools\native-eval-server.py`"") }
+  # The AI Arena (Workshop > AI Arena) plays matches through this runner. It lives in the game repo, so restarting the
+  # app leaves a running Arena (and its games) alone.
+  $arena = Join-Path $Games "RTSAI-WebGame\tools\arena\server.mjs"
+  if (Get-PortOwner $ArenaPort) { Write-Host "Port $ArenaPort already has the AI Arena runner; using it." }
+  elseif (Test-Path -LiteralPath $arena) { Start-Server "arena" $Node @("`"$arena`"") }
   if (Get-PortOwner $SitePort) { throw "Port $SitePort is already used by PID $(Get-PortOwner $SitePort)." }
   Start-Server "site" $Node @("`"$App\node_modules\vinext\dist\cli.js`"", "start", "-p", "$SitePort", "-H", "127.0.0.1")
   # The Studio uses the exact accepted game, verified by the shared launcher. A healthy wrong server is insufficient.
