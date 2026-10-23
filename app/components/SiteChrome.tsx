@@ -9,7 +9,7 @@ export const modSource = "https://github.com/alibad/RTSAI-Mod";
 function Brand({ footer = false }: { footer?: boolean }) {
   return (
     <Link className="brand" href="/" aria-label="RTS AI home">
-      <Image className="brand-symbol" src="/brand/rtsai-mark-64.png?v=command-red-2531" alt="" width={34} height={34} priority={!footer} />
+      <Image className="brand-symbol" src="/brand/rtsai-mark-64.png?v=command-red-2531" alt="" width={34} height={34} priority={!footer} unoptimized />
       <span className="brand-wordmark">RTS <b>AI</b>{!footer && <small>Modern real-time strategy</small>}</span>
     </Link>
   );
