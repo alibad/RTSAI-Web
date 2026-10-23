@@ -50,9 +50,11 @@ if (!contentEntry) throw new Error("Shared content entry was not compiled");
 const styles = files.filter(f => f.type === "asset" && f.fileName.endsWith(".css")).map(f => `<link rel="stylesheet" href="/${f.fileName}">`).join("");
 // The installed local app (scripts/local-app.ps1) puts the production website behind the Studio on one origin.
 const site = process.env.RTSAI_SITE_ORIGIN ? new URL(process.env.RTSAI_SITE_ORIGIN) : null;
+// The owner's local app is "Faction Studio", apart from the website's "RTS AI" (docs/app-identity). The id stays
+// "/art/review" so an already installed app updates in place.
 const manifest = JSON.stringify({
-  id: "/art/review", name: "RTS AI Studio", short_name: "RTS AI",
-  description: "Local Faction Studio and website: explore the factions, test encounters and review new art.",
+  id: "/art/review", name: "Faction Studio", short_name: "Faction Studio",
+  description: "Your local Faction Studio: units and factions, art review, encounters, the AI Arena and the admin tools.",
   start_url: "/art/review", scope: "/", display: "standalone", background_color: "#111411", theme_color: "#111411",
   icons: [
     { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -61,7 +63,7 @@ const manifest = JSON.stringify({
   ],
 });
 const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#111411"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
-const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio · Local</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
 const contentHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shared content - Local Studio</title>${head}${styles}</head><body style="background:#111411;font-family:Arial"><div id="shared-content-root"></div><script type="module" src="/${contentEntry.fileName}"></script></body></html>`;
 const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });
 // The admin Faction viewer's Sound desk (decisions to RTSAI-Art/sound-review.json; the mod is read in place).

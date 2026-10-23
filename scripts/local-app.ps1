@@ -106,7 +106,7 @@ try {
     Start-Sleep -Seconds 3
     try { $ready = (Invoke-WebRequest "http://127.0.0.1:$AppPort/factions" -UseBasicParsing -TimeoutSec 10).StatusCode -eq 200 } catch { $ready = $false }
   } until ($ready -or (Get-Date) -gt $deadline)
-  if ($ready) { Write-Host "RTS AI Studio is ready: http://127.0.0.1:$AppPort/art/review" }
+  if ($ready) { Write-Host "Faction Studio is ready: http://127.0.0.1:$AppPort/art/review" }
   else { Write-Host "Not answering yet; see $State\studio.err and site.err" }
 }
 catch { Write-Host "Failed: $_" }
