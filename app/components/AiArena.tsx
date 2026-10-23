@@ -19,6 +19,9 @@ type Game = { id: string; brain: string; provider: string | null; opponent: stri
   decisionCount: number; questionCount: number; usd: number; ms: { p50: number; p95: number }; fallbacks: number; finishedAt: string; us?: { killsCost: number; deathsCost: number }; stopReason?: string };
 type Summary = { matrix: Record<string, Record<string, { win: number; draw: number; loss: number }>>; ladder: { id: string; label: string; rating: number; games: number; kind: string }[];
   perf: Record<string, { label: string; games: number; decisions: number; usdPerGame: number; msMedian: number; wallPerGame: number; fallbacks: number }>; games: Game[] };
+type BenchRecord = { id: string; orders: string; path: "model" | "pipeline"; label: string; only: string; cases: number; overall: number; executable: number; guarded: number; questions: number;
+  unsafeAccepts: number; orderCalls: { count: number; p50: number; p95: number; usd: number }; usd: number; usdPer1000Turns: number; finishedAt: string; failedCalls: number };
+type Bench = { brains: Record<string, string>; running: { orders: string; path: string; done: number; last: string } | null; queued: { orders: string; path: string }[]; lastError: { orders: string; error: string } | null; records: BenchRecord[] };
 type Decision = { tick: number; auto: { label: string; accepted: boolean }[]; questions: { name: string; instructions: string; choice: string | null; accepted?: boolean; options: { value: string; label: string; p: number }[] }[]; ms: number; usd: number; fallback?: boolean };
 
 const competitor = (g: { brain: string; provider: string | null }) => (g.brain === "decision" ? `decision:${g.provider}` : g.brain);
@@ -49,8 +52,9 @@ export function AiArena() {
   const [error, setError] = useState(""), [notice, setNotice] = useState(""), [busy, setBusy] = useState(false), [key, setKey] = useState("");
   const [selected, setSelected] = useState<string | null>(null), [log, setLog] = useState<Decision[] | null>(null), [filter, setFilter] = useState<{ c?: string; o?: string }>({});
 
+  const [bench, setBench] = useState<Bench | null>(null), [benchPath, setBenchPath] = useState<"model" | "pipeline">("model");
   const refresh = useCallback(async () => {
-    try { const [s, m] = await Promise.all([api<Status>("/status"), api<Summary>("/summary")]); setStatus(s); setSummary(m); setOffline(false); }
+    try { const [s, m, b] = await Promise.all([api<Status>("/status"), api<Summary>("/summary"), api<Bench>("/bench").catch(() => null)]); setStatus(s); setSummary(m); setBench(b); setOffline(false); }
     catch { setOffline(true); }
   }, []);
   useEffect(() => { const first = setTimeout(refresh, 0); const t = setInterval(refresh, 4000); return () => { clearTimeout(first); clearInterval(t); }; }, [refresh]);
@@ -116,12 +120,13 @@ export function AiArena() {
         {brain === "decision" && status && <>
           <h3>Who answers</h3>
           <div className="arena-providers">{Object.entries(status.providers).map(([id, v]) => <button key={id} className={provider === id ? "active" : ""} onClick={() => setProvider(id)}>
-            <b>{v.label}</b><small>{v.paid ? `$${v.price?.input}/M tokens` : id === "local" ? (v.ready ? "Free · on this PC" : "Free · not running") : "Free"}</small>
+            <b>{v.label}</b><small>{v.paid ? `$${v.price?.input}/M tokens` : id === "local" || id === "laya" ? (v.ready ? "Free · on this PC" : "Free · not running") : "Free"}</small>
             {v.paid && !v.ready && <KeyRound size={13} aria-label="Needs a key" />}
           </button>)}</div>
           {paid && !p!.ready && <div className="arena-key"><label>Your {p!.label} key<input type="password" autoComplete="off" value={key} onChange={e => setKey(e.target.value)} placeholder="Paste key" /></label><button onClick={saveKey} disabled={!key}>Save</button><small>Kept on this PC only.</small></div>}
           {paid && p!.ready && <p className="arena-keyhint"><KeyRound size={13} aria-hidden="true" /> Key {p!.keyHint} <button onClick={() => { setKey(""); void api("/keys", { provider, key: "" }).then(refresh); }}>Remove</button></p>}
           {provider === "local" && !p?.ready && <p className="arena-hint">Start the local AI stack (gateway on port 4000) to use it.</p>}
+          {provider === "laya" && !p?.ready && <p className="arena-hint">Start Laya in the BeTenshi console (Services) to use it.</p>}
         </>}
 
         <h2>Opponents</h2>
@@ -192,6 +197,10 @@ export function AiArena() {
           </div>)}</div>
         </div>}
 
+        {bench && <VoiceOrders bench={bench} path={benchPath} setPath={setBenchPath} providers={status?.providers ?? {}}
+          run={(orders) => void api("/bench", { orders, path: benchPath }).then(refresh).catch((e) => setError(e instanceof Error ? e.message : String(e)))}
+          stop={() => void api("/bench/stop", {}).then(refresh)} />}
+
         {summary && summary.games.length > 0 && <div className="arena-card">
           <div className="arena-heading"><h2>Games</h2>
             {(filter.c || filter.o) ? <button onClick={() => setFilter({})}><X size={13} aria-hidden="true" />{[filter.c && label(filter.c), filter.o && status?.opponents[filter.o]?.label].filter(Boolean).join(" vs ")}</button> : <span>newest first</span>}</div>
@@ -210,6 +219,43 @@ export function AiArena() {
         </div>}
       </section>
     </div>
+  </div>;
+}
+
+const BENCH_ORDER = ["llm", "openai", "jev", "laya", "offline"] as const;
+const BENCH_SHORT: Record<string, string> = { llm: "LLM", openai: "OpenAI Decisions", jev: "Jev", laya: "Laya", offline: "Rules only" };
+
+/** The companion's 281 spoken-order cases, interpreted by each brain: accuracy, time per order and cost. */
+function VoiceOrders({ bench, path, setPath, providers, run, stop }: { bench: Bench; path: "model" | "pipeline"; setPath: (p: "model" | "pipeline") => void;
+  providers: Record<string, Provider>; run: (orders: string) => void; stop: () => void }) {
+  // The newest full run (all cases, not a test slice) per brain for the chosen path.
+  const latest = BENCH_ORDER.map(o => bench.records.find(r => r.orders === o && !r.only && (o === "offline" || r.path === path))).filter((r): r is BenchRecord => !!r);
+  const busy = !!bench.running || bench.queued.length > 0;
+  const fastest = Math.min(...latest.filter(r => r.orderCalls.count).map(r => r.orderCalls.p50));
+  return <div className="arena-card arena-voice">
+    <div className="arena-heading"><h2>Voice orders</h2><span>281 spoken orders from the companion&apos;s test set</span></div>
+    <div className="arena-voice-controls">
+      <div className="seg" role="radiogroup" aria-label="What the brain answers">
+        <button role="radio" aria-checked={path === "model"} className={path === "model" ? "active" : ""} onClick={() => setPath("model")}>Every order</button>
+        <button role="radio" aria-checked={path === "pipeline"} className={path === "pipeline" ? "active" : ""} onClick={() => setPath("pipeline")}>Full pipeline</button>
+      </div>
+      <div className="runs">{BENCH_ORDER.map(o => <button key={o} disabled={busy || (o !== "offline" && o !== "llm" && providers[o] && !providers[o].ready)} onClick={() => run(o)}><Play size={12} aria-hidden="true" />{BENCH_SHORT[o]}</button>)}</div>
+    </div>
+    <p className="arena-hint">{path === "model" ? "The companion's rules are off: every order is the brain's to read. Compares brains." : "The product: the companion's rules read what they can; the brain gets the rest."}</p>
+    {bench.running && <div className="arena-voice-run"><span><b>{BENCH_SHORT[bench.running.orders]}</b> · {bench.running.done} / 281</span><i style={{ width: `${Math.min(100, bench.running.done / 2.81)}%` }} />
+      <small>{bench.running.last}</small><button onClick={stop}><Square size={12} aria-hidden="true" />Stop</button></div>}
+    {bench.queued.length > 0 && <p className="arena-hint">Next: {bench.queued.map(q => BENCH_SHORT[q.orders]).join(", ")}</p>}
+    {bench.lastError && <p className="arena-error">{BENCH_SHORT[bench.lastError.orders]}: {bench.lastError.error}</p>}
+    {latest.length ? <div className="arena-voice-table">
+      <span className="h">Brain</span><span className="h">Right</span><span className="h opt">Orders</span><span className="h opt">Refusals</span><span className="h opt">Questions</span><span className="h">Per order</span><span className="h opt">Per 1,000 turns</span>
+      {latest.map(r => <div key={r.id} className="row">
+        <span className="who">{BENCH_SHORT[r.orders]}</span>
+        <span className="score"><i style={{ width: `${r.overall}%` }} /><b>{Math.round(r.overall)}%</b></span>
+        <span className="opt">{Math.round(r.executable)}%</span><span className="opt">{Math.round(r.guarded)}%</span><span className="opt">{Math.round(r.questions)}%</span>
+        <span className={r.orderCalls.count && r.orderCalls.p50 === fastest ? "best" : ""}>{r.orderCalls.count ? `${r.orderCalls.p50} ms` : "—"}{r.orderCalls.count ? <small> · p95 {r.orderCalls.p95}</small> : null}</span>
+        <span className="opt">{money(r.usdPer1000Turns)}</span>
+      </div>)}
+    </div> : <p className="arena-empty">No bench run yet for this view.</p>}
   </div>;
 }
 
