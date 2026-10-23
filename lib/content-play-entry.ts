@@ -17,7 +17,9 @@ export function contentPlayEntry(webRoot: string, fallback: (req: IncomingMessag
       if (current.revision !== build.revision || !contentCodeCurrent(webRoot, build)) throw Error('Saved content or code changed. Build & test locally in Studio first.');
       const result = JSON.parse((await run(process.execPath, [resolve(webRoot, '../RTSAI-WebGame/tools/local-game.mjs'), 'start'], { timeout: 120000, maxBuffer: 1024 * 1024 })).stdout) as { url: string; buildId: string };
       if (result.buildId !== build.buildId) throw Error('The local launcher selected a different content build.');
-      const target = new URL(result.url); target.search = url.search;
+      const target = new URL(result.url);
+      // Retain the runtime chosen by the verified launcher when adding entry options.
+      url.searchParams.forEach((value, key) => target.searchParams.set(key, value));
       if (!target.searchParams.has('profile')) target.searchParams.set('profile', url.searchParams.get('game') === 'classic' ? 'public-classic' : 'public');
       res.writeHead(302, { location: target.href, 'cache-control': 'no-store' }).end();
     } catch {
