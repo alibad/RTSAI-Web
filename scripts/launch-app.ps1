@@ -15,7 +15,11 @@ function Start-LocalWebsite {
     if (Ready 'http://127.0.0.1:3451/') { return }
     if (!(Test-Path -LiteralPath (Join-Path $repository 'dist'))) { throw 'Build the canonical website first: npm run build.' }
     if (Get-NetTCPConnection -State Listen -LocalPort 3451 -ErrorAction SilentlyContinue) { throw 'Port 3451 is occupied by an unresponsive server. It was left untouched.' }
-    Start-Process -FilePath $node -ArgumentList @("`"$repository/node_modules/vinext/dist/cli.js`"",'start','-p','3451','-H','127.0.0.1') -WorkingDirectory $repository -WindowStyle Hidden -RedirectStandardOutput "$state/website.log" -RedirectStandardError "$state/website.err"
+    if (!(Ready 'http://127.0.0.1:3452/')) {
+        if (Get-NetTCPConnection -State Listen -LocalPort 3452 -ErrorAction SilentlyContinue) { throw 'Website renderer port 3452 is occupied by an unresponsive server. It was left untouched.' }
+        Start-Process -FilePath $node -ArgumentList @("`"$repository/node_modules/vinext/dist/cli.js`"",'start','-p','3452','-H','127.0.0.1') -WorkingDirectory $repository -WindowStyle Hidden -RedirectStandardOutput "$state/website-renderer.log" -RedirectStandardError "$state/website-renderer.err"
+    }
+    Start-Process -FilePath $node -ArgumentList @('--import','tsx',"`"$repository/scripts/website-app-server.ts`"") -WorkingDirectory $repository -WindowStyle Hidden -RedirectStandardOutput "$state/website.log" -RedirectStandardError "$state/website.err"
 }
 Start-LocalWebsite
 if ($App -eq 'Studio' -and !(Ready $url)) {

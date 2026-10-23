@@ -27,4 +27,6 @@ The native game process uses the approved icon through the branded `RTSAI.exe` b
 
 ## Delivery
 
+The local Website app entry on port 3451 wraps its built renderer on loopback port 3452. It uses the same verified-content Play redirect as Studio, before the renderer's route normalization. This keeps `/play/` working in the production-style local preview without changing the hosted website or bypassing build verification.
+
 These changes are local until separately authorized for release. Website main deploys production when pushed. Web Game production uses only `RTSAI-WebGame/tools/release-play.mjs`; ordinary source changes and a local UI build do not change rtsai.net/play.
