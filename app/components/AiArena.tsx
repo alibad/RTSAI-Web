@@ -90,7 +90,8 @@ export function AiArena() {
   }, [summary]);
   const label = (id: string) => summary?.ladder.find(l => l.id === id)?.label ?? summary?.perf[id]?.label ?? id;
   const shown = (summary?.games ?? []).filter(g => (!filter.c || competitor(g) === filter.c) && (!filter.o || g.opponent === filter.o)).slice(0, 40);
-  const activeRuns = (status?.runs ?? []).filter(r => ["queued", "running"].includes(r.status));
+  // Playing runs first, then the queue in the order it will play.
+  const activeRuns = (status?.runs ?? []).filter(r => ["queued", "running"].includes(r.status)).reverse().sort((a, b) => Number(b.status === "running") - Number(a.status === "running"));
   const ladder = summary?.ladder ?? [];
   const [lo, hi] = ladder.length ? [Math.min(...ladder.map(l => l.rating)) - 60, Math.max(...ladder.map(l => l.rating)) + 20] : [0, 1];
 
@@ -182,9 +183,11 @@ export function AiArena() {
           <div className="arena-heading"><h2>Speed and cost</h2><span>per brain</span></div>
           <div className="arena-perf">{Object.entries(summary.perf).filter(([id]) => id !== "bot").map(([id, v]) => <div key={id}>
             <b>{v.label}</b>
-            <span><Timer size={13} aria-hidden="true" />{id.startsWith("decision:") ? `${v.msMedian} ms a turn` : "—"}</span>
-            <span><Coins size={13} aria-hidden="true" />{money(v.usdPerGame)} a game</span>
-            <span><BrainCircuit size={13} aria-hidden="true" />{Math.round(v.decisions / Math.max(1, v.games))} turns a game</span>
+            {id === "you" ? <span><Gamepad2 size={13} aria-hidden="true" />{v.games} game{v.games === 1 ? "" : "s"} played · no AI cost</span> : <>
+              <span><Timer size={13} aria-hidden="true" />{id.startsWith("decision:") ? `${v.msMedian} ms a turn` : "—"}</span>
+              <span><Coins size={13} aria-hidden="true" />{money(v.usdPerGame)} a game</span>
+              <span><BrainCircuit size={13} aria-hidden="true" />{Math.round(v.decisions / Math.max(1, v.games))} turns a game</span>
+            </>}
             {v.fallbacks > 0 && <span className="warn">{v.fallbacks} failed calls</span>}
           </div>)}</div>
         </div>}
@@ -202,7 +205,7 @@ export function AiArena() {
               <span>{g.ms?.p50 ? `${g.ms.p50} ms` : ""}</span>
               <span>{g.usd ? money(g.usd) : ""}</span>
             </button>
-            {selected === g.id && <DecisionLog log={log} />}
+            {selected === g.id && (g.brain === "you" ? <p className="arena-empty">You played this one{g.stopReason ? ` (${g.stopReason.toLowerCase()})` : ""}; your own orders are in its replay, not logged as choices.</p> : <DecisionLog log={log} />)}
           </li>)}</ul>
         </div>}
       </section>
