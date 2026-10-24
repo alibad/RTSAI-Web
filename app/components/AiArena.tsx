@@ -15,7 +15,7 @@ type Job = { index: number; opponent: string; ours: string; theirs: string; stat
 type Run = { id: string; status: string; brain: string; provider: string | null; capUsd: number; spentUsd: number; jobs: Job[]; note?: string };
 type Status = { ready: boolean; page: { page: string; release: string; since: string } | null; providers: Record<string, Provider>; opponents: Record<string, { label: string; hint: string }>;
   factions: string[]; maps: string[]; budget: { dailyCapUsd: number; spentToday: number; maxParallel: number }; runs: Run[] };
-type Game = { id: string; brain: string; provider: string | null; opponent: string; ours: string; theirs: string; map: string; result: string; gameSeconds: number; wallSeconds: number;
+type Game = { id: string; brain: string; provider: string | null; version?: string; opponent: string; ours: string; theirs: string; map: string; result: string; gameSeconds: number; wallSeconds: number;
   decisionCount: number; questionCount: number; usd: number; ms: { p50: number; p95: number }; fallbacks: number; finishedAt: string; us?: { killsCost: number; deathsCost: number }; stopReason?: string };
 type Summary = { matrix: Record<string, Record<string, { win: number; draw: number; loss: number }>>; ladder: { id: string; label: string; rating: number; games: number; kind: string }[];
   perf: Record<string, { label: string; games: number; decisions: number; usdPerGame: number; msMedian: number; wallPerGame: number; fallbacks: number }>; games: Game[] };
@@ -24,7 +24,8 @@ type BenchRecord = { id: string; orders: string; path: "model" | "pipeline"; lab
 type Bench = { brains: Record<string, string>; running: { orders: string; path: string; done: number; last: string } | null; queued: { orders: string; path: string }[]; lastError: { orders: string; error: string } | null; records: BenchRecord[] };
 type Decision = { tick: number; auto: { label: string; accepted: boolean }[]; questions: { name: string; instructions: string; choice: string | null; accepted?: boolean; options: { value: string; label: string; p: number }[] }[]; ms: number; usd: number; fallback?: boolean };
 
-const competitor = (g: { brain: string; provider: string | null }) => (g.brain === "decision" ? `decision:${g.provider}` : g.brain);
+// Matches the runner (tools/arena/server.mjs): a decision brain is one competitor per provider and brain version.
+const competitor = (g: { brain: string; provider: string | null; version?: string }) => (g.brain === "decision" ? `decision:${g.provider}@${g.version ?? "earlier"}` : g.brain);
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 const money = (usd: number) => (usd === 0 ? "$0" : usd < 0.01 ? `${(usd * 100).toFixed(2)}¢` : `$${usd.toFixed(2)}`);
 function faction(id: string) {
