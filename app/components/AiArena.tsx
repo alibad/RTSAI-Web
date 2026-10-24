@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { Bot, BrainCircuit, Compass, Crown, Gamepad2, KeyRound, Play, Square, Swords, Timer, Coins, Check, X, Minus } from "lucide-react";
+import { Bot, BrainCircuit, Clapperboard, Compass, Crown, Gamepad2, KeyRound, Play, Square, Swords, Timer, Coins, Check, X, Minus } from "lucide-react";
 import { factions } from "../../lib/game-content";
 import { FactionFlag } from "./FactionVisuals";
 import { OptionSelect, type Option } from "./ui/fields";
@@ -14,7 +14,7 @@ type Provider = { label: string; paid: boolean; ready: boolean; keyHint: string;
 type Job = { index: number; opponent: string; ours: string; theirs: string; state: string; gameSeconds?: number; decisions?: number; result?: string; gameId?: string };
 type Run = { id: string; status: string; brain: string; provider: string | null; capUsd: number; spentUsd: number; jobs: Job[]; note?: string };
 type Status = { ready: boolean; page: { page: string; release: string; since: string } | null; providers: Record<string, Provider>; opponents: Record<string, { label: string; hint: string }>;
-  factions: string[]; maps: string[]; budget: { dailyCapUsd: number; spentToday: number; maxParallel: number }; runs: Run[] };
+  factions: string[]; maps: string[]; budget: { dailyCapUsd: number; spentToday: number; maxParallel: number }; runs: Run[]; brainVersion?: string; experiments?: Record<string, string> };
 type Game = { id: string; brain: string; provider: string | null; version?: string; opponent: string; ours: string; theirs: string; map: string; result: string; gameSeconds: number; wallSeconds: number;
   decisionCount: number; questionCount: number; usd: number; ms: { p50: number; p95: number }; fallbacks: number; finishedAt: string; us?: { killsCost: number; deathsCost: number }; stopReason?: string };
 type Summary = { matrix: Record<string, Record<string, { win: number; draw: number; loss: number }>>; ladder: { id: string; label: string; rating: number; games: number; kind: string }[];
@@ -23,6 +23,10 @@ type BenchRecord = { id: string; orders: string; path: "model" | "pipeline"; lab
   unsafeAccepts: number; orderCalls: { count: number; p50: number; p95: number; usd: number }; usd: number; usdPer1000Turns: number; finishedAt: string; failedCalls: number };
 type Bench = { brains: Record<string, string>; running: { orders: string; path: string; done: number; last: string } | null; queued: { orders: string; path: string }[]; lastError: { orders: string; error: string } | null; records: BenchRecord[] };
 type Decision = { tick: number; auto: { label: string; accepted: boolean }[]; questions: { name: string; instructions: string; choice: string | null; accepted?: boolean; options: { value: string; label: string; p: number }[] }[]; ms: number; usd: number; fallback?: boolean };
+type Tally = { win: number; draw: number; loss: number; minutes: number[] };
+type Film = { game: string; shot: string; caption: string; file: string; poster: string; ready: boolean };
+type NotebookEntry = { id: string; date: string; kind: string; status: string; title: string; question: string; change: string; finding: string; lesson: string; tip: string;
+  results: { label: string; version: string; games: number; byOpponent: Record<string, Tally> }[]; story: string | null; films: Film[] };
 
 // Matches the runner (tools/arena/server.mjs): a decision brain is one competitor per provider and brain version.
 const competitor = (g: { brain: string; provider: string | null; version?: string }) => (g.brain === "decision" ? `decision:${g.provider}@${g.version ?? "earlier"}` : g.brain);
@@ -54,9 +58,12 @@ export function AiArena() {
   const [selected, setSelected] = useState<string | null>(null), [log, setLog] = useState<Decision[] | null>(null), [filter, setFilter] = useState<{ c?: string; o?: string }>({});
 
   const [bench, setBench] = useState<Bench | null>(null), [benchPath, setBenchPath] = useState<"model" | "pipeline">("model");
+  const [notebook, setNotebook] = useState<NotebookEntry[] | null>(null), [experiment, setExperiment] = useState("");
   const refresh = useCallback(async () => {
-    try { const [s, m, b] = await Promise.all([api<Status>("/status"), api<Summary>("/summary"), api<Bench>("/bench").catch(() => null)]); setStatus(s); setSummary(m); setBench(b); setOffline(false); }
-    catch { setOffline(true); }
+    try {
+      const [s, m, b, n] = await Promise.all([api<Status>("/status"), api<Summary>("/summary"), api<Bench>("/bench").catch(() => null), api<{ entries: NotebookEntry[] }>("/notebook").catch(() => null)]);
+      setStatus(s); setSummary(m); setBench(b); setNotebook(n?.entries ?? null); setOffline(false);
+    } catch { setOffline(true); }
   }, []);
   useEffect(() => { const first = setTimeout(refresh, 0); const t = setInterval(refresh, 4000); return () => { clearTimeout(first); clearInterval(t); }; }, [refresh]);
   useEffect(() => {
@@ -76,7 +83,7 @@ export function AiArena() {
   async function start() {
     setBusy(true); setError(""); setNotice("");
     try {
-      await api("/runs", { brain, provider, opponents, games, ours: side, theirs: "mirror", map, capUsd: cap, speed: 6 });
+      await api("/runs", { brain, provider, opponents, games, ours: side, theirs: "mirror", map, capUsd: cap, speed: 6, ...(brain === "decision" && experiment ? { experiment } : {}) });
       setNotice(`${total} game${total === 1 ? "" : "s"} queued.`); await refresh();
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   }
@@ -128,6 +135,11 @@ export function AiArena() {
           {paid && p!.ready && <p className="arena-keyhint"><KeyRound size={13} aria-hidden="true" /> Key {p!.keyHint} <button onClick={() => { setKey(""); void api("/keys", { provider, key: "" }).then(refresh); }}>Remove</button></p>}
           {provider === "local" && !p?.ready && <p className="arena-hint">Start the local AI stack (gateway on port 4000) to use it.</p>}
           {provider === "laya" && !p?.ready && <p className="arena-hint">Start Laya in the BeTenshi console (Services) to use it.</p>}
+          {status.experiments && Object.keys(status.experiments).length > 0 && <>
+            <label>Rules<OptionSelect value={experiment} onValueChange={setExperiment}
+              options={[{ value: "", label: `Current brain (${status.brainVersion ?? "live"})` }, ...Object.keys(status.experiments).map(e => ({ value: e, label: `Experiment: ${e}` }))]} /></label>
+            {experiment && <p className="arena-hint">{status.experiments[experiment]}</p>}
+          </>}
         </>}
 
         <h2>Opponents</h2>
@@ -158,6 +170,8 @@ export function AiArena() {
             <b>{status?.opponents[j.opponent]?.label}</b>{j.state === "running" ? <small>{clock(j.gameSeconds ?? 0)} · {j.decisions ?? 0}</small> : j.result ? <small>{j.result}</small> : <small>{j.state}</small>}
           </span>)}</div>
         </div>)}
+
+        {notebook && notebook.length > 0 && <Notebook entries={notebook} opponents={status?.opponents ?? {}} />}
 
         <div className="arena-card">
           <div className="arena-heading"><h2>Ladder</h2><span>Rating from every finished game · Normal AI = 1000</span></div>
@@ -220,6 +234,60 @@ export function AiArena() {
         </div>}
       </section>
     </div>
+  </div>;
+}
+
+/**
+ * The experiment notebook (RTSAI-WebGame tools/arena/notebook.json): one story per question asked of the brain, newest
+ * first. Each has its story film (tools/arena/story.mjs), the question, the change, the results of each brain version
+ * on the same seeds (counted live), the lesson, and the films of single games (tools/arena/film.mjs).
+ */
+function Notebook({ entries, opponents }: { entries: NotebookEntry[]; opponents: Record<string, { label: string }> }) {
+  const ordered = [...entries].reverse();
+  const [open, setOpen] = useState<string>(ordered[0]?.id ?? ""), [playing, setPlaying] = useState<Record<string, string>>({});
+  return <div className="arena-card arena-notebook">
+    <div className="arena-heading"><h2>Notebook</h2><span>What we asked the brain, what we changed, what happened</span></div>
+    <ol>{ordered.map(e => {
+      const shown = open === e.id;
+      const video = playing[e.id] ?? e.story ?? e.films.find(f => f.ready)?.file ?? null;
+      const cols = ["normal", "rush", "hard", "brutal"].filter(o => e.results.some(r => r.byOpponent[o]));
+      return <li key={e.id} className={`${shown ? "open" : ""} ${e.status}`}>
+        <button className="nb-head" aria-expanded={shown} onClick={() => setOpen(shown ? "" : e.id)}>
+          <span className="nb-date">{new Date(e.date).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>
+          <b>{e.title}</b>
+          <span className={`nb-chip ${e.status}`}>{e.status === "running" ? "Running" : e.kind === "milestone" ? "Milestone" : "Done"}</span>
+        </button>
+        {shown && <div className="nb-body">
+          <div className="nb-media">
+            {video ? <video key={video} src={`${endpoint}/films/${video}`} poster={`${endpoint}/films/${video.replace(/\.mp4$/, ".jpg")}`} controls preload="metadata" aria-label={`${e.title}: film`}>
+              <track kind="captions" src={`${endpoint}/films/${video.replace(/\.mp4$/, ".vtt")}`} srcLang="en" label="English captions" /></video>
+              : <div className="nb-novideo"><Clapperboard size={28} aria-hidden="true" />Films come when the games are in</div>}
+            {/* Posters come from the Arena runner on this machine, which next/image cannot optimize. */}
+            {/* eslint-disable @next/next/no-img-element */}
+            {(e.story || e.films.some(f => f.ready)) && <div className="nb-reel">
+              {e.story && <button className={video === e.story ? "on" : ""} onClick={() => setPlaying(p => ({ ...p, [e.id]: e.story! }))}><img src={`${endpoint}/films/${e.story.replace(/\.mp4$/, ".jpg")}`} alt="" /><small>The story</small></button>}
+              {e.films.filter(f => f.ready).map(f => <button key={f.file} className={video === f.file ? "on" : ""} title={f.caption} onClick={() => setPlaying(p => ({ ...p, [e.id]: f.file }))}>
+                <img src={`${endpoint}/films/${f.poster}`} alt="" /><small>{f.caption}</small></button>)}
+            </div>}
+            {/* eslint-enable @next/next/no-img-element */}
+          </div>
+          <div className="nb-text">
+            <p><span>Question</span>{e.question}</p>
+            <p><span>Change</span>{e.change}</p>
+            {cols.length > 0 && <table className="nb-results"><thead><tr><th />{cols.map(o => <th key={o}>vs {opponents[o]?.label ?? o}</th>)}</tr></thead>
+              <tbody>{e.results.map(r => <tr key={r.label}><td>{r.label}<small>{r.games} games</small></td>{cols.map(o => {
+                const t = r.byOpponent[o];
+                if (!t) return <td key={o} className="none">·</td>;
+                return <td key={o} title={`Ended at minute ${t.minutes.join(", ")}`}>
+                  <span className="nb-bar">{t.win > 0 && <i className="w" style={{ flex: t.win }} />}{t.draw > 0 && <i className="d" style={{ flex: t.draw }} />}{t.loss > 0 && <i className="l" style={{ flex: t.loss }} />}</span>
+                  <small>{[t.win && `${t.win} W`, t.draw && `${t.draw} D`, t.loss && `${t.loss} L`].filter(Boolean).join(" · ")}</small></td>;
+              })}</tr>)}</tbody></table>}
+            {e.finding && <p><span>What happened</span>{e.finding}</p>}
+            {e.lesson && <p className="nb-lesson"><span>Lesson</span>{e.lesson}{e.tip && <em>{e.tip}</em>}</p>}
+          </div>
+        </div>}
+      </li>;
+    })}</ol>
   </div>;
 }
 
