@@ -98,7 +98,9 @@ test("sprite rigs animate only when the picture changes, around a fixed centre",
 
 test("Review is an app screen: dev-only, no marketing chrome, no floating feedback button", () => {
   const page = readFileSync(new URL("../app/art/review/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /process\.env\.NODE_ENV === "production"\) notFound\(\)/);
+  // Production builds never load the review UI: admin builds 404 (the local Studio serves this path), and on rtsai.net
+  // the owner gets only the card naming the art workspace it needs (lib/admin.ts).
+  assert.match(page, /process\.env\.NODE_ENV === "production"\) \{\s*if \(ADMIN_BUILD\) notFound\(\);\s*return <AdminGate surface="review" \/>;/);
   assert.match(page, /await import\("\.\.\/\.\.\/components\/art\/ReviewApp"\)/, "the review UI is loaded only on the dev route");
   assert.doesNotMatch(page, /ArtLabChrome|SiteHeader|SiteFooter/);
   const app = readFileSync(new URL("../app/components/art/ReviewApp.tsx", import.meta.url), "utf8");

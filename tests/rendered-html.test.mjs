@@ -20,11 +20,18 @@ async function render(pathname = "/") {
   );
 }
 
-// Admin tools render only in an admin build (RTSAI_ADMIN=1 npm test); public builds must answer 404 (lib/admin.ts).
+// Admin tools render in an admin build (RTSAI_ADMIN=1 npm test). Public builds show them only to the owner after sign-in,
+// and send nothing about the tools that need the owner's machine (lib/admin.ts).
 const adminBuild = process.env.RTSAI_ADMIN === "1";
 
-test("public builds leave the admin Workshop tools out: 404, no nav links, not in the sitemap", { skip: adminBuild }, async () => {
-  for (const path of ["/workshop/campaigns?mode=ra2", "/workshop/evals?mode=ra", "/workshop/arena?mode=ra2"]) assert.equal((await render(path)).status, 404, path);
+test("public builds keep the admin for the owner: no tool in the page, never indexed, no nav links, not in the sitemap", { skip: adminBuild }, async () => {
+  for (const path of ["/workshop/evals?mode=ra", "/workshop/arena?mode=ra2", "/workshop/campaigns?mode=ra2", "/studio/content", "/admin"]) {
+    const response = await render(path), html = await response.text();
+    assert.equal(response.status, 200, path);
+    assert.match(html, /noindex/, path);
+    const body = html.slice(html.indexOf("<body"));
+    assert.doesNotMatch(body, /Who wins\?|Put an idea to the test|Generate intro video/, `${path} shows no tool before the owner signs in`);
+  }
   const workshop = await (await render("/workshop?mode=ra2")).text();
   assert.doesNotMatch(workshop, /href="\/workshop\/(?:campaigns|evals|arena)/);
   assert.doesNotMatch(workshop, /Campaign studio|AI testing|AI Arena/);

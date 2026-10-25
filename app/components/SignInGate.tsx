@@ -4,12 +4,11 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import { Gamepad2, LockKeyhole, Map, Swords } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { firebaseIsConfigured } from "../../lib/firebase-client";
-import { ADMIN_BUILD } from "../../lib/admin";
+import { onThisMachine } from "../../lib/admin";
 
 // The local admin app (an admin build opened on this machine) is the owner's own: it needs no player account.
 // Public builds are never admin builds, so rtsai.net keeps the gate.
 const noop = () => () => {};
-const onThisMachine = () => ADMIN_BUILD && ["127.0.0.1", "localhost", "[::1]"].includes(window.location.hostname);
 
 /**
  * Members-only areas (the game, Workshop, Faction viewer, Earth Studio): a free account unlocks all of them. The gated

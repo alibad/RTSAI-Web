@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LayoutDashboard, LogOut } from "lucide-react";
 import type { User } from "firebase/auth";
 import { useAuth } from "./AuthProvider";
+import { useAdmin } from "./AdminGate";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 export function firebaseProfilePhoto(user: User) {
@@ -30,6 +32,7 @@ function AccountAvatar({ photoUrl, name, large = false }: { photoUrl: string | n
 
 export function AccountNav() {
   const { user, loading, openAuth, signOutUser } = useAuth();
+  const { admin } = useAdmin();
 
   if (loading) return <span className="nav-account is-loading">Account</span>;
   if (!user) return <button type="button" className="nav-account" onClick={() => openAuth("Sign in to play and build with RTS AI")}>Sign in</button>;
@@ -47,6 +50,7 @@ export function AccountNav() {
             <span><strong>{displayName}</strong><small>{user.email}</small></span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
+        {admin && <DropdownMenuItem render={<Link href="/admin" />}><LayoutDashboard size={14} /> Admin</DropdownMenuItem>}
         <DropdownMenuItem className="account-menu-signout" onClick={() => void signOutUser()}><LogOut size={14} /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

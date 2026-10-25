@@ -44,7 +44,11 @@ test("the Faction Art Lab renders and is never indexed", { skip: !adminBuild }, 
 });
 
 test("the local Studio route and its API stay out of production; the shared Studio reads the published snapshot", async () => {
-  assert.equal((await render("/art/review")).status, 404);
+  // Admin builds 404 (the local Studio serves the path itself); public builds send only the owner's card naming the art
+  // workspace review needs (lib/admin.ts), never the review data.
+  const review = await render("/art/review");
+  if (adminBuild) assert.equal(review.status, 404);
+  else assert.doesNotMatch(await review.text(), /r2karrar|r2cnrifle|mapTints/, "no review data in a public build");
   assert.notEqual((await render("/api/art-review/state")).status, 200);
   for (const path of ["/api/art-review/roster?mode=classic", "/api/art-review/classic/e1.shp", "/api/art-review/mod/example.pal", "/api/art-review/duel", "/api/art-review/visual?mode=ra2&image=explosion&sequence=medium_clsn&palette=effect"]) assert.notEqual((await render(path)).status, 200, path);
   const artLab = await (await render("/art")).text();
