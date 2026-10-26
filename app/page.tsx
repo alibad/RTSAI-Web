@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { Apple, ArrowRight, BrainCircuit, Download, Flag, Globe, Mic, MonitorDown, PackageCheck, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +15,8 @@ import "./home.css";
 
 const canonicalUrl = "https://rtsai.net";
 const description = "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander. Play in your browser or download the Windows alpha.";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
   const modRelease = getModRelease();

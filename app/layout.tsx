@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "AI strategy game",
     "modern factions",
   ],
-  alternates: { canonical: "/" },
+  // No site-wide canonical: every child route would inherit it. Each indexable page declares its own.
   manifest: "/manifest.webmanifest",
   referrer: "origin-when-cross-origin",
   robots: {
