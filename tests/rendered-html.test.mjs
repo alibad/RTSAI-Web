@@ -308,6 +308,21 @@ test("privacy distinguishes local acceptance, unavailable hosted service and fee
   assert.match(html, /Written feedback and diagnostics are never sent to Google Analytics/);
 });
 
+test("privacy names who is responsible, asks before analytics and points to the account controls", async () => {
+  const html = await (await render("/privacy")).text();
+  const { LEGAL } = await import("../lib/legal.ts");
+  assert.match(html, /id="controller"/);
+  assert.ok(html.includes(LEGAL.operator) && html.includes(`mailto:${LEGAL.contactEmail}`), "the data controller and how to reach them");
+  assert.match(html, /id="analytics"[\s\S]*Google Analytics only runs if you allow it/);
+  assert.match(html, /href="\/account"/);
+  assert.match(html, /Download your data/);
+  assert.match(html, /Delete your account/);
+  assert.match(html, /It does not include your email address or your city/);
+  assert.match(html, /Dammam, Saudi Arabia/);
+  assert.doesNotMatch(html, /remain planned/, "deletion and export exist now");
+  if (LEGAL.draft) assert.match(html, /Draft for review/);
+});
+
 test("terms: plain words, marked as a draft until the owner signs off, linked from every footer and the sitemap", async () => {
   const response = await render("/terms"), html = await response.text();
   assert.equal(response.status, 200);

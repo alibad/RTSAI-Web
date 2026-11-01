@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "../components/SiteChrome";
+import { LegalDraftNote } from "../components/LegalDraftNote";
+import { LEGAL } from "../../lib/legal";
 
 export const metadata: Metadata = {
   title: "Privacy — RTS AI",
@@ -9,12 +11,21 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
+  const mail = `mailto:${LEGAL.contactEmail}`;
   return (
     <><SiteHeader /><main id="main-content" className="privacy-page">
       <Link className="privacy-back" href="/">← Back to RTS AI</Link>
       <span className="eyebrow">Privacy / plain language</span>
       <h1>Your account helps you use the website.</h1>
+      <LegalDraftNote />
       <p className="privacy-lede">The website uses Firebase Authentication for accounts and Google Analytics for bounded product events. Published game builds and locally tested companion features have different capabilities; a local check does not establish a hosted service.</p>
+      <section id="controller">
+        <h2>Who is responsible</h2>
+        <div className="privacy-detail">
+          <p className="privacy-contact"><strong>{LEGAL.operator}</strong><span>{LEGAL.basedIn}</span><span><a href={mail}>{LEGAL.contactEmail}</a></span></p>
+          <p>{LEGAL.operator} runs RTS AI and decides what happens to the data on this page (the &ldquo;data controller&rdquo;). Write to us to see, correct, export or delete your data, to object to how we use it, or with any question. You can also complain to the data protection authority where you live. Last updated {LEGAL.updated}.</p>
+        </div>
+      </section>
       <section id="ai-co-commander">
         <h2>Optional AI co-commander</h2>
         <div className="privacy-detail">
@@ -33,15 +44,18 @@ export default function PrivacyPage() {
         <p>Firebase Authentication stores account identity and sign-in information, including your name, email address, account identifier and account timestamps. We use it to sign you in, secure website features and support your account. Vercel hosts the website and handles network requests.</p>
         <p>The parked Earth map can request map tiles from OpenStreetMap. That tile request exposes your network address and the requested map area to the tile service.</p>
       </section>
-      <section>
+      <section id="analytics">
         <h2>Usage analytics</h2>
-        <p>Website and game events can be associated with your pseudonymous Firebase user ID in Google Analytics: sign-ups and sign-ins, play and download clicks, the game loading, matches starting and ending (mode, map, faction, result), multiplayer matches (number of players and AI), applied AI co-commander suggestions, and game errors. A click does not establish a completed download or a game start: the game reports those itself when it loads and when a match begins.</p>
+        <div className="privacy-detail">
+        <p>Google Analytics only runs if you allow it. Until you choose, it is not even loaded; &ldquo;No thanks&rdquo; is one click, like &ldquo;Allow&rdquo;. Your choice is remembered on this device, and you can change it any time with &ldquo;Privacy choices&rdquo; at the bottom of every page or on your <Link href="/account">account page</Link>. Advertising storage and ad signals are always off.</p>
+        <p>If you allow it, website and game events can be associated with your pseudonymous Firebase user ID in Google Analytics: sign-ups and sign-ins, play and download clicks, the game loading, matches starting and ending (mode, map, faction, result), multiplayer matches (number of players and AI), applied AI co-commander suggestions, and game errors. A click does not establish a completed download or a game start: the game reports those itself when it loads and when a match begins.</p>
         <p>We do not send your name, email, free-text mission prompt, search query, exact latitude and longitude, match codes or connection details to Google Analytics.</p>
-        <p>Our Firebase database keeps a few counts for your account (matches, multiplayer matches, applied suggestions and errors) and overall totals.</p>
+        <p>Separately from Google Analytics, when you are signed in our own Firebase database keeps a few counts for your account (matches, multiplayer matches, applied suggestions and errors), a short daily record of when you played and with which faction and map, and overall totals. These counts work the same whatever you choose for analytics.</p>
+        </div>
       </section>
       <section>
         <h2>Activity notices to the team</h2>
-        <p>A sign-up, your first match, each multiplayer match start, game errors and product milestones send a private email to the RTS AI team. It includes your account name and email, an approximate location derived from your network address (country, region and city), your browser and operating system, and the page you came from. These notices are never sent to Google Analytics.</p>
+        <p>A sign-up, your first match, each multiplayer match start, game errors and product milestones send a private email to the RTS AI team. It includes your display name and account ID, an approximate location derived from your network address (region and country), your browser and operating system, and the page you came from. It does not include your email address or your city. These notices are never sent to Google Analytics; copies are kept in our database and in the team&apos;s private email archive (a Google Group).</p>
       </section>
       <section>
         <h2>Multiplayer</h2>
@@ -54,13 +68,33 @@ export default function PrivacyPage() {
       <section>
         <h2>Product feedback</h2>
         <p>Feedback you deliberately submit includes your Firebase account identity. It can be saved as a private GitHub issue, or accepted through a queued Firebase mail notification if issue creation fails. The receipt states whether an issue exists and whether a notification was queued; it does not confirm email delivery. If both paths fail, the form keeps your draft for retry.</p>
-        <p>You can add screenshots (and mark them up first), one voice note and files: images, video, audio or text, up to 10 MB each. In the browser game, opening Feedback during a match attaches a picture of the battlefield, which you can remove before sending. Nothing is sent until you press send. The files are stored privately in our Firebase database with your account identifier, and only the RTS AI team can open them; the private issue and the team&apos;s alert name the files and link to that team-only page. Files stay until the team removes them.</p>
+        <p>You can add screenshots (and mark them up first), one voice note and files: images, video, audio or text, up to 10 MB each. In the browser game, opening Feedback during a match attaches a picture of the battlefield, which you can remove before sending. Nothing is sent until you press send. The files are stored privately in our Firebase database with your account identifier, and only the RTS AI team can open them; the private issue and the team&apos;s alert name the files and link to that team-only page. Files stay until the team removes them or you delete your account.</p>
         <p>The microphone button in a text box uses your browser&apos;s speech recognition (in Chrome, Google&apos;s service) to type for you; it attaches no audio. A voice note is a recording you choose to attach.</p>
         <p>You can optionally include bounded browser, console and network diagnostics. Page HTML, form values, request bodies, headers and URL queries are not captured. Written feedback and diagnostics are never sent to Google Analytics.</p>
       </section>
       <section>
         <h2>Your controls</h2>
-        <p>You can sign out from the account menu. Account deletion and data-export controls remain planned before the website leaves alpha.</p>
+        <div className="privacy-detail">
+          <p>On your <Link href="/account">account page</Link> you can:</p>
+          <ul>
+            <li><strong>Download your data:</strong> one file with your account details, counts, daily records, saved maps, the records of feedback files you sent, and the team emails about you.</li>
+            <li><strong>Delete your account:</strong> removes your sign-in, counts, daily records, saved maps, feedback files and the team emails about you from our database straight away. The team is then asked to remove the remaining copies by hand: your feedback issues on GitHub, the email archive, and Google Analytics data for your account ID.</li>
+            <li><strong>Turn analytics on or off</strong> on that device.</li>
+          </ul>
+          <p>Overall totals (such as the number of matches played) are not personal and stay. You can also sign out from the account menu, or write to <a href={mail}>{LEGAL.contactEmail}</a> and we&apos;ll do any of this for you.</p>
+        </div>
+      </section>
+      <section id="where">
+        <h2>Where your data is kept</h2>
+        <div className="privacy-detail">
+          <ul>
+            <li><strong>Google Firebase:</strong> accounts (Authentication) and our database (Firestore, in Dammam, Saudi Arabia). Small Firebase functions in Belgium send the team&apos;s emails, record daily activity and run downloads and deletions.</li>
+            <li><strong>Vercel</strong> hosts the website and <strong>Cloudflare</strong> delivers the game&apos;s files; both see your network address when you load a page.</li>
+            <li><strong>Google Analytics</strong>, only if you allow it.</li>
+            <li><strong>GitHub</strong> keeps feedback as private issues; a <strong>Google Group</strong> keeps the team&apos;s email archive, sent from our own mail server.</li>
+          </ul>
+          <p>Some of these companies store data outside your country. We keep your data while you have an account; deleting it starts the removal described above.</p>
+        </div>
       </section>
       <section>
         <h2>Public downloads</h2>
