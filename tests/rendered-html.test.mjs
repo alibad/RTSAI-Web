@@ -234,7 +234,7 @@ test("the download page offers the browser and Windows and needs no other game",
   assert.match(html, /both Classic\/top-down and isometric modes/);
   assert.doesNotMatch(html, /Own Red Alert 2\?/);
   assert.match(html, /EA has not endorsed and does not support this product/);
-  const aiHeading = modRelease.published && !(modRelease.aiModes ?? []).length ? "No co-commander in this download yet." : "How should your co-commander think?";
+  const aiHeading = modRelease.published && !(modRelease.aiModes ?? []).length ? "Play without the co-commander for now." : "How should your co-commander think?";
   const order = [html.indexOf("Play in your browser"), html.indexOf(aiHeading), html.indexOf("What your PC needs."), html.indexOf('id="mod-downloads"'), html.indexOf('id="classic-alpha"')];
   assert.ok(order.every((index) => index > 0), `every section renders: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, "ways to play, AI choices, requirements, downloads, then the earlier prototype");

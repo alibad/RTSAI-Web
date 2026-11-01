@@ -17,7 +17,7 @@ const releasedPlatforms = macInstaller(releaseAtBuild) ? "Windows and macOS" : "
 export const metadata: Metadata = releasedVersion
   ? {
     title: macAlphaRelease ? "Download RTS AI | Windows, Mac alpha, or play in your browser" : `Download RTS AI ${releasedVersion} | ${releasedPlatforms}, or play in your browser`,
-    description: macAlphaRelease ? `Download Windows ${releasedVersion} or the separate macOS 15+ alpha, or play both standalone modes free in your browser at rtsai.net/play. No owned Red Alert installation is required.` : `RTS AI is a modern real-time strategy game with seven real-world factions. Download the ${releasedVersion} alpha for ${releasedPlatforms}, or play free in your browser at rtsai.net/play. Nothing else to install.`,
+    description: macAlphaRelease ? `Download RTS AI ${releasedVersion} for Windows, a library of three games (Classic, RA2 and RTS), or the separate macOS 15+ alpha, or play free in your browser at rtsai.net/play. No owned Red Alert installation is required.` : `RTS AI is a modern real-time strategy game with seven real-world factions. Download the ${releasedVersion} alpha for ${releasedPlatforms}, or play free in your browser at rtsai.net/play. Nothing else to install.`,
     alternates: { canonical: "/download" },
   }
   : {
@@ -63,22 +63,22 @@ const aiChoices = [
 
 const requirements = [
   { icon: MonitorDown, label: "System", value: "Windows 10 or 11, 64-bit" },
-  { icon: PackageCheck, label: "Game", value: "Nothing else: RTS AI brings its own art, sound and maps" },
+  { icon: PackageCheck, label: "Game", value: "Nothing else: RTS AI brings its own art, sound and maps; Classic fetches the free Red Alert content once" },
   { icon: Cpu, label: "Processor", value: "4-core x64 CPU with AVX2 for local voice and local AI" },
   { icon: MemoryStick, label: "Memory", value: "8 GB; 16 GB recommended for Full local AI" },
   { icon: HardDrive, label: "Storage", value: "About 5 GB free (6 GB with Full local AI)" },
-  { icon: Wifi, label: "Internet", value: "Needed for the installer and optional models; local skirmishes and local AI run offline" },
+  { icon: Wifi, label: "Internet", value: "Needed for the installer, optional models and Classic's first start; local skirmishes and local AI run offline" },
   { icon: Mic, label: "Microphone", value: "Optional, for push-to-talk questions" },
 ] as const;
 
 /** The same targets without the co-commander's needs, for a release that ships without it. */
 const requirementsWithoutAI = [
   { icon: MonitorDown, label: "System", value: "Windows 10 or 11, 64-bit" },
-  { icon: PackageCheck, label: "Game", value: "Nothing else: RTS AI brings its own art, sound and maps" },
+  { icon: PackageCheck, label: "Game", value: "Nothing else: RTS AI brings its own art, sound and maps; Classic fetches the free Red Alert content once" },
   { icon: Cpu, label: "Processor", value: "64-bit x64 processor" },
   { icon: MemoryStick, label: "Memory", value: "8 GB" },
   { icon: HardDrive, label: "Storage", value: "About 1 GB free" },
-  { icon: Wifi, label: "Internet", value: "Only for the download; skirmishes play offline" },
+  { icon: Wifi, label: "Internet", value: "For the download and Classic's first start; skirmishes then play offline" },
 ] as const;
 
 export default async function DownloadPage({ searchParams }: { searchParams: Promise<{ faction?: string | string[]; mode?: string | string[] }> }) {
@@ -132,8 +132,8 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
         <header className="route-hero download-route-hero play-hero">
           <span className="eyebrow">{mac ? "RTS AI / BROWSER, WINDOWS AND MACOS" : "RTS AI / BROWSER AND WINDOWS"}</span>
           <h1>Play RTS AI.<br /><em>{published ? "Out now." : "Now in your browser."}</em></h1>
-          <p>Web RTS and Downloadable RTS share one standalone game. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
-          <p>The Windows alpha and separate Mac alpha are described by their release files below. Play both Classic/top-down and isometric modes in the browser. Both standalone modes require no owned Red Alert installation.</p>
+          <p>On Windows, RTS AI opens a library of three games. Classic: the original, with your additions. RA2: the isometric game, expanded. RTS: new ideas on a separate playground. Nothing else to install: RTS AI brings its own art, sound and maps.</p>
+          <p>No Red Alert installation is needed. Classic asks to download the free Red Alert content the first time you open it. In your browser, play both Classic/top-down and isometric modes. The separate Mac alpha below is the earlier two-mode game.</p>
           <div className={`play-options ${mac ? "has-three" : ""}`}>
             <article className="play-option">
               <Globe size={24} aria-hidden="true" />
@@ -143,7 +143,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             </article>
             <article className="play-option">
               <MonitorDown size={24} aria-hidden="true" />
-              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>{noCoCommander ? "The standalone game, with built-in bots." : "Both game modes, campaigns and an optional local co-commander."}</p></div>
+              <div><span className="platform-kicker">Windows 10 / 11, 64-bit</span><h2>Download for Windows</h2><p>{noCoCommander ? "Classic, RA2 and RTS in one library, with built-in bots." : "Classic, RA2 and RTS in one library, with campaigns and an optional local co-commander."}</p></div>
               {published && installer
                 ? <a className="primary-action" href={installer.url} data-analytics-event="mod_download" data-platform="windows-x64-setup"><Download size={17} /> Download RTS AI {published.version}</a>
                 : <span className="pending-download" aria-disabled="true">Coming soon</span>}
@@ -182,8 +182,8 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           {noCoCommander && published ? (
           <div className="download-intro">
             <span className="section-number">01 / AI CO-COMMANDER</span>
-            <h2 id="ai-choice-title">No co-commander in this download yet.</h2>
-            <p>RTS AI {published.version} plays skirmishes against the built-in bots, and the installer asks no AI question. Local companion integration has separate acceptance evidence; that does not add it to this published installer.</p>
+            <h2 id="ai-choice-title">Play without the co-commander for now.</h2>
+            <p>RTS AI {published.version} plays skirmishes against the built-in bots. If the installer asks about AI, choose No AI: the co-commander has not been checked in this release yet.</p>
           </div>
           ) : (<>
           <div className="download-intro">
@@ -294,7 +294,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
               )}
             </article>
           </div>
-          <div className="download-footnote"><BrainCircuit size={15} /><span>The earlier prototype keeps its own AI setup. The current Windows game above includes both mode choices and optional local AI.</span></div>
+          <div className="download-footnote"><BrainCircuit size={15} /><span>The earlier prototype keeps its own AI setup. The current Windows download above is the RTS AI library: Classic, RA2 and RTS.</span></div>
         </details>
       </main>
       <SiteFooter />
