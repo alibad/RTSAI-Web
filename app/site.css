@@ -260,3 +260,9 @@ footer > div { flex-wrap: wrap; gap: 12px 20px; }
   .account-numbers svg { grid-row: auto; }
   .account-numbers strong { font-size: 22px; }
 }
+.privacy-back { display: flex; width: fit-content; }
+.privacy-detail ul { list-style: disc; }
+.privacy-detail li + li { margin-top: 6px; }
+.privacy-detail li::marker { color: var(--gold); }
+/* Room under the footer links for the fixed Feedback button, so the last link (Privacy choices) can be clicked. */
+footer { padding-bottom: 84px; }

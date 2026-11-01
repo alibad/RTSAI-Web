@@ -2,14 +2,13 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { BarChart3, Download, Gamepad2, KeyRound, Map, ShieldCheck, Trash2, Users, X } from "lucide-react";
+import { BarChart3, Download, Gamepad2, KeyRound, LockKeyhole, Map, ShieldCheck, Trash2, Users, X } from "lucide-react";
 import { EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, reauthenticateWithPopup, signOut, type User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseFirestore } from "../../lib/firebase-client";
 import { LEGAL } from "../../lib/legal";
 import { useAuth } from "./AuthProvider";
 import { chooseAnalytics, useAnalyticsChoice } from "./ConsentBanner";
 import { firebaseProfilePhoto } from "./AccountNav";
-import { SignInGate } from "./SignInGate";
 
 type Numbers = { matches: number; multiplayer: number; maps: number };
 
@@ -36,14 +35,26 @@ function useNumbers(user: User) {
 
 const method = (user: User) => user.providerData.some((p) => p.providerId === "google.com") ? "google" : "password";
 
-/** Behind the sign-in gate, except the goodbye after a deletion (which signs the player out). */
+/**
+ * Signed-in players only. Its own gate rather than SignInGate, which lets the owner's machine in without an account:
+ * here there is nothing to show without one. The goodbye after a deletion (which signs the player out) shows anyway.
+ */
 export function AccountCenter() {
-  const { user } = useAuth();
+  const { user, loading, openAuth } = useAuth();
   const [deleted, setDeleted] = useState<{ notified: boolean } | null>(null);
   if (deleted) return <Goodbye notified={deleted.notified} />;
-  return <SignInGate feature="account page" title="Sign in to see your account" header={null} footer={null}>
-    {user && <AccountView user={user} onDeleted={setDeleted} />}
-  </SignInGate>;
+  if (user) return <AccountView user={user} onDeleted={setDeleted} />;
+  return (
+    <main id="main-content" className="signin-gate" aria-busy={loading}>
+      {!loading && <section className="signin-gate-card">
+        <span className="signin-gate-icon"><LockKeyhole size={22} /></span>
+        <span className="eyebrow">Your account</span>
+        <h1>Sign in to see your account</h1>
+        <p>Your stats, your data and your privacy choices, in one place.</p>
+        <button type="button" className="primary-action" onClick={() => openAuth("Sign in to see your account")}>Sign in</button>
+      </section>}
+    </main>
+  );
 }
 
 function AccountView({ user, onDeleted }: { user: User; onDeleted: (result: { notified: boolean }) => void }) {
