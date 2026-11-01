@@ -62,10 +62,10 @@ export function getFirebaseFirestore() {
   })();
 }
 
-/** Whether this deployment has Google Analytics at all (the consent banner only asks when it does). */
+/** Whether this deployment has Google Analytics at all. */
 export const analyticsIsConfigured = Boolean(firebaseIsConfigured && firebaseConfig.measurementId);
 
-// Consent mode: no ads storage or signals ever; analytics storage only once the player allows it (lib/consent.ts).
+// Consent mode: no ads storage or signals ever; analytics storage unless the player turned it off (lib/consent.ts).
 const consentFor = (granted: boolean) => ({
   analytics_storage: granted ? "granted" : "denied",
   ad_storage: "denied",
@@ -75,9 +75,9 @@ const consentFor = (granted: boolean) => ({
 
 let analyticsUid: string | null = null;
 
-/** Google Analytics, loaded only after the player allowed it on this device; null otherwise. */
+/** Google Analytics, on unless the player turned it off on this device (account page); null then. */
 async function getFirebaseAnalytics() {
-  if (!analyticsIsConfigured || readConsent() !== "granted") return null;
+  if (!analyticsIsConfigured || readConsent() === "denied") return null;
   if (!analyticsPromise) {
     analyticsPromise = (async () => {
       const app = getFirebaseApp();
@@ -101,7 +101,7 @@ function clearAnalyticsCookies() {
   }
 }
 
-/** Applies a new choice at once: allowing loads GA now; declining stops it on this page and removes its cookies. */
+/** Applies a new choice at once: on loads GA now; off stops it on this page and removes its cookies. */
 export async function applyAnalyticsConsent(choice: AnalyticsChoice) {
   if (!analyticsIsConfigured) return;
   if (choice === "granted") {

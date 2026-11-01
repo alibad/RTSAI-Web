@@ -12,7 +12,7 @@ function fakeWindow(initial: Record<string, string> = {}) {
 
 test("no choice until the player makes one, and only our own record counts", () => {
   fakeWindow();
-  assert.equal(readConsent(), null, "analytics stays off before any choice");
+  assert.equal(readConsent(), null, "no record before any choice: analytics on");
   assert.equal(parseConsent(null), null);
   assert.equal(parseConsent("granted"), null, "not JSON");
   assert.equal(parseConsent(JSON.stringify({ analytics: "yes" })), null);
@@ -40,12 +40,14 @@ test("blocked storage means no consent, never an error", () => {
   assert.doesNotThrow(() => writeConsent("granted"));
 });
 
-test("Google Analytics only loads after the player allows it, with ads signals always denied", async () => {
+test("Google Analytics is on unless the player turned it off, with ads signals always denied and no banner", async () => {
   const client = await readFile(new URL("../lib/firebase-client.ts", import.meta.url), "utf8");
-  assert.match(client, /if \(!analyticsIsConfigured \|\| readConsent\(\) !== "granted"\) return null;/);
-  assert.ok(client.indexOf("setConsent(consentFor(true))") < client.indexOf("getAnalytics(app)"), "consent is set before GA starts");
+  assert.match(client, /if \(!analyticsIsConfigured \|\| readConsent\(\) === "denied"\) return null;/);
+  assert.ok(client.indexOf("setConsent(consentFor(true))") < client.indexOf("getAnalytics(app)"), "consent mode is set before GA starts");
   for (const signal of ["ad_storage", "ad_user_data", "ad_personalization"]) assert.match(client, new RegExp(`${signal}: "denied"`));
-  const banner = await readFile(new URL("../app/components/ConsentBanner.tsx", import.meta.url), "utf8");
-  assert.match(banner, /choose\("denied"\)}[^>]*>No thanks</);
-  assert.match(banner, /choose\("granted"\)}[^>]*>Allow</);
+  const auth = await readFile(new URL("../app/components/AuthProvider.tsx", import.meta.url), "utf8");
+  const chrome = await readFile(new URL("../app/components/SiteChrome.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(auth + chrome, /Consent|Privacy choices/, "no banner and no footer prompt (owner, 1 Nov 2026)");
+  const account = await readFile(new URL("../app/components/AccountCenter.tsx", import.meta.url), "utf8");
+  assert.match(account, /aria-pressed=\{choice !== "denied"\}.*>On<\/button>/, "the account page shows analytics on until it is turned off");
 });

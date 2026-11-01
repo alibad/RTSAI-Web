@@ -1,14 +1,13 @@
 /**
- * The player's analytics choice on this device. Google Analytics stays off (not even loaded) until the player allows it
- * in the banner (app/components/ConsentBanner.tsx), the footer's "Privacy choices" or the account page; "No thanks" is
- * one click, like "Allow". The choice lives in localStorage under CONSENT_KEY, so the browser game on the same origin
- * (rtsai.net/play) can read the same answer: { "analytics": "granted" | "denied", "at": ISO time }.
+ * The player's analytics choice on this device. Google Analytics is on unless the player turned it off on the account
+ * page (owner, 1 Nov 2026: no banner; asking every visitor is worse than counting). The choice lives in localStorage
+ * under CONSENT_KEY, so the browser game on the same origin (rtsai.net/play) reads the same answer:
+ * { "analytics": "granted" | "denied", "at": ISO time }. No record means on.
  * First-party product events for signed-in players (lib/track.ts → POST /api/event) are not Google Analytics and do not
  * depend on this choice; /privacy says so.
  */
 export const CONSENT_KEY = "rtsai.consent.v1";
 const CHANGED = "rtsai:consent";
-const OPEN = "rtsai:consent-open";
 
 export type AnalyticsChoice = "granted" | "denied";
 export type ConsentRecord = { analytics: AnalyticsChoice; at: string };
@@ -25,7 +24,7 @@ export function parseConsent(raw: string | null): ConsentRecord | null {
   }
 }
 
-/** The choice made on this device, or null when the player hasn't chosen yet (or storage is blocked). */
+/** The choice made on this device, or null when the player never chose (or storage is blocked): analytics on. */
 export function readConsent(): AnalyticsChoice | null {
   try {
     return parseConsent(window.localStorage.getItem(CONSENT_KEY))?.analytics ?? null;
@@ -50,14 +49,4 @@ export function subscribeConsent(callback: () => void) {
     window.removeEventListener(CHANGED, callback);
     window.removeEventListener("storage", onStorage);
   };
-}
-
-/** Shows the banner again (footer "Privacy choices"). */
-export function openConsentChoices() {
-  window.dispatchEvent(new Event(OPEN));
-}
-
-export function onConsentOpen(callback: () => void) {
-  window.addEventListener(OPEN, callback);
-  return () => window.removeEventListener(OPEN, callback);
 }

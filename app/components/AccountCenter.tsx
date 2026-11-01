@@ -7,7 +7,7 @@ import { EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, re
 import { getFirebaseAuth, getFirebaseFirestore } from "../../lib/firebase-client";
 import { LEGAL } from "../../lib/legal";
 import { useAuth } from "./AuthProvider";
-import { chooseAnalytics, useAnalyticsChoice } from "./ConsentBanner";
+import { chooseAnalytics, useAnalyticsChoice } from "./AnalyticsChoice";
 import { firebaseProfilePhoto } from "./AccountNav";
 
 type Numbers = { matches: number; multiplayer: number; maps: number };
@@ -111,8 +111,8 @@ function AccountView({ user, onDeleted }: { user: User; onDeleted: (result: { no
           <h2>Analytics</h2>
           <p>Google Analytics on this device.</p>
           <div className="account-toggle" role="group" aria-label="Google Analytics on this device">
-            <button type="button" aria-pressed={choice !== "granted"} onClick={() => chooseAnalytics("denied")}>Off</button>
-            <button type="button" aria-pressed={choice === "granted"} onClick={() => chooseAnalytics("granted")}>Allowed</button>
+            <button type="button" aria-pressed={choice === "denied"} onClick={() => chooseAnalytics("denied")}>Off</button>
+            <button type="button" aria-pressed={choice !== "denied"} onClick={() => chooseAnalytics("granted")}>On</button>
           </div>
         </article>
         <article className="account-card">

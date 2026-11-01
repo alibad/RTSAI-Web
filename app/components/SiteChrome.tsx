@@ -2,7 +2,6 @@ import { Gamepad2, Github } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { AccountNav } from "./AccountNav";
-import { PrivacyChoicesLink } from "./ConsentBanner";
 
 export const gameSource = "https://github.com/alibad/OpenRA-AI";
 export const modSource = "https://github.com/alibad/RTSAI-Mod";
@@ -47,7 +46,6 @@ export function SiteFooter() {
         <a href={`${gameSource}/blob/main/LICENSE`}>Companion license</a>
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
-        <PrivacyChoicesLink />
       </div>
     </footer>
   );
