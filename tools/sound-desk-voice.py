@@ -1,7 +1,7 @@
 """Sound desk voice worker: says a line again with the engine, voice and processing chain the faction already uses.
 
 The local admin viewer's Sound desk (lib/sound-desk/server.ts) starts this once and sends one JSON job per line on
-stdin; each reply is one JSON line on stdout. Nothing here is new synthesis code: it loads OpenRA-AI's own generators.
+stdin; each reply is one JSON line on stdout. Nothing here is new synthesis code: it loads the companion's own generators (RTSAI-Mod/companion/scripts, formerly OpenRA-AI).
 
   {"kind": "eva", "faction": "china", "clip": "009", "text": "Strategic uplink ready.", "out": "<path>/clip.wav"}
       the faction's announcer: Kokoro voicepack + the faction's radio/mastering chain (scripts/generate-faction-eva.py),
@@ -15,7 +15,7 @@ stdin; each reply is one JSON line on stdout. Nothing here is new synthesis code
 Reply: the generator's provenance record (engine, model and revision, licence, voice, seed, takes, QA, processing).
 The process exits when stdin closes; the desk closes it after a few idle minutes so the GPU is handed back.
 
-    python tools/sound-desk-voice.py --openra-ai ../OpenRA-AI
+    python tools/sound-desk-voice.py --openra-ai ../RTSAI-Mod/companion
 """
 from __future__ import annotations
 

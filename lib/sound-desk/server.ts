@@ -63,7 +63,7 @@ export type SoundDeskConfig = {
 };
 
 /**
- * Where the desk reads and writes. The canonical layout has RTSAI-Art, RTSAI-Mod and OpenRA-AI beside RTSAI-Web; a
+ * Where the desk reads and writes. The canonical layout has RTSAI-Art and RTSAI-Mod (with the companion's voice scripts in companion/) beside RTSAI-Web; a
  * worktree trio (web/, mod/, art/ side by side) works too. Environment variables win.
  */
 export function soundDeskConfig(webRoot: string, env: NodeJS.ProcessEnv = process.env): SoundDeskConfig {
@@ -75,7 +75,7 @@ export function soundDeskConfig(webRoot: string, env: NodeJS.ProcessEnv = proces
     modRoot: first(env.RTSAI_SOUND_MOD_DIR, "../RTSAI-Mod", "../mod"),
     bakeoffDir: env.RTSAI_SOUND_BAKEOFF ?? "D:/Generated/RTSAI/sound/bakeoff",
     sourcesDir: env.RTSAI_SOUND_SOURCES ?? "D:/Datasets/Sounds",
-    openraAi: first(env.RTSAI_OPENRA_AI_DIR, "../OpenRA-AI", "C:/Users/Admin/Code/hq/games/OpenRA-AI"),
+    openraAi: first(env.RTSAI_OPENRA_AI_DIR, "../RTSAI-Mod/companion", "../mod/companion", "C:/Users/Admin/Code/hq/games/RTSAI-Mod/companion"),
     voicePython: env.RTSAI_VOICE_PYTHON ?? "C:/Users/Admin/Code/AI/chatterbox/.venv/Scripts/python.exe",
     gpuLogs: env.RTSAI_GPU_LOGS ?? "C:/Users/Admin/Code/AI/logs",
     ffmpeg: env.RTSAI_FFMPEG ?? "ffmpeg",
@@ -330,7 +330,7 @@ class VoiceWorker {
   private start() {
     const script = join(this.cfg.webRoot, "tools", "sound-desk-voice.py");
     if (!this.cfg.voicePython || !existsSync(this.cfg.voicePython)) throw new Error(`No voice Python at ${this.cfg.voicePython} (set RTSAI_VOICE_PYTHON to a Python with kokoro, chatterbox-tts and faster-whisper)`);
-    if (!this.cfg.openraAi || !existsSync(join(this.cfg.openraAi, "scripts", "voice_engines.py"))) throw new Error(`No OpenRA-AI checkout at ${this.cfg.openraAi} (set RTSAI_OPENRA_AI_DIR)`);
+    if (!this.cfg.openraAi || !existsSync(join(this.cfg.openraAi, "scripts", "voice_engines.py"))) throw new Error(`No companion voice scripts at ${this.cfg.openraAi} (RTSAI-Mod/companion; set RTSAI_OPENRA_AI_DIR)`);
     const p = spawn(this.cfg.voicePython, ["-u", script, "--openra-ai", this.cfg.openraAi], { windowsHide: true, env: { ...process.env, PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" } });
     p.stdout.setEncoding("utf8");
     p.stdout.on("data", (chunk: string) => {

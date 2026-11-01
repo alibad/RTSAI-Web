@@ -21,7 +21,7 @@ New-Item -ItemType Directory -Force $State | Out-Null
 Start-Transcript -Path (Join-Path $State "start.log") -Force | Out-Null
 
 $AppPort = 3450; $SitePort = 3451; $RunnerPort = 3462; $ArenaPort = 3463
-$Python = Join-Path $Games "OpenRA-AI\.venv\Scripts\python.exe"
+$Python = Join-Path $Games "RTSAI-Mod\companion\.venv\Scripts\python.exe"
 $Node = (Get-Command node).Source
 
 function Stop-AppServers {

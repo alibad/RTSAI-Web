@@ -7,7 +7,7 @@
 //
 // Reads RTSAI-Mod (read-only) and writes decisions to RTSAI-Art/sound-review.json, both found beside this checkout
 // (RTSAI-Art/RTSAI-Mod, or art/mod in a worktree trio); RTSAI_ART_DIR and RTSAI_SOUND_MOD_DIR override them. Saying a
-// line again needs OpenRA-AI beside it (or RTSAI_OPENRA_AI_DIR) and a Python with kokoro, chatterbox-tts and
+// line again needs RTSAI-Mod/companion beside it (or RTSAI_OPENRA_AI_DIR) and a Python with kokoro, chatterbox-tts and
 // faster-whisper (RTSAI_VOICE_PYTHON; default: the local Chatterbox service's venv). Apply the decisions to the mod with
 // RTSAI-Mod's tools/apply-sound-decisions.py.
 import { spawn } from "node:child_process";
