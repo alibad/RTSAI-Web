@@ -5,10 +5,13 @@ import {
   getAnalytics,
   isSupported,
   logEvent,
+  setAnalyticsCollectionEnabled,
+  setConsent,
   setUserId,
   setUserProperties,
   type Analytics,
 } from "firebase/analytics";
+import { readConsent, type AnalyticsChoice } from "./consent";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -59,16 +62,56 @@ export function getFirebaseFirestore() {
   })();
 }
 
+/** Whether this deployment has Google Analytics at all (the consent banner only asks when it does). */
+export const analyticsIsConfigured = Boolean(firebaseIsConfigured && firebaseConfig.measurementId);
+
+// Consent mode: no ads storage or signals ever; analytics storage only once the player allows it (lib/consent.ts).
+const consentFor = (granted: boolean) => ({
+  analytics_storage: granted ? "granted" : "denied",
+  ad_storage: "denied",
+  ad_user_data: "denied",
+  ad_personalization: "denied",
+} as const);
+
+let analyticsUid: string | null = null;
+
+/** Google Analytics, loaded only after the player allowed it on this device; null otherwise. */
 async function getFirebaseAnalytics() {
-  if (!firebaseConfig.measurementId) return null;
+  if (!analyticsIsConfigured || readConsent() !== "granted") return null;
   if (!analyticsPromise) {
     analyticsPromise = (async () => {
       const app = getFirebaseApp();
       if (!app || !(await isSupported())) return null;
-      return getAnalytics(app);
+      setConsent(consentFor(true));
+      const analytics = getAnalytics(app);
+      if (analyticsUid) setUserId(analytics, analyticsUid);
+      return analytics;
     })();
   }
   return analyticsPromise;
+}
+
+/** GA's own cookies (_ga, _ga_<id>) on this host and its parent domain. */
+function clearAnalyticsCookies() {
+  const host = window.location.hostname, parent = host.split(".").slice(-2).join(".");
+  for (const entry of document.cookie.split(";")) {
+    const name = entry.split("=")[0]?.trim();
+    if (!name?.startsWith("_ga")) continue;
+    for (const domain of ["", `; domain=${host}`, `; domain=.${parent}`]) document.cookie = `${name}=; max-age=0; path=/${domain}`;
+  }
+}
+
+/** Applies a new choice at once: allowing loads GA now; declining stops it on this page and removes its cookies. */
+export async function applyAnalyticsConsent(choice: AnalyticsChoice) {
+  if (!analyticsIsConfigured) return;
+  if (choice === "granted") {
+    const analytics = await getFirebaseAnalytics();
+    if (analytics) { setConsent(consentFor(true)); setAnalyticsCollectionEnabled(analytics, true); }
+    return;
+  }
+  const analytics = analyticsPromise ? await analyticsPromise : null;
+  if (analytics) { setAnalyticsCollectionEnabled(analytics, false); setConsent(consentFor(false)); }
+  clearAnalyticsCookies();
 }
 
 type AnalyticsParameters = Record<string, string | number | boolean | undefined>;
@@ -82,6 +125,7 @@ export async function trackAnalyticsEvent(name: string, parameters: AnalyticsPar
 }
 
 export async function identifyAnalyticsUser(uid: string | null) {
+  analyticsUid = uid;
   const analytics = await getFirebaseAnalytics();
   if (!analytics) return;
   setUserId(analytics, uid);
