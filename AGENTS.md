@@ -12,6 +12,23 @@
 - Treat Vercel as the canonical production host. GitHub `main` deploys through Vercel's native Git integration to `rtsai.net` and `www.rtsai.net`.
 - Never add GitHub Actions or hosted workflow files.
 
+## Where things live (owner, 1 Nov 2026)
+
+| Repository | Holds | GitHub |
+|---|---|---|
+| `OpenRA` | The engine: our fork of OpenRA/OpenRA (`fork/main`) | public |
+| `RTSAI-Mod` | The desktop game, plus the faction catalog master (`catalog/`), the AI companion (`companion/`), the older missions (`missions/`) and the roadmap (`docs/roadmap.md`) | public |
+| `RTSAI-WebGame` | The web game at rtsai.net/play, plus its release tool | public |
+| `RTSAI-Web` | rtsai.net, plus the Faction Studio (the one review desk) and the Sound Desk | private |
+| `RTSAI-Art` | The forge: the look (`bible/`), art sources, the sound tools (`tools/sound`) and the trailers (`film/`) | private |
+
+- **Archived on GitHub (read-only), so don't work in them:**
+  - `OpenRA-AI`, now `RTSAI-Mod/companion`, `missions` and `docs/roadmap.md`
+  - `RTSAI-Film`, now `RTSAI-Art/film`
+  - `OpenRA-RL`
+- **Drafts made with AI** (art, sound, film) stay outside git in `D:\Generated\RTSAI\<faction>\<kind>` until the Faction Studio approves them. Approved files go into git.
+- **One look:** names come from the catalog (`RTSAI-Mod/catalog/factions.json`), and colours and style come from the bible (`RTSAI-Art/bible`). Read them; never hand-write a faction's name or palette. `RTSAI-Art/film` still has its own palette, which is still to be fixed.
+
 ## Branches: commit on main, always from the latest main
 
 Several sessions change RTS AI at the same time; work left on a branch or built from a checkout that is behind gets
