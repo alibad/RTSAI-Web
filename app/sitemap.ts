@@ -16,5 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: "https://rtsai.net/companion", lastModified, changeFrequency: "weekly", priority: 0.9 },
     { url: "https://rtsai.net/download", lastModified, changeFrequency: "weekly", priority: 0.9 },
     { url: "https://rtsai.net/privacy", lastModified, changeFrequency: "yearly", priority: 0.2 },
+    { url: "https://rtsai.net/terms", lastModified: new Date("2026-11-01"), changeFrequency: "yearly", priority: 0.2 },
   ];
 }

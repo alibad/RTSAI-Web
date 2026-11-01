@@ -308,6 +308,20 @@ test("privacy distinguishes local acceptance, unavailable hosted service and fee
   assert.match(html, /Written feedback and diagnostics are never sent to Google Analytics/);
 });
 
+test("terms: plain words, marked as a draft until the owner signs off, linked from every footer and the sitemap", async () => {
+  const response = await render("/terms"), html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /rel="canonical" href="https:\/\/rtsai\.net\/terms"/);
+  assert.match(html, /The rules for playing RTS AI/);
+  for (const claim of ["Play fair", "A fictional war", "What you make", "No promises we can", "href=\"/account\""]) assert.ok(html.includes(claim), claim);
+  const { LEGAL } = await import("../lib/legal.ts");
+  if (LEGAL.draft) assert.match(html, /Draft for review\.<\/strong>.*not legal advice/);
+  else assert.doesNotMatch(html, /Draft for review/);
+  assert.ok(html.includes(`mailto:${LEGAL.contactEmail}`));
+  assert.match(await (await render("/")).text(), /href="\/terms"/);
+  assert.match(await (await render("/sitemap.xml")).text(), /rtsai\.net\/terms/);
+});
+
 test("faction pages are visual and player-facing: flags, project art only, no admin material", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
   for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah", "america", "russia"]) assert.match(directory, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);

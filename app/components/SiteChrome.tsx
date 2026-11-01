@@ -45,6 +45,7 @@ export function SiteFooter() {
         <a href={modSource}>Game source</a>
         <a href={`${gameSource}/blob/main/LICENSE`}>Companion license</a>
         <Link href="/privacy">Privacy</Link>
+        <Link href="/terms">Terms</Link>
       </div>
     </footer>
   );

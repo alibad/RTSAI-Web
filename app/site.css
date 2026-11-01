@@ -166,3 +166,14 @@ footer > div { flex-wrap: wrap; gap: 12px 20px; }
 .signin-gate-card .primary-action { width: 100%; }
 .signin-gate-card .text-action { align-self: center; background: none; border: 0; cursor: pointer; }
 .signin-gate-continue { color: #b8bfae; }
+
+/* Terms and privacy: the draft marker (lib/legal.ts) and sections with more than one paragraph or a list. */
+.legal-draft { display: flex; align-items: flex-start; gap: 10px; max-width: 680px; margin: 0 0 28px; padding: 12px 14px; border: 1px solid rgba(241, 210, 139, .4); background: rgba(241, 210, 139, .07); color: #d9cfae; font-size: 13px; line-height: 1.55; }
+.legal-draft svg { flex: none; margin-top: 2px; color: var(--gold); }
+.legal-draft strong { color: var(--gold); font-weight: 620; }
+.privacy-detail > p + p, .privacy-detail > p + ul, .privacy-detail > ul + p { margin-top: 12px; }
+.privacy-detail a, .legal-page .privacy-detail a { color: var(--paper); text-decoration: underline; text-underline-offset: 3px; }
+.privacy-detail a:hover { color: var(--gold); }
+.privacy-contact { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); background: rgba(240, 238, 230, .03); }
+.privacy-contact strong { color: var(--paper); font-weight: 600; }
+.privacy-contact span { color: #9da097; font-size: 14px; }
