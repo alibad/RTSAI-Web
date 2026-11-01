@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Faction Studio",
+      "runtimeExecutable": "powershell.exe",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/local-app.ps1"],
+      "port": 3450,
+      "url": "http://127.0.0.1:3450"
+    },
+    {
+      "name": "Sound Desk",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "sound-desk", "--", "--no-open"],
+      "port": 3470
+    }
+  ]
+}
