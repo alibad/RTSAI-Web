@@ -6,6 +6,9 @@
 //                  it is added to the player's Doha day in dailyStats (record.js, whitelisted by rollup.js).
 //   weeklyDigest   every Monday 08:00 Doha time, one email to the team group: last week's players, matches by mode and
 //                  faction, sign-ups, feedback and errors (weekly.js, digest.js), delivered like any other mail document.
+//   account        a signed-in player's own data (account.js), called by the website's /api/account with the player's ID
+//                  token: GET returns it all as JSON, DELETE (after a sign-in in the last ten minutes) erases it and the
+//                  account, then mails the team the steps left by hand.
 //   sendDigestNow  the digest on demand, for the project's owners only (Cloud Run IAM, not public):
 //                    curl -X POST -d "" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
 //                      https://europe-west1-rtsai-net.cloudfunctions.net/sendDigestNow
@@ -29,7 +32,8 @@ import { deliver } from "./send.js";
 import { recordEvent as record } from "./record.js";
 import { EVENT_NAMES } from "./rollup.js";
 import { digestWindow, renderDigest } from "./digest.js";
-import { gatherDigest, sendDigest } from "./weekly.js";
+import { gatherDigest, sendDigest, TEAM_GROUP } from "./weekly.js";
+import { deletionNotice, eraseAccount, exportAccount, recentLogin } from "./account.js";
 
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 // Not secrets; the local emulator test points them at its own SMTP server (functions/.env.local).
@@ -79,6 +83,39 @@ export const recordEvent = onRequest(
     } catch (error) {
       logger.error(JSON.stringify({ severity: "ERROR", message: "rollup failed", event: name, error: short(error) }));
       res.status(500).json({ error: "Not recorded" });
+    }
+  },
+);
+
+// The player's own account only: the uid comes from their verified, unrevoked ID token, never from the request.
+export const account = onRequest(
+  { region, secrets: [SMTP_PASSWORD], maxInstances: 5, timeoutSeconds: 300, memory: "512MiB", cors: false },
+  async (req, res) => {
+    if (req.method !== "GET" && req.method !== "DELETE") { res.status(405).json({ error: "GET or DELETE only" }); return; }
+    let user;
+    try { user = await getAuth().verifyIdToken(bearer(req), true); } catch { res.status(401).json({ error: "Sign in required" }); return; }
+    if (user.firebase?.sign_in_provider === "anonymous") { res.status(403).json({ error: "Players only" }); return; }
+    const db = getFirestore();
+    try {
+      if (req.method === "GET") { res.status(200).json(await exportAccount(db, getAuth(), user.uid)); return; }
+      if (!recentLogin(user)) { res.status(401).json({ error: "Sign in again to delete your account", reauthenticate: true }); return; }
+      const removed = await eraseAccount(db, getAuth(), user.uid);
+      if (!removed) { res.status(410).json({ error: "This account is already deleted" }); return; }
+      logger.info(JSON.stringify({ message: "account deleted", uid: user.uid, ...removed }));
+      let notified = false;
+      try {
+        const ref = db.collection("mail").doc();
+        await ref.create({ to: [TEAM_GROUP], message: deletionNotice(user.uid, removed) });
+        notified = (await deliver(db, ref, { transport, defaults, logger })) === "SUCCESS";
+      } catch (error) {
+        cached = null;
+        logger.error(JSON.stringify({ severity: "ERROR", message: "deletion notice failed", uid: user.uid, error: short(error) }));
+      }
+      res.status(200).json({ deleted: true, removed, notified });
+    } catch (error) {
+      logger.error(JSON.stringify({ severity: "ERROR", message: `account ${req.method} failed`, uid: user.uid, error: short(error) }));
+      // Auth goes last, so after a failure the account still exists and trying again finishes the job.
+      res.status(500).json({ error: req.method === "GET" ? "Your data could not be gathered. Try again." : "Deleting stopped part way. Your account is still there: try again." });
     }
   },
 );

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import type { User } from "firebase/auth";
 import { useAuth } from "./AuthProvider";
 import { useAdmin } from "./AdminGate";
@@ -50,6 +50,7 @@ export function AccountNav() {
             <span><strong>{displayName}</strong><small>{user.email}</small></span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
+        <DropdownMenuItem render={<Link href="/account" />}><UserRound size={14} /> Account</DropdownMenuItem>
         {admin && <DropdownMenuItem render={<Link href="/admin" />}><LayoutDashboard size={14} /> Admin</DropdownMenuItem>}
         <DropdownMenuItem className="account-menu-signout" onClick={() => void signOutUser()}><LogOut size={14} /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>

@@ -70,3 +70,19 @@ Add `public/trailer/rtsai-trailer.mp4` and a poster
 (`public/trailer/rtsai-trailer-poster.jpg`, `.webp` or `.png`). The homepage
 hero switches from the companion demo to the muted, looping trailer at the next
 build; it does not autoplay for visitors who prefer reduced motion.
+
+## 5. Owner: player accounts (download and delete), before pushing main
+
+The account page (`/account`) downloads and deletes a player's data through the `account` function on rtsai-net
+(`functions/account.js`). Until it is deployed, both buttons answer "not available right now" with the contact
+address from `lib/legal.ts`. Deploy it first, then push main:
+
+```powershell
+firebase deploy --only functions:mail:account --project rtsai-net
+```
+
+What a deletion clears automatically: the Firebase Auth user, `players/{uid}`, the player's `maps` and `mapData`,
+`feedbackReports` (with chunks and files), `dailyStats/*/players/{uid}`, `p2pMatches` they host or joined, team
+emails in `mail` that name the account ID; `aiInstalls` linked to them are unlinked. The team then gets an email
+with the three steps only a person can do: GitHub feedback issues, the Google Group archive, and Google Analytics'
+user deletion. Test it on the emulators with `functions/account.emulator.test.js`.
