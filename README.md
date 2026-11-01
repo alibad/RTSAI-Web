@@ -19,7 +19,7 @@ Players can:
 - send authenticated, private product feedback with a searchable receipt ID and optional usefulness rating.
 
 The product is one thing: a Red Alert 2 mod for OpenRA with five modern
-nations and an AI co-commander (see `../OpenRA-AI/docs/roadmap.md`). The public
+nations and an AI co-commander (see `../RTSAI-Mod/docs/roadmap.md`). The public
 navigation is Factions and Download. The Earth studio, Capability Atlas and
 platform plan are parked: still reachable for existing links, but `noindex`,
 out of the sitemap and unlinked.
