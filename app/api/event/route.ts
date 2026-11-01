@@ -9,14 +9,15 @@ import { countEvent, type CountResult } from "../../../lib/player-stats";
  * POST /api/event { name, props } from the signed-in site or game (same origin). Adds the event to its day's rollup
  * (lib/event-rollup.ts, for the weekly digest), counts it per player and overall, then emails the event log group
  * (MAIL_GROUP) for always-notable events and milestones. The server adds what the browser can't know about itself:
- * country and city, device, and the page. Analytics never breaks the product: failures are logged and the caller
+ * region and country, device, and the page. Analytics never breaks the product: failures are logged and the caller
  * fires and forgets.
  */
 
 const allowedOrigins = ["https://rtsai.net", "https://www.rtsai.net"];
 const decode = (value: string | null) => { if (!value) return ""; try { return decodeURIComponent(value); } catch { return value; } };
 
-function who(identity: FirebaseIdentity) { return identity.name || identity.email || "a player"; }
+// The team's emails name a player by display name only: never their email address (lib/event-email.ts).
+function who(identity: FirebaseIdentity) { return identity.name || "a player"; }
 
 function headlines(name: EventName, identity: FirebaseIdentity, props: Record<string, string | number | boolean>, counts: CountResult) {
   const spec = EVENTS[name], out: string[] = [];
@@ -78,9 +79,9 @@ export function createEventHandler(deps: {
       try {
         await deps.sendEmail({
           to, idToken: bearerToken(request),
-          ...eventEmail({ name, headline: lines.join(" · "), user: identity, props, counts, context: {
+          ...eventEmail({ name, headline: lines.join(" · "), user: { uid: identity.uid, name: identity.name }, props, counts, context: {
             at: new Date().toISOString(), country: h.get("x-vercel-ip-country") ?? "", region: decode(h.get("x-vercel-ip-country-region")),
-            city: decode(h.get("x-vercel-ip-city")), userAgent: h.get("user-agent") ?? "", referer: h.get("referer") ?? "",
+            userAgent: h.get("user-agent") ?? "", referer: h.get("referer") ?? "",
           } }),
         });
         emailed = true;

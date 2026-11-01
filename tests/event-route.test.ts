@@ -38,12 +38,35 @@ test("a new sign-up is emailed once, and counted overall only the first time", a
   const h = harness(input => input.player ? { player: ++joined } : { global: ++players });
   await h.post({ name: "sign_up", props: { method: "google" } });
   assert.equal(h.sent.length, 1);
-  assert.match(h.sent[0].subject, /New sign-up: Ali · Riyadh, SA/);
+  assert.match(h.sent[0].subject, /New sign-up: Ali · SA$/);
   assert.match(h.sent[0].text, /Chrome on Windows/);
   assert.deepEqual(h.counted, [{ player: "joined", global: undefined }, { player: undefined, global: "players" }]);
   await h.post({ name: "sign_up" });
   assert.equal(h.sent.length, 1, "a repeated sign-up call neither emails nor counts the player again");
   assert.equal(h.counted.length, 3);
+});
+
+test("team emails name the player and a coarse place only: never their email address or city", async () => {
+  const h = harness(() => ({ player: 1, global: 3 }));
+  await h.post({ name: "sign_up" }, { "x-vercel-ip-country-region": "01" });
+  await h.post({ name: "multiplayer_started", props: { players: 2 } }, { "x-vercel-ip-country-region": "01" });
+  assert.equal(h.sent.length, 2);
+  for (const mail of h.sent) {
+    const all = `${mail.subject}\n${mail.text}\n${(mail as Sent & { html?: string }).html ?? ""}`;
+    assert.doesNotMatch(all, /ali@example\.com/);
+    assert.doesNotMatch(all, /Riyadh/);
+    assert.match(mail.text, /Where: 01, SA/);
+    assert.match(mail.text, /Account ID: u1/, "the account ID is enough to look the player up");
+  }
+
+  const nameless = createEventHandler({
+    verifyIdentity: async () => ({ uid: "u2", email: "nameless@example.com", name: null }),
+    count: async () => ({ player: 1 }), sendEmail: async message => { h.sent.push(message); return "doc"; },
+    recipients: () => ["rtsai@googlegroups.com"], reportError: () => {},
+  });
+  await nameless(new Request("https://rtsai.net/api/event", { method: "POST", body: JSON.stringify({ name: "match_started" }), headers: { "Content-Type": "application/json", Authorization: "Bearer t" } }));
+  assert.match(h.sent.at(-1)!.subject, /First match for a player/);
+  assert.doesNotMatch(h.sent.at(-1)!.text, /nameless@example\.com/);
 });
 
 test("first match, global milestones, and quiet in between", async () => {

@@ -1,11 +1,14 @@
-/** One event as an email to the event log group: what happened, who, and from where (the server adds the where). */
+/**
+ * One event as an email to the event log group: what happened, who, and from where (the server adds the where).
+ * Only what the team needs: the player's display name and account ID (the Firebase console has the rest), and a
+ * coarse location (region and country, never the city). The player's email address is never in these emails.
+ */
 import { EVENTS, type EventName, type Severity } from "./event-registry";
 
 export type EventContext = {
   at: string;
   country: string;
   region: string;
-  city: string;
   userAgent: string;
   referer: string;
 };
@@ -23,7 +26,7 @@ export function describeDevice(userAgent: string) {
 export function eventEmail(input: {
   name: EventName;
   headline: string;
-  user: { uid: string; email: string | null; name: string | null };
+  user: { uid: string; name: string | null };
   props: Record<string, string | number | boolean>;
   counts: { player?: number; global?: number };
   context: EventContext;
@@ -31,10 +34,10 @@ export function eventEmail(input: {
   const spec = EVENTS[input.name];
   const severity: Severity = spec.severity;
   const dot = severity === "critical" ? "🔴" : severity === "notable" ? "🟡" : "🟢";
-  const where = [input.context.city, input.context.region, input.context.country].filter(Boolean).join(", ");
+  const where = [input.context.region, input.context.country].filter(Boolean).join(", ");
   const rows: [string, string][] = [
     ["Event", `${spec.label} (${input.name})`],
-    ["Player", [input.user.name, input.user.email].filter(Boolean).join(" · ") || input.user.uid],
+    ["Player", input.user.name || "No display name"],
     ...(input.counts.player !== undefined ? [["Player total", String(input.counts.player)] as [string, string]] : []),
     ...(input.counts.global !== undefined ? [["Overall total", input.counts.global.toLocaleString("en-US")] as [string, string]] : []),
     ["Where", where || "—"],
