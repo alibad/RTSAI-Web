@@ -126,10 +126,11 @@ export async function eraseAccount(db, auth, uid) {
 }
 
 /** The team's to-do after a deletion: what went automatically, and the three places only a person can clear. */
-export function deletionNotice(uid, removed, { at = new Date(), issues = "https://github.com/alibad/RTSAI-Web/issues" } = {}) {
+// Feedback issues live in the private Human Quest inbox, labelled app:rtsai (lib/github.ts, lib/feedback.ts).
+export function deletionNotice(uid, removed, { at = new Date(), issues = "https://github.com/alibad/humanquest-feedback/issues" } = {}) {
   const done = Object.entries(removed).map(([what, n]) => `${what}: ${n}`).join(", ");
   const steps = [
-    `GitHub feedback issues: search ${issues}?q=${encodeURIComponent(`"${uid}"`)} and delete what you find.`,
+    `GitHub feedback issues: search ${issues}?q=${encodeURIComponent(`label:app:rtsai "${uid}"`)} and delete what you find.`,
     `Google Group archive (rtsai@googlegroups.com): search for ${uid} and delete those posts.`,
     `Google Analytics: Explore → User explorer, find user ID ${uid}, and delete the user.`,
   ];

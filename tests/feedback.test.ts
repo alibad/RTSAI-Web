@@ -80,8 +80,8 @@ test("creates a private issue body with bounded context and labels", () => {
   assert.doesNotMatch(body, /## Files/, "no files, no viewer link");
   assert.match(body, /\*\*Element:\*\* `button\.generate/);
   assert.match(body, /- Source: Website/);
-  assert.deepEqual(feedbackLabels("Bug"), ["feedback", "source:web", "bug"]);
-  assert.deepEqual(feedbackLabels("Gameplay", "game"), ["feedback", "source:game", "gameplay"]);
+  assert.deepEqual(feedbackLabels("Bug"), ["feedback", "app:rtsai", "source:web", "bug"]);
+  assert.deepEqual(feedbackLabels("Gameplay", "game"), ["feedback", "app:rtsai", "source:game", "gameplay"]);
 });
 
 const id = valid.clientSubmissionId;

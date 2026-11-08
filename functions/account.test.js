@@ -22,7 +22,7 @@ test("the team's deletion notice names only the account ID and the steps left by
   assert.match(notice.subject, /Account deleted/);
   assert.match(notice.text, /Account ID: UID123abc/);
   assert.match(notice.text, /savedMaps: 2/);
-  assert.match(notice.text, /issues\?q=%22UID123abc%22/);
+  assert.match(notice.text, /humanquest-feedback\/issues\?q=label%3Aapp%3Artsai%20%22UID123abc%22/);
   assert.match(notice.text, /Google Group archive/);
   assert.match(notice.text, /Google Analytics/);
   assert.match(notice.html, /<ol><li>GitHub feedback issues/);

@@ -1,7 +1,9 @@
 import { importPKCS8, SignJWT } from "jose";
 
+// Reports land in the private Human Quest feedback inbox, shared by every app and split by its app:<name> label
+// (feedbackLabels adds app:rtsai). The website code itself is public, so its own repository never holds them.
 export const GITHUB_OWNER = process.env.GITHUB_REPO_OWNER || "alibad";
-export const GITHUB_REPO = process.env.GITHUB_REPO_NAME || "RTSAI-Web";
+export const GITHUB_REPO = process.env.GITHUB_REPO_NAME || "humanquest-feedback";
 
 let cachedInstallationToken: { token: string; expiresAtMs: number } | null = null;
 

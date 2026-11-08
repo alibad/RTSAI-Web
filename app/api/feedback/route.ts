@@ -1,4 +1,5 @@
 import {
+  FEEDBACK_APP_LABEL,
   createFeedbackEmail,
   createFeedbackIssueBody,
   feedbackLabels,
@@ -50,8 +51,14 @@ return async function handleFeedback(request: Request) {
   const issueTitle = `[${parsed.value.category}] ${parsed.value.title} — ${parsed.value.pagePath || "/"}`.slice(0, 240);
   const issueBody = createFeedbackIssueBody({ receipt, receivedAt, pageUrl, viewerUrl, submission: parsed.value, identity });
   const labels = feedbackLabels(parsed.value.category, parsed.value.source);
-  // A label GitHub doesn't know (422) is retried without it: first without a newer source label, then with none.
-  const labelAttempts = [labels, ...(parsed.value.source === "web" ? [] : [feedbackLabels(parsed.value.category)]), undefined];
+  // A label GitHub doesn't know (422) is retried without it: first without a newer source label, then with only the
+  // app label (the shared inbox is split by it, so it goes last), then with none.
+  const labelAttempts = [
+    labels,
+    ...(parsed.value.source === "web" ? [] : [labels.filter((label) => !label.startsWith("source:"))]),
+    ["feedback", FEEDBACK_APP_LABEL],
+    undefined,
+  ];
 
   let issue: { number: number; html_url: string } | null = null;
   if (dependencies.issueConfigured()) {

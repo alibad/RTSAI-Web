@@ -24,7 +24,7 @@ test("feedback issue success survives mail failure without claiming delivery or 
   const response = await handle(request()), payload = await response.json();
   assert.equal(response.status, 200); assert.equal(payload.receipt, "RTS-#42"); assert.equal(payload.notificationQueued, false);
   assert.equal(payload.issueUrl, "https://example.test/private/42"); assert.equal(payload.deliveryConfirmed, undefined);
-  assert.deepEqual(calls, ["issue-labels:feedback,source:web,bug", "queue"]);
+  assert.deepEqual(calls, ["issue-labels:feedback,app:rtsai,source:web,bug", "queue"]);
 });
 
 test("feedback queue fallback returns a receipt with no invented private issue", async () => {
@@ -34,13 +34,13 @@ test("feedback queue fallback returns a receipt with no invented private issue",
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
 
-test("both delivery paths failing preserve a retryable failure; missing labels retry once", async () => {
+test("both delivery paths failing preserve a retryable failure; missing labels retry with the app label, then none", async () => {
   const failed = fixture({ issue: false, mail: false });
   const response = await failed.handle(request());
   assert.equal(response.status, 503); assert.match((await response.json()).error, /Your message is still here/);
   const retry = fixture({ labelsFail: true });
   assert.equal((await retry.handle(request())).status, 200);
-  assert.deepEqual(retry.calls, ["issue-labels:feedback,source:web,bug", "issue", "queue"]);
+  assert.deepEqual(retry.calls, ["issue-labels:feedback,app:rtsai,source:web,bug", "issue-labels:feedback,app:rtsai", "issue", "queue"]);
 });
 
 test("foreign origin and unauthenticated feedback never reach storage or notification mocks", async () => {
@@ -53,7 +53,7 @@ test("game feedback is labelled source:game, keeps its other labels if that labe
   const { handle, calls, bodies } = fixture({ unknownLabel: "source:game" });
   const response = await handle(request(undefined, game));
   assert.equal(response.status, 200);
-  assert.deepEqual(calls, ["issue-labels:feedback,source:game,gameplay", "issue-labels:feedback,source:web,gameplay", "queue"]);
+  assert.deepEqual(calls, ["issue-labels:feedback,app:rtsai,source:game,gameplay", "issue-labels:feedback,app:rtsai,gameplay", "queue"]);
   assert.ok(bodies[0].includes(`/feedback/${input.clientSubmissionId})** (RTS AI team sign-in)`));
 });
 

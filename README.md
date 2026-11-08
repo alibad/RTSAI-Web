@@ -93,7 +93,10 @@ environment:
 - `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and
   `GITHUB_APP_PRIVATE_KEY` authenticate the GitHub App. Its installation needs
   metadata read access and issue read/write access to `GITHUB_REPO_OWNER` /
-  `GITHUB_REPO_NAME`. Personal access tokens are not supported.
+  `GITHUB_REPO_NAME`: the private Human Quest feedback inbox
+  (`alibad/humanquest-feedback`), shared by every app and split by label, so
+  each RTS AI report is labelled `app:rtsai`. Reports never go to this
+  repository, whose code is public. Personal access tokens are not supported.
 
 Files never pass through `/api/feedback`. The signed-in browser writes them
 straight into Firestore (`app/components/feedback/report-files.ts`):

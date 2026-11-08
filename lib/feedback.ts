@@ -394,6 +394,9 @@ function filesOf(submission: FeedbackSubmission) {
   return [...screenshots, ...voice, ...files];
 }
 
+/** Which app a report in the shared private feedback inbox came from (see lib/github.ts). */
+export const FEEDBACK_APP_LABEL = "app:rtsai";
+
 export function feedbackLabels(category: FeedbackCategory, source: FeedbackSource = "web") {
   const categoryLabel: Partial<Record<FeedbackCategory, string>> = {
     "Bug": "bug",
@@ -403,7 +406,7 @@ export function feedbackLabels(category: FeedbackCategory, source: FeedbackSourc
     "Mission Generator": "mission-generator",
     "AI Companion": "ai-companion",
   };
-  return ["feedback", `source:${source}`, ...(categoryLabel[category] ? [categoryLabel[category]!] : [])];
+  return ["feedback", FEEDBACK_APP_LABEL, `source:${source}`, ...(categoryLabel[category] ? [categoryLabel[category]!] : [])];
 }
 
 export function createFeedbackIssueBody(input: {
