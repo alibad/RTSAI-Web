@@ -250,3 +250,5 @@ footer > div { flex-wrap: wrap; gap: 12px 20px; }
 .privacy-detail li::marker { color: var(--gold); }
 /* Room under the footer links for the fixed Feedback button, so the last link can be clicked. */
 footer { padding-bottom: 84px; }
+/* EA's C&C modding guidelines: the statement goes prominently at the top of the website (owner, 8 Nov 2026). */
+.ea-top-notice { margin: 0; padding: 6px 16px; background: var(--ink); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.4; text-align: center; }

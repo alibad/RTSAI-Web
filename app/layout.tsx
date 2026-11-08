@@ -4,6 +4,7 @@ import "./globals.css";
 import "./catalog.css";
 import "./site.css";
 import { AuthProvider } from "./components/AuthProvider";
+import { EA_NOTICE } from "../lib/ea-notice";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
@@ -81,5 +82,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#151719", colorScheme: "dark" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body className={`${geist.variable} ${mono.variable}`}><AuthProvider>{children}</AuthProvider></body></html>;
+  return <html lang="en"><body className={`${geist.variable} ${mono.variable}`}><p className="ea-top-notice">Independent project. {EA_NOTICE}</p><AuthProvider>{children}</AuthProvider></body></html>;
 }
