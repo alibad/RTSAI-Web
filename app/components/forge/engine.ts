@@ -396,7 +396,7 @@ export class Stage {
       if (t < d.t0 || (d.z <= 0 && d.vz === 0)) continue;
       d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.vz -= 160 * dt;
       if (d.z <= 0) { d.z = 0; d.vz = Math.abs(d.vz) > 30 ? -d.vz * 0.3 : 0; d.vx *= 0.5; d.vy *= 0.5; }
-      if (t - d.smoke > 90 && d.vz !== 0) { d.smoke = t; this.fx.push({ name: "sgrysmk1", x: d.x, y: d.y - d.z + 3, t0: t, scale: 0.3, alpha: 0.5 }); }
+      if (d.size > 1 && t - d.smoke > 170 && d.vz !== 0) { d.smoke = t; this.fx.push({ name: "sgrysmk1", x: d.x, y: d.y - d.z + 3, t0: t, scale: 0.25, alpha: 0.35 }); }
     }
     this.debris = this.debris.filter(d => t - d.t0 < 9000);
     if (this.burning && this.mode === "dead" && t - this.lastSmoke > 500) {
