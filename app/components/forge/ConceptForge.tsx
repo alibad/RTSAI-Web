@@ -151,7 +151,10 @@ export function ConceptForge() {
       const st = stage.current;
       st.update(t, dt); st.draw(w, t);
       const fo = foe.current;
-      if (fo) { fo.target = { x: st.x, y: st.y - 6 }; st.target = { x: fo.x, y: fo.y - 6 }; fo.update(t, dt); fo.draw(w, t); }
+      if (fo) {
+        const aim = (u: Stage) => ({ x: u.x, y: u.y - (u.concept?.air && u.mode !== "dead" ? u.concept.altitude ?? 30 : 6) });
+        fo.target = aim(st); st.target = aim(fo); fo.update(t, dt); fo.draw(w, t);
+      }
       const ctxScreen = canvas.current?.getContext("2d");
       if (ctxScreen) {
         ctxScreen.imageSmoothingEnabled = false; ctxScreen.drawImage(world, 0, 0, world.width * ZOOM, world.height * ZOOM);
@@ -203,7 +206,8 @@ export function ConceptForge() {
     for (const [a, b] of [[st, fo], [fo, st]] as const) {
       a.hp = a.maxHp = hp(a.concept!); a.auto = true;
       a.onImpact = (x, y, w) => {
-        if (b.mode === "dead" || Math.hypot(x - b.x, (y - b.y) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) return;
+        const by = b.y - (b.concept!.air ? b.concept!.altitude ?? 30 : 0);
+        if (b.mode === "dead" || Math.hypot(x - b.x, (y - by) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) return;
         const dmg = { shell: 34, rail: 60, rocket: 18, missile: 36, mortar: 40, bullet: b.concept!.kind === "infantry" ? 9 : 3, beam: 16, arc: 22, flame: 30 }[w.kind] ?? 10;
         b.hp -= dmg; if (b.hp < b.maxHp * 0.5) b.damaged = true;
         if (b.hp <= 0) { b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); if (recordFight.current) { recordFight.current = false; stopRecording(); } }, 3200); }
