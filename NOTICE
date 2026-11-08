@@ -12,4 +12,7 @@ The Faction Studio's mod library shows art from other OpenRA mods (Romanov's Ven
 Generals Alpha, RA+, Shattered Paradise, OpenHV, OpenRA Red Alert 2). That art belongs to each mod's authors and keeps
 its own licence; each unit credits its mod and links the project. It is shown free of charge and non-commercially.
 
-RTS AI's own code and art keep the licences stated in their repositories.
+The website's code is free software under the GNU General Public License, version 3 or (at your option) any later
+version; see LICENSE. Parts of it (the Faction viewer and the Earth battlefield compiler) are built into the browser game
+at rtsai.net/play, whose BUILD.json names the website commit it was built from. RTS AI's own art keeps the terms
+stated in RTSAI-Mod.
