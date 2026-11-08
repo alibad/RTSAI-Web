@@ -61,7 +61,7 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
           const r = routing[c.id];
           return `- ${c.name} (${c.role})${r?.verdict ? ` · ${r.verdict}` : ""}${r?.note ? ` · ${r.note.replace(/\s+/g, " ")}` : ""}`;
         };
-        const out = ["# Concept Forge routing plan", "", `Made ${new Date().toISOString().slice(0, 16).replace("T", " ")} from ${root}`, ""];
+        const out = ["# Concept Forge routing plan", "", `Made ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC from ${root}`, ""];
         for (const [fid, f] of Object.entries(names)) {
           const mine = concepts.filter(c => routing[c.id]?.factions?.includes(fid) && routing[c.id]?.verdict !== "drop");
           out.push(`## ${f.name} (${mine.length})`, "", ...(mine.length ? mine.map(line) : ["- nothing routed yet"]), "");
