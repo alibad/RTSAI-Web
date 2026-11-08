@@ -21,7 +21,9 @@ function Thumb({ c, pal, faction, player }: { c: Concept; pal: Palettes; faction
       if (!live || !ref.current) return;
       const sheet = paint(enc, `${c.id}/thumb`, pal, faction, player);
       const x = ref.current.getContext("2d")!; x.imageSmoothingEnabled = false;
-      x.clearRect(0, 0, 128, 96); x.drawImage(sheet, 0, 0);
+      x.clearRect(0, 0, 128, 96);
+      if (c.kind === "infantry") x.drawImage(sheet, 32, 30, 64, 48, 0, 0, 128, 96);   // soldiers at double size
+      else x.drawImage(sheet, 0, 0);
     }).catch(() => undefined);
     return () => { live = false; };
   }, [c.id, pal, faction, player]);
@@ -57,6 +59,36 @@ function Lineup({ concepts, index, faction, player, onPick }: { concepts: Concep
   ))}</div>;
 }
 
+/** The selected concept in every faction's paint at once; clicking one plays that faction's voice for it. */
+function FactionRow({ concept, index, player, onHover }: { concept: Concept; index: Index; player: string; onHover: (f: string) => void }) {
+  const ids = Object.keys(index.palettes.factions);
+  const refs = useRef(new Map<string, HTMLCanvasElement>());
+  const stages = useRef(new Map<string, Stage>());
+  useEffect(() => {
+    stages.current = new Map(ids.map(f => { const st = new Stage(); st.faction = f; st.voices = index.voices ?? {}; void st.load(concept, index.palettes, index.fx, true); return [f, st]; }));
+  }, [concept, index]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    let raf = 0;
+    const tick = (t: number) => {
+      for (const f of ids) {
+        const cv = refs.current.get(f); const st = stages.current.get(f); if (!cv || !st) continue;
+        st.player = player; const x = cv.getContext("2d")!; x.imageSmoothingEnabled = false;
+        st.drawTurntable(x, t, cv.width, cv.height);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [concept, player]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <div className="cf-facrow">{ids.map(f => (
+    <button key={f} title={`${index.palettes.factions[f].name}: click to hear its voice`} onMouseEnter={() => onHover(f)} onMouseLeave={() => onHover("")}
+      onClick={() => { const st = stages.current.get(f); if (st) { st.sound.ensure(); st.mode = "idle"; st.lastVoice = 0; st.say("select"); } }}>
+      <canvas ref={el => { if (el) refs.current.set(f, el); }} width={72} height={60} />
+      <span>{index.palettes.factions[f].name}</span>
+    </button>
+  ))}</div>;
+}
+
 function Bars({ stats }: { stats: Record<string, number> }) {
   return <div className="cf-bars">{Object.entries(stats).filter(([, v]) => v > 0).map(([k, v]) => (
     <div key={k} className="cf-bar"><span>{k}</span><i>{[1, 2, 3, 4, 5].map(n => <b key={n} className={n <= v ? "on" : ""} />)}</i></div>
@@ -79,6 +111,9 @@ export function ConceptForge() {
   const overlay = useRef({ caption: "", name: "", role: "", recording: false });
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<Stage>(new Stage());
+  const foe = useRef<Stage | null>(null);
+  const [foeId, setFoeId] = useState("");
+  const [fighting, setFighting] = useState(false);
   useEffect(() => { (window as unknown as { __forge: Stage }).__forge = stage.current; }, []);
   const demo = useRef(0);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -96,7 +131,7 @@ export function ConceptForge() {
   // load the selected concept into the stage
   useEffect(() => {
     if (!index || !concept) return;
-    demo.current++; setBusy(false); setCaption("");
+    demo.current++; setBusy(false); setCaption(""); foe.current = null; setFighting(false); stage.current.auto = false; stage.current.onImpact = null;
     const st = stage.current;
     st.voices = index.voices ?? {};
     void st.load(concept, index.palettes, index.fx);
@@ -114,6 +149,8 @@ export function ConceptForge() {
       const dt = Math.min(0.05, (t - last) / 1000); last = t;
       const st = stage.current;
       st.update(t, dt); st.draw(w, t);
+      const fo = foe.current;
+      if (fo) { fo.target = { x: st.x, y: st.y - 6 }; st.target = { x: fo.x, y: fo.y - 6 }; fo.update(t, dt); fo.draw(w, t); }
       const ctxScreen = canvas.current?.getContext("2d");
       if (ctxScreen) {
         ctxScreen.imageSmoothingEnabled = false; ctxScreen.drawImage(world, 0, 0, world.width * ZOOM, world.height * ZOOM);
@@ -147,9 +184,35 @@ export function ConceptForge() {
     else if (a === "destroy") st.setMode("dead", t);
     else if (a === "build") { st.reset(t); st.setMode("build", t); }
     else if (a === "prone") st.setMode(st.mode === "prone" ? "idle" : "prone", t);
-    else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; st.reset(t); }
+    else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(t); }
     else if (a === "select") { st.sound.play(concept?.sounds.select, { gain: 0.6 }); st.say("select"); }
   }, [concept]);
+
+  /** Versus: the selected concept against another one, both firing on their own until one is destroyed. */
+  const fight = useCallback(async (otherId: string) => {
+    const c = concept; const other = index?.concepts.find(x => x.id === otherId); if (!c || !other || !index) return;
+    demo.current++; setBusy(true);
+    const st = stage.current; const t = performance.now(); st.sound.ensure(); st.reset(t);
+    const fo = new Stage(); fo.sound = st.sound; fo.voices = index.voices ?? {}; fo.noGround = true;
+    fo.faction = faction ? Object.keys(index.palettes.factions).find(f => f !== faction) ?? other.faction : other.faction === paintAs ? Object.keys(index.palettes.factions).find(f => f !== paintAs) ?? other.faction : other.faction;
+    fo.player = player === "#2f6fe0" ? "#e02a1f" : "#2f6fe0";
+    await fo.load(other, index.palettes, index.fx, true);
+    const hp = (k: Concept) => 60 + (k.stats?.armour ?? 2) * 40 + (k.kind === "defence" ? 60 : k.kind === "infantry" ? -40 : 0);
+    st.x = 105; st.y = 150; fo.x = 260; fo.y = 82; st.ang = Math.atan2(-(fo.x - st.x), -2 * (fo.y - st.y)); st.tang = st.ang; fo.ang = fo.tang = st.ang + Math.PI;
+    for (const [a, b] of [[st, fo], [fo, st]] as const) {
+      a.hp = a.maxHp = hp(a.concept!); a.auto = true;
+      a.onImpact = (x, y, w) => {
+        if (b.mode === "dead" || Math.hypot(x - b.x, (y - b.y) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) return;
+        const dmg = { shell: 34, rail: 60, rocket: 18, missile: 36, mortar: 40, bullet: b.concept!.kind === "infantry" ? 9 : 3, beam: 16, arc: 22, flame: 30 }[w.kind] ?? 10;
+        b.hp -= dmg; if (b.hp < b.maxHp * 0.5) b.damaged = true;
+        if (b.hp <= 0) { b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); }, 2500); }
+      };
+    }
+    st.reloadUntil = t + 500; fo.reloadUntil = t + 900;
+    foe.current = fo; setFighting(true);
+    st.say("attack");
+  }, [concept, index, faction, paintAs, player]);
+  const endFight = () => { const st = stage.current; foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(performance.now()); setBusy(false); };
 
   const wait = (ms: number, token: number) => new Promise<boolean>(ok => setTimeout(() => ok(demo.current === token), ms));
 
@@ -296,6 +359,11 @@ export function ConceptForge() {
           <button onClick={() => act("destroy")}>Destroy <kbd>X</kbd></button>
           <button onClick={() => act("reset")}>Reset <kbd>R</kbd></button>
           <span className="cf-gap" />
+          <select className="cf-versus" value={foeId} onChange={e => setFoeId(e.target.value)} aria-label="Opponent">
+            <option value="">Versus…</option>
+            {index.concepts.filter(x => x.id !== concept?.id && x.weapons.length).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+          <button disabled={!foeId || !concept?.weapons.length} onClick={() => (fighting ? endFight() : void fight(foeId))}>{fighting ? "End fight" : "Fight"}</button>
           <button disabled={busy || !!recording} onClick={() => void playAll(true)}>● Record video</button>
           {videoUrl ? <a className="cf-download" href={videoUrl} download={`${concept?.id ?? "concept"}.webm`}>Save video</a> : null}
         </div>
@@ -309,6 +377,8 @@ export function ConceptForge() {
           <p className="cf-desc">{concept.description}</p>
           <Bars stats={concept.stats} />
           <ul className="cf-weapons">{concept.weapons.map(w => <li key={w.name}><b>{w.name}</b><span>{w.burst > 1 ? `${w.burst}-round ${w.kind}` : w.kind}{w.air ? " · hits aircraft" : ""}{w.pierce ? " · pierces" : ""}</span></li>)}</ul>
+          <h3>In every faction</h3>
+          <FactionRow concept={concept} index={index} player={player} onHover={setFaction} />
           <h3>Send to faction</h3>
           <div className="cf-route">{facIds.map(f => {
             const on = routed.includes(f); const fit = concept.factions.includes(f);

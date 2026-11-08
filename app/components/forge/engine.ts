@@ -23,6 +23,8 @@ export type Concept = {
   built?: string; timing?: Record<string, number>;
   /** Dish keeps turning (radar), the body floats and bobs, a shield pulses. */
   spin?: boolean; hover?: boolean; pulse?: boolean;
+  /** Flying: rotors spin in every frame, the body bobs, it explodes in the air and its wreck falls. */
+  air?: boolean; altitude?: number;
 };
 export type Palettes = {
   classes: string[]; lmax: number; players: Record<string, string>;
@@ -213,6 +215,8 @@ export class Stage {
   fx: Fx[] = []; shots: Shot[] = []; lines: Line[] = []; parts: Particle[] = [];
   lastDust = 0; lastSmoke = 0; deathKind: "die1" | "die2" = "die1"; wix = 0;
   caption = "";
+  // versus: hit points, automatic fire at the target, and a hook that tells the duel where shots land
+  hp = 0; maxHp = 0; auto = false; noGround = false; onImpact: ((x: number, y: number, w: Weapon) => void) | null = null;
 
   async load(c: Concept, pal: Palettes, fx: FxMeta, quiet = false) {
     this.concept = c; this.pal = pal; this.fxMeta = fx;
@@ -268,6 +272,14 @@ export class Stage {
     this.deathKind = Math.random() < 0.5 ? "die1" : "die2";
     if (c.kind === "infantry") { this.sound.play(c.sounds.die ?? "infantry_death", { gain: 0.9 }); return; }
     const big = c.kind === "defence" ? "demtexp" : (c.stats?.armour ?? 3) >= 4 ? "brrlexp1" : "explolrg";
+    if (c.air) {     // blown up in the air; the wreck hits the ground a moment later
+      const h = c.altitude ?? 30;
+      this.fx.push({ name: "explomed", x: this.x, y: this.y - h, t0: t });
+      this.fx.push({ name: "explolrg", x: this.x, y: this.y + 4, t0: t + 520 });
+      this.sound.play(c.sounds.die, { gain: 1 });
+      this.fx.push({ name: "fire01", x: this.x, y: this.y + 2, t0: t + 900, loop: 8000 });
+      return;
+    }
     this.fx.push({ name: big, x: this.x, y: this.y + 4, t0: t });
     this.fx.push({ name: "explomed", x: this.x + 10, y: this.y - 6, t0: t + 260 });
     this.sound.play(c.sounds.die, { gain: 1 });
@@ -320,7 +332,7 @@ export class Stage {
       const dx = nx - this.x, dy = ny - this.y;
       if (Math.hypot(dx, dy) > 0.01) this.ang = angleOf(dx, dy);
       this.x = nx; this.y = ny;
-      if (c.kind === "vehicle" && t - this.lastDust > 140) {
+      if (c.kind === "vehicle" && !c.air && !c.hover && t - this.lastDust > 140) {
         this.lastDust = t;
         const back = [-Math.sin(this.ang) * 0, 0];
         this.fx.push({ name: "htrkpuff", x: this.x - dx * 6 + back[0], y: this.y - dy * 6 + 3, t0: t, scale: 0.6, alpha: 0.6 });
@@ -347,9 +359,10 @@ export class Stage {
       if (aimed) {
         this.shoot(f.w, f.muzzle, t);
         f.muzzle++; f.shotsLeft--; f.next = t + f.w.interval;
-        if (f.shotsLeft <= 0) { this.firing = null; this.reloadUntil = t + Math.min(f.w.reload, 1600); }
+        if (f.shotsLeft <= 0) { this.firing = null; this.reloadUntil = t + (this.auto ? f.w.reload : Math.min(f.w.reload, 1600)); }
       }
     }
+    if (this.auto && !this.firing && this.mode !== "dead" && this.mode !== "build" && t >= this.reloadUntil) this.fire(t);
     // shots
     for (const s of this.shots) {
       const u = (t - s.t0) / s.dur;
@@ -421,6 +434,7 @@ export class Stage {
   }
 
   impact(w: Weapon, x: number, y: number, t: number) {
+    this.onImpact?.(x, y, w);
     this.fx.push({ name: w.impact, x, y: y + (w.kind === "bullet" ? 0 : 4), t0: t });
     this.sound.play(w.hit, { gain: w.kind === "bullet" ? 0.35 : 0.8, pan: this.pan(x), minGap: w.kind === "bullet" ? 70 : 60, rate: 0.95 + Math.random() * 0.1 });
   }
@@ -483,10 +497,14 @@ export class Stage {
       const s = this.seqFrame(name, fac8, t, t0, loop); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y);
       return;
     }
-    const bob = c.hover && this.mode !== "dead" ? Math.round(Math.sin(t / 260) * 1.2 - 1) : 0;
+    const bob = (c.hover || c.air) && this.mode !== "dead" ? Math.round(Math.sin(t / 260) * (c.air ? 2 : 1.2) - 1) : 0;
     if (c.kind === "vehicle") {
-      if (this.mode === "dead") { const s = this.seqFrame("husk", hf, t, 0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y); return; }
-      const s = this.seqFrame(c.hover ? "idle" : this.mode === "move" ? "move" : "idle", hf, t, this.modeT0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y + bob);
+      if (this.mode === "dead") {
+        if (c.air && t - this.modeT0 < 520) return;   // still a fireball in the air
+        const s = this.seqFrame("husk", hf, t, 0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y); return;
+      }
+      if (c.air) { const s = this.seqFrame("move", hf, t, 0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y + bob); }
+      else { const s = this.seqFrame(c.hover ? "idle" : this.mode === "move" ? "move" : "idle", hf, t, this.modeT0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y + bob); }
     } else {
       if (this.mode === "dead") { this.blit(ctx, "rubble", 0, this.x, this.y); return; }
       if (this.mode === "build") {
@@ -502,7 +520,7 @@ export class Stage {
       const s = firing ? this.seqFrame("fire", tf, t, this.fireAnimT0, false) : this.seqFrame("turret", tf, t, 0);
       if (s) this.blit(ctx, s.layer, s.index, this.x + pv[0], this.y + pv[1] + bob);
     }
-    if (c.pulse && this.mode !== "dead" && this.mode !== "build") {
+    if (c.pulse && this.mode !== "build") {
       for (let k = 0; k < 2; k++) {
         const u = ((t / 1700) + k / 2) % 1;
         ctx.strokeStyle = `rgba(127,232,255,${0.55 * (1 - u)})`; ctx.lineWidth = 1;
@@ -523,11 +541,19 @@ export class Stage {
   draw(ctx: CanvasRenderingContext2D, t: number) {
     if (!this.ground) this.makeGround();
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(this.ground!, 0, 0);
+    if (!this.noGround) ctx.drawImage(this.ground!, 0, 0);
+    if (this.auto && this.concept && this.mode !== "dead") {     // health bar
+      const w = 22, x = Math.round(this.x - w / 2), y = Math.round(this.y - (this.concept.kind === "infantry" ? 40 : 46) - (this.concept.altitude ?? 0));
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - 1, y - 1, w + 2, 4);
+      const f = Math.max(0, this.hp / this.maxHp);
+      ctx.fillStyle = f > 0.5 ? "#5fd35f" : f > 0.25 ? "#e8c02a" : "#e0442f"; ctx.fillRect(x, y, Math.round(w * f), 2);
+    }
+    if (this.auto) { if (!this.concept) return; } else {
     // target marker
     ctx.strokeStyle = "rgba(200,40,30,0.55)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.ellipse(this.target.x + 0.5, this.target.y + 0.5, 7, 3.5, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(this.target.x - 10, this.target.y + 0.5); ctx.lineTo(this.target.x - 4, this.target.y + 0.5); ctx.moveTo(this.target.x + 4, this.target.y + 0.5); ctx.lineTo(this.target.x + 10, this.target.y + 0.5); ctx.stroke();
+    }
     if (!this.concept) return;
     const behind = this.fx.filter(e => e.y < this.y - 2), front = this.fx.filter(e => e.y >= this.y - 2);
     for (const e of behind) this.drawFx(ctx, e, t);

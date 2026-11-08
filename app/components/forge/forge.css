@@ -84,3 +84,10 @@
 .cf-lineup-cell canvas { width: 144px; height: 115px; image-rendering: pixelated; }
 .cf-lineup-cell span { font-size: 12px; font-weight: 700; color: #1b1a14; text-align: center; line-height: 1.2; }
 .cf [hidden] { display: none !important; }
+.cf-facrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.cf-facrow button { display: flex; flex-direction: column; align-items: center; background: #8d7f5c; border: 1px solid var(--line); border-radius: 6px; padding: 2px 0 4px; }
+.cf-facrow button:hover { outline: 2px solid var(--gold); }
+.cf-facrow canvas { width: 100%; height: auto; image-rendering: pixelated; }
+.cf-facrow span { font-size: 10px; font-weight: 700; color: #1b1a14; }
+@media (max-width: 1350px) { .cf { grid-template-columns: 200px minmax(0, 1fr) 280px; } .cf-thumb { width: 72px; height: 54px; } .cf-card { grid-template-columns: 72px 1fr; } }
+.cf-versus { background: #252923; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: 700 13px Arial; max-width: 220px; }
