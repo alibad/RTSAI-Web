@@ -369,9 +369,9 @@ export class Stage {
     // shots
     for (const s of this.shots) {
       const u = (t - s.t0) / s.dur;
-      if ((s.kind === "rocket" || s.kind === "missile") && u > 0 && u < 1 && t - (s.lastPuff ?? 0) > 35) {
+      if ((s.kind === "rocket" || s.kind === "missile") && u > 0 && u < 1 && t - (s.lastPuff ?? 0) > 85) {
         s.lastPuff = t; const [x, y] = this.shotPos(s, u);
-        this.fx.push({ name: "sgrysmk1", x, y: y + 5, t0: t, scale: 0.6, alpha: 0.85 });
+        this.fx.push({ name: "sgrysmk1", x, y: y + 4, t0: t, scale: 0.42, alpha: 0.55 });
       }
       if (u >= 1 && !s.done) { s.done = true; this.impact(s.w, s.x1, s.y1, t); if (s.w.name === "incoming" && c.kind !== "infantry") this.fx.push({ name: "piffpiff", x: s.x1, y: s.y1, t0: t }); }
     }
