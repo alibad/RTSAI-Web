@@ -7,6 +7,7 @@
  *   GET  /api/concept-forge/index          palettes, effects, sounds, every concept.json, routing
  *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder
  *   POST /api/concept-forge/routing        {id, factions?, verdict?, note?} -> routing.json
+ *   GET  /api/concept-forge/plan           the routing as a readable plan, per faction
  */
 import { existsSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
@@ -49,6 +50,27 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
         if (!file.startsWith(root + sep) || !MIME[extname(file)] || !existsSync(file)) { res.writeHead(404).end(); return; }
         res.writeHead(200, { "Content-Type": MIME[extname(file)], "Cache-Control": "no-store" });
         res.end(readFileSync(file));
+        return;
+      }
+      if (req.method === "GET" && path === "/plan") {
+        const index = readJson<{ concepts: string[]; palettes?: { factions?: Record<string, { name: string }> } }>(resolve(root, "index.json"), { concepts: [] });
+        const routing = readJson<Routing>(resolve(root, "routing.json"), {});
+        const concepts = index.concepts.map(id => readJson<{ id: string; name: string; role: string; kind: string } | null>(resolve(root, "concepts", id, "concept.json"), null)).filter(Boolean) as { id: string; name: string; role: string; kind: string }[];
+        const names = index.palettes?.factions ?? {};
+        const line = (c: { id: string; name: string; role: string }) => {
+          const r = routing[c.id];
+          return `- ${c.name} (${c.role})${r?.verdict ? ` · ${r.verdict}` : ""}${r?.note ? ` · ${r.note.replace(/\s+/g, " ")}` : ""}`;
+        };
+        const out = ["# Concept Forge routing plan", "", `Made ${new Date().toISOString().slice(0, 16).replace("T", " ")} from ${root}`, ""];
+        for (const [fid, f] of Object.entries(names)) {
+          const mine = concepts.filter(c => routing[c.id]?.factions?.includes(fid) && routing[c.id]?.verdict !== "drop");
+          out.push(`## ${f.name} (${mine.length})`, "", ...(mine.length ? mine.map(line) : ["- nothing routed yet"]), "");
+        }
+        const open = concepts.filter(c => !routing[c.id]?.factions?.length && routing[c.id]?.verdict !== "drop");
+        const dropped = concepts.filter(c => routing[c.id]?.verdict === "drop");
+        out.push(`## Not routed yet (${open.length})`, "", ...open.map(line), "", `## Dropped (${dropped.length})`, "", ...(dropped.length ? dropped.map(line) : ["- none"]), "");
+        res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(out.join("\n"));
         return;
       }
       if (req.method === "POST" && path === "/routing") {

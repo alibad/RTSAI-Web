@@ -350,6 +350,7 @@ export function ConceptForge() {
         ))}</div>
         <button className="cf-sound" onClick={() => setGround(g => (g === "desert" ? "steppe" : g === "steppe" ? "urban" : "desert"))} title="Ground under the stage">{ground === "desert" ? "Desert" : ground === "steppe" ? "Steppe" : "Urban"}</button>
         <button className={`cf-sound ${lineup ? "on" : ""}`} onClick={() => setLineup(l => !l)}>{lineup ? "Back to stage" : "Lineup"}</button>
+        <a className="cf-sound" href={`${API}/plan`} target="_blank" rel="noreferrer" title="The routing as a plan, per faction">Plan</a>
         <button className={`cf-sound ${sound ? "on" : ""}`} onClick={() => setSound(s => !s)}>{sound ? "Sound on" : "Sound off"}</button>
       </header>
 

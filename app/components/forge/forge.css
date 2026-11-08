@@ -96,3 +96,4 @@
 .cf-routed button i { width: 9px; height: 9px; border-radius: 2px; background: var(--fac); box-shadow: 0 0 0 1px #0008; }
 .cf-routed button.on { border-color: var(--gold); background: #2c2a1f; }
 .cf-routed button:disabled { opacity: .35; cursor: default; }
+.cf a.cf-sound { color: var(--ink); text-decoration: none; }
