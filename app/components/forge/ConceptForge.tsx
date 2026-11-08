@@ -116,7 +116,7 @@ export function ConceptForge() {
   /** The stage engine, created on first use (never during render). */
   const engine = useCallback(() => (stageRef.current ??= new Stage()), []);
   useEffect(() => { const st = engine(); st.terrain = ground; st.ground = null; }, [ground, engine]);
-  const foe = useRef<Stage | null>(null);
+  const others = useRef<Stage[]>([]);
   const [foeId, setFoeId] = useState("");
   const [fighting, setFighting] = useState(false);
   const recordFight = useRef(false);
@@ -137,7 +137,7 @@ export function ConceptForge() {
 
   /** Select a concept: stop whatever the stage was doing for the previous one. */
   const select = useCallback((id: string) => {
-    demo.current++; setBusy(false); setCaption(""); foe.current = null; setFighting(false);
+    demo.current++; setBusy(false); setCaption(""); others.current = []; setFighting(false);
     const st = engine(); st.auto = false; st.onImpact = null;
     setSel(id);
   }, [engine]);
@@ -162,10 +162,17 @@ export function ConceptForge() {
       const dt = Math.min(0.05, (t - last) / 1000); last = t;
       const st = engine();
       st.update(t, dt); st.draw(w, t);
-      const fo = foe.current;
-      if (fo) {
+      const rest = others.current;
+      if (rest.length) {
+        // every armed unit aims at the nearest living enemy; units are drawn back to front
+        const all = [st, ...rest];
         const aim = (u: Stage) => ({ x: u.x, y: u.y - (u.concept?.air && u.mode !== "dead" ? u.concept.altitude ?? 30 : 6) });
-        fo.target = aim(st); st.target = aim(fo); fo.update(t, dt); fo.draw(w, t);
+        for (const u of all) {
+          const foes = all.filter(v => v.team !== u.team && v.mode !== "dead");
+          if (foes.length) u.target = aim(foes.reduce((m, v) => (Math.hypot(v.x - u.x, v.y - u.y) < Math.hypot(m.x - u.x, m.y - u.y) ? v : m)));
+        }
+        for (const u of rest) u.update(t, dt);
+        for (const u of [...rest].sort((a, b) => a.y - b.y)) u.draw(w, t);
       }
       const ctxScreen = canvas.current?.getContext("2d");
       if (ctxScreen) {
@@ -215,38 +222,79 @@ export function ConceptForge() {
     else if (a === "destroy") st.setMode("dead", t);
     else if (a === "build") { st.reset(t); st.setMode("build", t); }
     else if (a === "prone") st.setMode(st.mode === "prone" ? "idle" : "prone", t);
-    else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(t); }
+    else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; others.current = []; setFighting(false); st.auto = false; st.onImpact = null; st.team = 0; st.reset(t); }
     else if (a === "select") { st.sound.play(concept?.sounds.select, { gain: 0.6 }); st.say("select"); }
   }, [concept, engine]);
 
-  /** Versus: the selected concept against another one, both firing on their own until one is destroyed. */
-  const fight = useCallback(async (otherId: string, record = false) => {
-    const c = concept; const other = index?.concepts.find(x => x.id === otherId); if (!c || !other || !index) return;
+  /** Versus and Battle: two teams fire on their own at the nearest living enemy until one team is destroyed. The
+   *  selected concept leads team A (the paint chosen above); team B wears another faction and player colour. */
+  const battle = useCallback(async (teamA: Concept[], teamB: Concept[], label: string, record = false) => {
+    if (!index || !teamA.length || !teamB.length) return;
     demo.current++; setBusy(true);
     const st = engine(); const t = performance.now(); st.sound.ensure(); st.reset(t);
-    const fo = new Stage(); fo.sound = st.sound; fo.voices = index.voices ?? {}; fo.noGround = true;
-    fo.faction = faction ? Object.keys(index.palettes.factions).find(f => f !== faction) ?? other.faction : other.faction === paintAs ? Object.keys(index.palettes.factions).find(f => f !== paintAs) ?? other.faction : other.faction;
-    fo.player = player === "#2f6fe0" ? "#e02a1f" : "#2f6fe0";
-    await fo.load(other, index.palettes, index.fx, true);
+    const facIds = Object.keys(index.palettes.factions);
+    const facB = teamB[0].factions.find(f => f !== paintAs) ?? facIds.find(f => f !== paintAs) ?? teamB[0].faction;
+    const playerB = player === "#2f6fe0" ? "#e02a1f" : "#2f6fe0";
+    const spotsA = [[100, 160], [58, 122], [150, 192]], spotsB = [[268, 78], [312, 112], [226, 52]];
+    const all: Stage[] = [st];
+    st.team = 0; [st.x, st.y] = spotsA[0];
+    const make = async (c: Concept, team: number, spot: number[]) => {
+      const u = new Stage(); u.sound = st.sound; u.voices = index.voices ?? {}; u.noGround = true; u.team = team;
+      u.faction = team ? facB : paintAs; u.player = team ? playerB : player;
+      await u.load(c, index.palettes, index.fx, true);
+      [u.x, u.y] = spot; return u;
+    };
+    for (let i = 1; i < teamA.length; i++) all.push(await make(teamA[i], 0, spotsA[i]));
+    for (let i = 0; i < teamB.length; i++) all.push(await make(teamB[i], 1, spotsB[i]));
     const hp = (k: Concept) => 60 + (k.stats?.armour ?? 2) * 40 + (k.kind === "defence" ? 60 : k.kind === "infantry" ? -40 : 0);
-    st.x = 105; st.y = 150; fo.x = 260; fo.y = 82; st.ang = Math.atan2(-(fo.x - st.x), -2 * (fo.y - st.y)); st.tang = st.ang; fo.ang = fo.tang = st.ang + Math.PI;
-    for (const [a, b] of [[st, fo], [fo, st]] as const) {
-      a.hp = a.maxHp = hp(a.concept!); a.auto = true;
+    const alive = (team: number) => all.filter(v => v.team === team && v.mode !== "dead");
+    for (const a of all) {
+      const ex = a.team ? 140 : 280, ey = a.team ? 170 : 70;
+      a.ang = a.tang = Math.atan2(-(ex - a.x), -2 * (ey - a.y));
+      a.hp = a.maxHp = hp(a.concept!); a.auto = a.concept!.weapons.length > 0;
+      a.reloadUntil = t + 400 + Math.random() * 900;
       a.onImpact = (x, y, w) => {
-        const by = b.y - (b.concept!.air ? b.concept!.altitude ?? 30 : 0);
-        if (b.mode === "dead" || Math.hypot(x - b.x, (y - by) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) return;
-        const dmg = { shell: 34, rail: 60, rocket: 18, missile: 36, mortar: 40, bullet: b.concept!.kind === "infantry" ? 9 : 3, beam: 16, arc: 22, flame: 30 }[w.kind] ?? 10;
-        b.hp -= dmg; if (b.hp < b.maxHp * 0.5) b.damaged = true;
-        if (b.hp <= 0) { b.burning = b.concept!.kind === "infantry" && (w.kind === "flame" || w.kind === "arc"); b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); if (recordFight.current) { recordFight.current = false; stopRecording(); } }, 3200); }
+        for (const b of all) {
+          if (b.team === a.team || b.mode === "dead") continue;
+          const by = b.y - (b.concept!.air ? b.concept!.altitude ?? 30 : 0);
+          if (Math.hypot(x - b.x, (y - by) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) continue;
+          const dmg = { shell: 34, rail: 60, rocket: 18, missile: 36, mortar: 40, bullet: b.concept!.kind === "infantry" ? 9 : 3, beam: 16, arc: 22, flame: 30 }[w.kind] ?? 10;
+          b.hp -= dmg; if (b.hp < b.maxHp * 0.5) b.damaged = true;
+          if (b.hp <= 0) {
+            b.burning = b.concept!.kind === "infantry" && (w.kind === "flame" || w.kind === "arc");
+            b.auto = false; b.firing = null; b.setMode("dead", performance.now());
+            if (!alive(b.team).length) {
+              for (const v of all) { v.auto = false; v.firing = null; }
+              setTimeout(() => { setBusy(false); if (recordFight.current) { recordFight.current = false; stopRecording(); } }, 3600);
+            }
+          }
+          break;
+        }
       };
     }
-    st.reloadUntil = t + 500; fo.reloadUntil = t + 900;
-    foe.current = fo; setFighting(true);
-    if (record) { startRecording(c); overlay.current = { ...overlay.current, name: `${c.name}  vs  ${other.name}`, role: "Versus" }; }
+    others.current = all.slice(1); setFighting(true);
+    if (record) { startRecording(teamA[0]); overlay.current = { ...overlay.current, name: label, role: teamA.length > 1 ? "Battle" : "Versus" }; }
     recordFight.current = record;
     st.say("attack");
-  }, [concept, index, faction, paintAs, player, engine, startRecording, stopRecording]);
-  const endFight = () => { const st = engine(); foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(performance.now()); setBusy(false); };
+  }, [index, paintAs, player, engine, startRecording, stopRecording]);
+
+  /** The Versus menu: one opponent, or a three-against-three battle around the selected concept. */
+  const fight = useCallback((otherId: string, record = false) => {
+    const c = concept; if (!c || !index) return;
+    if (otherId === "__battle__") {
+      const armed = index.concepts.filter(x => x.id !== c.id && x.weapons.length);
+      const shuffled = [...armed].sort(() => Math.random() - 0.5);
+      const mates = shuffled.filter(x => x.factions.includes(paintAs)).slice(0, 2);
+      const rest = shuffled.filter(x => !mates.includes(x));
+      const teamA = [c, ...mates, ...rest].slice(0, 3);
+      const teamB = rest.filter(x => !teamA.includes(x)).slice(0, 3);
+      void battle(teamA, teamB, `${c.name} and squad  vs  ${teamB.map(x => x.name).join(", ")}`, record);
+      return;
+    }
+    const other = index.concepts.find(x => x.id === otherId); if (!other) return;
+    void battle([c], [other], `${c.name}  vs  ${other.name}`, record);
+  }, [concept, index, paintAs, battle]);
+  const endFight = () => { const st = engine(); others.current = []; setFighting(false); st.auto = false; st.onImpact = null; st.team = 0; st.reset(performance.now()); setBusy(false); };
 
   const wait = (ms: number, token: number) => new Promise<boolean>(ok => setTimeout(() => ok(demo.current === token), ms));
 
@@ -390,10 +438,11 @@ export function ConceptForge() {
           <span className="cf-gap" />
           <select className="cf-versus" value={foeId} onChange={e => setFoeId(e.target.value)} aria-label="Opponent">
             <option value="">Versus…</option>
+            <option value="__battle__">Battle: three against three</option>
             {index.concepts.filter(x => x.id !== concept?.id && x.weapons.length).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
           </select>
-          <button disabled={!foeId || !concept?.weapons.length} onClick={() => (fighting ? endFight() : void fight(foeId))}>{fighting ? "End fight" : "Fight"}</button>
-          <button disabled={busy || !!recording} onClick={() => void (foeId && concept?.weapons.length ? fight(foeId, true) : playAll(true))}>● Record video</button>
+          <button disabled={!foeId || !concept?.weapons.length} onClick={() => (fighting ? endFight() : fight(foeId))}>{fighting ? "End fight" : "Fight"}</button>
+          <button disabled={busy || !!recording} onClick={() => (foeId && concept?.weapons.length ? fight(foeId, true) : void playAll(true))}>● Record video</button>
           {videoUrl ? <a className="cf-download" href={videoUrl} download={`${concept?.id ?? "concept"}.webm`}>Save video</a> : null}
         </div>
       </main>

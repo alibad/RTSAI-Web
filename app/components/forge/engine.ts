@@ -222,7 +222,7 @@ export class Stage {
   lastDust = 0; lastSmoke = 0; deathKind: "die1" | "die2" = "die1"; wix = 0;
   caption = "";
   // versus: hit points, automatic fire at the target, and a hook that tells the duel where shots land
-  hp = 0; maxHp = 0; auto = false; noGround = false; onImpact: ((x: number, y: number, w: Weapon) => void) | null = null;
+  hp = 0; maxHp = 0; auto = false; noGround = false; team = 0; onImpact: ((x: number, y: number, w: Weapon) => void) | null = null;
 
   async load(c: Concept, pal: Palettes, fx: FxMeta, quiet = false) {
     this.concept = c; this.pal = pal; this.fxMeta = fx;
