@@ -175,6 +175,7 @@ type Shot = {
 };
 type Line = { kind: "beam" | "arc" | "rail"; x0: number; y0: number; x1: number; y1: number; t0: number; dur: number; seed: number; colour: string };
 type Particle = { x: number; y: number; vx: number; vy: number; t0: number; life: number; r: number };
+type Debris = { x: number; y: number; z: number; vx: number; vy: number; vz: number; t0: number; size: number; shade: string; smoke: number };
 
 export type Mode = "idle" | "move" | "dead" | "build" | "prone";
 
@@ -215,7 +216,9 @@ export class Stage {
   firing: { w: Weapon; shotsLeft: number; next: number; muzzle: number; burstStart: number } | null = null;
   fireAnimT0 = -1e9; reloadUntil = 0;
   path = { cx: 175, cy: 120, rx: 95, ry: 52, phase: 0 };
-  fx: Fx[] = []; shots: Shot[] = []; lines: Line[] = []; parts: Particle[] = [];
+  fx: Fx[] = []; shots: Shot[] = []; lines: Line[] = []; parts: Particle[] = []; debris: Debris[] = [];
+  /** Set when a soldier is killed by flame: the body burns. */
+  burning = false;
   lastDust = 0; lastSmoke = 0; deathKind: "die1" | "die2" = "die1"; wix = 0;
   caption = "";
   // versus: hit points, automatic fire at the target, and a hook that tells the duel where shots land
@@ -243,7 +246,7 @@ export class Stage {
 
   reset(t: number) {
     this.mode = this.concept?.kind === "defence" ? "idle" : "idle"; this.modeT0 = t; this.damaged = false; this.firing = null;
-    this.fx = []; this.shots = []; this.lines = []; this.parts = [];
+    this.fx = []; this.shots = []; this.lines = []; this.parts = []; this.debris = []; this.burning = false;
     if (this.concept?.kind === "defence") { this.x = 150; this.y = 140; } else { this.x = 150; this.y = 130; }
     this.sound.stopAll();
   }
@@ -285,11 +288,22 @@ export class Stage {
     }
     this.fx.push({ name: big, x: this.x, y: this.y + 4, t0: t });
     this.fx.push({ name: "explomed", x: this.x + 10, y: this.y - 6, t0: t + 260 });
+    this.spawnDebris(t, c.kind === "defence" ? 22 : 16);
     this.sound.play(c.sounds.die, { gain: 1 });
     for (let i = 0; i < 3; i++) this.fx.push({ name: "fire01", x: this.x + (i - 1) * 9, y: this.y + (i % 2) * 4, t0: t + 700 + i * 90, loop: 9000 });
   }
 
   pan(x: number) { return (x - this.W / 2) / (this.W / 2) * 0.7; }
+
+  /** Wreck chunks thrown out by an explosion: they fly, fall, bounce once and smoke. */
+  spawnDebris(t: number, n: number) {
+    for (let k = 0; k < n; k++) {
+      const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 55;
+      this.debris.push({ x: this.x, y: this.y - 4, z: 6 + Math.random() * 6, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.5,
+        vz: 40 + Math.random() * 70, t0: t + Math.random() * 120, size: 1 + Math.round(Math.random() * 1.5),
+        shade: ["#2a2622", "#3d3833", "#5b5f63", "#1c1a18"][k % 4], smoke: 0 });
+    }
+  }
 
   /** Incoming fire from off-screen: tracers and a couple of shells that hit the unit (how it gets shot). */
   underFire(t: number) {
@@ -378,11 +392,22 @@ export class Stage {
     this.shots = this.shots.filter(s => !s.done);
     this.lines = this.lines.filter(l => t - l.t0 < l.dur);
     this.parts = this.parts.filter(p => t - p.t0 < p.life);
+    for (const d of this.debris) {
+      if (t < d.t0 || (d.z <= 0 && d.vz === 0)) continue;
+      d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.vz -= 160 * dt;
+      if (d.z <= 0) { d.z = 0; d.vz = Math.abs(d.vz) > 30 ? -d.vz * 0.3 : 0; d.vx *= 0.5; d.vy *= 0.5; }
+      if (t - d.smoke > 90 && d.vz !== 0) { d.smoke = t; this.fx.push({ name: "sgrysmk1", x: d.x, y: d.y - d.z + 3, t0: t, scale: 0.3, alpha: 0.5 }); }
+    }
+    this.debris = this.debris.filter(d => t - d.t0 < 9000);
+    if (this.burning && this.mode === "dead" && t - this.lastSmoke > 500) {
+      this.lastSmoke = t; this.fx.push({ name: "fire01", x: this.x + (Math.random() - 0.5) * 6, y: this.y + 2, t0: t, scale: 0.6, alpha: 0.95 });
+    }
     this.fx = this.fx.filter(e => { const m = this.fxMeta[e.name]; if (!m) return false; return e.loop ? t - e.t0 < e.loop : t - e.t0 < m.count * m.tick; });
     // damage smoke
     if ((this.damaged || this.mode === "dead") && c.kind !== "infantry" && t - this.lastSmoke > (this.mode === "dead" ? 260 : 420)) {
       this.lastSmoke = t;
       this.fx.push({ name: this.mode === "dead" ? "lgrysmk1" : "sgrysmk1", x: this.x + (Math.random() - 0.5) * 18, y: this.y - 8 - Math.random() * 8, t0: t, alpha: 0.85 });
+      if (this.damaged && this.mode !== "dead" && Math.random() < 0.35) this.fx.push({ name: "fire01", x: this.x + (Math.random() - 0.5) * 14, y: this.y - 2 - Math.random() * 6, t0: t, scale: 0.55, alpha: 0.9 });
     }
   }
 
@@ -562,6 +587,11 @@ export class Stage {
     for (const e of behind) this.drawFx(ctx, e, t);
     this.drawUnit(ctx, t);
     for (const e of front) this.drawFx(ctx, e, t);
+    for (const d of this.debris) {
+      if (t < d.t0) continue;
+      ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(Math.round(d.x), Math.round(d.y), d.size, 1);
+      ctx.fillStyle = d.shade; ctx.fillRect(Math.round(d.x), Math.round(d.y - d.z), d.size + 1, d.size);
+    }
     // projectiles
     for (const s of this.shots) {
       const u = (t - s.t0) / s.dur; if (u < 0 || u > 1) continue;

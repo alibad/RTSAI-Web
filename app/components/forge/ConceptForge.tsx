@@ -237,7 +237,7 @@ export function ConceptForge() {
         if (b.mode === "dead" || Math.hypot(x - b.x, (y - by) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) return;
         const dmg = { shell: 34, rail: 60, rocket: 18, missile: 36, mortar: 40, bullet: b.concept!.kind === "infantry" ? 9 : 3, beam: 16, arc: 22, flame: 30 }[w.kind] ?? 10;
         b.hp -= dmg; if (b.hp < b.maxHp * 0.5) b.damaged = true;
-        if (b.hp <= 0) { b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); if (recordFight.current) { recordFight.current = false; stopRecording(); } }, 3200); }
+        if (b.hp <= 0) { b.burning = b.concept!.kind === "infantry" && (w.kind === "flame" || w.kind === "arc"); b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); if (recordFight.current) { recordFight.current = false; stopRecording(); } }, 3200); }
       };
     }
     st.reloadUntil = t + 500; fo.reloadUntil = t + 900;
