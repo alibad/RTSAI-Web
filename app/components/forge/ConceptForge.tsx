@@ -5,11 +5,11 @@
  * Drafts live in D:\Generated\RTSAI\art\concept-forge (lib/concept-forge/server.ts); nothing here changes the game.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API, fileUrl, loadEncoded, paint, Stage, type Concept, type FxMeta, type Palettes } from "./engine";
+import { API, fileUrl, loadEncoded, paint, Stage, type Concept, type FxMeta, type Palettes, type Voices } from "./engine";
 import "./forge.css";
 
 type Routing = Record<string, { factions: string[]; verdict: string | null; note: string; at: string }>;
-type Index = { palettes: Palettes; concepts: Concept[]; fx: FxMeta; sounds: string[]; routing: Routing };
+type Index = { palettes: Palettes; concepts: Concept[]; fx: FxMeta; sounds: string[]; routing: Routing; voices?: Voices };
 const KINDS = [{ id: "all", label: "All" }, { id: "infantry", label: "Soldiers" }, { id: "vehicle", label: "Vehicles" }, { id: "defence", label: "Defences" }] as const;
 const ZOOM = 3;
 
@@ -98,6 +98,7 @@ export function ConceptForge() {
     if (!index || !concept) return;
     demo.current++; setBusy(false); setCaption("");
     const st = stage.current;
+    st.voices = index.voices ?? {};
     void st.load(concept, index.palettes, index.fx);
     const u = new URL(location.href); u.searchParams.set("concept", concept.id); history.replaceState(null, "", u);
   }, [index, concept]);
@@ -147,7 +148,7 @@ export function ConceptForge() {
     else if (a === "build") { st.reset(t); st.setMode("build", t); }
     else if (a === "prone") st.setMode(st.mode === "prone" ? "idle" : "prone", t);
     else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; st.reset(t); }
-    else if (a === "select") st.sound.play(concept?.sounds.select, { gain: 0.8 });
+    else if (a === "select") { st.sound.play(concept?.sounds.select, { gain: 0.6 }); st.say("select"); }
   }, [concept]);
 
   const wait = (ms: number, token: number) => new Promise<boolean>(ok => setTimeout(() => ok(demo.current === token), ms));
@@ -176,6 +177,7 @@ export function ConceptForge() {
       steps.push(["Halt", () => act("stop"), 900]);
     }
     if (c.kind === "infantry") steps.push(["Going prone and firing", () => { act("prone"); setTimeout(() => act("fire"), 600); }, 2200]);
+    steps.push(["Under fire", () => stage.current.underFire(performance.now()), 2200]);
     if (c.kind !== "infantry") steps.push(["Taking damage", () => { act("damage"); aimAt(90, 175); if (c.weapons.length) setTimeout(() => act("fire"), 500); }, 2600]);
     steps.push(["Destroyed", () => act("destroy"), c.kind === "infantry" ? 2200 : 4200]);
     for (const [label, run, ms] of steps) {
@@ -223,7 +225,12 @@ export function ConceptForge() {
     const d = drag.current; if (!d) return; const p = toWorld(e);
     if (Math.hypot(p.x - d.x, p.y - d.y) > 4) { d.moved = true; const st = stage.current; st.ang = Math.atan2(-(p.x - st.x), -2 * (p.y - st.y)); st.tang = st.ang; }
   };
-  const onUp = (e: React.PointerEvent) => { const d = drag.current; drag.current = null; if (d && !d.moved) { const p = toWorld(e); stage.current.target = p; act("fire"); } };
+  const onUp = (e: React.PointerEvent) => {
+    const d = drag.current; drag.current = null; if (!d || d.moved) return;
+    const p = toWorld(e); const st = stage.current;
+    if (Math.hypot(p.x - st.x, (p.y - (st.y - 8)) * 1.4) < 16) { act("select"); return; }   // the unit: select it (it answers)
+    st.target = p; act("fire");
+  };
 
   // routing
   const route = async (body: { factions?: string[]; verdict?: string | null; note?: string }) => {
@@ -279,7 +286,7 @@ export function ConceptForge() {
           <canvas ref={canvas} width={stage.current.W * ZOOM} height={stage.current.H * ZOOM}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} />
           {recording ? <div className="cf-rec">● Recording</div> : null}
-          <div className="cf-hint">Click the ground to fire there · drag to turn · Enter plays everything</div>
+          <div className="cf-hint">Click the unit to select it · click the ground to fire there · drag to turn · Enter plays everything</div>
         </div>
         <div className="cf-actions" hidden={lineup}>
           <button className="cf-primary" disabled={busy} onClick={() => void playAll()}>▶ Show everything <kbd>Enter</kbd></button>

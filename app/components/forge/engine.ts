@@ -29,6 +29,8 @@ export type Palettes = {
   factions: Record<string, Record<string, string>>;
 };
 export type FxMeta = Record<string, { sheet: string; w: number; h: number; count: number; tick: number }>;
+/** Per faction, infantry ("inf") and vehicle ("veh") voice lines per cue (select, move, attack, action). */
+export type Voices = Record<string, Record<"inf" | "veh", Record<string, string[]>>>;
 
 export const API = "/api/concept-forge";
 export const fileUrl = (rel: string) => `${API}/file/${rel.split("/").map(encodeURIComponent).join("/")}`;
@@ -125,7 +127,7 @@ export class Sound {
     let p = this.buffers.get(cue);
     if (!p) {
       const ctx = this.ensure();
-      p = fetch(fileUrl(`sounds/${cue}.ogg`)).then(r => (r.ok ? r.arrayBuffer() : Promise.reject())).then(b => ctx.decodeAudioData(b)).catch(() => null);
+      p = fetch(fileUrl(cue.includes("/") ? cue : `sounds/${cue}.ogg`)).then(r => (r.ok ? r.arrayBuffer() : Promise.reject())).then(b => ctx.decodeAudioData(b)).catch(() => null);
       this.buffers.set(cue, p);
     }
     return p;
@@ -191,6 +193,17 @@ export class Stage {
   ground: HTMLCanvasElement | null = null;
   terrain: "desert" | "steppe" | "urban" = "desert";
   sound = new Sound();
+  voices: Voices = {};
+  lastVoice = 0;
+  /** The unit answers in the voice of the faction it is painted as (the mod's shipped voice sets). */
+  say(cue: "select" | "move" | "attack") {
+    const c = this.concept; if (!c || c.kind === "defence" || this.mode === "dead") return;
+    const now = performance.now(); if (now - this.lastVoice < 900) return;
+    const set = this.voices[this.faction]?.[c.kind === "infantry" ? "inf" : "veh"]; if (!set) return;
+    const lines = set[cue] ?? set.action ?? set.select; if (!lines?.length) return;
+    this.lastVoice = now;
+    this.sound.play(lines[Math.floor(Math.random() * lines.length)], { gain: 0.95, pan: this.pan(this.x) * 0.4 });
+  }
   // unit state
   x = 150; y = 130; ang = Math.PI * 1.25; tang = Math.PI * 1.25; mode: Mode = "idle"; modeT0 = 0;
   target = { x: 280, y: 80 }; damaged = false;
@@ -232,6 +245,7 @@ export class Stage {
   setMode(m: Mode, t: number) {
     const c = this.concept; if (!c) return;
     if (m === "move" && c.kind === "defence") return;
+    if (m === "move" && this.mode !== "move") this.say("move");
     this.mode = m; this.modeT0 = t;
     this.sound.loop("move", c.sounds.move, m === "move", c.kind === "infantry" ? 0 : 0.45);
     if (m === "dead") this.die(t);
@@ -243,6 +257,7 @@ export class Stage {
     const c = this.concept; if (!c || this.mode === "dead" || this.mode === "build" || !c.weapons.length) return;
     if (this.firing || t < this.reloadUntil) return;
     const w = c.weapons[this.wix++ % c.weapons.length];
+    this.say("attack");
     this.firing = { w, shotsLeft: w.burst, next: t, muzzle: 0, burstStart: t };
     if (w.kind === "bullet") this.sound.play(w.fire, { gain: 0.9, pan: this.pan(this.x) });
   }
@@ -260,6 +275,25 @@ export class Stage {
   }
 
   pan(x: number) { return (x - this.W / 2) / (this.W / 2) * 0.7; }
+
+  /** Incoming fire from off-screen: tracers and a couple of shells that hit the unit (how it gets shot). */
+  underFire(t: number) {
+    const c = this.concept; if (!c || this.mode === "dead") return;
+    const h = c.kind === "infantry" ? 14 : c.kind === "defence" ? 16 : 10;
+    const tracer: Weapon = { name: "incoming", kind: "bullet", burst: 1, interval: 0, reload: 0, impact: "piff", fire: "", hit: "impact_bullet" };
+    const shell: Weapon = { name: "incoming", kind: "shell", burst: 1, interval: 0, reload: 0, impact: c.kind === "infantry" ? "explosml" : "explomed", fire: "", hit: "impact_shell" };
+    for (let k = 0; k < 9; k++) {
+      const x1 = this.x + (Math.random() - 0.5) * 16, y1 = this.y - Math.random() * h;
+      const sx = -10, sy = this.y - 40 + Math.random() * 60;
+      this.shots.push({ kind: "bullet", x0: sx, y0: sy, z0: 0, x1, y1, t0: t + k * 110, dur: 260, arc: 0, w: tracer, seed: Math.random() });
+    }
+    for (let k = 0; k < 2; k++) {
+      this.shots.push({ kind: "shell", x0: this.W + 10, y0: this.y - 60 + k * 30, z0: 0, x1: this.x + (k ? 6 : -5), y1: this.y - h * 0.4, t0: t + 500 + k * 650, dur: 380, arc: 0, w: shell, seed: Math.random() });
+    }
+    this.sound.play("mg_heavy", { gain: 0.5, pan: -0.8 });
+    setTimeout(() => this.sound.play("cannon_light", { gain: 0.45, pan: 0.8 }), 380);
+    setTimeout(() => { if (this.concept === c && c.kind !== "infantry") this.damaged = true; }, 1300);
+  }
 
   // ------------------------------------------------------------------ geometry
   hullFacing() { const c = this.concept!; const n = c.kind === "infantry" ? 8 : 32; return facingIndex(this.ang, n); }
@@ -323,7 +357,7 @@ export class Stage {
         s.lastPuff = t; const [x, y] = this.shotPos(s, u);
         this.fx.push({ name: "sgrysmk1", x, y: y + 5, t0: t, scale: 0.6, alpha: 0.85 });
       }
-      if (u >= 1 && !s.done) { s.done = true; this.impact(s.w, s.x1, s.y1, t); }
+      if (u >= 1 && !s.done) { s.done = true; this.impact(s.w, s.x1, s.y1, t); if (s.w.name === "incoming" && c.kind !== "infantry") this.fx.push({ name: "piffpiff", x: s.x1, y: s.y1, t0: t }); }
     }
     this.shots = this.shots.filter(s => !s.done);
     this.lines = this.lines.filter(l => t - l.t0 < l.dur);
@@ -501,7 +535,7 @@ export class Stage {
     for (const e of front) this.drawFx(ctx, e, t);
     // projectiles
     for (const s of this.shots) {
-      const u = Math.max(0, (t - s.t0) / s.dur); if (u > 1) continue;
+      const u = (t - s.t0) / s.dur; if (u < 0 || u > 1) continue;
       const [x, y] = this.shotPos(s, u); const [px, py] = this.shotPos(s, Math.max(0, u - 0.06));
       if (s.kind === "bullet") { ctx.strokeStyle = "rgba(255,236,150,0.95)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke(); }
       else if (s.kind === "shell") { ctx.fillStyle = "#fff6c8"; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2); ctx.strokeStyle = "rgba(255,210,120,0.6)"; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke(); }
