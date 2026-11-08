@@ -28,6 +28,35 @@ function Thumb({ c, pal, faction, player }: { c: Concept; pal: Palettes; faction
   return <canvas ref={ref} width={128} height={96} className="cf-thumb" />;
 }
 
+/** Every shown concept on a turntable, painted in the chosen faction: the overview for routing. */
+function Lineup({ concepts, index, faction, player, onPick }: { concepts: Concept[]; index: Index; faction: string; player: string; onPick: (id: string) => void }) {
+  const refs = useRef(new Map<string, HTMLCanvasElement>());
+  const stages = useRef(new Map<string, Stage>());
+  useEffect(() => {
+    for (const c of concepts) if (!stages.current.has(c.id)) { const st = new Stage(); stages.current.set(c.id, st); void st.load(c, index.palettes, index.fx, true); }
+  }, [concepts, index]);
+  useEffect(() => {
+    let raf = 0;
+    const tick = (t: number) => {
+      for (const c of concepts) {
+        const cv = refs.current.get(c.id); const st = stages.current.get(c.id); if (!cv || !st) continue;
+        st.faction = faction || c.faction; st.player = player;
+        const x = cv.getContext("2d")!; x.imageSmoothingEnabled = false;
+        st.drawTurntable(x, t, cv.width, cv.height);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [concepts, faction, player]);
+  return <div className="cf-lineup">{concepts.map(c => (
+    <button key={c.id} onClick={() => onPick(c.id)} className="cf-lineup-cell">
+      <canvas ref={el => { if (el) refs.current.set(c.id, el); }} width={120} height={96} />
+      <span>{c.name}</span>
+    </button>
+  ))}</div>;
+}
+
 function Bars({ stats }: { stats: Record<string, number> }) {
   return <div className="cf-bars">{Object.entries(stats).filter(([, v]) => v > 0).map(([k, v]) => (
     <div key={k} className="cf-bar"><span>{k}</span><i>{[1, 2, 3, 4, 5].map(n => <b key={n} className={n <= v ? "on" : ""} />)}</i></div>
@@ -42,12 +71,15 @@ export function ConceptForge() {
   const [faction, setFaction] = useState<string>("");
   const [player, setPlayer] = useState("#e02a1f");
   const [sound, setSound] = useState(true);
-  const [caption, setCaption] = useState("");
+  const [, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [lineup, setLineup] = useState(false);
+  const overlay = useRef({ caption: "", name: "", role: "", recording: false });
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<Stage>(new Stage());
+  useEffect(() => { (window as unknown as { __forge: Stage }).__forge = stage.current; }, []);
   const demo = useRef(0);
   const recorder = useRef<MediaRecorder | null>(null);
 
@@ -82,7 +114,22 @@ export function ConceptForge() {
       const st = stage.current;
       st.update(t, dt); st.draw(w, t);
       const ctxScreen = canvas.current?.getContext("2d");
-      if (ctxScreen) { ctxScreen.imageSmoothingEnabled = false; ctxScreen.drawImage(world, 0, 0, world.width * ZOOM, world.height * ZOOM); }
+      if (ctxScreen) {
+        ctxScreen.imageSmoothingEnabled = false; ctxScreen.drawImage(world, 0, 0, world.width * ZOOM, world.height * ZOOM);
+        // captions and the name are drawn into the canvas so a recorded video carries them
+        const o = overlay.current; const W = world.width * ZOOM;
+        ctxScreen.textBaseline = "middle"; ctxScreen.textAlign = "center";
+        if (o.caption) {
+          ctxScreen.font = "bold 22px Arial"; const tw = ctxScreen.measureText(o.caption).width + 40;
+          ctxScreen.fillStyle = "rgba(0,0,0,0.62)"; ctxScreen.beginPath(); ctxScreen.roundRect(W / 2 - tw / 2, 20, tw, 40, 20); ctxScreen.fill();
+          ctxScreen.fillStyle = "#fff"; ctxScreen.fillText(o.caption, W / 2, 41);
+        }
+        if (o.recording && o.name) {
+          ctxScreen.textAlign = "left"; ctxScreen.fillStyle = "rgba(0,0,0,0.55)"; ctxScreen.fillRect(0, world.height * ZOOM - 74, 520, 74);
+          ctxScreen.fillStyle = "#d7ae5f"; ctxScreen.font = "bold 13px Arial"; ctxScreen.fillText(o.role.toUpperCase(), 22, world.height * ZOOM - 52);
+          ctxScreen.fillStyle = "#fff"; ctxScreen.font = "bold 24px Arial"; ctxScreen.fillText(o.name, 22, world.height * ZOOM - 27);
+        }
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -99,7 +146,7 @@ export function ConceptForge() {
     else if (a === "destroy") st.setMode("dead", t);
     else if (a === "build") { st.reset(t); st.setMode("build", t); }
     else if (a === "prone") st.setMode(st.mode === "prone" ? "idle" : "prone", t);
-    else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); st.reset(t); }
+    else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; st.reset(t); }
     else if (a === "select") st.sound.play(concept?.sounds.select, { gain: 0.8 });
   }, [concept]);
 
@@ -110,29 +157,33 @@ export function ConceptForge() {
     const c = concept; if (!c) return;
     const token = ++demo.current; setBusy(true);
     const st = stage.current; st.sound.ensure(); st.reset(performance.now());
-    const say = (s: string) => { setCaption(s); };
+    const say = (s: string) => { setCaption(s); overlay.current.caption = s; };
     const aimAt = (x: number, y: number) => { st.target = { x, y }; };
     if (record) startRecording();
     const steps: Array<[string, () => void, number]> = [];
     if (c.kind === "defence") steps.push(["Construction", () => act("build"), 1800]);
     steps.push(["Selected", () => act("select"), 1200]);
-    steps.push(["Turning to a new target", () => aimAt(70, 70), 1500]);
-    steps.push(["Firing", () => act("fire"), Math.max(1600, (c.weapons[0]?.burst ?? 1) * (c.weapons[0]?.interval ?? 0) + 1400)]);
-    steps.push(["Turning and firing again", () => { aimAt(300, 170); setTimeout(() => act("fire"), 700); }, 2600]);
+    if (c.weapons.length) {
+      steps.push(["Turning to a new target", () => aimAt(70, 70), 1500]);
+      steps.push([c.weapons[0].name, () => act("fire"), Math.max(1600, (c.weapons[0]?.burst ?? 1) * (c.weapons[0]?.interval ?? 0) + 1400)]);
+      const w2 = c.weapons[1];
+      steps.push([w2 ? w2.name : "Turning and firing again", () => { aimAt(300, 170); setTimeout(() => act("fire"), 700); }, w2 ? Math.max(2600, w2.burst * w2.interval + 1800) : 2600]);
+    } else if (c.spin) steps.push(["Scanning", () => undefined, 3000]);
+    else if (c.pulse) steps.push(["Shield up", () => undefined, 3000]);
     if (c.kind !== "defence") {
       steps.push(["On the move", () => { aimAt(290, 70); act("move"); }, 2200]);
-      steps.push(["Firing on the move", () => act("fire"), 2600]);
+      if (c.weapons.length) steps.push(["Firing on the move", () => act("fire"), 2600]);
       steps.push(["Halt", () => act("stop"), 900]);
     }
     if (c.kind === "infantry") steps.push(["Going prone and firing", () => { act("prone"); setTimeout(() => act("fire"), 600); }, 2200]);
-    if (c.kind !== "infantry") steps.push(["Taking damage", () => { act("damage"); aimAt(90, 175); setTimeout(() => act("fire"), 500); }, 2600]);
+    if (c.kind !== "infantry") steps.push(["Taking damage", () => { act("damage"); aimAt(90, 175); if (c.weapons.length) setTimeout(() => act("fire"), 500); }, 2600]);
     steps.push(["Destroyed", () => act("destroy"), c.kind === "infantry" ? 2200 : 4200]);
     for (const [label, run, ms] of steps) {
       if (demo.current !== token) break;
       say(label); run();
       if (!(await wait(ms, token))) break;
     }
-    if (demo.current === token) { say(""); setBusy(false); }
+    if (demo.current === token) { say(""); setBusy(false); } else overlay.current.caption = "";
     if (record) setTimeout(stopRecording, 300);
   }, [concept, act]);
 
@@ -144,8 +195,9 @@ export function ConceptForge() {
     const chunks: Blob[] = [];
     const rec = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm" });
     rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-    rec.onstop = () => { setVideoUrl(URL.createObjectURL(new Blob(chunks, { type: "video/webm" }))); setRecording(null); };
+    rec.onstop = () => { overlay.current.recording = false; setVideoUrl(URL.createObjectURL(new Blob(chunks, { type: "video/webm" }))); setRecording(null); };
     rec.start(250); recorder.current = rec; setRecording(concept?.id ?? ""); setVideoUrl(null);
+    overlay.current = { ...overlay.current, recording: true, name: concept?.name ?? "", role: concept?.role ?? "" };
   }
   function stopRecording() { recorder.current?.state === "recording" && recorder.current.stop(); }
 
@@ -205,6 +257,7 @@ export function ConceptForge() {
         <div className="cf-players">{Object.entries(pal.players).map(([n, h]) => (
           <button key={n} title={n} aria-label={`Player colour ${n}`} className={player === h ? "on" : ""} style={{ background: h }} onClick={() => setPlayer(h)} />
         ))}</div>
+        <button className={`cf-sound ${lineup ? "on" : ""}`} onClick={() => setLineup(l => !l)}>{lineup ? "Back to stage" : "Lineup"}</button>
         <button className={`cf-sound ${sound ? "on" : ""}`} onClick={() => setSound(s => !s)}>{sound ? "Sound on" : "Sound off"}</button>
       </header>
 
@@ -221,14 +274,14 @@ export function ConceptForge() {
       })}</aside>
 
       <main className="cf-main">
-        <div className="cf-stage">
+        {lineup ? <Lineup concepts={shown} index={index} faction={faction} player={player} onPick={id => { setSel(id); setLineup(false); }} /> : null}
+        <div className="cf-stage" hidden={lineup}>
           <canvas ref={canvas} width={stage.current.W * ZOOM} height={stage.current.H * ZOOM}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} />
-          {caption ? <div className="cf-caption">{caption}</div> : null}
           {recording ? <div className="cf-rec">● Recording</div> : null}
           <div className="cf-hint">Click the ground to fire there · drag to turn · Enter plays everything</div>
         </div>
-        <div className="cf-actions">
+        <div className="cf-actions" hidden={lineup}>
           <button className="cf-primary" disabled={busy} onClick={() => void playAll()}>▶ Show everything <kbd>Enter</kbd></button>
           <button onClick={() => act("fire")}>Fire <kbd>F</kbd></button>
           {concept?.kind !== "defence" ? <button onClick={() => act("move")}>Move <kbd>M</kbd></button> : <button onClick={() => act("build")}>Build <kbd>B</kbd></button>}

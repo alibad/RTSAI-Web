@@ -12,6 +12,8 @@ export type Weapon = {
   name: string; kind: "shell" | "bullet" | "rocket" | "missile" | "mortar" | "beam" | "arc" | "flame" | "rail";
   burst: number; interval: number; reload: number; speed?: number; arc?: number; spread?: number; duration?: number;
   range?: number; impact: string; fire: string; hit: string; air?: boolean; pierce?: boolean; chain?: number;
+  /** Which of the model's muzzles this weapon fires from (default: all, in turn). */
+  muzzles?: number[];
 };
 export type Concept = {
   id: string; kind: "infantry" | "vehicle" | "defence"; name: string; idea: string; description: string; role: string;
@@ -19,6 +21,8 @@ export type Concept = {
   layers: Record<string, LayerMeta>; sequences: Record<string, SeqMeta>; turretLocked?: boolean; cell: number;
   geometry: { pivot: number[][]; muzzles: number[][][]; muzzleHeight?: number[] };
   built?: string; timing?: Record<string, number>;
+  /** Dish keeps turning (radar), the body floats and bobs, a shield pulses. */
+  spin?: boolean; hover?: boolean; pulse?: boolean;
 };
 export type Palettes = {
   classes: string[]; lmax: number; players: Record<string, string>;
@@ -194,17 +198,27 @@ export class Stage {
   fireAnimT0 = -1e9; reloadUntil = 0;
   path = { cx: 175, cy: 120, rx: 95, ry: 52, phase: 0 };
   fx: Fx[] = []; shots: Shot[] = []; lines: Line[] = []; parts: Particle[] = [];
-  lastDust = 0; lastSmoke = 0; deathKind: "die1" | "die2" = "die1";
+  lastDust = 0; lastSmoke = 0; deathKind: "die1" | "die2" = "die1"; wix = 0;
   caption = "";
 
-  async load(c: Concept, pal: Palettes, fx: FxMeta) {
+  async load(c: Concept, pal: Palettes, fx: FxMeta, quiet = false) {
     this.concept = c; this.pal = pal; this.fxMeta = fx;
     this.reset(performance.now());
     await Promise.all(Object.entries(c.layers).map(async ([name, L]) => {
       this.enc.set(`${c.id}/${name}`, await loadEncoded(fileUrl(`concepts/${c.id}/${L.sheet}`)));
     }));
     await Promise.all(Object.entries(fx).map(async ([n, f]) => { this.fxImg.set(n, await loadImage(fileUrl(`fx/${f.sheet}`))); }));
-    for (const cue of [...c.weapons.flatMap(w => [w.fire, w.hit]), ...Object.values(c.sounds)]) void this.sound.buffer(cue);
+    if (!quiet) for (const cue of [...c.weapons.flatMap(w => [w.fire, w.hit]), ...Object.values(c.sounds)]) void this.sound.buffer(cue);
+  }
+
+  /** Lineup: the unit alone on a small canvas, turning slowly (hull and turret together), idle animation. */
+  drawTurntable(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+    const c = this.concept; if (!c) return;
+    ctx.clearRect(0, 0, w, h);
+    this.x = w / 2; this.y = h * (c.kind === "infantry" ? 0.78 : 0.66);
+    this.ang = (t / 1000) * 0.55 + 1.2; this.tang = this.ang; this.mode = "idle";
+    if (c.kind === "defence") this.tang = this.ang;
+    this.drawUnit(ctx, t);
   }
 
   reset(t: number) {
@@ -228,7 +242,7 @@ export class Stage {
   fire(t: number) {
     const c = this.concept; if (!c || this.mode === "dead" || this.mode === "build" || !c.weapons.length) return;
     if (this.firing || t < this.reloadUntil) return;
-    const w = c.weapons[0];
+    const w = c.weapons[this.wix++ % c.weapons.length];
     this.firing = { w, shotsLeft: w.burst, next: t, muzzle: 0, burstStart: t };
     if (w.kind === "bullet") this.sound.play(w.fire, { gain: 0.9, pan: this.pan(this.x) });
   }
@@ -284,6 +298,8 @@ export class Stage {
       const turretless = c.kind === "infantry" || !c.layers.turret || c.turretLocked;
       if (turretless) {
         if (this.firing && this.mode !== "move") { const d = angDiff(this.ang, want); this.ang += Math.sign(d) * Math.min(Math.abs(d), 4 * dt); }
+      } else if (c.spin && !this.firing) {
+        this.tang += dt * 1.4;
       } else {
         const d = angDiff(this.tang, want);
         const rate = 2.6;
@@ -305,7 +321,7 @@ export class Stage {
       const u = (t - s.t0) / s.dur;
       if ((s.kind === "rocket" || s.kind === "missile") && u > 0 && u < 1 && t - (s.lastPuff ?? 0) > 35) {
         s.lastPuff = t; const [x, y] = this.shotPos(s, u);
-        this.fx.push({ name: "sgrysmk1", x, y: y + 6, t0: t, scale: 0.45, alpha: 0.75 });
+        this.fx.push({ name: "sgrysmk1", x, y: y + 5, t0: t, scale: 0.6, alpha: 0.85 });
       }
       if (u >= 1 && !s.done) { s.done = true; this.impact(s.w, s.x1, s.y1, t); }
     }
@@ -321,7 +337,7 @@ export class Stage {
   }
 
   shoot(w: Weapon, i: number, t: number) {
-    const [mx, my] = this.muzzle(i);
+    const [mx, my] = this.muzzle(w.muzzles?.length ? w.muzzles[i % w.muzzles.length] : i);
     this.fireAnimT0 = t;
     const spread = w.spread ?? (w.kind === "bullet" ? 7 : 3);
     const tx = this.target.x + (Math.random() - 0.5) * spread * 2, ty = this.target.y + (Math.random() - 0.5) * spread;
@@ -358,7 +374,7 @@ export class Stage {
       return;
     }
     const speed = w.speed ?? 900;
-    const dur = Math.max(80, (dist / speed) * 1000 * (w.kind === "mortar" ? 2.2 : w.kind === "missile" ? 1.5 : 1));
+    const dur = Math.max(80, (dist / speed) * 1000 * ({ mortar: 2.4, missile: 3.2, rocket: 2.4 } as Record<string, number>)[w.kind] || (dist / speed) * 1000);
     const arc = (w.arc ?? 0) * dist;
     this.shots.push({ kind: w.kind, x0: mx, y0: my, z0: 0, x1: tx, y1: ty, t0: t, dur, arc, w, seed: Math.random() });
     if (w.kind === "rocket" || w.kind === "missile" || w.kind === "mortar") this.fx.push({ name: "sgrysmk1", x: mx, y: my + 8, t0: t, scale: 0.8 });
@@ -433,9 +449,10 @@ export class Stage {
       const s = this.seqFrame(name, fac8, t, t0, loop); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y);
       return;
     }
+    const bob = c.hover && this.mode !== "dead" ? Math.round(Math.sin(t / 260) * 1.2 - 1) : 0;
     if (c.kind === "vehicle") {
       if (this.mode === "dead") { const s = this.seqFrame("husk", hf, t, 0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y); return; }
-      const s = this.seqFrame(this.mode === "move" ? "move" : "idle", hf, t, this.modeT0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y);
+      const s = this.seqFrame(c.hover ? "idle" : this.mode === "move" ? "move" : "idle", hf, t, this.modeT0); if (s) this.blit(ctx, s.layer, s.index, this.x, this.y + bob);
     } else {
       if (this.mode === "dead") { this.blit(ctx, "rubble", 0, this.x, this.y); return; }
       if (this.mode === "build") {
@@ -449,7 +466,14 @@ export class Stage {
       const tf = this.turretFacing(); const pv = this.pivot();
       const firing = t - this.fireAnimT0 < 4 * 70;
       const s = firing ? this.seqFrame("fire", tf, t, this.fireAnimT0, false) : this.seqFrame("turret", tf, t, 0);
-      if (s) this.blit(ctx, s.layer, s.index, this.x + pv[0], this.y + pv[1]);
+      if (s) this.blit(ctx, s.layer, s.index, this.x + pv[0], this.y + pv[1] + bob);
+    }
+    if (c.pulse && this.mode !== "dead" && this.mode !== "build") {
+      for (let k = 0; k < 2; k++) {
+        const u = ((t / 1700) + k / 2) % 1;
+        ctx.strokeStyle = `rgba(127,232,255,${0.55 * (1 - u)})`; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(this.x, this.y - 2, 10 + u * 46, (10 + u * 46) / 2, 0, 0, Math.PI * 2); ctx.stroke();
+      }
     }
   }
 
@@ -492,14 +516,16 @@ export class Stage {
         const pts: number[][] = []; const n = 9; let sd = Math.floor(t / 45) * 1.7 + l.seed * 100;
         const r = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280 - 0.5; };
         for (let i = 0; i <= n; i++) { const v = i / n; pts.push([l.x0 + (l.x1 - l.x0) * v + (i && i < n ? r() * 9 : 0), l.y0 + (l.y1 - l.y0) * v + (i && i < n ? r() * 9 : 0)]); }
-        for (const [w, col] of [[3, `rgba(120,220,255,${0.35 * fade})`], [1, `rgba(235,250,255,${fade})`]] as const) {
-          ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+        const mid = pts[Math.floor(n / 2)]; const branch = [mid, [mid[0] + r() * 22, mid[1] + 6 + Math.abs(r()) * 14]];
+        for (const [lw, col] of [[5, `rgba(120,220,255,${0.32 * fade})`], [2, `rgba(235,250,255,${fade})`]] as const) {
+          ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+          ctx.lineWidth = Math.max(1, lw - 2); ctx.beginPath(); ctx.moveTo(branch[0][0], branch[0][1]); ctx.lineTo(branch[1][0], branch[1][1]); ctx.stroke();
         }
       } else {
         const [r, g, b] = hexRgb(l.colour); const flick = l.kind === "beam" ? 0.75 + 0.25 * Math.sin(t / 25) : 1;
-        ctx.strokeStyle = `rgba(${r},${g},${b},${0.45 * fade * flick})`; ctx.lineWidth = l.kind === "rail" ? 4 : 3;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${0.45 * fade * flick})`; ctx.lineWidth = l.kind === "rail" ? 6 * (0.4 + 0.6 * fade) : 5;
         ctx.beginPath(); ctx.moveTo(l.x0, l.y0); ctx.lineTo(l.x1, l.y1); ctx.stroke();
-        ctx.strokeStyle = `rgba(255,255,255,${fade * flick})`; ctx.lineWidth = 1;
+        ctx.strokeStyle = `rgba(255,255,255,${fade * flick})`; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(l.x0, l.y0); ctx.lineTo(l.x1, l.y1); ctx.stroke();
       }
     }

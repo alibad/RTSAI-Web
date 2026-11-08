@@ -78,3 +78,9 @@
 .cf-verdict button.on.drop { background: #4a2622; border-color: var(--red); }
 .cf-info textarea { width: 100%; min-height: 70px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: 13px Arial; resize: vertical; box-sizing: border-box; }
 .cf-meta { color: #6f6b5e; font-size: 11px; margin-top: 10px; }
+.cf-lineup { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; width: 100%; max-width: 1080px; align-self: center; }
+.cf-lineup-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #8d7f5c; border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px 8px; }
+.cf-lineup-cell:hover { outline: 2px solid var(--gold); }
+.cf-lineup-cell canvas { width: 144px; height: 115px; image-rendering: pixelated; }
+.cf-lineup-cell span { font-size: 12px; font-weight: 700; color: #1b1a14; text-align: center; line-height: 1.2; }
+.cf [hidden] { display: none !important; }
