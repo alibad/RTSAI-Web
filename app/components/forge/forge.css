@@ -91,3 +91,8 @@
 .cf-facrow span { font-size: 10px; font-weight: 700; color: #1b1a14; }
 @media (max-width: 1350px) { .cf { grid-template-columns: 200px minmax(0, 1fr) 280px; } .cf-thumb { width: 72px; height: 54px; } .cf-card { grid-template-columns: 72px 1fr; } }
 .cf-versus { background: #252923; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: 700 13px Arial; max-width: 220px; }
+.cf-routed { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin-bottom: 2px; }
+.cf-routed button { display: flex; align-items: center; justify-content: center; gap: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 0; font-size: 11px; font-weight: 700; }
+.cf-routed button i { width: 9px; height: 9px; border-radius: 2px; background: var(--fac); box-shadow: 0 0 0 1px #0008; }
+.cf-routed button.on { border-color: var(--gold); background: #2c2a1f; }
+.cf-routed button:disabled { opacity: .35; cursor: default; }

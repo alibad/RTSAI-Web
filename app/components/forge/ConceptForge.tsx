@@ -99,6 +99,7 @@ export function ConceptForge() {
   const [index, setIndex] = useState<Index | null>(null);
   const [error, setError] = useState("");
   const [kind, setKind] = useState<string>("all");
+  const [routedTo, setRoutedTo] = useState<string>("");
   const [sel, setSel] = useState<string>("");
   const [faction, setFaction] = useState<string>("");
   const [player, setPlayer] = useState("#e02a1f");
@@ -126,7 +127,8 @@ export function ConceptForge() {
   useEffect(() => { void reload(); }, [reload]);
 
   const concept = useMemo(() => index?.concepts.find(c => c.id === sel) ?? null, [index, sel]);
-  const shown = useMemo(() => (index?.concepts ?? []).filter(c => kind === "all" || c.kind === kind), [index, kind]);
+  const shown = useMemo(() => (index?.concepts ?? []).filter(c => (kind === "all" || c.kind === kind)
+    && (!routedTo || index?.routing[c.id]?.factions?.includes(routedTo))), [index, kind, routedTo]);
   const paintAs = faction || concept?.faction || "iran";
 
   // load the selected concept into the stage
@@ -338,7 +340,13 @@ export function ConceptForge() {
         <button className={`cf-sound ${sound ? "on" : ""}`} onClick={() => setSound(s => !s)}>{sound ? "Sound on" : "Sound off"}</button>
       </header>
 
-      <aside className="cf-list">{shown.map(c => {
+      <aside className="cf-list">
+        <div className="cf-routed" aria-label="Routed to factions">{facIds.map(f => {
+          const n = index.concepts.filter(c => index.routing[c.id]?.factions?.includes(f)).length;
+          return <button key={f} className={routedTo === f ? "on" : ""} disabled={!n && routedTo !== f} onClick={() => setRoutedTo(r => (r === f ? "" : f))}
+            title={`${pal.factions[f].name}: ${n} routed`} style={{ ["--fac" as string]: pal.factions[f].paint }}><i />{n}</button>;
+        })}</div>
+        {shown.map(c => {
         const rr = index.routing[c.id];
         return (
           <button key={c.id} className={`cf-card ${c.id === sel ? "on" : ""} ${rr?.verdict ?? ""}`} onClick={() => setSel(c.id)}>
