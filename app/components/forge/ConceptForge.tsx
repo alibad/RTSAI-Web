@@ -5,7 +5,7 @@
  * Drafts live in D:\Generated\RTSAI\art\concept-forge (lib/concept-forge/server.ts); nothing here changes the game.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API, fileUrl, loadEncoded, paint, Stage, type Concept, type FxMeta, type Palettes, type Voices } from "./engine";
+import { API, fileUrl, loadEncoded, paint, Stage, STAGE_H, STAGE_W, type Concept, type FxMeta, type Palettes, type Voices } from "./engine";
 import "./forge.css";
 
 type Routing = Record<string, { factions: string[]; verdict: string | null; note: string; at: string }>;
@@ -26,7 +26,7 @@ function Thumb({ c, pal, faction, player }: { c: Concept; pal: Palettes; faction
       else x.drawImage(sheet, 0, 0);
     }).catch(() => undefined);
     return () => { live = false; };
-  }, [c.id, pal, faction, player]);
+  }, [c.id, c.kind, pal, faction, player]);
   return <canvas ref={ref} width={128} height={96} className="cf-thumb" />;
 }
 
@@ -110,15 +110,17 @@ export function ConceptForge() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [lineup, setLineup] = useState(false);
   const [ground, setGround] = useState<"desert" | "steppe" | "urban">("desert");
-  useEffect(() => { stage.current.terrain = ground; stage.current.ground = null; }, [ground]);
   const overlay = useRef({ caption: "", name: "", role: "", recording: false });
   const canvas = useRef<HTMLCanvasElement>(null);
-  const stage = useRef<Stage>(new Stage());
+  const stageRef = useRef<Stage | null>(null);
+  /** The stage engine, created on first use (never during render). */
+  const engine = useCallback(() => (stageRef.current ??= new Stage()), []);
+  useEffect(() => { const st = engine(); st.terrain = ground; st.ground = null; }, [ground, engine]);
   const foe = useRef<Stage | null>(null);
   const [foeId, setFoeId] = useState("");
   const [fighting, setFighting] = useState(false);
   const recordFight = useRef(false);
-  useEffect(() => { (window as unknown as { __forge: Stage }).__forge = stage.current; }, []);
+  useEffect(() => { (window as unknown as { __forge: Stage }).__forge = engine(); }, [engine]);
   const demo = useRef(0);
   const recorder = useRef<MediaRecorder | null>(null);
 
@@ -133,26 +135,32 @@ export function ConceptForge() {
     && (!routedTo || index?.routing[c.id]?.factions?.includes(routedTo))), [index, kind, routedTo]);
   const paintAs = faction || concept?.faction || "iran";
 
+  /** Select a concept: stop whatever the stage was doing for the previous one. */
+  const select = useCallback((id: string) => {
+    demo.current++; setBusy(false); setCaption(""); foe.current = null; setFighting(false);
+    const st = engine(); st.auto = false; st.onImpact = null;
+    setSel(id);
+  }, [engine]);
+
   // load the selected concept into the stage
   useEffect(() => {
     if (!index || !concept) return;
-    demo.current++; setBusy(false); setCaption(""); foe.current = null; setFighting(false); stage.current.auto = false; stage.current.onImpact = null;
-    const st = stage.current;
+    const st = engine();
     st.voices = index.voices ?? {};
     void st.load(concept, index.palettes, index.fx);
     const u = new URL(location.href); u.searchParams.set("concept", concept.id); history.replaceState(null, "", u);
-  }, [index, concept]);
-  useEffect(() => { stage.current.faction = paintAs; stage.current.player = player; }, [paintAs, player]);
-  useEffect(() => { stage.current.sound.enabled = sound; if (!sound) stage.current.sound.stopAll(); }, [sound]);
+  }, [index, concept, engine]);
+  useEffect(() => { const st = engine(); st.faction = paintAs; st.player = player; }, [paintAs, player, engine]);
+  useEffect(() => { const st = engine(); st.sound.enabled = sound; if (!sound) st.sound.stopAll(); }, [sound, engine]);
 
   // render loop
   useEffect(() => {
     let raf = 0, last = performance.now();
-    const world = document.createElement("canvas"); world.width = stage.current.W; world.height = stage.current.H;
+    const world = document.createElement("canvas"); world.width = STAGE_W; world.height = STAGE_H;
     const w = world.getContext("2d")!;
     const tick = (t: number) => {
       const dt = Math.min(0.05, (t - last) / 1000); last = t;
-      const st = stage.current;
+      const st = engine();
       st.update(t, dt); st.draw(w, t);
       const fo = foe.current;
       if (fo) {
@@ -180,11 +188,26 @@ export function ConceptForge() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [engine]);
+
+  // ---------------------------------------------------------------- recording
+  const startRecording = useCallback((c: Concept | null) => {
+    const cv = canvas.current; const st = engine(); if (!cv) return;
+    st.sound.ensure();
+    const stream = cv.captureStream(30);
+    const audio = st.sound.dest?.stream.getAudioTracks()[0]; if (audio) stream.addTrack(audio);
+    const chunks: Blob[] = [];
+    const rec = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm" });
+    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = () => { overlay.current.recording = false; setVideoUrl(URL.createObjectURL(new Blob(chunks, { type: "video/webm" }))); setRecording(null); };
+    rec.start(250); recorder.current = rec; setRecording(c?.id ?? ""); setVideoUrl(null);
+    overlay.current = { ...overlay.current, recording: true, name: c?.name ?? "", role: c?.role ?? "" };
+  }, [engine]);
+  const stopRecording = useCallback(() => { if (recorder.current?.state === "recording") recorder.current.stop(); }, []);
 
   // ---------------------------------------------------------------- actions
   const act = useCallback((a: string) => {
-    const st = stage.current; const t = performance.now(); st.sound.ensure();
+    const st = engine(); const t = performance.now(); st.sound.ensure();
     if (a === "fire") st.fire(t);
     else if (a === "move") st.setMode(st.mode === "move" ? "idle" : "move", t);
     else if (a === "stop") st.setMode("idle", t);
@@ -194,13 +217,13 @@ export function ConceptForge() {
     else if (a === "prone") st.setMode(st.mode === "prone" ? "idle" : "prone", t);
     else if (a === "reset") { demo.current++; setBusy(false); setCaption(""); overlay.current.caption = ""; foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(t); }
     else if (a === "select") { st.sound.play(concept?.sounds.select, { gain: 0.6 }); st.say("select"); }
-  }, [concept]);
+  }, [concept, engine]);
 
   /** Versus: the selected concept against another one, both firing on their own until one is destroyed. */
   const fight = useCallback(async (otherId: string, record = false) => {
     const c = concept; const other = index?.concepts.find(x => x.id === otherId); if (!c || !other || !index) return;
     demo.current++; setBusy(true);
-    const st = stage.current; const t = performance.now(); st.sound.ensure(); st.reset(t);
+    const st = engine(); const t = performance.now(); st.sound.ensure(); st.reset(t);
     const fo = new Stage(); fo.sound = st.sound; fo.voices = index.voices ?? {}; fo.noGround = true;
     fo.faction = faction ? Object.keys(index.palettes.factions).find(f => f !== faction) ?? other.faction : other.faction === paintAs ? Object.keys(index.palettes.factions).find(f => f !== paintAs) ?? other.faction : other.faction;
     fo.player = player === "#2f6fe0" ? "#e02a1f" : "#2f6fe0";
@@ -219,11 +242,11 @@ export function ConceptForge() {
     }
     st.reloadUntil = t + 500; fo.reloadUntil = t + 900;
     foe.current = fo; setFighting(true);
-    if (record) { startRecording(); overlay.current = { ...overlay.current, name: `${c.name}  vs  ${other.name}`, role: "Versus" }; }
+    if (record) { startRecording(c); overlay.current = { ...overlay.current, name: `${c.name}  vs  ${other.name}`, role: "Versus" }; }
     recordFight.current = record;
     st.say("attack");
-  }, [concept, index, faction, paintAs, player]);
-  const endFight = () => { const st = stage.current; foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(performance.now()); setBusy(false); };
+  }, [concept, index, faction, paintAs, player, engine, startRecording, stopRecording]);
+  const endFight = () => { const st = engine(); foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(performance.now()); setBusy(false); };
 
   const wait = (ms: number, token: number) => new Promise<boolean>(ok => setTimeout(() => ok(demo.current === token), ms));
 
@@ -231,10 +254,10 @@ export function ConceptForge() {
   const playAll = useCallback(async (record = false) => {
     const c = concept; if (!c) return;
     const token = ++demo.current; setBusy(true);
-    const st = stage.current; st.sound.ensure(); st.reset(performance.now());
+    const st = engine(); st.sound.ensure(); st.reset(performance.now());
     const say = (s: string) => { setCaption(s); overlay.current.caption = s; };
     const aimAt = (x: number, y: number) => { st.target = { x, y }; };
-    if (record) startRecording();
+    if (record) startRecording(c);
     const steps: Array<[string, () => void, number]> = [];
     if (c.kind === "defence") steps.push(["Construction", () => act("build"), 1800]);
     steps.push(["Selected", () => act("select"), 1200]);
@@ -251,7 +274,7 @@ export function ConceptForge() {
       steps.push(["Halt", () => act("stop"), 900]);
     }
     if (c.kind === "infantry") steps.push(["Going prone and firing", () => { act("prone"); setTimeout(() => act("fire"), 600); }, 2200]);
-    steps.push(["Under fire", () => stage.current.underFire(performance.now()), 2200]);
+    steps.push(["Under fire", () => st.underFire(performance.now()), 2200]);
     if (c.kind !== "infantry") steps.push(["Taking damage", () => { act("damage"); aimAt(90, 175); if (c.weapons.length) setTimeout(() => act("fire"), 500); }, 2600]);
     steps.push(["Destroyed", () => act("destroy"), c.kind === "infantry" ? 2200 : 4200]);
     for (const [label, run, ms] of steps) {
@@ -261,21 +284,8 @@ export function ConceptForge() {
     }
     if (demo.current === token) { say(""); setBusy(false); } else overlay.current.caption = "";
     if (record) setTimeout(stopRecording, 300);
-  }, [concept, act]);
+  }, [concept, act, engine, startRecording, stopRecording]);
 
-  function startRecording() {
-    const cv = canvas.current; const st = stage.current; if (!cv) return;
-    st.sound.ensure();
-    const stream = cv.captureStream(30);
-    const audio = st.sound.dest?.stream.getAudioTracks()[0]; if (audio) stream.addTrack(audio);
-    const chunks: Blob[] = [];
-    const rec = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm" });
-    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-    rec.onstop = () => { overlay.current.recording = false; setVideoUrl(URL.createObjectURL(new Blob(chunks, { type: "video/webm" }))); setRecording(null); };
-    rec.start(250); recorder.current = rec; setRecording(concept?.id ?? ""); setVideoUrl(null);
-    overlay.current = { ...overlay.current, recording: true, name: concept?.name ?? "", role: concept?.role ?? "" };
-  }
-  function stopRecording() { recorder.current?.state === "recording" && recorder.current.stop(); }
 
   // keyboard
   useEffect(() => {
@@ -285,23 +295,23 @@ export function ConceptForge() {
       if (e.key === "Enter") { e.preventDefault(); void playAll(); return; }
       if (map[e.key]) { e.preventDefault(); act(map[e.key]); return; }
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault(); const i = shown.findIndex(c => c.id === sel); const n = shown[(i + (e.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length]; if (n) setSel(n.id);
+        e.preventDefault(); const i = shown.findIndex(c => c.id === sel); const n = shown[(i + (e.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length]; if (n) select(n.id);
       }
     };
     addEventListener("keydown", k); return () => removeEventListener("keydown", k);
-  }, [act, playAll, shown, sel]);
+  }, [act, playAll, shown, sel, select]);
 
   // stage pointer: click = new target (and fire), drag = turn the unit
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
-  const toWorld = (e: React.PointerEvent) => { const r = canvas.current!.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * stage.current.W, y: (e.clientY - r.top) / r.height * stage.current.H }; };
-  const onDown = (e: React.PointerEvent) => { drag.current = { ...toWorld(e), moved: false }; (e.target as HTMLElement).setPointerCapture(e.pointerId); stage.current.sound.ensure(); };
+  const toWorld = (e: React.PointerEvent) => { const r = canvas.current!.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * STAGE_W, y: (e.clientY - r.top) / r.height * STAGE_H }; };
+  const onDown = (e: React.PointerEvent) => { drag.current = { ...toWorld(e), moved: false }; (e.target as HTMLElement).setPointerCapture(e.pointerId); engine().sound.ensure(); };
   const onMove = (e: React.PointerEvent) => {
     const d = drag.current; if (!d) return; const p = toWorld(e);
-    if (Math.hypot(p.x - d.x, p.y - d.y) > 4) { d.moved = true; const st = stage.current; st.ang = Math.atan2(-(p.x - st.x), -2 * (p.y - st.y)); st.tang = st.ang; }
+    if (Math.hypot(p.x - d.x, p.y - d.y) > 4) { d.moved = true; const st = engine(); st.ang = Math.atan2(-(p.x - st.x), -2 * (p.y - st.y)); st.tang = st.ang; }
   };
   const onUp = (e: React.PointerEvent) => {
     const d = drag.current; drag.current = null; if (!d || d.moved) return;
-    const p = toWorld(e); const st = stage.current;
+    const p = toWorld(e); const st = engine();
     if (Math.hypot(p.x - st.x, (p.y - (st.y - 8)) * 1.4) < 16) { act("select"); return; }   // the unit: select it (it answers)
     st.target = p; act("fire");
   };
@@ -352,7 +362,7 @@ export function ConceptForge() {
         {shown.map(c => {
         const rr = index.routing[c.id];
         return (
-          <button key={c.id} className={`cf-card ${c.id === sel ? "on" : ""} ${rr?.verdict ?? ""}`} onClick={() => setSel(c.id)}>
+          <button key={c.id} className={`cf-card ${c.id === sel ? "on" : ""} ${rr?.verdict ?? ""}`} onClick={() => select(c.id)}>
             <Thumb c={c} pal={pal} faction={faction || c.faction} player={player} />
             <span className="cf-card-name">{c.name}</span>
             <span className="cf-card-role">{c.role}</span>
@@ -362,9 +372,9 @@ export function ConceptForge() {
       })}</aside>
 
       <main className="cf-main">
-        {lineup ? <Lineup concepts={shown} index={index} faction={faction} player={player} onPick={id => { setSel(id); setLineup(false); }} /> : null}
+        {lineup ? <Lineup concepts={shown} index={index} faction={faction} player={player} onPick={id => { select(id); setLineup(false); }} /> : null}
         <div className="cf-stage" hidden={lineup}>
-          <canvas ref={canvas} width={stage.current.W * ZOOM} height={stage.current.H * ZOOM}
+          <canvas ref={canvas} width={STAGE_W * ZOOM} height={STAGE_H * ZOOM}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} />
           {recording ? <div className="cf-rec">● Recording</div> : null}
           <div className="cf-hint">Click the unit to select it · click the ground to fire there · drag to turn · Enter plays everything</div>

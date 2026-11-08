@@ -184,8 +184,11 @@ export const angleOf = (dx: number, dy: number) => Math.atan2(-dx, -2 * dy);
 export const facingIndex = (ang: number, n: number) => ((Math.round((ang / (2 * Math.PI)) * n) % n) + n) % n;
 const angDiff = (a: number, b: number) => { let d = (b - a) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
+/** The stage's world size in sprite pixels (drawn at 3x on the page). */
+export const STAGE_W = 360, STAGE_H = 220;
+
 export class Stage {
-  W = 360; H = 220;
+  W = STAGE_W; H = STAGE_H;
   concept: Concept | null = null;
   pal: Palettes | null = null;
   fxMeta: FxMeta = {};
