@@ -109,6 +109,8 @@ export function ConceptForge() {
   const [recording, setRecording] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [lineup, setLineup] = useState(false);
+  const [ground, setGround] = useState<"desert" | "steppe" | "urban">("desert");
+  useEffect(() => { stage.current.terrain = ground; stage.current.ground = null; }, [ground]);
   const overlay = useRef({ caption: "", name: "", role: "", recording: false });
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<Stage>(new Stage());
@@ -336,6 +338,7 @@ export function ConceptForge() {
         <div className="cf-players">{Object.entries(pal.players).map(([n, h]) => (
           <button key={n} title={n} aria-label={`Player colour ${n}`} className={player === h ? "on" : ""} style={{ background: h }} onClick={() => setPlayer(h)} />
         ))}</div>
+        <button className="cf-sound" onClick={() => setGround(g => (g === "desert" ? "steppe" : g === "steppe" ? "urban" : "desert"))} title="Ground under the stage">{ground === "desert" ? "Desert" : ground === "steppe" ? "Steppe" : "Urban"}</button>
         <button className={`cf-sound ${lineup ? "on" : ""}`} onClick={() => setLineup(l => !l)}>{lineup ? "Back to stage" : "Lineup"}</button>
         <button className={`cf-sound ${sound ? "on" : ""}`} onClick={() => setSound(s => !s)}>{sound ? "Sound on" : "Sound off"}</button>
       </header>
