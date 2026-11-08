@@ -1,0 +1,80 @@
+.cf { --bg: #141614; --panel: #1c1f1b; --line: #2e322c; --ink: #e9e4d6; --mute: #9b9686; --gold: #d7ae5f; --red: #c8483a;
+  display: grid; grid-template-columns: 244px minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; gap: 0; height: 100vh;
+  background: var(--bg); color: var(--ink); font: 14px/1.45 Arial, sans-serif; overflow: hidden; }
+.cf button { font: inherit; color: inherit; cursor: pointer; }
+.cf-empty { padding: 48px; color: #ddd; background: #141614; height: 100vh; font: 15px Arial, sans-serif; }
+.cf-top { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: #111311; }
+.cf-top h1 { font-size: 17px; margin: 0; letter-spacing: .02em; color: var(--gold); font-weight: 700; }
+.cf-back { color: var(--mute); text-decoration: none; font-size: 13px; }
+.cf-back:hover { color: var(--ink); }
+.cf-kinds { display: flex; gap: 4px; }
+.cf-kinds button { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 11px; }
+.cf-kinds button em { font-style: normal; color: var(--mute); margin-left: 6px; font-size: 12px; }
+.cf-kinds button.on { background: #2b2f27; border-color: var(--gold); }
+.cf-paint { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.cf-paint span { color: var(--mute); font-size: 12px; margin-right: 4px; }
+.cf-paint button { border: 2px solid transparent; border-radius: 5px; padding: 3px 7px; font-size: 11px; font-weight: 700; background: #2b2f27; }
+.cf-paint button.on { border-color: #fff; }
+.cf-players { display: flex; gap: 4px; }
+.cf-players button { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
+.cf-players button.on { border-color: #fff; transform: scale(1.15); }
+.cf-sound { background: #2b2f27; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12px; }
+.cf-sound.on { border-color: var(--gold); }
+
+.cf-list { overflow-y: auto; padding: 10px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.cf-card { position: relative; display: grid; grid-template-columns: 96px 1fr; grid-template-rows: auto auto 1fr; column-gap: 8px; text-align: left;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; transition: border-color .12s, transform .12s; }
+.cf-card:hover { border-color: #5a5d50; transform: translateX(2px); }
+.cf-card.on { border-color: var(--gold); background: #24271f; }
+.cf-card.drop { opacity: .45; }
+.cf-card.keep::after { content: "✓"; position: absolute; top: 6px; right: 8px; color: #7fc46b; font-weight: 700; }
+.cf-thumb { grid-row: 1 / 4; width: 96px; height: 72px; image-rendering: pixelated; background: #8d7f5c; border-radius: 5px; }
+.cf-card-name { font-weight: 700; font-size: 13px; line-height: 1.2; }
+.cf-card-role { color: var(--mute); font-size: 11px; }
+.cf-card-routed { display: flex; gap: 3px; align-self: end; }
+.cf-card-routed i { width: 12px; height: 8px; border-radius: 2px; display: block; box-shadow: 0 0 0 1px #0006; }
+
+.cf-main { display: flex; flex-direction: column; min-width: 0; padding: 14px; gap: 10px; overflow: auto; }
+.cf-stage { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #000; align-self: center; width: 100%; max-width: 1080px; }
+.cf-stage canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; cursor: crosshair; touch-action: none; }
+.cf-caption { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: #000a; color: #fff; padding: 6px 16px; border-radius: 20px; font-weight: 700; letter-spacing: .02em; pointer-events: none; }
+.cf-rec { position: absolute; right: 14px; top: 14px; color: #ff5a4a; font-weight: 700; background: #000a; padding: 4px 10px; border-radius: 12px; }
+.cf-hint { position: absolute; left: 12px; bottom: 10px; color: #fffc; font-size: 12px; text-shadow: 0 1px 2px #000; pointer-events: none; }
+.cf-actions { display: flex; flex-wrap: wrap; gap: 6px; align-self: center; width: 100%; max-width: 1080px; }
+.cf-actions button, .cf-download { background: #252923; border: 1px solid var(--line); border-radius: 7px; padding: 8px 13px; font-weight: 700; color: var(--ink); text-decoration: none; transition: background .1s, transform .08s; }
+.cf-actions button:hover:not(:disabled), .cf-download:hover { background: #33382f; }
+.cf-actions button:active:not(:disabled) { transform: translateY(1px); }
+.cf-actions button:disabled { opacity: .45; cursor: default; }
+.cf-actions kbd { font: 11px Arial; color: var(--mute); margin-left: 6px; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+.cf-primary { background: var(--gold) !important; color: #1b1a14 !important; border-color: var(--gold) !important; }
+.cf-primary kbd { color: #4a3d1c !important; border-color: #8a6f30 !important; }
+.cf-gap { flex: 1; }
+.cf-download { background: #2f4a2a; border-color: #5e8a4f; }
+
+.cf-info { border-left: 1px solid var(--line); padding: 16px 18px; overflow-y: auto; }
+.cf-info h2 { font-size: 22px; margin: 2px 0 6px; line-height: 1.15; }
+.cf-info h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); margin: 18px 0 8px; }
+.cf-role { color: var(--gold); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+.cf-idea { font-size: 15px; color: #f3eedd; margin: 0 0 8px; }
+.cf-desc { color: #c9c4b4; margin: 0 0 12px; }
+.cf-bars { display: grid; gap: 4px; margin: 10px 0; }
+.cf-bar { display: grid; grid-template-columns: 70px 1fr; align-items: center; font-size: 12px; color: var(--mute); text-transform: capitalize; }
+.cf-bar i { display: flex; gap: 3px; }
+.cf-bar b { width: 22px; height: 7px; border-radius: 2px; background: #2e322c; }
+.cf-bar b.on { background: var(--gold); }
+.cf-weapons { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; }
+.cf-weapons li { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; background: var(--panel); border-radius: 6px; padding: 6px 9px; }
+.cf-weapons span { color: var(--mute); }
+.cf-route { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.cf-route button { display: flex; align-items: center; gap: 7px; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 7px 8px; font-size: 13px; text-align: left; }
+.cf-route button i { width: 14px; height: 14px; border-radius: 3px; background: var(--fac); box-shadow: 0 0 0 1px #0008; flex: none; }
+.cf-route button em { margin-left: auto; font-style: normal; font-size: 10px; color: var(--mute); text-transform: uppercase; }
+.cf-route button.on { border-color: var(--gold); background: #2c2a1f; }
+.cf-route button.on::after { content: "✓"; color: var(--gold); font-weight: 700; }
+.cf-verdict { display: flex; gap: 6px; margin: 14px 0 8px; }
+.cf-verdict button { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font-weight: 700; }
+.cf-verdict button.on.keep { background: #2f4a2a; border-color: #7fc46b; }
+.cf-verdict button.on.rework { background: #4a3f22; border-color: var(--gold); }
+.cf-verdict button.on.drop { background: #4a2622; border-color: var(--red); }
+.cf-info textarea { width: 100%; min-height: 70px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: 13px Arial; resize: vertical; box-sizing: border-box; }
+.cf-meta { color: #6f6b5e; font-size: 11px; margin-top: 10px; }

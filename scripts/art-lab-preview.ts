@@ -13,6 +13,7 @@ import { isPlayPath, proxyTo } from "../lib/play-proxy";
 import { createLocalOwnerContentHandler } from "../lib/studio-content-server";
 import { createUnitStudioService } from "../lib/unit-studio-server";
 import { contentPlayEntry } from "../lib/content-play-entry";
+import { createConceptForgeMiddleware } from "../lib/concept-forge/server";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, ".cache/art-lab-client");
@@ -39,7 +40,7 @@ const result = await build({
   // "@/..." resolves as in tsconfig.json and components.json, for files the shadcn CLI adds.
   resolve: { alias: [...Object.entries(aliases).map(([find, replacement]) => ({ find, replacement })), { find: /^@\//, replacement: `${root.replaceAll("\\", "/")}/` }] },
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
-  build: { outDir: output, emptyOutDir: false, rollupOptions: { input: { studio: resolve(root, "app/art/review/local-entry.tsx"), content: resolve(root, "app/studio/content/local-entry.tsx") } } },
+  build: { outDir: output, emptyOutDir: false, rollupOptions: { input: { studio: resolve(root, "app/art/review/local-entry.tsx"), content: resolve(root, "app/studio/content/local-entry.tsx"), forge: resolve(root, "app/art/forge/local-entry.tsx") } } },
 });
 const bundles = Array.isArray(result) ? result : [result];
 const files = bundles.flatMap(r => "output" in r ? r.output : []);
@@ -47,6 +48,8 @@ const entry = files.find(f => f.type === "chunk" && f.isEntry && f.name === "stu
 if (!entry) throw new Error("Studio entry was not compiled");
 const contentEntry = files.find(f => f.type === "chunk" && f.isEntry && f.name === "content");
 if (!contentEntry) throw new Error("Shared content entry was not compiled");
+const forgeEntry = files.find(f => f.type === "chunk" && f.isEntry && f.name === "forge");
+if (!forgeEntry) throw new Error("Concept Forge entry was not compiled");
 const styles = files.filter(f => f.type === "asset" && f.fileName.endsWith(".css")).map(f => `<link rel="stylesheet" href="/${f.fileName}">`).join("");
 // The installed local app (scripts/local-app.ps1) puts the production website behind the Studio on one origin.
 const site = process.env.RTSAI_SITE_ORIGIN ? new URL(process.env.RTSAI_SITE_ORIGIN) : null;
@@ -65,6 +68,9 @@ const manifest = JSON.stringify({
 const head = `<link rel="manifest" href="/studio.webmanifest"><meta name="theme-color" content="#151719"><link rel="icon" href="/brand/faction-studio/favicon-32.png?v=command-red-2531" type="image/png"><link rel="apple-touch-icon" href="/brand/faction-studio/apple-touch-icon.png?v=command-red-2531">`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Faction Studio</title>${head}${styles}</head><body style="--font-geist:Arial"${site ? ` data-site="1"` : ""}><div id="art-lab-root"></div><script type="module" src="/${entry.fileName}"></script></body></html>`;
 const contentHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shared content - Local Studio</title>${head}${styles}</head><body style="background:#111411;font-family:Arial"><div id="shared-content-root"></div><script type="module" src="/${contentEntry.fileName}"></script></body></html>`;
+// Faction Studio > Concept Forge: exploratory concepts from RTSAI-Art tools/forge (drafts in D:\Generated\RTSAI\art\concept-forge).
+const forgeHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Concept Forge - Faction Studio</title>${head}${styles}</head><body style="margin:0;background:#141614"><div id="concept-forge-root"></div><script type="module" src="/${forgeEntry.fileName}"></script></body></html>`;
+const forge = createConceptForgeMiddleware();
 const api = createArtReviewMiddleware({ root: process.env.RTSAI_ART_DIR ?? resolve(root, "../RTSAI-Art"), env: "development", originals: originalsConfig(root), webRoot: root, previewMod: resolve(root, process.env.RTSAI_PREVIEW_MOD_DIR ?? "../RTSAI-Mod-wt-art-preview") });
 // The admin Faction viewer's Sound desk (decisions to RTSAI-Art/sound-review.json; the mod is read in place).
 const desk = createSoundReviewMiddleware({ ...soundDeskConfig(root), env: "development" });
@@ -107,9 +113,11 @@ createServer((req, res) => {
   }
   if (req.url?.startsWith("/api/art-review/")) { void api(req, res); return; }
   if (req.url?.startsWith("/api/sound-review/")) { void desk(req, res); return; }
+  if (req.url?.startsWith("/api/concept-forge/")) { void forge(req, res); return; }
   if (isPlayPath(req.url)) { toGame(req, res); return; }
   const path = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
   if (req.method === "GET") {
+    if (path === "/art/forge") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }).end(forgeHtml); return; }
     if (path === "/studio/content") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "frame-ancestors 'none'" }).end(contentHtml); return; }
     // One manifest for the installed app, whichever page it is installed from.
     if (path === "/studio.webmanifest" || (site && path === "/manifest.webmanifest")) { res.writeHead(200, { "Content-Type": "application/manifest+json", "Cache-Control": "no-store" }).end(manifest); return; }
