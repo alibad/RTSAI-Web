@@ -114,6 +114,7 @@ export function ConceptForge() {
   const foe = useRef<Stage | null>(null);
   const [foeId, setFoeId] = useState("");
   const [fighting, setFighting] = useState(false);
+  const recordFight = useRef(false);
   useEffect(() => { (window as unknown as { __forge: Stage }).__forge = stage.current; }, []);
   const demo = useRef(0);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -189,7 +190,7 @@ export function ConceptForge() {
   }, [concept]);
 
   /** Versus: the selected concept against another one, both firing on their own until one is destroyed. */
-  const fight = useCallback(async (otherId: string) => {
+  const fight = useCallback(async (otherId: string, record = false) => {
     const c = concept; const other = index?.concepts.find(x => x.id === otherId); if (!c || !other || !index) return;
     demo.current++; setBusy(true);
     const st = stage.current; const t = performance.now(); st.sound.ensure(); st.reset(t);
@@ -205,11 +206,13 @@ export function ConceptForge() {
         if (b.mode === "dead" || Math.hypot(x - b.x, (y - b.y) * 1.6) > (b.concept!.kind === "infantry" ? 10 : 22)) return;
         const dmg = { shell: 34, rail: 60, rocket: 18, missile: 36, mortar: 40, bullet: b.concept!.kind === "infantry" ? 9 : 3, beam: 16, arc: 22, flame: 30 }[w.kind] ?? 10;
         b.hp -= dmg; if (b.hp < b.maxHp * 0.5) b.damaged = true;
-        if (b.hp <= 0) { b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); }, 2500); }
+        if (b.hp <= 0) { b.setMode("dead", performance.now()); a.auto = false; a.firing = null; setTimeout(() => { setBusy(false); if (recordFight.current) { recordFight.current = false; stopRecording(); } }, 3200); }
       };
     }
     st.reloadUntil = t + 500; fo.reloadUntil = t + 900;
     foe.current = fo; setFighting(true);
+    if (record) { startRecording(); overlay.current = { ...overlay.current, name: `${c.name}  vs  ${other.name}`, role: "Versus" }; }
+    recordFight.current = record;
     st.say("attack");
   }, [concept, index, faction, paintAs, player]);
   const endFight = () => { const st = stage.current; foe.current = null; setFighting(false); st.auto = false; st.onImpact = null; st.reset(performance.now()); setBusy(false); };
@@ -364,7 +367,7 @@ export function ConceptForge() {
             {index.concepts.filter(x => x.id !== concept?.id && x.weapons.length).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
           </select>
           <button disabled={!foeId || !concept?.weapons.length} onClick={() => (fighting ? endFight() : void fight(foeId))}>{fighting ? "End fight" : "Fight"}</button>
-          <button disabled={busy || !!recording} onClick={() => void playAll(true)}>● Record video</button>
+          <button disabled={busy || !!recording} onClick={() => void (foeId && concept?.weapons.length ? fight(foeId, true) : playAll(true))}>● Record video</button>
           {videoUrl ? <a className="cf-download" href={videoUrl} download={`${concept?.id ?? "concept"}.webm`}>Save video</a> : null}
         </div>
       </main>
