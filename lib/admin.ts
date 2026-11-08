@@ -20,7 +20,7 @@ export const onThisMachine = () => ADMIN_BUILD && typeof window !== "undefined" 
 /** The local app, where the tools that need this machine run. */
 export const LOCAL_APP = "http://127.0.0.1:3450";
 
-export type AdminSurfaceId = "campaigns" | "arena" | "evals" | "content" | "review" | "art";
+export type AdminSurfaceId = "campaigns" | "arena" | "evals" | "content" | "review" | "forge" | "art";
 export type AdminSurface = {
   id: AdminSurfaceId; title: string; href: string; about: string;
   /** What it needs on this machine; null when it works on rtsai.net too. */
@@ -45,6 +45,9 @@ export const ADMIN_SURFACES: AdminSurface[] = [
   { id: "review", title: "Art review", href: "/art/review", studio: true,
     about: "Review, compare and rebuild unit art and sounds.",
     needs: { what: "The local art workspace", detail: "RTSAI-Art on this machine: source models, renders and sounds." } },
+  { id: "forge", title: "Concept Forge", href: "/art/forge", studio: true,
+    about: "Exploratory soldiers, vehicles and defences with their full behaviour and sounds; route them to factions.",
+    needs: { what: "The local Studio", detail: "RTSAI-Art tools/forge drafts in D:\Generated\RTSAI\art\concept-forge on this machine." } },
   { id: "art", title: "Art lab", href: "/art",
     about: "Every faction's art with its provenance.",
     needs: { what: "The local app, for now", detail: "Its pages carry provenance details the website doesn't serve privately yet." } },
