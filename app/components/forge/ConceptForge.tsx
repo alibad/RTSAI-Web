@@ -314,7 +314,7 @@ export function ConceptForge() {
       steps.push([c.weapons[0].name, () => act("fire"), Math.max(1600, (c.weapons[0]?.burst ?? 1) * (c.weapons[0]?.interval ?? 0) + 1400)]);
       const w2 = c.weapons[1];
       steps.push([w2 ? w2.name : "Turning and firing again", () => { aimAt(300, 170); setTimeout(() => act("fire"), 700); }, w2 ? Math.max(2600, w2.burst * w2.interval + 1800) : 2600]);
-    } else if (c.spin) steps.push(["Scanning", () => undefined, 3000]);
+    } else if (c.spin) steps.push([/radar/i.test(c.name) ? "Scanning" : /light/i.test(c.name) ? "Sweeping" : "Working", () => undefined, 3000]);
     else if (c.pulse) steps.push(["Shield up", () => undefined, 3000]);
     if (c.kind !== "defence") {
       steps.push(["On the move", () => { aimAt(290, 70); act("move"); }, 2200]);
