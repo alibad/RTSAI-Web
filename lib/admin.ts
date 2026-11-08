@@ -47,7 +47,7 @@ export const ADMIN_SURFACES: AdminSurface[] = [
     needs: { what: "The local art workspace", detail: "RTSAI-Art on this machine: source models, renders and sounds." } },
   { id: "forge", title: "Concept Forge", href: "/art/forge", studio: true,
     about: "Exploratory soldiers, vehicles and defences with their full behaviour and sounds; route them to factions.",
-    needs: { what: "The local Studio", detail: "RTSAI-Art tools/forge drafts in D:\Generated\RTSAI\art\concept-forge on this machine." } },
+    needs: { what: "The local Studio", detail: "RTSAI-Art tools/forge drafts in D:/Generated/RTSAI/art/concept-forge on this machine." } },
   { id: "art", title: "Art lab", href: "/art",
     about: "Every faction's art with its provenance.",
     needs: { what: "The local app, for now", detail: "Its pages carry provenance details the website doesn't serve privately yet." } },
