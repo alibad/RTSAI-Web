@@ -15,9 +15,6 @@
 .cf-paint span { color: var(--mute); font-size: 12px; margin-right: 4px; }
 .cf-paint button { border: 2px solid transparent; border-radius: 5px; padding: 3px 7px; font-size: 11px; font-weight: 700; background: #2b2f27; }
 .cf-paint button.on { border-color: #fff; }
-.cf-players { display: flex; gap: 4px; }
-.cf-players button { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
-.cf-players button.on { border-color: #fff; transform: scale(1.15); }
 .cf-sound { background: #2b2f27; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12px; }
 .cf-sound.on { border-color: var(--gold); }
 
@@ -34,22 +31,12 @@
 .cf-card-routed { display: flex; gap: 3px; align-self: end; }
 .cf-card-routed i { width: 12px; height: 8px; border-radius: 2px; display: block; box-shadow: 0 0 0 1px #0006; }
 
-.cf-main { display: flex; flex-direction: column; min-width: 0; padding: 14px; gap: 10px; overflow: auto; }
-.cf-stage { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #000; align-self: center; width: 100%; max-width: 1080px; }
-.cf-stage canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; cursor: crosshair; touch-action: none; }
-.cf-caption { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: #000a; color: #fff; padding: 6px 16px; border-radius: 20px; font-weight: 700; letter-spacing: .02em; pointer-events: none; }
-.cf-rec { position: absolute; right: 14px; top: 14px; color: #ff5a4a; font-weight: 700; background: #000a; padding: 4px 10px; border-radius: 12px; }
-.cf-hint { position: absolute; left: 12px; bottom: 10px; color: #fffc; font-size: 12px; text-shadow: 0 1px 2px #000; pointer-events: none; }
-.cf-actions { display: flex; flex-wrap: wrap; gap: 6px; align-self: center; width: 100%; max-width: 1080px; }
-.cf-actions button, .cf-download { background: #252923; border: 1px solid var(--line); border-radius: 7px; padding: 8px 13px; font-weight: 700; color: var(--ink); text-decoration: none; transition: background .1s, transform .08s; }
-.cf-actions button:hover:not(:disabled), .cf-download:hover { background: #33382f; }
-.cf-actions button:active:not(:disabled) { transform: translateY(1px); }
-.cf-actions button:disabled { opacity: .45; cursor: default; }
-.cf-actions kbd { font: 11px Arial; color: var(--mute); margin-left: 6px; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
-.cf-primary { background: var(--gold) !important; color: #1b1a14 !important; border-color: var(--gold) !important; }
-.cf-primary kbd { color: #4a3d1c !important; border-color: #8a6f30 !important; }
-.cf-gap { flex: 1; }
-.cf-download { background: #2f4a2a; border-color: #5e8a4f; }
+.cf-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 14px; gap: 10px; overflow: auto; }
+/* The Faction viewer's stage (viewer.css), with the site colours it reads; its --ink is the page, --paper the text. */
+.cf-stagehost { --ink: #111311; --paper: #ede8da; --muted: #9b9686; --faint: #7a7e74; --surface: #151915; --raised: #1c211c;
+  --raised-2: #252b25; --line: rgba(240, 238, 230, .14); --line-2: rgba(240, 238, 230, .26); --gold: #d7ae5f; --accent: var(--gold);
+  --font-mono: ui-monospace, Consolas, monospace; color: var(--paper); flex: 1; min-height: 560px; border: 1px solid #2e322c; border-radius: 10px; overflow: hidden; }
+.cf-stagehost .viewer-stage { height: 100%; }
 
 .cf-info { border-left: 1px solid var(--line); padding: 16px 18px; overflow-y: auto; }
 .cf-info h2 { font-size: 22px; margin: 2px 0 6px; line-height: 1.15; }
@@ -81,7 +68,7 @@
 .cf-lineup { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; width: 100%; max-width: 1080px; align-self: center; }
 .cf-lineup-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #8d7f5c; border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px 8px; }
 .cf-lineup-cell:hover { outline: 2px solid var(--gold); }
-.cf-lineup-cell canvas { width: 144px; height: 115px; image-rendering: pixelated; }
+.cf-lineup-cell canvas.cf-thumb { width: 144px; height: 108px; image-rendering: pixelated; background: none; }
 .cf-lineup-cell span { font-size: 12px; font-weight: 700; color: #1b1a14; text-align: center; line-height: 1.2; }
 .cf [hidden] { display: none !important; }
 .cf-facrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
@@ -90,7 +77,6 @@
 .cf-facrow canvas { width: 100%; height: auto; image-rendering: pixelated; }
 .cf-facrow span { font-size: 10px; font-weight: 700; color: #1b1a14; }
 @media (max-width: 1350px) { .cf { grid-template-columns: 200px minmax(0, 1fr) 280px; } .cf-thumb { width: 72px; height: 54px; } .cf-card { grid-template-columns: 72px 1fr; } }
-.cf-versus { background: #252923; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: 700 13px Arial; max-width: 220px; }
 .cf-routed { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin-bottom: 2px; }
 .cf-routed button { display: flex; align-items: center; justify-content: center; gap: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 0; font-size: 11px; font-weight: 700; }
 .cf-routed button i { width: 9px; height: 9px; border-radius: 2px; background: var(--fac); box-shadow: 0 0 0 1px #0008; }

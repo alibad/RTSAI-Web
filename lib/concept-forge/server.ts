@@ -4,7 +4,9 @@
  * (D:\Generated\RTSAI\art\concept-forge by default, RTSAI_FORGE_DIR to override) and keeps the owner's
  * faction routing and verdicts in that folder's routing.json. Drafts only: nothing here touches the game.
  *
- *   GET  /api/concept-forge/index          palettes, effects, sounds, every concept.json, routing
+ *   GET  /api/concept-forge/index          palettes, effects, sounds, every concept.json with its game-format art
+ *                                          (art.json, tools/forge/forge_export.py), the palette layout, the Faction
+ *                                          viewer's training targets, routing
  *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder
  *   POST /api/concept-forge/routing        {id, factions?, verdict?, note?} -> routing.json
  *   GET  /api/concept-forge/plan           the routing as a readable plan, per faction
@@ -12,10 +14,11 @@
 import { existsSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { viewerDummies } from "../viewer";
 
 export const forgeRoot = () => resolve(process.env.RTSAI_FORGE_DIR ?? "D:/Generated/RTSAI/art/concept-forge");
 
-const MIME: Record<string, string> = { ".png": "image/png", ".ogg": "audio/ogg", ".json": "application/json", ".wav": "audio/wav" };
+const MIME: Record<string, string> = { ".png": "image/png", ".ogg": "audio/ogg", ".json": "application/json", ".wav": "audio/wav", ".pal": "application/octet-stream" };
 const FACTION_IDS = new Set(["iran", "china", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah"]);
 const VERDICTS = new Set(["keep", "rework", "drop"]);
 
@@ -38,9 +41,13 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
       if (req.method === "GET" && path === "/index") {
         const index = readJson<{ palettes: unknown; concepts: string[]; fx: unknown; sounds: string[] }>(resolve(root, "index.json"), { palettes: null, concepts: [], fx: {}, sounds: [] });
         const concepts = index.concepts
-          .map(id => readJson<Record<string, unknown> | null>(resolve(root, "concepts", id, "concept.json"), null))
+          .map(id => {
+            const c = readJson<Record<string, unknown> | null>(resolve(root, "concepts", id, "concept.json"), null);
+            return c && { ...c, art: readJson<unknown>(resolve(root, "concepts", id, "art.json"), null) };
+          })
           .filter(Boolean);
-        send(res, 200, { ...index, concepts, routing: readJson<Routing>(resolve(root, "routing.json"), {}) });
+        send(res, 200, { ...index, concepts, game: readJson<unknown>(resolve(root, "game.json"), null), dummies: viewerDummies(),
+          routing: readJson<Routing>(resolve(root, "routing.json"), {}) });
         return;
       }
       if (req.method === "GET" && path.startsWith("/file/")) {
