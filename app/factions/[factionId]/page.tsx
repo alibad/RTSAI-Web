@@ -3,7 +3,6 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Crosshair, Footprints, ShieldAlert } from "lucide-react";
-import { SiteHeader, SiteFooter } from "../../components/SiteChrome";
 import { ModeNav, ReleaseCallout } from "../../components/ContentGuide";
 import { CompleteRoster } from "../../components/CompleteRoster";
 import { CampaignStrip } from "../../components/CampaignStrip";
@@ -13,6 +12,7 @@ import { CountChips, FactionEmblem, FactionFlag, LineupImage } from "../../compo
 import { CLASSIC_ADDON, factionById, modeLabel, resolveMode, rosterFactionById, rosters, type GameMode } from "../../../lib/game-content";
 import { flagSrc, hasFlag, VIEWER_READY, viewerHref } from "../../../lib/faction-art";
 import "../factions.css";
+import { PathPage } from "../../components/PathChrome";
 
 /* The flag wash is a static, pre-sized SVG from public/faction-art/flags. */
 /* eslint-disable @next/next/no-img-element */
@@ -36,7 +36,7 @@ export default async function FactionPage({ params, searchParams }: Props) {
   const name = roster?.name ?? other!.name;
   const side = roster?.side ?? other!.side;
   const accent = faction?.accent ?? (side === "Allies" ? "#85afcc" : "#ce8779");
-  return <><SiteHeader /><main id="main-content" className="catalog-page faction-page" style={{ "--faction-accent": accent } as CSSProperties}>
+  return <PathPage><main id="main-content" className="catalog-page faction-page" style={{ "--faction-accent": accent } as CSSProperties}>
     <Link className="catalog-back" href={`/factions?mode=${mode}`}>← All factions</Link>
     <header className={`faction-hero ${faction ? "" : "is-original"}`}>
       {/* Original factions have no art here: their flag fills the banner. Modern factions lead with their units. */}
@@ -65,5 +65,5 @@ export default async function FactionPage({ params, searchParams }: Props) {
       {faction ? <ReleaseCallout faction={faction} mode={mode} /> : <aside className="catalog-release"><div><span className="section-number">Development roster</span><h2>Check the release before you play.</h2><p>This guide describes the current rules. Public download coverage is listed separately.</p></div><Link className="primary-action" href={`/download?faction=${id}&mode=${mode}`}>Release details →</Link></aside>}
       <details className="catalog-provenance"><summary>About this guide</summary><p>Names, categories, costs and stats are measured from the game rules. Modern faction strategies are editorial guidance, and balance is still being refined.</p><p>{modeLabel(mode)} rule revision: <code>{rosters.sources[mode].commit.slice(0, 12)}</code>. Unit pictures are rendered from the project’s own 3D models; original factions show their flag and names only. National flags: flag-icons (MIT).</p></details>
     </> : <section className="catalog-unavailable"><h2>No roster in this mode.</h2><p>{name} is available in the {modeLabel(other!.mode as GameMode)} development roster.</p><Link href={`/factions/${id}?mode=${other!.mode}`}>View that roster →</Link></section>}
-  </main><SiteFooter /></>;
+  </main></PathPage>;
 }

@@ -3,12 +3,12 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Crosshair, ShieldAlert } from "lucide-react";
-import { SiteHeader, SiteFooter } from "../../components/SiteChrome";
 import { ModeNav, ReleaseCallout } from "../../components/ContentGuide";
 import { Cameo, CategoryIcon, FactionFlag, SpriteLoop, StatBars, UnitRender } from "../../components/FactionVisuals";
 import { categoryLabels, factionById, resolveMode, rosters, unitById, unitLabel, unitsForFaction } from "../../../lib/game-content";
 import { factionArtActors, unitArt, unitStats, VIEWER_READY, viewerHref } from "../../../lib/faction-art";
 import "../../factions/factions.css";
+import { PathPage } from "../../components/PathChrome";
 
 type Props = { params: Promise<{ unitId: string }>; searchParams: Promise<{ mode?: string | string[] }> };
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -38,7 +38,7 @@ export default async function UnitPage({ params, searchParams }: Props) {
     const roster = rosters.actors.find(r => r.mode === "ra2" && r.id === a);
     return { actor: a, name: dossier ? unitLabel(dossier, mode).name : roster?.name ?? a, href: dossier ? `/units/${dossier.id}?mode=${mode}` : VIEWER_READY ? viewerHref(faction.id, a) : `/factions/${faction.id}?mode=${mode}#complete-roster-title` };
   });
-  return <><SiteHeader /><main id="main-content" className="catalog-page unit-page" style={{ "--faction-accent": faction.accent } as CSSProperties}>
+  return <PathPage><main id="main-content" className="catalog-page unit-page" style={{ "--faction-accent": faction.accent } as CSSProperties}>
     <Link className="catalog-back" href={`/factions/${faction.id}?mode=${mode}`}>← {faction.name} faction</Link>
     <header className="unit-hero">
       <div className="unit-hero-stage">{art ? <UnitRender actorId={artId} alt={`${label.name}, rendered from its game model`} sizes="(min-width: 1000px) 560px, 92vw" priority /> : null}</div>
@@ -64,5 +64,5 @@ export default async function UnitPage({ params, searchParams }: Props) {
       <details className="catalog-provenance"><summary>Inspect the gameplay source</summary><p>Editorial ID: <code>{unit.id}</code> · actor: <code>{variant.actorId}</code></p><p><code>{variant.rulesPath}</code></p><p>Stats are read from this mode’s rules; bars compare units of the same kind. Pictures are rendered from the project’s own model of this unit{mode === "ra" ? " for RTS AI" : ""}.</p></details>
     </> : <section className="catalog-unavailable"><h2>Not in RTS AI.</h2><p>This unit belongs to the historical Classic catalog only; it is not a verified entry in the current standalone release.</p><Link href={`/units/${unit.id}?mode=ra`}>View the Classic version →</Link></section>}
     <ReleaseCallout faction={faction} mode={mode} />
-  </main><SiteFooter /></>;
+  </main></PathPage>;
 }

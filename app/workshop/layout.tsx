@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { SignInGate } from "../components/SignInGate";
-import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { PathFooter, PathQuestbar, pathShell } from "../components/PathChrome";
 
 export default function MembersOnly({ children }: { children: ReactNode }) {
-  return <SignInGate feature="Map Workshop" header={<SiteHeader />} footer={<SiteFooter />}>{children}</SignInGate>;
+  return <SignInGate feature="Map Workshop" shell={pathShell} header={<PathQuestbar />} footer={<PathFooter />}>{children}</SignInGate>;
 }

@@ -1,22 +1,25 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
-import { Apple, ArrowRight, BrainCircuit, Download, Flag, Globe, Mic, MonitorDown, PackageCheck, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, Mic, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "./components/CompanionDemo";
 import { HeroTrailer } from "./components/HeroTrailer";
-import { SiteFooter, SiteHeader } from "./components/SiteChrome";
-import { FactionFlag } from "./components/FactionVisuals";
-import { FrontLine } from "./components/FrontLine";
+import { FactionFlag, LineupImage } from "./components/FactionVisuals";
+import { FactionCard } from "./components/FactionCard";
+import { HqHills, HqStones } from "./components/hq-path/hq-path";
 import { getModRelease, isPublished, macInstaller } from "../lib/mod-release";
 import { buildTrailer } from "../lib/trailer";
 import { factions, dossierForRoster, rosterFactions } from "../lib/game-content";
-import { FactionCard } from "./components/FactionCard";
-import "./home.css";
+// Last, so the Path layer (the kit, home-path.css, pages-path.css) loads after the components' own styles.
+import { PathPage } from "./components/PathChrome";
 
 const canonicalUrl = "https://rtsai.net";
 const description = "Seven real-world factions. One fictional war. A modern real-time strategy game with an AI co-commander. Play in your browser or download the Windows alpha.";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+const numberWords = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
+const count = (n: number) => numberWords[n] ?? String(n);
 
 export default async function Home() {
   const modRelease = getModRelease();
@@ -35,93 +38,97 @@ export default async function Home() {
       { "@type": ["SoftwareApplication", "VideoGame"], "@id": `${canonicalUrl}/#rtsai`, name: "RTS AI", url: canonicalUrl, description, genre: "Real-time strategy", applicationCategory: "GameApplication", gamePlatform: ["Web browser", "Windows"], image: `${canonicalUrl}/social-card.png` },
     ],
   };
-  const pillars = [
-    { id: "factions", icon: Flag, status: `${modern.length} factions`, title: "Real-world factions", description: "Each with its own doctrine, signature units, voice and counters. A fictional war, never a real one.", href: "/factions", action: "Choose your side" },
-    { id: "companion", icon: BrainCircuit, status: "AI co-commander", title: "A co-commander that talks back", description: "Local integration supports fog-respecting advice and reviewed orders. Model and voice runtimes are optional; the public browser build runs without the companion.", href: "/companion", action: "How it works" },
-    { id: "install", icon: PackageCheck, status: "Play now", title: "Nothing else to install", description: `Its own art, sound and maps. Play in your browser at rtsai.net/play now. ${downloadStatus}`, href: "/download", action: "Ways to play" },
+  const steps = [
+    { title: "Choose your side", text: `${count(modern.length)} real-world factions, each with its own doctrine, signature units, voice and counters. A fictional war, never a real one.` },
+    { title: "Build and fight", text: "Classic top-down or isometric, in your browser. Its own art, sound and maps: nothing else to install." },
+    { title: "Keep the final say", text: "The optional local co-commander sees only what you see, and you review every order. The browser game runs without it." },
   ];
 
   return (
-    <>
-      <SiteHeader />
+    <PathPage home>
       <main id="main-content">
-        <header className="home-hero" id="top">
-          <div className="home-hero-copy">
-            <span className="eyebrow">RTS AI · Modern real-time strategy</span>
-            <h1>Seven real-world factions.<br /><em>One fictional war.</em></h1>
-            <p className="hero-lede">One standalone game with its own art, sound and maps. Play Classic/top-down and isometric modes in your browser, or check the native alpha downloads. The optional local co-commander has separate runtime and release requirements.</p>
-            <div className="hero-actions">
-              {/* /play is the browser game's own Vercel project behind a proxy, not a page of this app: a plain link. */}
-              <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>
-              <Link className="text-action" href="/factions">Choose your side <ArrowRight size={17} /></Link>
+        <section className="hqp-hero rts-hero" id="top" aria-labelledby="hero-title">
+          <div className="hqp-hero-sun" aria-hidden="true" />
+          <div className="hqp-hero-grid">
+            <div className="hqp-hero-copy">
+              <p className="hqp-eyebrow">RTS AI · Modern real-time strategy</p>
+              <h1 className="hqp-display" id="hero-title">Seven real-world factions. <em>One fictional war.</em></h1>
+              <p className="hqp-lede">A real-time strategy game with its own art, sound and maps. Play it free in your browser.</p>
+              <div className="hqp-ctas">
+                <a className="hqp-btn hqp-btn-ember" href="/play/" data-analytics-event="play_browser">Play in your browser</a>
+                <Link className="hqp-btn hqp-btn-ghost" href="/factions">Choose your side <ArrowRight size={17} aria-hidden="true" /></Link>
+              </div>
+              <nav className="rts-flags" aria-label="The seven factions">{modern.map((f, i) =>
+                <Link key={f.id} href={`/factions/${f.id}`} style={{ "--faction-accent": f.accent, "--i": i } as CSSProperties}><FactionFlag factionId={f.id} name={f.name} accent={f.accent} size="md" eager /><span>{f.name}</span></Link>)}</nav>
             </div>
-            <ul className="home-platforms" aria-label="Platforms">
-              <li><Globe size={15} /> Browser <small>play now</small></li>
-              <li><MonitorDown size={15} /> Windows <small>{mod ? mod.version : "coming soon"}</small></li>
-              {mod && macRelease && <li><Apple size={15} /> macOS <small>{mod.version}</small></li>}
-              <li><PackageCheck size={15} /> Nothing else to install</li>
-            </ul>
+            <div className="hqp-hero-art">
+              <div className="rts-army" aria-hidden="true">{modern.map((f, i) =>
+                <figure key={f.id} className="rts-army-unit" style={{ "--faction-accent": f.accent, "--i": i } as CSSProperties}>
+                  <LineupImage factionId={f.id} alt="" sizes="(min-width: 860px) 54vw, 100vw" priority={i === 0} />
+                  <figcaption><FactionFlag factionId={f.id} name={f.name} accent={f.accent} size="sm" eager={i === 0} />{f.name}<small>{f.title}</small></figcaption>
+                </figure>)}</div>
+            </div>
           </div>
-          <nav className="home-flags" aria-label="The seven factions">{modern.map(f =>
-            <Link key={f.id} href={`/factions/${f.id}`} style={{ "--faction-accent": f.accent } as CSSProperties}><FactionFlag factionId={f.id} name={f.name} accent={f.accent} size="md" eager /><span>{f.name}</span></Link>)}</nav>
-          <FrontLine priority={3} />
-        </header>
+          <HqHills />
+        </section>
 
-        <section className="home-experiences" aria-labelledby="pillars-title">
-          <div className="home-section-heading">
-            <span className="section-number">WHAT YOU GET</span>
-            <h2 id="pillars-title">Seven factions.<br />One co-commander.</h2>
-            <p>A standalone game in development, free to play in your browser now. {downloadStatus}</p>
-          </div>
-          <div className="home-experience-grid">
-            {pillars.map((pillar, index) => (
-              <Link href={pillar.href} className="home-experience-card" key={pillar.id}>
-                <div><span>{String(index + 1).padStart(2, "0")}</span><i>{pillar.status}</i></div>
-                <pillar.icon size={26} />
-                <h3>{pillar.title}</h3>
-                <p>{pillar.description}</p>
-                <strong>{pillar.action} <ArrowRight size={16} /></strong>
-              </Link>
-            ))}
+        <section className="hqp-section hqp-tint" aria-labelledby="how-title">
+          <div className="hqp-inner">
+            <div className="hqp-head">
+              <div><p className="hqp-eyebrow">How it plays</p><h2 className="hqp-display" id="how-title">Pick a side. <em>Take command.</em></h2></div>
+              <p className="hqp-lede">A standalone game in development, free to play in your browser now. {downloadStatus}</p>
+            </div>
+            <HqStones steps={steps} />
           </div>
         </section>
 
-        <section className="home-companion" aria-labelledby="companion-title">
-          <div>
-            <span className="section-number">THE AI CO-COMMANDER</span>
-            <h2 id="companion-title">Your battlefield.<br /><em>Your final say.</em></h2>
-            <ul className="hero-proof">
-              <li><ShieldCheck size={15} /> Sees only what you see</li>
-              <li><Mic size={15} /> Optional local companion</li>
-              <li><Zap size={15} /> Review before applying</li>
-            </ul>
-            <Link className="text-action" href="/companion">How the co-commander works <ArrowRight size={17} /></Link>
+        <section className="hqp-section" aria-labelledby="faction-entry-title">
+          <div className="hqp-inner">
+            <div className="hqp-head">
+              <div><p className="hqp-eyebrow">The factions</p><h2 className="hqp-display" id="faction-entry-title">Choose your <em>side.</em></h2></div>
+              <Link className="rts-more" href="/factions">All factions <ArrowRight size={17} aria-hidden="true" /></Link>
+            </div>
+            <div className="rts-factions">{rosterFactions("ra2").filter(f => dossierForRoster(f)).map(f => <FactionCard key={f.id} faction={f} compact />)}</div>
           </div>
-          {trailer ? <div><HeroTrailer video={trailer.video} poster={trailer.poster} /><p>Earlier companion demonstration. Voice and model capabilities depend on the installed runtime.</p></div> : <CompanionDemo />}
         </section>
 
-        <section className="home-nations" aria-labelledby="faction-entry-title">
-          <div className="faction-group-heading"><div><span className="section-number">THE FACTIONS</span><h2 id="faction-entry-title">Choose your side.</h2></div><Link className="text-action" href="/factions">All factions <ArrowRight size={17} /></Link></div>
-          <div className="faction-tile-grid">{rosterFactions("ra2").filter(f => dossierForRoster(f)).map(f => <FactionCard key={f.id} faction={f} compact />)}</div>
+        <section className="hqp-section hqp-tint" aria-labelledby="companion-title">
+          <div className="hqp-inner rts-commander">
+            <div>
+              <p className="hqp-eyebrow">The AI co-commander</p>
+              <h2 className="hqp-display" id="companion-title">Your battlefield. <em>Your final say.</em></h2>
+              <ul className="rts-proof">
+                <li><ShieldCheck size={18} aria-hidden="true" /> Sees only what you see</li>
+                <li><Mic size={18} aria-hidden="true" /> Optional local companion</li>
+                <li><Zap size={18} aria-hidden="true" /> Review before applying</li>
+              </ul>
+              <Link className="rts-more" href="/companion">How the co-commander works <ArrowRight size={17} aria-hidden="true" /></Link>
+            </div>
+            {trailer ? <div>
+              <div className="hqp-screen rts-screen"><div className="hqp-chrome"><i /><i /><i /><span>RTS AI · gameplay</span></div><HeroTrailer video={trailer.video} poster={trailer.poster} /></div>
+              <p className="rts-caption">Earlier companion demonstration. Voice and model capabilities depend on the installed runtime.</p>
+            </div> : <CompanionDemo />}
+          </div>
         </section>
 
-        <section className="closing-section home-closing">
-          <div>
-            <span className="eyebrow">{mod ? `RTS AI ${mod.version}` : "Play now"}</span>
-            <h2>Play in your browser.<br />Or on your computer.</h2>
-          </div>
-          <div>
-            <p>{mod ? `RTS AI ${mod.version} is out for Windows${macRelease ? " and macOS" : ""}, and free to play in your browser at rtsai.net/play.` : "RTS AI is in development and free to play in your browser at rtsai.net/play. The Windows download is coming soon."}</p>
-            <div className="hero-actions">
-              <a className="primary-action" href="/play/" data-analytics-event="play_browser"><Globe size={17} /> Play in your browser</a>
-              {mod && <Link className="text-action" href="/download"><Download size={17} /> Download RTS AI {mod.version}</Link>}
-              <Link className="text-action" href="/factions">Meet the factions <ArrowRight size={17} /></Link>
+        <section className="hqp-section rts-closing-band" aria-labelledby="closing-title">
+          <div className="hqp-inner rts-closing">
+            <div>
+              <p className="hqp-eyebrow">Play now</p>
+              <h2 className="hqp-display" id="closing-title">Play in your browser. <em>Or on your computer.</em></h2>
+            </div>
+            <div>
+              <p>{mod ? `Free to play in your browser at rtsai.net/play. RTS AI ${mod.version} is out for Windows${macRelease ? " and macOS" : ""}.` : "RTS AI is in development and free to play in your browser at rtsai.net/play. The Windows download is coming soon."}</p>
+              <div className="hqp-ctas">
+                <a className="hqp-btn hqp-btn-ember" href="/play/" data-analytics-event="play_browser">Play in your browser</a>
+                {mod && <Link className="hqp-btn hqp-btn-ghost" href="/download">Download for {macRelease ? "Windows or Mac" : "Windows"}</Link>}
+              </div>
+              <Link className="rts-more" href="/factions">Meet the factions <ArrowRight size={17} aria-hidden="true" /></Link>
             </div>
           </div>
         </section>
       </main>
-      <SiteFooter />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
-    </>
+    </PathPage>
   );
 }

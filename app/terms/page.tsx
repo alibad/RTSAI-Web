@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader, SiteFooter, modSource } from "../components/SiteChrome";
+import { modSource } from "../components/SiteChrome";
 import { LegalDraftNote } from "../components/LegalDraftNote";
 import { LEGAL } from "../../lib/legal";
+import { PathPage } from "../components/PathChrome";
 
 export const metadata: Metadata = {
   title: "Terms — RTS AI",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   const mail = `mailto:${LEGAL.contactEmail}`;
   return (
-    <><SiteHeader /><main id="main-content" className="privacy-page legal-page">
+    <PathPage><main id="main-content" className="privacy-page legal-page">
       <Link className="privacy-back" href="/">← Back to RTS AI</Link>
       <span className="eyebrow">Terms / plain language</span>
       <h1>The rules for playing RTS AI.</h1>
@@ -98,6 +99,6 @@ export default function TermsPage() {
           <p>Write to <a href={mail}>{LEGAL.contactEmail}</a>. How we handle your data is on the <Link href="/privacy">privacy page</Link>.</p>
         </div>
       </section>
-    </main><SiteFooter /></>
+    </main></PathPage>
   );
 }

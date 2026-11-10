@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { ArrowRight, BrainCircuit, Map, RadioTower, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { CompanionDemo } from "../components/CompanionDemo";
-import { gameSource, SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { gameSource } from "../components/SiteChrome";
 import { getMacAlphaRelease } from "../../lib/mac-release";
+import { PathPage } from "../components/PathChrome";
 
 export const metadata: Metadata = {
   title: "AI Game Companion | RTS AI",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function CompanionPage() {
   const macAlpha = getMacAlphaRelease();
   return (
-    <><SiteHeader /><main id="main-content">
+    <PathPage><main id="main-content">
       <header className="route-hero route-hero-split">
         <div><span className="eyebrow">OPTIONAL LOCAL CO-COMMANDER</span><h1>A second mind.<br /><em>Your final say.</em></h1>
           <p>Ask for advice, review a proposed order and decide whether to apply it. These controls passed local integration checks; model and voice runtimes are optional.</p>
@@ -31,6 +32,6 @@ export default function CompanionPage() {
       <section className="architecture-section"><div className="architecture-copy"><span className="section-number">CAPABILITIES BY BUILD</span><h2>Local checks.<br />Clear release limits.</h2><p>The public static browser build has no local companion service routes. Locally served development builds support reviewed orders. The macOS 15+ {macAlpha ? "alpha is downloadable and" : "candidate is not published and"} supports Apple silicon companion use, but contains no model, transcription or speech runtime. It is ad-hoc signed and not notarized; Intel companion support and another Mac remain pending.</p><p>Hosted model access requires authenticated, durable budget controls and provider approval. That service is not advertised as available. Native and browser unit-voice language selection is separate from companion speech; human listening review remains pending.</p><Link href="/privacy#ai-co-commander">Read AI privacy <ArrowRight size={16} /></Link></div>
         <div className="route-diagram" aria-label="Local companion architecture"><div><Map size={18} /><span>OpenRA engine<small>visible state and order receipts</small></span></div><i /><div className="active-route"><Sparkles size={18} /><span>Local companion<small>advice + reviewed proposals</small></span></div><i /><div><ShieldCheck size={18} /><span>Player review<small>explicit proposal ID</small></span></div><i /><div className="model-routes"><span>Optional runtime<small>not included in the Mac candidate</small></span></div></div>
       </section>
-    </main><SiteFooter /></>
+    </main></PathPage>
   );
 }

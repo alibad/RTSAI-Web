@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { SiteHeader, SiteFooter } from "../components/SiteChrome";
 import { ModeNav } from "../components/ContentGuide";
 import { FactionCard } from "../components/FactionCard";
 import { FactionFlag } from "../components/FactionVisuals";
@@ -9,6 +8,7 @@ import { CLASSIC_ADDON, dossierForRoster, factions, modeLabel, resolveMode, rost
 import { getModRelease, isPublished, macInstaller } from "../../lib/mod-release";
 import { EA_NOTICE } from "../../lib/ea-notice";
 import "./factions.css";
+import { PathPage } from "../components/PathChrome";
 
 export const metadata: Metadata = { title: "Factions | RTS AI", description: "Seven real-world factions in one fictional war: their units, buildings, defenses and doctrines. A standalone game with Classic and isometric gameplay; no Red Alert installation required.", alternates: { canonical: "/factions" } };
 
@@ -28,7 +28,7 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
   const releaseLine = released
     ? `RTS AI ${released.version} is out for Windows${macInstaller(released) ? " and macOS" : ""}, and free to play in your browser at rtsai.net/play.`
     : "RTS AI is in development and free to play in your browser now at rtsai.net/play. The Windows download is coming soon.";
-  return <><SiteHeader /><main id="main-content" className="catalog-page faction-directory">
+  return <PathPage><main id="main-content" className="catalog-page faction-directory">
     <header className="factions-intro">
       <div><span className="eyebrow">THE FACTIONS</span><h1>Choose your side.</h1></div>
       <nav className="flag-rail" aria-label="Jump to a faction">{rail.map(f =>
@@ -52,5 +52,5 @@ export default async function FactionsPage({ searchParams }: { searchParams: Pro
       {originals.map(group => <div className="classic-addon-side" aria-label={group.name} key={group.name}><h3>{group.name}</h3><div className="faction-original-grid">{group.factions.map(f => <FactionCard faction={f} key={f.id} />)}</div></div>)}
     </section>}
     <p className="directory-footnote">Names and rosters come from the generated catalog snapshot. {standaloneRosters ? "Both rosters reflect the locally accepted standalone rules; this does not certify public availability." : "Classic entries describe historical rules, not the newly integrated standalone profile."} Shared units are counted once in the totals. {factions.filter(f => f.variants[mode].status === "implemented").length} modern factions have detailed dossiers. Balance is still being refined. National flags: flag-icons (MIT).</p>
-  </main><SiteFooter /></>;
+  </main></PathPage>;
 }

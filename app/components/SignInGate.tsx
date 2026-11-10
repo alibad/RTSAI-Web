@@ -12,13 +12,14 @@ const noop = () => () => {};
 
 /**
  * Members-only areas (the game, Workshop, Faction viewer, Earth Studio): a free account unlocks all of them. The gated
- * page's own code and art only load after sign-in.
+ * page's own code and art only load after sign-in. `shell` wraps the signed-out gate (header, card, footer) in one element
+ * with these classes, so a page look can style all of it (the public pages pass PathChrome's pathShell).
  */
-export function SignInGate({ feature, title, header, footer, children }: { feature: string; title?: string; header: ReactNode; footer: ReactNode; children: ReactNode }) {
+export function SignInGate({ feature, title, header, footer, shell, children }: { feature: string; title?: string; header: ReactNode; footer: ReactNode; shell?: string; children: ReactNode }) {
   const { user, loading, openAuth } = useAuth();
   const local = useSyncExternalStore(noop, onThisMachine, () => false);
   if (user || !firebaseIsConfigured || local) return <>{children}</>;
-  return <>
+  const gate = <>
     {header}
     <main id="main-content" className="signin-gate" aria-busy={loading}>
       {!loading && <section className="signin-gate-card">
@@ -37,4 +38,5 @@ export function SignInGate({ feature, title, header, footer, children }: { featu
     </main>
     {footer}
   </>;
+  return shell ? <div className={shell}>{gate}</div> : gate;
 }

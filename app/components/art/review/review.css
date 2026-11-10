@@ -497,9 +497,11 @@
   .studio-bar { flex-wrap:wrap; padding:12px; gap:12px; }
   .studio-title { flex:1; font-size:14px; }
   .studio-mode { min-width:0; max-width:160px; }
-  .studio-navigation { order:3; width:100%; height:36px; gap:24px; }
+  .studio-navigation { order:3; width:100%; height:36px; gap:24px; overflow-x:auto; scrollbar-width:none; }
   .studio-navigation button { font-size:13px; }
-  .lab-top { padding:10px 12px; grid-template-columns:1fr auto; }
+  .lab-top { padding:10px 12px; grid-template-columns:minmax(0,1fr) auto; }
+  .lab-top-right { grid-column:1 / -1; justify-self:stretch; min-width:0; flex-wrap:wrap; }
+  .lab-top-right .chain-tally { flex-wrap:wrap; row-gap:6px; }
   .lab-body, .lab-body.is-collapsed { display:flex; flex-direction:column; }
   .lab-rail { max-height:290px; border:0; border-bottom:1px solid var(--line); }
   .lab-rail-head [data-slot=select-trigger], .lab-rail-text { display:block; }

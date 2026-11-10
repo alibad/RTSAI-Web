@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader, SiteFooter } from "../components/SiteChrome";
 import { LegalDraftNote } from "../components/LegalDraftNote";
 import { LEGAL } from "../../lib/legal";
+import { PathPage } from "../components/PathChrome";
 
 export const metadata: Metadata = {
   title: "Privacy — RTS AI",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   const mail = `mailto:${LEGAL.contactEmail}`;
   return (
-    <><SiteHeader /><main id="main-content" className="privacy-page">
+    <PathPage><main id="main-content" className="privacy-page">
       <Link className="privacy-back" href="/">← Back to RTS AI</Link>
       <span className="eyebrow">Privacy / plain language</span>
       <h1>Your account helps you use the website.</h1>
@@ -100,6 +100,6 @@ export default function PrivacyPage() {
         <h2>Public downloads</h2>
         <p>Browsing the site and downloading public game builds do not require an RTS AI account. Playing in the browser, the Map Workshop, the Faction Studio, the Faction viewer and the Earth Mission Studio require a free account, as do interactive website AI features. That website account does not enable a hosted in-game model service.</p>
       </section>
-    </main><SiteFooter /></>
+    </main></PathPage>
   );
 }

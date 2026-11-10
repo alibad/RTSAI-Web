@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Apple, BrainCircuit, CalendarDays, Cpu, Download, ExternalLink, FileArchive, Globe, HardDrive, MemoryStick, Mic, MonitorDown, PackageCheck, PowerOff, ShieldAlert, ShieldCheck, Wifi } from "lucide-react";
 import Link from "next/link";
-import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { getGameRelease } from "../../lib/release";
 import { getModRelease, isPublished, macInstaller, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
 import { getMacAlphaRelease } from "../../lib/mac-release";
 import { availability, CLASSIC_ADDON_NOTE, factionById, modeLabel, resolveMode, rosterFactionById } from "../../lib/game-content";
 import "./download.css";
 import { FrontLine } from "../components/FrontLine";
+import { PathPage } from "../components/PathChrome";
 
 const releaseAtBuild = getModRelease();
 const macAlphaRelease = getMacAlphaRelease();
@@ -126,8 +126,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           : "The standalone Classic build passed local checks, but this historical catalog does not certify its faction coverage or public availability.";
 
   return (
-    <>
-      <SiteHeader />
+    <PathPage>
       <main id="main-content">
         <header className="route-hero download-route-hero play-hero">
           <span className="eyebrow">{mac ? "RTS AI / BROWSER, WINDOWS AND MACOS" : "RTS AI / BROWSER AND WINDOWS"}</span>
@@ -297,7 +296,6 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <div className="download-footnote"><BrainCircuit size={15} /><span>The earlier prototype keeps its own AI setup. The current Windows download above is the RTS AI library: Classic, RA2 and RTS.</span></div>
         </details>
       </main>
-      <SiteFooter />
-    </>
+    </PathPage>
   );
 }

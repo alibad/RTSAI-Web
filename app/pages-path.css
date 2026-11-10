@@ -1,0 +1,279 @@
+/* The public pages beyond home in the Human Quest family look "The Path", after sunset (8 Nov 2026).
+   RTS AI is night-only: no sun/moon button, the after-sunset palette everywhere.
+   Everything is scoped to .rts-inner (PathPage in components/PathChrome.tsx and the sign-in gate's shell), so the game,
+   Workshop, Faction viewer, Earth studio, Faction Studio and admin keep their own look.
+   Loads after globals.css, site.css, catalog.css and the pages' own CSS; home-path.css supplies the night tokens,
+   the questbar and the footer (all keyed on .rts-path, which every .rts-inner page also carries). */
+
+/* ---------- The site's own tokens, after sunset ---------- */
+.rts-inner {
+  --ink: #1c130e;                       /* the page (was a green-black) */
+  --ink-soft: #241911;                  /* cards and panels */
+  --paper: #f3e8d8;                     /* text */
+  --paper-deep: #c4b29c;
+  --muted: #c4b29c;
+  --line: #3d2c20;
+  --gold: #f2a08f;                      /* accents: the brand's soft red takes over from gold */
+  --font-mono: var(--hqp-mono);
+  --rts-card: #241911;
+  --rts-card-2: #2a1d15;
+  --rts-well: #140d09;                  /* behind art and in deep panels */
+  --rts-hairline: rgba(243, 232, 216, .12);
+}
+.rts-inner main { color: var(--hqp-ink); }
+.rts-inner ::selection { background: var(--hqp-ember); color: #fff; }
+.rts-inner a:focus-visible, .rts-inner button:focus-visible, .rts-inner summary:focus-visible { outline-color: var(--gold); }
+
+/* ---------- Eyebrows: the family's small mono line ---------- */
+.rts-inner :is(.eyebrow, .section-number) { color: var(--hqp-ink-3); font: 500 12px/1.3 var(--hqp-mono); letter-spacing: .14em; text-transform: uppercase; }
+.rts-inner .route-hero > .eyebrow, .rts-inner .route-hero > div > .eyebrow { color: var(--hqp-ink-3); }
+.rts-inner .faction-hero .eyebrow, .rts-inner .faction-narrative-mark .section-number { color: var(--faction-accent); }
+.rts-inner .platform-kicker { color: var(--hqp-ink-3); font: 500 11px/1.3 var(--hqp-mono); letter-spacing: .12em; }
+
+/* ---------- Headings in Fraunces ---------- */
+.rts-inner :is(.catalog-intro h1, .factions-intro h1, .route-hero h1, .faction-hero h1, .unit-title h1, .privacy-page h1, .signin-gate-card h1, .account-hero h1, .account-goodbye h1) {
+  font-family: var(--hqp-display); font-weight: 450; letter-spacing: -.025em; font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0; color: var(--hqp-ink);
+}
+.rts-inner :is(.route-hero h1, .catalog-intro h1, .faction-hero h1) em { color: var(--hqp-ember); font-style: italic; font-weight: 300; }
+.rts-inner .route-hero h1 { line-height: .98; }
+.rts-inner :is(.faction-group-heading h2, .roster-heading h2, .unit-appearance h2, .download-intro h2, .section-intro h2, .architecture-copy h2, .play-option h2, .catalog-release h2, .catalog-unavailable h2, .catalog-note h2, .release-selection h2, .faction-narrative h2, .privacy-page section h2, .account-card h2, .account-dialog h2) {
+  font-family: var(--hqp-display); font-weight: 450; letter-spacing: -.02em; font-variation-settings: "SOFT" 0, "WONK" 0; color: var(--hqp-ink);
+}
+.rts-inner :is(.doctrine-cards h2, .principles h3, .ai-choice h3, .platform-card h3, .campaign-card h3, .faction-tile.is-original h3, .roster-category summary, .privacy-detail h3) {
+  font-family: var(--hqp-display); font-weight: 500; letter-spacing: -.01em; font-variation-settings: "SOFT" 0, "WONK" 0; color: var(--hqp-ink);
+}
+.rts-inner .faction-tile-name h3 { font-family: var(--hqp-display); font-weight: 450; letter-spacing: -.015em; font-variation-settings: "opsz" 144, "SOFT" 0; }
+.rts-inner .faction-group-heading h2 { font-size: clamp(30px, 3vw, 40px); line-height: 1.1; }
+.rts-inner .download-intro h2, .rts-inner .section-intro h2, .rts-inner .architecture-copy h2 { line-height: 1.04; }
+
+/* ---------- Reading text and small print ---------- */
+.rts-inner :is(.catalog-intro > p, .dossier-hero p, .roster-heading p, .faction-group-heading p, .directory-summary p, .directory-stats .directory-release, .doctrine-cards p, .doctrine-grid p, .faction-story, .campaign-synopsis, .faction-narrative p, .rival-view p, .unit-hero-copy > p, .route-hero > p, .route-hero > div > p, .download-intro > p, .play-option p, .section-intro p, .architecture-copy > p, .principles p, .platform-card > p, .ai-choice p, .privacy-lede, .privacy-page section p, .privacy-detail ul, .catalog-release p, .catalog-note p, .catalog-unavailable p, .catalog-provenance p, .release-selection p, .mod-coming-soon p, .signin-gate-card > p, .account-card p, .account-goodbye p, .account-dialog p) { color: var(--hqp-ink-2); }
+.rts-inner .faction-narrative.is-identity .faction-narrative-body p:first-child, .rts-inner .faction-hero-tagline { color: var(--hqp-ink); }
+.rts-inner :is(.directory-footnote, .classic-addon-note, .faction-group-heading > span, .directory-stats span, .directory-summary span, .ai-choice small, .platform-meta, .release-trust, .download-footnote, .narrative-framing, .campaign-card header p, .campaign-chapters span, .campaign-cast small, .shared-units small, .shared-units > span, .roster-category-title span, .roster-category summary > span, .faction-tile.is-original span, .account-hero p, .account-numbers span, .account-links, .signin-gate-continue, .stat-bars dt, .unit-sprite figcaption) { color: var(--hqp-ink-3); }
+.rts-inner .narrative-framing { color: var(--hqp-ink-3) !important; }
+.rts-inner :is(.mod-requirements dd, .privacy-detail b, .unsigned-note p, .state-readout b, .spoken-line p, .rival-view p, .shared-units li, .stat-bars small, .faction-tile.is-modern p) { color: var(--hqp-ink-2); }
+.rts-inner :is(.mod-asset-list b, .ai-choice h3, .platform-card h3, .faction-roster-summary b, .count-chips b, .privacy-contact strong, .account-numbers strong) { color: var(--hqp-ink); }
+.rts-inner code { color: var(--hqp-ink-2); font-family: var(--hqp-mono); }
+.rts-inner .mod-asset-list code { color: var(--hqp-ink-3); }
+
+/* ---------- Links and buttons: the family pills, in the site's red ---------- */
+.rts-inner .primary-action { border-radius: 999px; padding: 13px 22px; background: var(--hqp-ember); color: #fff; font: 600 15px/1 var(--hqp-text); letter-spacing: 0; }
+.rts-inner .primary-action:hover { background: color-mix(in srgb, var(--hqp-ember) 86%, #fff); transform: translateY(-1px); }
+.rts-inner .secondary-download { border-radius: 999px; border: 1.5px solid var(--hqp-ink-3); color: var(--hqp-ink); font: 600 14px/1 var(--hqp-text); padding: 10px 18px; }
+.rts-inner .secondary-download:hover { border-color: var(--hqp-ink); background: var(--hqp-paper-2); color: var(--hqp-ink); }
+.rts-inner .pending-download { border-radius: 999px; border: 1.5px dashed var(--hqp-line); color: var(--hqp-ink-3); }
+.rts-inner .text-action { color: var(--hqp-ink-2); font: 600 15px/1.4 var(--hqp-text); transition: color .15s ease, gap .15s ease; }
+.rts-inner .text-action:hover { color: var(--hqp-ink); gap: 12px; }
+.rts-inner :is(.catalog-back, .privacy-back) { color: var(--hqp-ink-2); font: 600 14px/1.4 var(--hqp-text); transition: color .15s ease; }
+.rts-inner :is(.catalog-back, .privacy-back):hover { color: var(--hqp-ink); }
+.rts-inner :is(.directory-summary a, .directory-stats .directory-release a, .catalog-note a, .catalog-unavailable a, .catalog-provenance a, .catalog-provenance summary, .release-selection a, .architecture-copy > a, .roster-category a, .privacy-detail a, .legal-page .privacy-detail a, .planned-setup > summary, .platform-meta a, .release-trust a, .account-links a) { color: var(--gold); }
+.rts-inner :is(.privacy-detail a, .platform-meta a, .release-trust a):hover { color: var(--hqp-ink); }
+.rts-inner .platform-meta a, .rts-inner .release-trust a { border-bottom-color: var(--hqp-line); }
+.rts-inner .download-intro p a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+.rts-inner .download-intro p a:hover { color: var(--hqp-ink); }
+.rts-inner .download-intro > .primary-action { margin: 18px 0 6px; }
+.rts-inner .architecture-copy > a { font: 600 15px/1.4 var(--hqp-text); }
+
+/* ---------- Surfaces: warm cards instead of green-black ones ---------- */
+.rts-inner :is(.catalog-card, .unit-card, .catalog-note, .catalog-unavailable, .directory-stats li, .doctrine-cards article, .unit-sprite, .route-diagram > div:not(.model-routes), .home-faction-entry, .install-contract) { background: var(--rts-card); border-color: var(--line); }
+.rts-inner .catalog-image { background: var(--rts-well); }
+.rts-inner .catalog-image figcaption { color: var(--hqp-ink-3); border-top-color: var(--line); }
+.rts-inner .unit-cameo { background: var(--rts-well); box-shadow: 0 0 0 1px rgba(0, 0, 0, .7), 0 0 0 2px rgba(243, 232, 216, .14); }
+.rts-inner .faction-flag { box-shadow: 0 0 0 1px rgba(243, 232, 216, .2), 0 6px 16px rgba(10, 5, 2, .45); }
+.rts-inner .faction-flag.is-emblem { background: color-mix(in srgb, var(--faction-accent) 16%, #1c130e); }
+.rts-inner :is(.count-chips li, .cost-chip, .category-chip, .roster-card-tags span) { border-color: var(--rts-hairline); color: var(--hqp-ink-2); background: rgba(243, 232, 216, .03); }
+.rts-inner .roster-card-tags .cost-chip { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
+.rts-inner .stat-bar { background: rgba(243, 232, 216, .08); }
+
+/* ---------- /factions ---------- */
+.rts-inner .catalog-intro h1, .rts-inner .factions-intro h1 { font-size: clamp(46px, 5.6vw, 80px); line-height: .98; }
+.rts-inner .flag-rail a { color: var(--hqp-ink-3); font: 500 12px/1.1 var(--hqp-text); border-radius: 12px 12px 0 0; }
+.rts-inner .flag-rail a:hover, .rts-inner .flag-rail a:focus-visible { color: var(--hqp-ink); background: color-mix(in srgb, var(--faction-accent) 10%, transparent); }
+.rts-inner .mode-nav { padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--rts-well); }
+.rts-inner .mode-nav a { min-height: 42px; padding: 9px 22px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; color: var(--hqp-ink-2); }
+.rts-inner .mode-nav a b { font: 600 15px/1 var(--hqp-text); color: inherit; }
+.rts-inner .mode-nav a.is-addon b { color: var(--hqp-ink-3); font-weight: 500; }
+.rts-inner .mode-nav a:hover { color: var(--hqp-ink); }
+.rts-inner .mode-nav a[aria-current="page"] { background: var(--hqp-ink); color: var(--hqp-paper); box-shadow: none; }
+.rts-inner .mode-nav a.is-addon[aria-current="page"] b { color: var(--hqp-paper); }
+.rts-inner .directory-stats li { border-radius: 14px; }
+.rts-inner .directory-stats b, .rts-inner .directory-summary b { font: 400 34px/1 var(--hqp-display); letter-spacing: -.03em; color: var(--hqp-ink); }
+.rts-inner .directory-stats li.is-addon { background: transparent; border-style: dashed; }
+.rts-inner .directory-stats li.is-addon b { color: var(--hqp-ink-2); }
+.rts-inner .faction-tile.is-modern { border-top: 3px solid var(--faction-accent); }
+.rts-inner .faction-tile.is-original { background: var(--rts-card); border-color: var(--line); border-left-color: var(--faction-accent); }
+.rts-inner .faction-tile.is-original:hover { background: var(--rts-card-2); border-color: var(--faction-accent); }
+.rts-inner .faction-tile.is-original h3 { font-size: 19px; }
+.rts-inner :is(.faction-tile-arrow, .faction-original-head > svg) { color: var(--hqp-ink-3); }
+.rts-inner .faction-group.classic-addon { border-top-color: var(--line); }
+.rts-inner .faction-group.classic-addon h2 { color: var(--hqp-ink-2); }
+.rts-inner .classic-addon-side h3 { color: var(--hqp-ink-3); font-family: var(--hqp-mono); }
+
+/* ---------- /factions/[id] ---------- */
+.rts-inner .faction-hero { border-color: var(--line); border-top-color: var(--faction-accent); background:
+  radial-gradient(ellipse 55% 85% at 72% 100%, color-mix(in srgb, var(--faction-accent) 30%, transparent), transparent 72%),
+  repeating-linear-gradient(135deg, rgba(243, 232, 216, .02) 0 1px, transparent 1px 18px),
+  linear-gradient(160deg, #2a1d15 0%, #1c130e 75%); }
+.rts-inner .faction-hero h1 { font-size: clamp(50px, 6.6vw, 98px); line-height: .95; }
+.rts-inner .faction-hero-tagline { font: 400 clamp(20px, 1.9vw, 25px)/1.3 var(--hqp-display); font-style: italic; letter-spacing: -.01em; }
+.rts-inner .doctrine-cards article { border-radius: 0 0 14px 14px; }
+.rts-inner .faction-story { color: var(--hqp-ink-3); }
+.rts-inner .roster-category-title { border-bottom-color: var(--line); color: var(--hqp-ink-2); font-family: var(--hqp-mono); font-weight: 500; }
+.rts-inner :is(.roster-card > a, .roster-card > div) { border-color: var(--line); background: linear-gradient(180deg, #2a1d15 0%, #1f150f 100%); }
+.rts-inner .roster-card > a:hover, .rts-inner .roster-card > a:focus-visible { border-color: var(--faction-accent); background: linear-gradient(180deg, #31221a 0%, #231811 100%); }
+.rts-inner .roster-card-copy h4 { font: 500 17px/1.2 var(--hqp-display); letter-spacing: -.01em; color: var(--hqp-ink); }
+.rts-inner .shared-units li { border-color: var(--rts-hairline); }
+.rts-inner :is(.roster-category, .roster-category:last-of-type) { border-color: var(--line); }
+.rts-inner :is(.roster-category th, .roster-category td) { border-top-color: var(--line); }
+.rts-inner .roster-category thead th { color: var(--hqp-ink-3); }
+.rts-inner .roster-category td { color: var(--hqp-ink-2); }
+.rts-inner :is(.campaign-card, .faction-narrative) { border-color: var(--line); background: linear-gradient(115deg, color-mix(in srgb, var(--faction-accent) 9%, #241911) 0%, #1c130e 62%); }
+.rts-inner .campaign-card, .rts-inner .faction-narrative.is-identity { border-left-color: var(--faction-accent); }
+.rts-inner .campaign-card h3 { font-weight: 450; font-size: 32px; }
+.rts-inner .campaign-chapters li { border-top-color: var(--rts-hairline); }
+.rts-inner .campaign-chapters li::before { background: var(--hqp-paper); border-color: rgba(243, 232, 216, .35); }
+.rts-inner .campaign-chapters li.is-start::before { background: var(--faction-accent); border-color: var(--faction-accent); }
+.rts-inner .campaign-chapters strong { font: 500 16px/1.2 var(--hqp-display); }
+.rts-inner .campaign-cast li > span { background: color-mix(in srgb, var(--faction-accent) 18%, #1c130e); }
+.rts-inner .faction-narrative h2 { font-size: clamp(28px, 3vw, 40px); }
+.rts-inner .faction-narrative.is-identity .faction-narrative-body p:first-child { font: 400 21px/1.45 var(--hqp-display); letter-spacing: -.005em; }
+.rts-inner .rival-view { border-color: var(--line); background: rgba(10, 5, 2, .22); }
+.rts-inner :is(.catalog-release) { border-color: var(--line); border-top: 2px solid var(--hqp-ember); background: var(--rts-card); border-radius: 0 0 16px 16px; }
+.rts-inner .catalog-provenance { border-top-color: var(--line); }
+
+/* ---------- /units/[id] ---------- */
+.rts-inner .unit-hero-stage { border-color: var(--line); border-top-color: var(--faction-accent); background:
+  radial-gradient(ellipse 62% 48% at 50% 76%, color-mix(in srgb, var(--faction-accent) 32%, transparent), transparent 72%),
+  repeating-linear-gradient(135deg, rgba(243, 232, 216, .02) 0 1px, transparent 1px 18px),
+  linear-gradient(170deg, #2a1d15, #1c130e 80%); }
+.rts-inner .unit-title h1 { font-size: clamp(38px, 4.6vw, 66px); }
+.rts-inner .unit-siblings { border-color: var(--line); }
+
+/* ---------- /download ---------- */
+.rts-inner .route-hero h1 { font-size: clamp(56px, 6vw, 96px); }
+.rts-inner .play-option { border-color: var(--line); border-top: 3px solid var(--hqp-ember); border-radius: 0 0 18px 18px; background: linear-gradient(150deg, color-mix(in srgb, var(--hqp-ember) 9%, #241911), #1f150f); }
+.rts-inner .play-option > svg { color: var(--gold); }
+.rts-inner .play-option .platform-kicker { color: var(--hqp-ink-3); font-size: 11px; }
+.rts-inner .play-option h2 { font-size: 28px; font-weight: 450; }
+.rts-inner .play-option .pending-download { color: var(--hqp-ink-3); border-color: var(--hqp-line); }
+.rts-inner .release-trust { font-size: 11px; }
+.rts-inner .release-trust svg, .rts-inner .platform-icon, .rts-inner .mod-requirements dt, .rts-inner .download-footnote svg { color: var(--gold); }
+.rts-inner .mod-requirements dt { font-size: 11px; }
+.rts-inner .home-frontline::before { background: radial-gradient(ellipse 60% 100% at 50% 100%, color-mix(in srgb, var(--hqp-ember) 26%, transparent), transparent 70%); }
+.rts-inner .planned-setup { border-color: var(--line); }
+.rts-inner .planned-setup > summary { font: 600 16px/1.3 var(--hqp-text); }
+.rts-inner :is(.ai-choice, .platform-card) { border-color: var(--line); border-radius: 16px; background: var(--rts-card); }
+.rts-inner .ai-choice.is-default { border-color: color-mix(in srgb, var(--gold) 50%, transparent); background: color-mix(in srgb, var(--gold) 7%, #241911); }
+.rts-inner .platform-icon { border-color: var(--line); border-radius: 12px; background: var(--rts-well); }
+.rts-inner .release-status { border-color: var(--line); border-radius: 999px; padding: 5px 9px; color: var(--hqp-ink-3); font-size: 10px; }
+.rts-inner .release-status.is-ready { border-color: color-mix(in srgb, var(--gold) 50%, transparent); color: var(--gold); }
+.rts-inner .unsigned-note { border-color: color-mix(in srgb, var(--hqp-ember) 50%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--hqp-ember) 8%, transparent); color: var(--hqp-ember); }
+.rts-inner .unsigned-note b { color: var(--hqp-ink); }
+.rts-inner :is(.mod-setup, .mod-downloads, .classic-alpha, .classic-addon-note, .mod-requirements, .mod-requirements > div, .mod-asset-list, .mod-asset-list li) { border-color: var(--line); }
+.rts-inner .mod-asset-list .primary-action, .rts-inner .mod-asset-list .secondary-download { font-size: 14px; }
+.rts-inner .download-footnote { border-color: var(--line); border-radius: 12px; font-size: 11px; }
+.rts-inner details.classic-alpha > summary h2::after { color: var(--hqp-ink-3); }
+.rts-inner .release-selection { border-color: var(--line); border-radius: 16px; background: var(--rts-card); }
+
+/* ---------- /companion ---------- */
+.rts-inner .route-hero-split h1 { font-size: clamp(54px, 5.4vw, 86px); }
+.rts-inner .principles, .rts-inner .principles article { border-color: var(--line); }
+.rts-inner .principles svg { color: var(--hqp-ember); }
+.rts-inner .principles h3 { font-size: 24px; }
+.rts-inner .principles span { color: var(--hqp-ink-3); }
+.rts-inner .companion-demo { border-color: var(--line); border-radius: 18px; overflow: hidden; background: #241911; box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .9); }
+.rts-inner :is(.demo-topline, .demo-controls button, .spoken-line) { border-color: var(--line); }
+.rts-inner .demo-topline { background: var(--rts-card-2); color: var(--hqp-ink-3); }
+.rts-inner :is(.demo-route, .state-readout span, .spoken-line span, .demo-controls span) { color: var(--hqp-ink-3); }
+.rts-inner .spoken-line { color: var(--gold); }
+.rts-inner .demo-controls button { border-radius: 999px; color: var(--hqp-ink-2); }
+.rts-inner .demo-controls button:hover:not(:disabled) { border-color: var(--hqp-ink-3); color: var(--hqp-ink); }
+.rts-inner .mini-map { border-right-color: var(--line); }
+.rts-inner .route-diagram { border-color: var(--line); border-radius: 18px; }
+.rts-inner .route-diagram > div:not(.model-routes) { border-radius: 12px; }
+.rts-inner .route-diagram > div svg { color: var(--gold); }
+.rts-inner .route-diagram > div > span { color: var(--hqp-ink); }
+.rts-inner .route-diagram small { color: var(--hqp-ink-3); }
+.rts-inner .route-diagram .active-route svg { color: var(--hqp-ember); }
+.rts-inner .route-diagram > i { background: var(--hqp-ink-3); }
+.rts-inner .model-routes > span { border-color: var(--line); border-radius: 12px; color: var(--hqp-ink-2); }
+
+/* ---------- /privacy and /terms ---------- */
+.rts-inner .privacy-page h1 { font-size: clamp(46px, 6.4vw, 78px); line-height: 1; }
+.rts-inner .privacy-page section { border-top-color: var(--line); }
+.rts-inner .privacy-page section h2 { font-size: 22px; line-height: 1.2; }
+.rts-inner .privacy-detail h3 { font-size: 17px; }
+.rts-inner .privacy-detail li::marker { color: var(--gold); }
+.rts-inner .privacy-contact { border-color: var(--line); border-radius: 12px; background: var(--rts-card); }
+.rts-inner .privacy-contact span { color: var(--hqp-ink-3); }
+.rts-inner .legal-draft { border: 1px solid color-mix(in srgb, var(--hqp-sun) 45%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--hqp-sun) 8%, transparent); color: var(--hqp-ink-2); }
+.rts-inner .legal-draft svg, .rts-inner .legal-draft strong { color: var(--hqp-sun); }
+
+/* ---------- Sign-in gate (signed-out /signin, /workshop, /viewer) and the account page ---------- */
+.rts-inner .signin-gate { min-height: 64vh; }
+.rts-inner .signin-gate-card { border-color: var(--line); border-radius: 22px; background: linear-gradient(160deg, #2a1d15, #1f150f); box-shadow: 0 40px 80px -44px rgba(0, 0, 0, .9); }
+.rts-inner .signin-gate-card h1 { font-size: clamp(28px, 3.2vw, 36px); line-height: 1.1; }
+.rts-inner .signin-gate-icon, .rts-inner .account-card-icon { border: 1px solid var(--line); background: var(--rts-well); color: var(--gold); }
+.rts-inner .signin-gate-card ul { color: var(--hqp-ink-2); }
+.rts-inner .signin-gate-card li svg { color: var(--gold); }
+.rts-inner .signin-gate-card .primary-action { justify-content: center; }
+.rts-inner .signin-gate-card .text-action { font-size: 14px; }
+.rts-inner .account-hero-avatar { border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
+.rts-inner .account-hero-avatar.is-fallback { background: linear-gradient(160deg, #3d2c20, #1f150f); color: var(--gold); }
+.rts-inner .account-numbers div { border-color: var(--line); border-radius: 14px; background: var(--rts-card); }
+.rts-inner .account-numbers svg { color: var(--gold); }
+.rts-inner .account-numbers strong { font: 400 30px/1.05 var(--hqp-display); }
+.rts-inner .account-card { border-color: var(--line); border-radius: 16px; background: linear-gradient(160deg, #2a1d15, #1f150f); }
+.rts-inner .account-card.is-danger { border-color: color-mix(in srgb, var(--hqp-ember) 40%, transparent); background: linear-gradient(160deg, #2f1a13, #1f130e); }
+.rts-inner .account-card.is-danger .account-card-icon { color: var(--hqp-ember); border-color: color-mix(in srgb, var(--hqp-ember) 50%, transparent); }
+.rts-inner .account-button { border-radius: 999px; border-color: var(--hqp-ink-3); background: transparent; color: var(--hqp-ink); font: 600 14px/1 var(--hqp-text); }
+.rts-inner .account-button:hover:not(:disabled) { border-color: var(--hqp-ink); background: var(--hqp-paper-2); }
+.rts-inner .account-button.is-danger { border-color: var(--hqp-ember); background: color-mix(in srgb, var(--hqp-ember) 14%, transparent); color: #ffd9cf; }
+.rts-inner .account-button.is-danger:hover:not(:disabled) { background: var(--hqp-ember); color: #fff; }
+.rts-inner .account-toggle { border-color: var(--hqp-line); border-radius: 999px; overflow: hidden; }
+.rts-inner .account-toggle button { color: var(--hqp-ink-3); }
+.rts-inner .account-toggle button[aria-pressed="true"] { background: var(--hqp-ink); color: var(--hqp-paper); }
+.rts-inner .account-links svg { color: var(--hqp-ink-3); }
+.rts-inner .account-dialog { border-color: color-mix(in srgb, var(--hqp-ember) 40%, transparent); border-radius: 20px; background: #241911; }
+.rts-inner .account-gone li { border-color: var(--line); color: var(--hqp-ink-2); }
+.rts-inner :is(.account-type input, .account-reauth input) { border-color: var(--hqp-line); background: var(--rts-well); color: var(--hqp-ink); }
+
+/* ---------- Overlays outside the page wrapper, on Path pages (home included) ----------
+   AuthProvider renders the sign-in dialog and the Feedback button beside the page, not inside it, so they key on
+   the page being a Path page. Other pages (game tools, Faction Studio, admin) keep their own. The dialog stays a
+   light card, now on the family's paper. */
+:root:has(.rts-path) .feedback-launcher { border-radius: 999px; border-color: #3d2c20; background: color-mix(in srgb, #241911 94%, transparent); color: #f3e8d8; font: 600 13px/1 var(--hqp-text); }
+:root:has(.rts-path) .feedback-launcher svg { color: #f2a08f; }
+:root:has(.rts-path) .feedback-launcher:hover { border-color: #927e69; background: #2a1d15; color: #fff; }
+:root:has(.rts-path) .auth-dialog { border-color: #3d2c20; border-radius: 22px; background: #f6efe3; color: #24170f; }
+:root:has(.rts-path) .auth-intro { background: #1c130e; color: #f3e8d8; }
+:root:has(.rts-path) .auth-intro::after { border-color: rgba(242, 160, 143, .16); box-shadow: 0 0 0 55px rgba(242, 160, 143, .04), 0 0 0 110px rgba(242, 160, 143, .025); }
+:root:has(.rts-path) .auth-emblem { border-color: #3d2c20; border-radius: 50%; background: #140d09; color: #f2a08f; }
+:root:has(.rts-path) .auth-intro .eyebrow { color: #927e69; font: 500 12px/1.3 var(--hqp-mono); letter-spacing: .14em; }
+:root:has(.rts-path) .auth-intro h2 { font-family: var(--hqp-display); font-weight: 450; letter-spacing: -.025em; font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0; }
+:root:has(.rts-path) .auth-intro p { color: #c4b29c; font-family: var(--hqp-text); }
+:root:has(.rts-path) .auth-close { border-radius: 50%; border-color: #dccbb0; background: #fffaf1; color: #6a5848; }
+:root:has(.rts-path) .auth-tabs { border-color: #dccbb0; }
+:root:has(.rts-path) .auth-tabs button { color: #9a8773; font: 600 14px/1 var(--hqp-text); }
+:root:has(.rts-path) .auth-tabs button[aria-selected="true"] { color: #c84631; border-color: #c84631; }
+:root:has(.rts-path) .auth-divider { color: #9a8773; }
+:root:has(.rts-path) .auth-divider::before, :root:has(.rts-path) .auth-divider::after { background: #dccbb0; }
+:root:has(.rts-path) .auth-form label { color: #6a5848; }
+:root:has(.rts-path) .auth-form input { border-color: #dccbb0; border-radius: 12px; background: #fffaf1; color: #24170f; font-family: var(--hqp-text); }
+:root:has(.rts-path) .auth-form input:focus { border-color: #c84631; box-shadow: 0 0 0 3px rgba(200, 70, 49, .14); }
+:root:has(.rts-path) .auth-google { border-radius: 999px; }
+:root:has(.rts-path) .auth-submit { border-radius: 999px; background: #c84631; color: #fff; font: 600 15px/1 var(--hqp-text); }
+:root:has(.rts-path) .auth-submit:hover { background: #b23c29; }
+:root:has(.rts-path) .auth-reset { color: #6a5848; }
+:root:has(.rts-path) .auth-privacy { border-color: #dccbb0; color: #6a5848; }
+:root:has(.rts-path) .auth-privacy svg { color: #9a8773; }
+:root:has(.rts-path) .auth-privacy a { color: #c84631; }
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 700px) {
+  .rts-inner .mode-nav { width: 100%; }
+  .rts-inner .mode-nav a { padding-inline: 12px; justify-content: center; }
+  .rts-inner .route-hero h1 { font-size: clamp(44px, 12vw, 60px); }
+  .rts-inner .privacy-page h1 { font-size: clamp(40px, 11vw, 52px); }
+  .rts-inner .faction-hero h1 { font-size: clamp(44px, 12vw, 64px); }
+}
