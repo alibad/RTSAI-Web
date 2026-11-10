@@ -559,9 +559,9 @@ export function drawReload(v: FxView, plan: AttackPlan, t: number, feet: P, acce
 }
 
 /** The outcome under the target once the demo has played. */
-export function drawResult(v: FxView, plan: AttackPlan, t: number) {
+export function drawResult(v: FxView, plan: AttackPlan, t: number, text?: string) {
   if (t < (plan.deathAt ?? plan.end - 1200)) return;
-  const label = resultLabel(plan), ctx = v.ctx, size = Math.round(12 * v.dpr);
+  const label = text ?? resultLabel(plan), ctx = v.ctx, size = Math.round(12 * v.dpr);
   const p = dev(v, { x: plan.target.x, y: plan.target.y + 10 });
   ctx.save(); ctx.font = `600 ${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`; ctx.textAlign = "center"; ctx.textBaseline = "top";
   const w = ctx.measureText(label).width + 16 * v.dpr, h = size + 10 * v.dpr;

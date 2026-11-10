@@ -1,16 +1,19 @@
 "use client";
 /**
  * Faction Studio > Concept Forge (local only): exploratory soldiers, vehicles and defences made by RTSAI-Art
- * tools/forge, routed to factions by the owner. They play on the Faction viewer's own stage (ViewerStage: the game's
- * sprite format, its animations and the rules-driven Attack demo), exactly like the game's units, so the Forge has no
- * stage, effects or sounds of its own. Drafts live in D:\Generated\RTSAI\art\concept-forge (lib/concept-forge/server.ts);
+ * tools/forge, routed to factions by the owner, next to the game's own units. Both play on the Faction viewer's own
+ * stage (ViewerStage: the game's sprite format, its animations, the rules-driven Attack demo and Versus), so the Forge
+ * has no stage, effects or sounds of its own, and any concept can fight any concept or game unit. Drafts live in D:\Generated\RTSAI\art\concept-forge (lib/concept-forge/server.ts);
  * nothing here changes the game.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FrameStore, type StageItem } from "../art/review/frames";
 import { soundEngine, useSoundPrefs } from "../art/review/sound";
-import { actionsFor, ViewerStage } from "../art/viewer/ViewerStage";
+import { actionsFor, ViewerStage, type Opponent } from "../art/viewer/ViewerStage";
+import { playAction, shownSounds, weaponSounds } from "../art/viewer/FactionViewer";
 import type { ViewerDummy } from "../../../lib/weapon-demo";
+import type { ViewerUnit } from "../../../lib/viewer";
+import type { PublicClip } from "../../../lib/faction-audio";
 import { actionSounds, API, conceptItem, conceptSounds, conceptWeapons, forgeFile, type ConceptArt, type ConceptGame, type Voices } from "./stage-item";
 import "../art/viewer/viewer.css";
 import "./forge.css";
@@ -23,8 +26,11 @@ type Concept = {
 };
 type Routing = Record<string, { factions: string[]; verdict: string | null; note: string; at: string }>;
 type Index = { palettes: { factions: Record<string, Faction> }; concepts: Concept[]; routing: Routing; voices?: Voices; game: ConceptGame | null; dummies: ViewerDummy[] };
-const KINDS = [{ id: "all", label: "All" }, { id: "infantry", label: "Soldiers" }, { id: "vehicle", label: "Vehicles" }, { id: "defence", label: "Defences" }] as const;
-const PLAYER = "#e02a1f";
+/** The game's own units, as the Faction viewer has them (GET /api/concept-forge/game-units). */
+type GameUnits = { factions: { id: string; name: string; units: ViewerUnit[] }[]; effects: Record<string, PublicClip> };
+const KINDS = [{ id: "all", label: "All" }, { id: "infantry", label: "Soldiers" }, { id: "vehicle", label: "Vehicles" }, { id: "defence", label: "Defences" }, { id: "game", label: "Game units" }] as const;
+const KIND_GROUP: Record<string, string> = { infantry: "Concepts: soldiers", vehicle: "Concepts: vehicles", defence: "Concepts: defences" };
+const PLAYER = "F21818";   // the stage's red (houseColors)
 
 /** The list picture: the concept in a faction's paint (forge_export.py cameo-<faction>.png); soldiers at double size. */
 function Thumb({ c, faction }: { c: Concept; faction: string }) {
@@ -78,6 +84,8 @@ export function ConceptForge() {
   const [faction, setFaction] = useState<string>("");
   const [player, setPlayer] = useState(PLAYER);
   const [lineup, setLineup] = useState(false);
+  const [gameUnits, setGameUnits] = useState<GameUnits | null>(null);
+  useEffect(() => { void fetch(`${API}/game-units`).then(r => r.json()).then(setGameUnits).catch(() => undefined); }, []);
   const [frames] = useState(() => new FrameStore());
   useEffect(() => { frames.revive(); return () => frames.dispose(); }, [frames]);
   const { muted } = useSoundPrefs();
@@ -89,20 +97,51 @@ export function ConceptForge() {
   useEffect(() => { void reload(); }, [reload]);
 
   const concept = useMemo(() => index?.concepts.find(c => c.id === sel) ?? null, [index, sel]);
+  /** A game unit is selected as game:<faction>:<unit>. */
+  const gameUnit = useMemo(() => {
+    const [tag, fid, uid] = sel.split(":");
+    const f = tag === "game" ? gameUnits?.factions.find(x => x.id === fid) : undefined;
+    const u = f?.units.find(x => x.id === uid);
+    return f && u?.art ? { faction: f, unit: u, item: { key: sel, spec: u.art.spec, sprite: u.art.sprite } as StageItem } : null;
+  }, [sel, gameUnits]);
   const shown = useMemo(() => (index?.concepts ?? []).filter(c => (kind === "all" || c.kind === kind)
     && (!routedTo || index?.routing[c.id]?.factions?.includes(routedTo))), [index, kind, routedTo]);
   const paintAs = faction || concept?.faction || "iran";
   const art = concept?.art ?? null;
-  const item = useMemo(() => (art && index?.game ? conceptItem(art, index.game, paintAs) : null), [art, index, paintAs]);
-  const weapons = useMemo(() => (art ? conceptWeapons(art) : []), [art]);
-  const sounds = useMemo(() => (art ? conceptSounds(art) : undefined), [art]);
+  const item = useMemo(() => (gameUnit ? gameUnit.item : art && index?.game ? conceptItem(art, index.game, paintAs) : null), [gameUnit, art, index, paintAs]);
+  const weapons = useMemo(() => (gameUnit ? gameUnit.unit.attack : art ? conceptWeapons(art) : []), [gameUnit, art]);
+  const effects = gameUnits?.effects;
+  const sounds = useMemo(() => {
+    if (gameUnit && effects) { const u = gameUnit.unit, groups = shownSounds(u, null, effects); return (w: string) => weaponSounds(u, groups, null, effects, w); }
+    return art ? conceptSounds(art) : undefined;
+  }, [gameUnit, art, effects]);
+  const self = gameUnit ? (gameUnit.unit.health ? { health: gameUnit.unit.health, armor: gameUnit.unit.armor ?? "none" } : null) : art ? { health: art.health, armor: art.armor } : null;
+  // Versus: every concept (in its own faction's paint) and every game unit, except the one on the stage.
+  const opponents = useMemo((): Opponent[] => {
+    if (!index?.game) return [];
+    const fromConcepts = index.concepts.flatMap((c): Opponent[] => (c.art && c.id !== sel ? [{
+      id: `forge:${c.id}`, name: c.name, group: KIND_GROUP[c.kind], item: conceptItem(c.art, index.game!, c.faction), weapons: conceptWeapons(c.art),
+      health: c.art.health, armor: c.art.armor, sounds: conceptSounds(c.art),
+    }] : []));
+    const fromGame = (gameUnits?.factions ?? []).flatMap(f => f.units.flatMap((u): Opponent[] => {
+      const key = `game:${f.id}:${u.id}`;
+      if (!u.art || !u.health || key === sel) return [];
+      const groups = shownSounds(u, null, gameUnits!.effects);
+      return [{ id: key, name: u.name, group: `${f.name} (game)`, item: { key, spec: u.art.spec, sprite: u.art.sprite }, weapons: u.attack, health: u.health, armor: u.armor ?? "none",
+        sounds: w => weaponSounds(u, groups, null, gameUnits!.effects, w) }];
+    }));
+    return [...fromConcepts, ...fromGame];
+  }, [index, gameUnits, sel]);
   const facItems = useMemo(() => (art && index?.game ? Object.keys(index.game.palettes).map(f => [f, conceptItem(art, index.game!, f)] as const) : []), [art, index]);
 
   const select = useCallback((id: string) => {
     setSel(id); soundEngine.stopAll();
     const u = new URL(location.href); u.searchParams.set("concept", id); history.replaceState(null, "", u);
   }, []);
-  const speak = useCallback((action: string, as = paintAs) => { if (art) void soundEngine.playAny(actionSounds(art, index?.voices, as, action)); }, [art, index, paintAs]);
+  const speak = useCallback((action: string, as = paintAs) => {
+    if (gameUnit && effects) playAction(shownSounds(gameUnit.unit, null, effects), action);
+    else if (art) void soundEngine.playAny(actionSounds(art, index?.voices, as, action));
+  }, [gameUnit, effects, art, index, paintAs]);
 
   const route = async (body: { factions?: string[]; verdict?: string | null; note?: string }) => {
     if (!concept) return;
@@ -125,7 +164,7 @@ export function ConceptForge() {
         <a className="cf-back" href="/art/review">← Faction Studio</a>
         <h1>Concept Forge</h1>
         <nav className="cf-kinds">{KINDS.map(k => (
-          <button key={k.id} className={kind === k.id ? "on" : ""} onClick={() => setKind(k.id)}>{k.label}<em>{k.id === "all" ? index.concepts.length : index.concepts.filter(c => c.kind === k.id).length}</em></button>
+          <button key={k.id} className={kind === k.id ? "on" : ""} onClick={() => setKind(k.id)}>{k.label}<em>{k.id === "all" ? index.concepts.length : k.id === "game" ? (gameUnits?.factions.reduce((n, f) => n + f.units.length, 0) ?? "…") : index.concepts.filter(c => c.kind === k.id).length}</em></button>
         ))}</nav>
         <div className="cf-paint">
           <span>Paint</span>
@@ -144,7 +183,23 @@ export function ConceptForge() {
           return <button key={f} className={routedTo === f ? "on" : ""} disabled={!n && routedTo !== f} onClick={() => setRoutedTo(x => (x === f ? "" : f))}
             title={`${pal.factions[f].name}: ${n} routed`} style={{ ["--fac" as string]: pal.factions[f].paint }}><i />{n}</button>;
         })}</div>
-        {shown.map(c => {
+        {kind === "game" ? (gameUnits?.factions ?? []).map(f => (
+          <div key={f.id} className="cf-game-faction">
+            <h4>{f.name}</h4>
+            {f.units.map(u => {
+              const key = `game:${f.id}:${u.id}`;
+              return (
+                <button key={key} className={`cf-card ${key === sel ? "on" : ""}`} onClick={() => select(key)}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the game's own cameo, pixel art */}
+                  {u.cameo ? <img className="cf-thumb cf-cameo" src={u.cameo} alt="" /> : <span className="cf-thumb" />}
+                  <span className="cf-card-name">{u.name}</span>
+                  <span className="cf-card-role">{u.role}</span>
+                </button>
+              );
+            })}
+          </div>
+        )) : null}
+        {kind !== "game" && shown.map(c => {
           const rr = index.routing[c.id];
           return (
             <button key={c.id} className={`cf-card ${c.id === sel ? "on" : ""} ${rr?.verdict ?? ""}`} onClick={() => select(c.id)}>
@@ -166,13 +221,25 @@ export function ConceptForge() {
         ))}</div> : null}
         <div className="cf-stagehost viewer-stage-slot" hidden={lineup}>
           {item ? <ViewerStage frames={frames} item={item} color={player} onColor={setPlayer} weapons={weapons} dummies={index.dummies}
-            sounds={sounds} onAction={id => speak(id)}>
-            <div className="viewer-stage-name"><h1>{concept?.name}</h1><span>{concept?.role}</span></div>
+            sounds={sounds} onAction={id => speak(id)} self={self} opponents={opponents}>
+            <div className="viewer-stage-name"><h1>{gameUnit?.unit.name ?? concept?.name}</h1><span>{gameUnit ? `${gameUnit.faction.name} · game unit` : concept?.role}</span></div>
           </ViewerStage> : <div className="cf-empty">This concept has no game-format art yet.</div>}
         </div>
       </main>
 
-      {concept ? (
+      {gameUnit ? (
+        <section className="cf-info">
+          <p className="cf-role">{gameUnit.faction.name} · in the game</p>
+          <h2>{gameUnit.unit.name}</h2>
+          <p className="cf-idea">{gameUnit.unit.role}</p>
+          <p className="cf-desc">{gameUnit.unit.description}</p>
+          {gameUnit.unit.health ? <p className="cf-meta">{gameUnit.unit.health} HP · {gameUnit.unit.armor} armor</p> : null}
+          <ul className="cf-weapons">{weapons.map(w => (
+            <li key={w.id}><b>{w.label}</b><span>{w.damage} damage{w.burst > 1 ? ` ×${w.burst}` : ""} · {w.range} cells · {seconds(w.reloadTicks)} reload{w.targets.includes("Air") ? " · hits aircraft" : ""}</span></li>
+          ))}</ul>
+          <p className="cf-meta">The game&apos;s own unit, exactly as the Faction viewer shows it. Pick a concept in Versus to see them fight.</p>
+        </section>
+      ) : concept ? (
         <section className="cf-info">
           <p className="cf-role">{concept.role}</p>
           <h2>{concept.name}</h2>

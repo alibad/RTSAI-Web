@@ -7,6 +7,8 @@
  *   GET  /api/concept-forge/index          palettes, effects, sounds, every concept.json with its game-format art
  *                                          (art.json, tools/forge/forge_export.py), the palette layout, the Faction
  *                                          viewer's training targets, routing
+ *   GET  /api/concept-forge/game-units     the game's own units per modern faction, exactly as the Faction viewer
+ *                                          has them (art, armaments, health, sounds), to play and fight next to concepts
  *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder
  *   POST /api/concept-forge/routing        {id, factions?, verdict?, note?} -> routing.json
  *   GET  /api/concept-forge/plan           the routing as a readable plan, per faction
@@ -14,7 +16,8 @@
 import { existsSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { viewerDummies } from "../viewer";
+import { viewerDummies, viewerFaction, viewerFactionLinks } from "../viewer";
+import { projectEffects } from "../faction-audio";
 
 export const forgeRoot = () => resolve(process.env.RTSAI_FORGE_DIR ?? "D:/Generated/RTSAI/art/concept-forge");
 
@@ -48,6 +51,14 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
           .filter(Boolean);
         send(res, 200, { ...index, concepts, game: readJson<unknown>(resolve(root, "game.json"), null), dummies: viewerDummies(),
           routing: readJson<Routing>(resolve(root, "routing.json"), {}) });
+        return;
+      }
+      if (req.method === "GET" && path === "/game-units") {
+        const factions = viewerFactionLinks().filter(l => !l.original).flatMap(l => {
+          const f = viewerFaction(l.id);
+          return f ? [{ id: f.id, name: f.name, units: f.units.filter(u => u.art) }] : [];
+        });
+        send(res, 200, { factions, effects: projectEffects() });
         return;
       }
       if (req.method === "GET" && path.startsWith("/file/")) {

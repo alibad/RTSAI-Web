@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { conditionHolds, demoWeapons, dummyTargets, shotDamage, volleyMs, weaponEffect, type RulesWeapon, type ViewerDummy } from "../lib/weapon-demo";
-import { healthAt, planAttack, resultLabel, screenOffset, unitPoseAt, type UnitShape } from "../app/components/art/viewer/attack";
+import { duelLabel, healthAt, holdFire, planAttack, resultLabel, screenOffset, settleDuel, unitPoseAt, type UnitShape } from "../app/components/art/viewer/attack";
 import { rosters } from "../lib/game-content";
 
 const actor = (id: string) => rosters.actors.find(a => a.mode === "ra2" && a.id === id)!;
@@ -91,4 +91,22 @@ test("turrets turn to the target, bodies turn when there is no turret, and the d
   assert.equal(unitPoseAt(bite, (bite.lunge!.runStart + bite.lunge!.runEnd) / 2).action, "run");
   assert.equal(unitPoseAt(bite, bite.lunge!.runEnd + 10).action, "fire", "then leaps");
   assert.equal(bite.deathAt, bite.lunge!.jumpEnd, "and the bite lands with the leap");
+});
+
+test("versus: both fire at once from the shorter range; whoever falls stops firing and the wreck stays", () => {
+  const m60 = demoWeapons(weapons("e1"))[0];
+  const a = planAttack({ weapon: m60, dummy: dummies[0], aim: 896, startFacing: 896, shape: infantry, cells: 3, respawn: false });
+  const b = planAttack({ weapon: { ...m60, damage: m60.damage * 2 }, dummy: dummies[0], aim: 384, startFacing: 384, shape: infantry, cells: 3, respawn: false });
+  assert.equal(a.distance, 3 * 1024, "a duel stands at the shorter range, not the weapon's own");
+  assert.equal(a.respawnAt, null, "no fresh target in a duel");
+  const [sa, sb] = settleDuel(a, b);
+  assert.ok(sb.deathAt !== null && sa.deathAt === null, "the harder hitter wins");
+  assert.ok(sa.shots.every(s => s.fire < sb.deathAt!), "the fallen side fires no more");
+  assert.ok(healthAt(sa, Infinity) > 0, "the winner's target survives");
+  assert.equal(sa.end, sb.end, "one clock for both sides");
+  assert.match(duelLabel(sb, sa, ["Strong", "Weak"]), /^Strong wins · [\d.]+ s · \d+% health left$/);
+  const idle = holdFire(a);
+  assert.equal(idle.shots.length, 0, "a side that cannot reach its opponent only takes fire");
+  const [, lone] = settleDuel(idle, b);
+  assert.ok(lone.deathAt !== null);
 });

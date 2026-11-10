@@ -97,11 +97,13 @@ export function flightMs(effect: WeaponEffect, px: number): number {
 /** A beam or bolt stays on screen this long. */
 export const beamMs = (effect: WeaponEffect) => (effect === "tesla" ? 320 : effect === "rad" ? 420 : effect === "beam" ? 480 : effect === "laser" ? 260 : 0);
 
-export function planAttack(args: { weapon: DemoWeapon; dummy: ViewerDummy; aim: number; startFacing: number; shape: UnitShape; muzzleToTarget?: number }): AttackPlan {
+export function planAttack(args: { weapon: DemoWeapon; dummy: ViewerDummy; aim: number; startFacing: number; shape: UnitShape; muzzleToTarget?: number;
+  /** Cells to the target (a duel's shorter range); else the weapon's range. */ cells?: number;
+  /** A fresh target replaces the wreck (the training targets); a duel's wreck stays. */ respawn?: boolean }): AttackPlan {
   const { weapon, dummy, aim, startFacing, shape } = args;
   const effect = weapon.effect;
   // The target stands at the weapon's real range (a bomber's target lies under it).
-  const distance = Math.max(weapon.range, effect === "bomb" ? 0 : 0.6) * CELL;
+  const distance = Math.max(args.cells ?? weapon.range, effect === "bomb" ? 0 : 0.6) * CELL;
   const target = screenOffset(aim, distance);
   const px = args.muzzleToTarget ?? Math.hypot(target.x, target.y);
   // Turning: a turret slews, a vehicle body turns more slowly, infantry snap round.
@@ -143,10 +145,55 @@ export function planAttack(args: { weapon: DemoWeapon; dummy: ViewerDummy; aim: 
       shots.push({ fire, impact: fire + flight, damage, hit, kill, volley, index: j, seed, spread });
     }
   }
-  const lastImpact = Math.max(0, ...shots.map(s => s.impact + beamMs(effect)));
-  const respawnAt = deathAt === null ? null : deathAt + WRECK_MS;
-  const end = respawnAt !== null ? Math.max(respawnAt + 450, lastImpact + 300) : lastImpact + 1400;
-  return { weapon, dummy, effect, aim, distance, target, shape, startFacing, turnEnd, firstShot, shots, deathAt, respawnAt, end, lunge };
+  return finishPlan({ weapon, dummy, effect, aim, distance, target, shape, startFacing, turnEnd, firstShot, shots, deathAt, respawnAt: null, end: 0, lunge }, args.respawn ?? true);
+}
+
+/** When the demo ends: after the wreck clears (or stays, in a duel), or after the last shot lands. */
+function finishPlan(plan: AttackPlan, respawn: boolean): AttackPlan {
+  const lastImpact = Math.max(0, ...plan.shots.map(s => s.impact + beamMs(plan.effect)));
+  const respawnAt = respawn && plan.deathAt !== null ? plan.deathAt + WRECK_MS : null;
+  const end = respawnAt !== null ? Math.max(respawnAt + 450, lastImpact + 300) : plan.deathAt !== null ? Math.max(plan.deathAt + WRECK_MS + 900, lastImpact + 300) : lastImpact + 1400;
+  return { ...plan, respawnAt, end };
+}
+
+/** The plan with no shot fired at or after `t` (its shooter fell then); hits and the kill are counted again. */
+function ceaseFire(plan: AttackPlan, t: number | null): AttackPlan {
+  if (t === null) return plan;
+  const shots = plan.shots.filter(s => s.fire < t);
+  if (shots.length === plan.shots.length) return plan;
+  let hp = plan.dummy.health, deathAt: number | null = null;
+  const perShot = shotDamage(plan.weapon, plan.dummy.armor);
+  const recounted = shots.map(s => {
+    const hit = deathAt === null, damage = hit ? perShot : 0;
+    let kill = false;
+    if (hit && perShot > 0) { hp -= perShot; if (hp <= 0) { kill = true; deathAt = s.impact; } }
+    return { ...s, hit, damage, kill };
+  });
+  return finishPlan({ ...plan, shots: recounted, deathAt }, false);
+}
+
+/** A side with nothing that can reach its opponent: it stands and takes the fire. */
+export const holdFire = (plan: AttackPlan): AttackPlan => finishPlan({ ...plan, shots: [], deathAt: null }, false);
+
+/**
+ * Versus: two units fire at each other at once, each plan an ordinary attack on the other's real health and armour.
+ * Whoever falls stops firing (shots already in the air still land), so both can fall when their last shots cross.
+ */
+export function settleDuel(a: AttackPlan, b: AttackPlan): [AttackPlan, AttackPlan] {
+  for (let i = 0; i < 2; i++) [a, b] = [ceaseFire(a, b.deathAt), ceaseFire(b, a.deathAt)];
+  const end = Math.max(a.end, b.end);
+  return [{ ...a, end }, { ...b, end }];
+}
+
+/** A duel's outcome in a few words. */
+export function duelLabel(a: AttackPlan, b: AttackPlan, names: [string, string]): string {
+  const aWins = a.deathAt !== null, bWins = b.deathAt !== null;
+  const at = (t: number) => `${(Math.max(0, t - Math.min(a.firstShot, b.firstShot)) / 1000).toFixed(1)} s`;
+  if (aWins && bWins) return `Both destroyed · ${at(Math.max(a.deathAt!, b.deathAt!))}`;
+  const left = (p: AttackPlan) => `${Math.round((100 * healthAt(p, Infinity)) / p.dummy.health)}% health left`;
+  if (aWins) return `${names[0]} wins · ${at(a.deathAt!)} · ${left(b)}`;
+  if (bWins) return `${names[1]} wins · ${at(b.deathAt!)} · ${left(a)}`;
+  return `No winner in ${(FIRE_WINDOW_MS / 1000).toFixed(0)} s`;
 }
 
 /** The target's health at time t (it springs back with a fresh target after its wreck clears). */

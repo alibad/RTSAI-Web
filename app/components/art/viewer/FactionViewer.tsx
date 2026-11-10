@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties, type Rea
 import { ADMIN_BUILD } from "../../../../lib/admin";
 import type { ViewerCampaign, ViewerFaction, ViewerFactionLink, ViewerUnit } from "../../../../lib/viewer";
 import { FrameStore, type StageItem } from "../review/frames";
-import { ViewerStage } from "./ViewerStage";
+import { ViewerStage, type Opponent } from "./ViewerStage";
 import { EffectGlyph } from "./attack-icons";
 import { modeLabel } from "../../../../lib/weapon-demo";
 import { ViewerAdmin, type ShownVersion } from "./ViewerAdmin";
@@ -85,6 +85,13 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   // The last unit with art stays on the (hidden) stage while the overview or a text-only unit is shown.
   const [stageItem, setStageItem] = useState<StageItem | null>(item);
   if (item && item !== stageItem) setStageItem(item);
+  // Versus: the faction's other units with art fight the one shown, each firing with its own weapon sounds.
+  const opponents = useMemo(() => units.flatMap((u): Opponent[] => {
+    const it = items.get(u.id);
+    if (!it || u.id === unit?.id || !u.health) return [];
+    return [{ id: u.id, name: u.name, group: GROUPS[u.category] ?? "Other", item: it, weapons: u.attack, health: u.health, armor: u.armor ?? "none",
+      sounds: weaponId => weaponSounds(u, shownSounds(u, snapSounds, faction.effects), snapSounds, faction.effects, weaponId) }];
+  }), [units, items, unit, snapSounds, faction.effects]);
 
   // Selection is client-side (the stage keeps its loaded art); the address follows it, and Back works.
   const select = useCallback((id: string | null) => {
@@ -162,6 +169,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
             <div className="viewer-stage-slot" hidden={!(unit && item)}>
               <ViewerStage frames={frames} item={shown?.item ?? stageItem} color={color} onColor={pickColor} onAction={id => playAction(sounds, id)}
                 weapons={unit && item && !shown ? unit.attack : NO_WEAPONS} dummies={faction.dummies} fire={desk ? fire : null}
+                self={unit?.health && !shown ? { health: unit.health, armor: unit.armor ?? "none" } : null} opponents={shown ? NO_OPPONENTS : opponents}
                 sounds={weaponId => {
                   const base = unit ? weaponSounds(unit, sounds, snapSounds, faction.effects, weaponId) : { report: [], impact: [] };
                   // The Sound desk auditions one weapon's fire or impact with the sound it is comparing.
@@ -199,6 +207,8 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
 }
 
 const NO_WEAPONS: ViewerUnit["attack"] = [];
+const NO_OPPONENTS: Opponent[] = [];
+const GROUPS: Record<string, string> = { infantry: "Infantry", vehicle: "Vehicles", aircraft: "Aircraft", ship: "Ships", defense: "Defences", structure: "Structures" };
 /** A clip the info panel lists: the project's own (with what it says) or one of Westwood's originals. */
 type ShownClip = PublicClip & { original: boolean; hangarPreview?: boolean };
 function withHangarPreview(groups: ShownGroup[], preview: HangarAudioPreview | null): ShownGroup[] {
@@ -213,7 +223,7 @@ type ShownGroup = { id: string; label: string; kind: string; clips: ShownClip[] 
  * Every sound the unit has, as the game plays it: the snapshot's lists (originals and the project's clips together,
  * in the game's order) when they are loaded, else the project's own published clips.
  */
-function shownSounds(unit: ViewerUnit, snap: SnapshotSounds | null, effects: Record<string, PublicClip>): ShownGroup[] {
+export function shownSounds(unit: ViewerUnit, snap: SnapshotSounds | null, effects: Record<string, PublicClip>): ShownGroup[] {
   const own = (g: ViewerUnit["sounds"][number]): ShownGroup => ({ ...g, clips: g.clips.map(c => ({ ...c, original: false })) });
   const lists = snap?.units[unit.id];
   if (!snap || !lists) return unit.sounds.map(own);
@@ -234,7 +244,7 @@ const groupSrcs = (groups: ShownGroup[], ...ids: string[]) => {
   return [];
 };
 /** A weapon's own report and impact (the snapshot knows each weapon's), else the unit's weapon sounds. */
-function weaponSounds(unit: ViewerUnit, groups: ShownGroup[], snap: SnapshotSounds | null, effects: Record<string, PublicClip>, weaponId: string): { report: string[]; impact: string[] } {
+export function weaponSounds(unit: ViewerUnit, groups: ShownGroup[], snap: SnapshotSounds | null, effects: Record<string, PublicClip>, weaponId: string): { report: string[]; impact: string[] } {
   if (groups.some(g => g.clips.some(c => c.hangarPreview)) && weaponId.toLowerCase() !== "r2abramsgun") return weaponSounds(unit, shownSounds(unit, snap, effects), snap, effects, weaponId);
   const previewReport = groups.find(g => g.id === "weapon:report" && g.clips.some(c => c.hangarPreview));
   const previewImpact = groups.find(g => g.id === "weapon:impact" && g.clips.some(c => c.hangarPreview));
@@ -248,7 +258,7 @@ function weaponSounds(unit: ViewerUnit, groups: ShownGroup[], snap: SnapshotSoun
   return { report: groupSrcs(groups, "weapon:report"), impact: groupSrcs(groups, "weapon:impact") };
 }
 /** An action's sound: the attack order's acknowledgement, a weapon report when it fires, the death sound when it dies. */
-function playAction(groups: ShownGroup[], action: string) {
+export function playAction(groups: ShownGroup[], action: string) {
   if (action === "attack-order") void soundEngine.playAny(groupSrcs(groups, "voice:Attack", "voice:Action"));
   else if (/^die/.test(action)) void soundEngine.playAny(groupSrcs(groups, "voice:Die", "death:explosion", "damage:destroyed"));
   else if (/^(attack|fire|shoot|prone-shoot)$/.test(action)) void soundEngine.playAny(groupSrcs(groups, "weapon:report"));

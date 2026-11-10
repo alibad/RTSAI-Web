@@ -7,11 +7,11 @@ import { spriteAnimations } from "../../../../lib/art-lab/sprite-anim";
 import { voxelAnimationParts, voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
 import { houseColors } from "../../../../lib/art-lab/remap";
 import { facingLabel } from "../../../../lib/art-lab/voxel-math";
-import { dummyTargets, modeLabel, shotDamage, type DemoWeapon, type DummyKind, type ViewerDummy } from "../../../../lib/weapon-demo";
+import { dummyTargets, modeLabel, shotDamage, volleyMs, type DemoWeapon, type DummyKind, type ViewerDummy } from "../../../../lib/weapon-demo";
 import { frameRadius, type Frame, type FrameStore, type Pose, type StageItem } from "../review/frames";
 import { groundFor, groundPath, groundTile, groundWidth } from "../review/ground";
 import { soundEngine } from "../review/sound";
-import { AIR_ALTITUDE, CELL, PX_X, PX_Y, facingVector, planAttack, unitPoseAt, type AttackPlan, type Shot, type UnitShape } from "./attack";
+import { AIR_ALTITUDE, CELL, PX_X, PX_Y, duelLabel, facingVector, holdFire, planAttack, settleDuel, unitPoseAt, type AttackPlan, type Shot, type UnitShape } from "./attack";
 import { aimPoint, arcHeight, blit, drawDamage, drawDeath, drawHealth, drawRangeRing, drawReload, drawResult, drawShots, drawTarget, dummyHeight, type FxView } from "./attack-draw";
 import { EffectGlyph, TargetGlyph } from "./attack-icons";
 
@@ -76,8 +76,24 @@ function rgbOf(color: string) {
 
 /** The Attack demo's pick: a weapon (by index) and the training target it fires at. */
 type AttackPick = { weapon: number; target: DummyKind };
-type AttackState = AttackPick & { plan: AttackPlan };
+type AttackState = AttackPick & { plan: AttackPlan; versus?: number };
 export type AttackSounds = (weaponId: string) => { report: string[]; impact: string[] };
+/** A unit the stage can fight in Versus: its art, armaments, health and armour, and its weapon sounds. */
+export type Opponent = { id: string; name: string; group?: string; item: StageItem; weapons: DemoWeapon[]; health: number; armor: string; sounds?: AttackSounds };
+/** What the stage needs to know to move a unit: its actions by kind, its attack shape and its flying height (1x px). */
+type Described = { first: string; fireA: string | null; runA: string | null; dieA: string | null; shape: UnitShape; lift: number };
+type Geo = { reach: number; height: number };
+/** The opponent's side of a duel: its plan (it firing at the unit), sound clock, gun geometry and last frames drawn. */
+type DuelSide = { opp: Opponent; plan: AttackPlan; t: number; fired: number; landed: number; lastReport: number; geo: Geo; color: string; me: Described; them: Described; frames: [Frame | null, Frame | null] };
+
+const dummyKindOf = (category: string): DummyKind =>
+  category === "infantry" ? "infantry" : category === "aircraft" ? "aircraft" : category === "ship" ? "ship" : category === "structure" || category === "defense" ? "building" : "vehicle";
+/** The armament that hurts a target most per second; null when none can reach it. */
+function bestWeapon(weapons: DemoWeapon[], target: ViewerDummy, category: string): DemoWeapon | null {
+  const dps = (w: DemoWeapon) => (shotDamage(w, target.armor) * w.burst) / volleyMs(w);
+  return weapons.filter(w => dummyTargets(w, [target], category).length).sort((a, b) => dps(b) - dps(a))[0] ?? null;
+}
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 /**
  * The player's stage: the unit as the game draws it, on its ground, pixel-exact at a whole zoom. Drag (or the arrow
@@ -85,7 +101,7 @@ export type AttackSounds = (weaponId: string) => { report: string[]; impact: str
  * at the weapon's real range and fires at it at the weapon's real cadence; Range draws the weapons' reach on the
  * ground at true scale. Draws only when something changes; nothing loops while it is still.
  */
-export function ViewerStage({ frames, item, color, onColor, tag, children, onAction, weapons = [], dummies = [], sounds, fire = null }: {
+export function ViewerStage({ frames, item, color, onColor, tag, children, onAction, weapons = [], dummies = [], sounds, fire = null, self = null, opponents = [] }: {
   frames: FrameStore; item: StageItem; color: string; onColor: (hex: string) => void;
   /** Called when the player starts an action (its sound plays with it). */
   onAction?: (id: string) => void;
@@ -100,6 +116,10 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   sounds?: AttackSounds;
   /** Fires one weapon in the Attack demo now (each new `n`), as if its button were pressed. */
   fire?: { weapon: string; n: number } | null;
+  /** The unit's own health and armour (rules): with `opponents`, the stage offers Versus. */
+  self?: { health: number; armor: string } | null;
+  /** Units it can fight in Versus: both fire their best armament at each other until one falls. */
+  opponents?: Opponent[];
 }) {
   const actions = useMemo(() => actionsFor(item), [item]);
   const firstAction = actions[0]?.id ?? "stand";
@@ -119,7 +139,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const view = useRef({ facing: DEFAULT_FACING, time: 0 });
   /** The planned demo and how far into it the stage is (ms); the last frame drawn stands in while a new one renders. */
-  const demo = useRef<{ plan: AttackPlan; t: number; startedAt: number; fired: number; landed: number; lastReport: number; reach: number; height: number; accent: string } | null>(null);
+  const demo = useRef<{ plan: AttackPlan; t: number; startedAt: number; fired: number; landed: number; lastReport: number; reach: number; height: number; accent: string; duel?: DuelSide } | null>(null);
   const lastFrame = useRef<Frame | null>(null);
   /** The facing as screen readers hear it (the drawing reads view.current, so dragging never re-renders). */
   const [facing, setFacing] = useState(DEFAULT_FACING);
@@ -144,9 +164,32 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
     return () => observer.disconnect();
   }, []);
 
-  const pose = (facing: number, time: number, action = animation, turret = 0, loop = !ONE_SHOT.test(action)): Pose => ({
-    facing, turret, tick: 0, timeMs: time, loop, animation: action, color, shadow: true, tint: [1, 1, 1], airborne,
+  const poseOf = (it: StageItem, facing: number, time: number, action: string, turret = 0, loop = !ONE_SHOT.test(action), tint: readonly number[] = [1, 1, 1], col = color): Pose => ({
+    facing, turret, tick: 0, timeMs: time, loop, animation: action, color: col, shadow: true, tint, airborne: it.spec.category === "aircraft",
   });
+  const pose = (facing: number, time: number, action = animation, turret = 0, loop = !ONE_SHOT.test(action)): Pose => poseOf(item, facing, time, action, turret, loop);
+  /** A unit's actions by kind, its attack shape and its flying height. */
+  const describe = (it: StageItem): Described => {
+    const acts = actionsFor(it);
+    const fireA = acts.find(a => a.id === "attack")?.id ?? acts.find(a => a.label === "Fire")?.id ?? null;
+    const runA = acts.find(a => a.id === "move")?.id ?? null;
+    const voxel = it.spec.voxel;
+    const turreted = voxel ? voxel.parts.some(p => /Turret/.test(p.trait)) : Boolean(it.sprite?.turret);
+    const building = it.spec.category === "structure" || it.spec.category === "defense";
+    const defenceTurret = building && turreted && !voxel ? it.sprite?.turret?.initialFacing ?? 0 : null;
+    const kind: UnitShape["kind"] = it.spec.category === "infantry" ? "infantry" : building ? "building" : it.spec.category === "aircraft" ? "aircraft" : it.spec.category === "ship" ? "ship" : "vehicle";
+    const fireAnimMs = fireA ? frames.animationInfo(it, fireA)?.durationMs ?? 400 : 0;
+    const up = it.spec.category === "aircraft" && !voxel && it.spec.airAltitude ? (30 * it.spec.airAltitude) / 1448 : 0;
+    return { first: acts[0]?.id ?? "stand", fireA, runA, dieA: acts.find(a => a.id === "die")?.id ?? null, shape: { turreted, defenceTurret, kind, fireAnimMs, canRun: Boolean(runA) }, lift: up };
+  };
+  /** Gun height and reach from the art: infantry hold their weapons at chest height; vehicles fire from the turret. */
+  const geoFor = (it: StageItem, d: Described, facing: number): Geo => {
+    const f = frames.get(it, poseOf(it, facing, 0, d.first));
+    const height = f ? -f.top : 20, half = f ? Math.max(f.right, -f.left) : 20, kind = d.shape.kind;
+    return kind === "infantry" ? { reach: 5, height: Math.round(height * 0.55) } : kind === "building" ? { reach: Math.round(half * 0.3), height: Math.round(height * 0.62) }
+      : kind === "aircraft" ? { reach: Math.round(half * 0.3), height: it.spec.voxel ? Math.round(-((f?.top ?? -20) + (f?.bottom ?? 0)) / 2) : Math.round(height * 0.4) }
+      : { reach: Math.round(half * 0.55), height: Math.round(height * 0.5) };
+  };
   // A sprite aircraft flies this many 1x pixels above its shadow (OpenRA: 1448 world units per 30 px); a voxel
   // aircraft's frame already holds its altitude.
   const lift = airborne && !item.spec.voxel && item.spec.airAltitude ? (30 * item.spec.airAltitude) / 1448 : 0;
@@ -182,7 +225,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
     const ctx = canvas.getContext("2d")!;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, w, h); ctx.imageSmoothingEnabled = false;
     const d = demo.current;
-    if (attack && d) { drawScene(ctx, dpr, d); return; }
+    if (attack && d) { if (d.duel) drawDuel(ctx, dpr, d, d.duel); else drawScene(ctx, dpr, d); return; }
     const f = frames.get(item, pose(view.current.facing, view.current.time));
     const up = f ? lift : 0;
     const cx = size.width / 2, cy = Math.round(size.height * (rings ? 0.5 : 0.56) + (up * zoom) / 2);
@@ -243,11 +286,53 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   };
 
   /** Where a shot leaves the unit: ahead along its weapon's facing and up at its gun height (estimated from the art). */
-  const muzzleAt = (plan: AttackPlan, s: Shot, d: { reach: number; height: number }) => {
+  const muzzleAt = (plan: AttackPlan, s: Shot, d: { reach: number; height: number }, up = lift) => {
     const p = unitPoseAt(plan, s.fire);
     const [fx, fy] = facingVector(p.weaponFacing), sx = fx * 60, sy = fy * 30, n = Math.hypot(sx, sy) || 1;
-    if (plan.effect === "bomb") return { x: p.offset.x, y: p.offset.y - lift - d.height * 0.4 };
-    return { x: p.offset.x + (sx / n) * d.reach, y: p.offset.y + (sy / n) * d.reach - d.height - lift };
+    if (plan.effect === "bomb") return { x: p.offset.x, y: p.offset.y - up - d.height * 0.4 };
+    return { x: p.offset.x + (sx / n) * d.reach, y: p.offset.y + (sy / n) * d.reach - d.height - up };
+  };
+
+  /**
+   * Versus at its current time: both units on one ground, each drawn with its own art and player colour, firing its
+   * plan at the other. The opponent's plan is drawn from the opponent's ground point, so its shots, the unit's health
+   * bar, damage and death come from the same helpers as the Attack demo. A fallen soldier plays its death; a fallen
+   * vehicle stays as a burnt hull; a fallen aircraft drops.
+   */
+  const drawDuel = (ctx: CanvasRenderingContext2D, dpr: number, d: NonNullable<typeof demo.current>, side: DuelSide) => {
+    const { plan, t } = d, theirs = side.plan;
+    const layout = attackLayout(plan);
+    const v: FxView = {
+      ctx, z: scaleFor(layout.zoom, dpr), ax: Math.round(layout.cx * dpr), ay: Math.round(layout.cy * dpr),
+      calm: typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches, dpr, width: ctx.canvas.width, height: ctx.canvas.height,
+    };
+    const vB: FxView = { ...v, ax: v.ax + Math.round(plan.target.x) * v.z, ay: v.ay + Math.round(plan.target.y) * v.z };
+    blit(v, groundPath("sand", [1, 1, 1], plan.target.x, plan.target.y, Math.max(26, Math.round((radius ?? 24) * 1.5))), { x: 0, y: 0 });
+    if (rings) drawRangeRing(v, { x: 0, y: 0 }, plan.weapon.range, d.accent, `${trimCells(plan.weapon.range)} cells`);
+    const drawUnit = (b: 0 | 1) => {
+      const it = b ? side.opp.item : item, own = b ? theirs : plan, killer = b ? plan : theirs, desc = b ? side.them : side.me;
+      const dead = killer.deathAt !== null && t >= killer.deathAt;
+      const up = unitPoseAt(own, dead ? killer.deathAt! : t);
+      let action = up.action === "fire" && desc.fireA ? desc.fireA : up.action === "run" && desc.runA ? desc.runA : desc.first;
+      let time = up.action === "base" ? 0 : up.actionMs, loop = up.action === "run", tint: readonly number[] = [1, 1, 1];
+      if (dead) { if (desc.dieA) { action = desc.dieA; time = t - killer.deathAt!; loop = false; } else tint = [0.34, 0.31, 0.28]; }
+      const turret = it.spec.voxel ? Math.round(up.turret / 16) * 16 & 1023 : up.turret;
+      const f = frames.get(it, poseOf(it, up.facing, time, action, turret, loop, tint, b ? side.color : color)) ?? side.frames[b];
+      if (f) side.frames[b] = f;
+      const at = b ? plan.target : { x: up.offset.x, y: up.offset.y };
+      const lifted = dead && desc.lift ? desc.lift * (1 - clamp01((t - killer.deathAt!) / 650) ** 2) : desc.lift;
+      if (!f) return;
+      if (lifted) { blit(v, { ...f, canvas: silhouette(f.canvas) }, at); blit(v, f, { x: at.x, y: at.y - lifted }); } else blit(v, f, at);
+    };
+    // Back to front: whoever stands further up the screen first.
+    if (plan.target.y < 0) { drawUnit(1); drawUnit(0); } else { drawUnit(0); drawUnit(1); }
+    drawDeath(v, plan, t); drawDeath(vB, theirs, t);
+    drawShots(v, plan, t, { muzzle: s => muzzleAt(plan, s, d), weaponFacing: s => unitPoseAt(plan, s.fire).weaponFacing });
+    drawShots(vB, theirs, t, { muzzle: s => muzzleAt(theirs, s, side.geo, side.them.lift), weaponFacing: s => unitPoseAt(theirs, s.fire).weaponFacing });
+    drawHealth(v, plan, t); drawHealth(vB, theirs, t);
+    if (!v.calm || t >= plan.end) { drawDamage(v, plan, t); drawDamage(vB, theirs, t); }
+    drawReload(v, plan, t, { x: 0, y: 0 }, `rgb(${d.accent})`);
+    drawResult(v, { ...plan, deathAt: plan.deathAt ?? theirs.deathAt }, t, duelLabel(plan, theirs, [item.spec.name, side.opp.name]));
   };
 
   const drawRef = useRef(draw);
@@ -291,6 +376,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
         if (d.startedAt < 0) d.startedAt = now;
         d.t = Math.min(d.plan.end, now - d.startedAt);
         playShotSounds(d, soundsRef.current);
+        if (d.duel) { d.duel.t = d.t; playShotSounds(d.duel, d.duel.opp.sounds); }
         if (d.t >= d.plan.end) setRunning(false);
       }
       drawRef.current();
@@ -308,26 +394,15 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
     const offered = dummyTargets(wpn, dummies, item.spec.category);
     const dummy = offered.find(x => x.kind === pick.target) ?? offered[0];
     if (!wpn || !dummy) return;
-    const voxel = item.spec.voxel;
-    const turreted = voxel ? voxel.parts.some(p => /Turret/.test(p.trait)) : Boolean(item.sprite?.turret);
-    const building = item.spec.category === "structure" || item.spec.category === "defense";
-    const defenceTurret = building && turreted && !voxel ? item.sprite?.turret?.initialFacing ?? 0 : null;
-    const kind: UnitShape["kind"] = item.spec.category === "infantry" ? "infantry" : building ? "building" : item.spec.category === "aircraft" ? "aircraft" : item.spec.category === "ship" ? "ship" : "vehicle";
-    const fireAnimMs = fireAction ? frames.animationInfo(item, fireAction)?.durationMs ?? 400 : 0;
-    const shape: UnitShape = { turreted, defenceTurret, kind, fireAnimMs, canRun: Boolean(runAction) };
-    const startFacing = defenceTurret !== null ? defenceTurret : view.current.facing;
+    const me = describe(item), shape = me.shape;
+    const startFacing = shape.defenceTurret !== null ? shape.defenceTurret : view.current.facing;
     // The direction that lets the scene show biggest (north-east, the default view, unless a long range needs another).
     const fitFor = (aim: number) => sceneFit(planAttack({ weapon: wpn, dummy, aim, startFacing, shape }), radius ?? 24, lift, size);
     const score = (fit: number) => (fit >= 1 ? Math.min(MAX_ZOOM, Math.floor(fit)) : fit);
     const fits = AIM_CANDIDATES.map(fitFor), top = Math.max(...fits.map(score));
     const aim = AIM_CANDIDATES[fits.findIndex(fit => score(fit) >= top)];
     const plan = planAttack({ weapon: wpn, dummy, aim, startFacing, shape });
-    // Gun height and reach from the art: infantry hold their weapons at chest height; vehicles fire from the turret.
-    const f = frames.get(item, pose(view.current.facing, 0, firstAction));
-    const height = f ? -f.top : 20, half = f ? Math.max(f.right, -f.left) : 20;
-    const geo = kind === "infantry" ? { reach: 5, height: Math.round(height * 0.55) } : kind === "building" ? { reach: Math.round(half * 0.3), height: Math.round(height * 0.62) }
-      : kind === "aircraft" ? { reach: Math.round(half * 0.3), height: item.spec.voxel ? Math.round(-((f?.top ?? -20) + (f?.bottom ?? 0)) / 2) : Math.round(height * 0.4) }
-      : { reach: Math.round(half * 0.55), height: Math.round(height * 0.5) };
+    const geo = geoFor(item, me, view.current.facing);
     // Warm the frames the demo turns to and fires with, so they are ready when it gets there.
     const end = unitPoseAt(plan, plan.firstShot);
     frames.want(item, pose(end.facing, 0, firstAction, item.spec.voxel ? Math.round(end.turret / 16) * 16 & 1023 : end.turret), true);
@@ -335,6 +410,42 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
     demo.current = { plan, t: 0, startedAt: -1, fired: 0, landed: 0, lastReport: -1e9, accent: accent(), ...geo };
     setSpin(false); setPlaying(false); setZoomOverride(null);
     setAttack({ weapon: pick.weapon, target: dummy.kind, plan }); setRunning(true);
+    onAction?.("attack-order");
+  };
+  /**
+   * Versus: the unit and an opponent stand at the shorter of their two ranges and fire their best armaments at each
+   * other until one falls (each an ordinary attack plan on the other's health and armour; settleDuel stops the fallen).
+   */
+  const startDuel = (index: number) => {
+    const opp = opponents[index];
+    if (!opp || !self) return;
+    const me = describe(item), them = describe(opp.item);
+    const mine: ViewerDummy = { kind: dummyKindOf(item.spec.category), name: item.spec.name, health: self.health, armor: self.armor };
+    const theirs: ViewerDummy = { kind: dummyKindOf(opp.item.spec.category), name: opp.name, health: opp.health, armor: opp.armor };
+    const wA = bestWeapon(weapons, theirs, item.spec.category), wB = bestWeapon(opp.weapons, mine, opp.item.spec.category);
+    const any = wA ?? wB;
+    if (!any) return;
+    const cells = Math.max(1.2, Math.min(...[wA, wB].flatMap(w => (w ? [w.range] : []))));
+    const startFacing = me.shape.defenceTurret !== null ? me.shape.defenceTurret : view.current.facing;
+    const planFor = (aim: number) => planAttack({ weapon: wA ?? any, dummy: theirs, aim, startFacing, shape: me.shape, cells, respawn: false });
+    const score = (fit: number) => (fit >= 1 ? Math.min(MAX_ZOOM, Math.floor(fit)) : fit);
+    const fits = AIM_CANDIDATES.map(aim => sceneFit(planFor(aim), radius ?? 24, lift, size)), top = Math.max(...fits.map(score));
+    const aim = AIM_CANDIDATES[fits.findIndex(fit => score(fit) >= top)];
+    const back = (aim + 512) & 1023;
+    let a = planFor(aim);
+    let b = planAttack({ weapon: wB ?? any, dummy: mine, aim: back, startFacing: them.shape.defenceTurret ?? back, shape: them.shape, cells, respawn: false });
+    if (!wA) a = holdFire(a);
+    if (!wB) b = holdFire(b);
+    [a, b] = settleDuel(a, b);
+    // The opponent wears another player colour than the unit.
+    const oppColor = houseColors.find(c => c.hex !== color && c.id !== "red")?.hex ?? houseColors[1].hex;
+    demo.current = {
+      plan: a, t: 0, startedAt: -1, fired: 0, landed: 0, lastReport: -1e9, accent: accent(), ...geoFor(item, me, view.current.facing),
+      duel: { opp, plan: b, t: 0, fired: 0, landed: 0, lastReport: -1e9, geo: geoFor(opp.item, them, back), color: color === houseColors[0].hex ? oppColor : houseColors[0].hex, me, them, frames: [null, null] },
+    };
+    lastFrame.current = null;
+    setSpin(false); setPlaying(false); setZoomOverride(null);
+    setAttack({ weapon: Math.max(0, weapons.indexOf(wA ?? any)), target: theirs.kind, plan: a, versus: index }); setRunning(true);
     onAction?.("attack-order");
   };
   const stopAttack = () => {
@@ -378,7 +489,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
         <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
         {tag && <div className="viewer-stage-tag">{tag}</div>}
         {/* The demo's picture choices sit on the stage itself: which weapon fires, and at what. */}
-        {attack && weapon && (weapons.length > 1 || targets.length > 1) && <div className="viewer-attack-picks">
+        {attack && attack.versus === undefined && weapon && (weapons.length > 1 || targets.length > 1) && <div className="viewer-attack-picks">
           {weapons.length > 1 && <div className="viewer-picks" role="radiogroup" aria-label="Weapon">
             {weapons.map((w, i) => { const best = dummyTargets(w, dummies, item.spec.category)[0]; return (
               <button key={w.id} type="button" role="radio" aria-checked={attack.weapon === i} onClick={() => pickWeapon(i)}
@@ -398,7 +509,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
         <div className="viewer-actions" role="group" aria-label="Actions">
           {weapons.length > 0 && <button type="button" className="viewer-attack" aria-pressed={Boolean(attack)}
             title={attack ? (running ? "Stop the attack" : "Fire again") : "Attack a target at this weapon's range"}
-            onClick={() => (attack ? (running ? stopAttack() : startAttack(attack)) : pickWeapon(0))}>
+            onClick={() => (attack ? (running ? stopAttack() : attack.versus !== undefined ? startDuel(attack.versus) : startAttack(attack)) : pickWeapon(0))}>
             {attack && !running ? <RotateCcw size={14} aria-hidden="true" /> : <Crosshair size={14} aria-hidden="true" />}Attack</button>}
           {actions.map(a => <button key={a.id} type="button" aria-pressed={!attack && animation === a.id} onClick={() => (!attack && animation === a.id ? setPlaying(p => !p) : choose(a.id))}>
             {!attack && animation === a.id && playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}{a.label}</button>)}
@@ -407,6 +518,15 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
           <div className="viewer-colors" role="radiogroup" aria-label="Player colour">
             {houseColors.map(c => <button key={c.id} type="button" role="radio" aria-checked={color === c.hex} aria-label={c.name} title={c.name} style={{ background: `#${c.hex}` }} onClick={() => onColor(c.hex)} />)}
           </div>
+          {self && opponents.length > 0 && <select className="viewer-tool viewer-versus" aria-label="Versus: fight another unit" value={attack?.versus ?? ""}
+            style={{ maxWidth: 190, background: "var(--raised)", color: "var(--paper)", border: "1px solid var(--line)", borderRadius: 6, padding: "4px 6px", font: "inherit", fontSize: 13 }}
+            onChange={e => (e.target.value === "" ? stopAttack() : startDuel(Number(e.target.value)))}>
+            <option value="">Versus…</option>
+            {[...new Set(opponents.map(o => o.group ?? ""))].map(g => {
+              const list = opponents.flatMap((o, i) => ((o.group ?? "") === g ? [<option key={o.id} value={i}>{o.name}</option>] : []));
+              return g ? <optgroup key={g} label={g}>{list}</optgroup> : list;
+            })}
+          </select>}
           {weapons.length > 0 && <button type="button" className="viewer-tool" aria-pressed={rings} onClick={() => { setRings(r => !r); if (!attack) setZoomOverride(null); }} title="Weapon range on the ground, to scale"><Radar size={15} aria-hidden="true" /><span>Range</span></button>}
           {turns(item) && <button type="button" className="viewer-tool" aria-pressed={spin} disabled={running} onClick={() => setSpin(s => !s)} title="Spin (Space)"><RotateCw size={15} aria-hidden="true" /><span>Spin</span></button>}
           <div className="viewer-zoom" role="group" aria-label="Zoom">

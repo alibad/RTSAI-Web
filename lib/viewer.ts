@@ -41,6 +41,9 @@ export type ViewerUnit = {
   sounds: PublicSoundGroup[];
   /** What the stage's Attack demo fires: the armaments the unit uses as it stands, and a switchable mode or two. */
   attack: DemoWeapon[];
+  /** Its rules health and armour type (what Versus fights with). */
+  health: number | null;
+  armor: string | null;
 };
 export type ViewerCampaign = {
   id: string; title: string; synopsis: string; setting: string;
@@ -117,6 +120,8 @@ function viewerUnit(actor: RosterActor, dossier: (typeof catalogUnits)[number] |
     art: own ? { spec: renderSpec(own), sprite: spriteWithUrls(own) } : null,
     sounds: own ? unitSounds(id) : [],
     attack: demoWeapons(b.weapons),
+    health: b.health ?? null,
+    armor: b.armor ?? null,
   };
 }
 
