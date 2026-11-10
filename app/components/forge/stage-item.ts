@@ -62,10 +62,26 @@ export function fitTurretOffset(pivots: [number, number][] | null, turns: boolea
   return (turns ? x : [0, x[0], x[1]]).map(Math.round) as Vec3;
 }
 
+/** A sheet's path in the drafts folder: a concept's own (art/hull.png), or a donor's, already rooted (a mix). */
+const rooted = (art: ConceptArt, file: string) => (file.startsWith("concepts/") ? file : `concepts/${art.id}/${file}`);
+
+/**
+ * A mix (RTSAI-Art tools/forge/forge_mix.py): the hull donor's body, armour and pivots with the turret donor's turret
+ * and weapons. It has no files of its own: its sequences point at the two donors' sheets.
+ */
+export function mixArt(id: string, name: string, hull: ConceptArt, turret: ConceptArt): ConceptArt {
+  const onTurret = (s: SpriteSequence) => s.usedBy.some(u => /Turret/.test(u));
+  const from = (a: ConceptArt, keep: (s: SpriteSequence) => boolean) => a.sequences.filter(keep).map(s => ({ ...s, file: s.file ? rooted(a, s.file) : null }));
+  return {
+    ...hull, id, name, sequences: [...from(hull, s => !onTurret(s)), ...from(turret, onTurret)], turret: turret.turret, weapons: turret.weapons,
+    sounds: { ...hull.sounds, ...(turret.sounds.turret ? { turret: turret.sounds.turret } : {}) },
+  };
+}
+
 /** The concept in one faction's paint, as a stage item (palette per faction; the player colour is the stage's). */
 export function conceptItem(art: ConceptArt, game: ConceptGame, faction: string): StageItem {
   const fac = game.palettes[faction] ? faction : Object.keys(game.palettes)[0];
-  const sequences = art.sequences.map(s => ({ ...s, file: s.file ? forgeFile(`concepts/${art.id}/${s.file}`) : null }));
+  const sequences = art.sequences.map(s => ({ ...s, file: s.file ? forgeFile(rooted(art, s.file)) : null }));
   const pick = (name: string) => sequences.find(s => s.name === name) ?? null;
   const turns = art.kind !== "defence";
   const sprite: SpriteArt = {

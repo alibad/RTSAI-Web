@@ -9,11 +9,15 @@
  *                                          viewer's training targets, routing
  *   GET  /api/concept-forge/game-units     the game's own units per modern faction, exactly as the Faction viewer
  *                                          has them (art, armaments, health, sounds), to play and fight next to concepts
- *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder
+ *   GET  /api/concept-forge/stamp          when the index and the mix catalogue last changed (the page polls it and
+ *                                          reloads, so concepts appear while a wave renders)
+ *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder; also catalogue.json (the
+ *                                          mixes: every turret on every hull it fits, tools/forge/forge_mix.py) and
+ *                                          its picture sheets (atlas/)
  *   POST /api/concept-forge/routing        {id, factions?, verdict?, note?} -> routing.json
  *   GET  /api/concept-forge/plan           the routing as a readable plan, per faction
  */
-import { existsSync, readFileSync, writeFileSync, renameSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, renameSync, statSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { viewerDummies, viewerFaction, viewerFactionLinks } from "../viewer";
@@ -53,6 +57,11 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
           routing: readJson<Routing>(resolve(root, "routing.json"), {}) });
         return;
       }
+      if (req.method === "GET" && path === "/stamp") {
+        const at = (file: string) => { try { return Math.round(statSync(resolve(root, file)).mtimeMs); } catch { return 0; } };
+        send(res, 200, { index: at("index.json"), catalogue: at("catalogue.json") });
+        return;
+      }
       if (req.method === "GET" && path === "/game-units") {
         const factions = viewerFactionLinks().filter(l => !l.original).flatMap(l => {
           const f = viewerFaction(l.id);
@@ -73,7 +82,11 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
       if (req.method === "GET" && path === "/plan") {
         const index = readJson<{ concepts: string[]; palettes?: { factions?: Record<string, { name: string }> } }>(resolve(root, "index.json"), { concepts: [] });
         const routing = readJson<Routing>(resolve(root, "routing.json"), {});
-        const concepts = index.concepts.map(id => readJson<{ id: string; name: string; role: string; kind: string } | null>(resolve(root, "concepts", id, "concept.json"), null)).filter(Boolean) as { id: string; name: string; role: string; kind: string }[];
+        // Routed mixes are listed with the concepts (a mix nobody touched is not "not routed yet": there are thousands).
+        const mixes = readJson<{ mixes?: { id: string; n: string; r: string; k: string }[] }>(resolve(root, "catalogue.json"), {}).mixes ?? [];
+        const routedMixes = mixes.filter(m => routing[m.id]).map(m => ({ id: m.id, name: m.n, role: `${m.r}, a mix`, kind: m.k }));
+        const originals = index.concepts.map(id => readJson<{ id: string; name: string; role: string; kind: string } | null>(resolve(root, "concepts", id, "concept.json"), null)).filter(Boolean) as { id: string; name: string; role: string; kind: string }[];
+        const concepts = [...originals, ...routedMixes];
         const names = index.palettes?.factions ?? {};
         const line = (c: { id: string; name: string; role: string }) => {
           const r = routing[c.id];
@@ -95,7 +108,9 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
         const chunks: Buffer[] = []; let size = 0;
         for await (const c of req) { size += (c as Buffer).length; if (size > 8192) { res.writeHead(413).end(); return; } chunks.push(c as Buffer); }
         const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}") as { id?: string; factions?: string[]; verdict?: string | null; note?: string };
-        if (!body.id || !/^[a-z0-9-]{2,64}$/.test(body.id) || !existsSync(resolve(root, "concepts", body.id, "concept.json"))) { send(res, 400, { error: "Unknown concept" }); return; }
+        // A concept, or a mix of two built concepts (<hull>~<turret>).
+        const built = (id: string) => /^[a-z0-9-]{2,64}$/.test(id) && existsSync(resolve(root, "concepts", id, "concept.json"));
+        if (!body.id || !(built(body.id) || (/^[a-z0-9-]+~[a-z0-9-]+$/.test(body.id) && body.id.split("~").every(built)))) { send(res, 400, { error: "Unknown concept" }); return; }
         const file = resolve(root, "routing.json");
         const routing = readJson<Routing>(file, {});
         const prev = routing[body.id] ?? { factions: [], verdict: null, note: "", at: "" };

@@ -1,5 +1,5 @@
 .cf { --bg: #141614; --panel: #1c1f1b; --line: #2e322c; --ink: #e9e4d6; --mute: #9b9686; --gold: #d7ae5f; --red: #c8483a;
-  display: grid; grid-template-columns: 244px minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; gap: 0; height: 100vh;
+  display: grid; grid-template-columns: 264px minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; gap: 0; height: 100vh;
   background: var(--bg); color: var(--ink); font: 14px/1.45 Arial, sans-serif; overflow: hidden; }
 .cf button { font: inherit; color: inherit; cursor: pointer; }
 .cf-empty { padding: 48px; color: #ddd; background: #141614; height: 100vh; font: 15px Arial, sans-serif; }
@@ -87,3 +87,18 @@
 .cf-game-faction { display: flex; flex-direction: column; gap: 8px; }
 .cf-game-faction h4 { margin: 8px 2px 0; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); }
 .cf-cameo { object-fit: contain; image-rendering: pixelated; }
+
+.cf-total { color: var(--mute); font-size: 12px; white-space: nowrap; }
+.cf-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; position: sticky; top: -10px; z-index: 2; background: var(--bg); padding: 2px 0 6px; }
+.cf-filters input, .cf-filters select { min-width: 0; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 7px; font: 12px Arial, sans-serif; }
+.cf-filters input { grid-column: 1 / -1; }
+.cf-chip { grid-column: 1 / -1; background: #2c2a1f; border: 1px solid var(--gold); border-radius: 6px; padding: 5px 8px; font-size: 12px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-pager { grid-column: 1 / -1; display: flex; align-items: center; gap: 5px; }
+.cf-pager button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; font-size: 13px; font-weight: 700; }
+.cf-pager button:disabled { opacity: .35; cursor: default; }
+.cf-pager span { flex: 1; text-align: center; font-size: 12px; font-weight: 700; display: grid; line-height: 1.15; }
+.cf-pager small { color: var(--mute); font-weight: 400; font-size: 11px; }
+.cf-none { color: var(--mute); font-size: 13px; padding: 12px 4px; margin: 0; }
+.cf-donors { display: grid; gap: 5px; }
+.cf-donors button { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; font-size: 13px; text-align: left; }
+.cf-donors button:hover { border-color: var(--gold); }
