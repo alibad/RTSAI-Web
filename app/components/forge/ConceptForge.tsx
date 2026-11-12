@@ -1,19 +1,21 @@
 "use client";
 /**
  * Faction Studio > Concept Forge (local only): exploratory soldiers, vehicles and defences made by RTSAI-Art
- * tools/forge, routed to factions by the owner, next to the game's own units. Three sources, one stage:
+ * tools/forge, next to the game's own units. The page opens as a wall of pictures; a click puts one on the stage.
  *   Originals   concepts rendered by the forge (forge_build.py, forge_infantry.py)
  *   Mixes       every rendered turret on every hull or base it fits (forge_mix.py): thousands, with no files of their
  *               own; a mix's art is built here from its two donors' art
  *   Game units  the game's own units, exactly as the Faction viewer has them
  * All of them play on the Faction viewer's stage (ViewerStage: the game's sprite format, its animations, the
- * rules-driven Attack demo and Versus), so the Forge has no stage, effects or sounds of its own. Drafts live in
- * D:\Generated\RTSAI\art\concept-forge (lib/concept-forge/server.ts); nothing here changes the game.
+ * rules-driven Attack demo and Versus), so the Forge has no stage, effects or sounds of its own. A faction changes
+ * only a concept's paint, so there is no paint mode: a concept wears its own faction's colours until it is given to
+ * another. Drafts live in D:\Generated\RTSAI\art\concept-forge (lib/concept-forge/server.ts); nothing here changes
+ * the game.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FrameStore, type StageItem } from "../art/review/frames";
 import { soundEngine, useSoundPrefs } from "../art/review/sound";
-import { actionsFor, ViewerStage, type Opponent } from "../art/viewer/ViewerStage";
+import { ViewerStage, type Opponent } from "../art/viewer/ViewerStage";
 import { playAction, shownSounds, weaponSounds } from "../art/viewer/FactionViewer";
 import { decodePal, type Palette } from "../../../lib/art-lab/pal";
 import type { ViewerDummy } from "../../../lib/weapon-demo";
@@ -37,19 +39,23 @@ type Routing = Record<string, { factions: string[]; verdict: string | null; note
 type Index = { palettes: { factions: Record<string, Faction> }; concepts: Concept[]; routing: Routing; voices?: Voices; game: ConceptGame | null; dummies: ViewerDummy[] };
 /** The game's own units, as the Faction viewer has them (GET /api/concept-forge/game-units). */
 type GameUnits = { factions: { id: string; name: string; units: ViewerUnit[] }[]; effects: Record<string, PublicClip> };
-/** One row of the list: an original (at -1) or a mix (its place in the catalogue, which is where its picture is). */
-type Entry = { id: string; name: string; role: string; kind: string; faction: string; weapons: string[]; at: number; h?: string; t?: string };
+/** One picture on the wall: an original (at -1), a mix (its place in the catalogue, which is where its picture is) or
+ *  a game unit (at -2, with the game's own cameo and its faction's name as the group). */
+type Entry = { id: string; name: string; role: string; kind: string; faction: string; weapons: string[]; at: number; h?: string; t?: string; cameo?: string | null; group?: string };
 type Source = "originals" | "mixes" | "game";
 
-const KINDS = [["all", "Every kind"], ["infantry", "Soldiers"], ["vehicle", "Vehicles"], ["defence", "Defences"]] as const;
+const KINDS = [["all", "All"], ["infantry", "Soldiers"], ["vehicle", "Vehicles"], ["defence", "Defences"]] as const;
 const WEAPONS = [["", "Any weapon"], ["shell", "Guns"], ["bullet", "Machine guns, autocannon"], ["rocket", "Rockets"], ["missile", "Missiles"],
   ["mortar", "Mortars, howitzers"], ["beam", "Beams"], ["arc", "Arc"], ["flame", "Flame"], ["rail", "Rail"], ["none", "Unarmed"]] as const;
 const KIND_GROUP: Record<string, string> = { infantry: "Concepts: soldiers", vehicle: "Concepts: vehicles", defence: "Concepts: defences" };
 const PLAYER = "F21818";   // the stage's red (houseColors)
-const PAGE = 64;
+const STEP = 240;          // pictures added to the wall each time its end comes into view
+const NEAR = 4;            // neighbours shown on each side under the stage
 const NO_CONCEPTS: Concept[] = [];
 const NO_MIXES: Mix[] = [];
 const count = (n: number) => n.toLocaleString("en-US");
+/** The part of a 128x96 list picture that ever holds anything (measured over every original): the wall shows only that. */
+const CROP = { x: 16, y: 4, w: 96, h: 88 };
 
 /** The list picture of an original: the concept in a faction's paint (forge_export.py cameo-<faction>.png); soldiers at double size. */
 function Thumb({ id, kind, faction }: { id: string; kind: string; faction: string }) {
@@ -58,12 +64,12 @@ function Thumb({ id, kind, faction }: { id: string; kind: string; faction: strin
     const img = new Image();
     img.onload = () => {
       const x = ref.current?.getContext("2d"); if (!x) return;
-      x.imageSmoothingEnabled = false; x.clearRect(0, 0, 128, 96);
-      if (kind === "infantry") x.drawImage(img, 32, 30, 64, 48, 0, 0, 128, 96); else x.drawImage(img, 0, 0);
+      x.imageSmoothingEnabled = false; x.clearRect(0, 0, CROP.w, CROP.h);
+      if (kind === "infantry") x.drawImage(img, 40, 32, CROP.w / 2, CROP.h / 2, 0, 0, CROP.w, CROP.h); else x.drawImage(img, -CROP.x, -CROP.y);
     };
     img.src = forgeFile(`concepts/${id}/art/cameo-${faction}.png`);
   }, [id, kind, faction]);
-  return <canvas ref={ref} width={128} height={96} className="cf-thumb" />;
+  return <canvas ref={ref} width={CROP.w} height={CROP.h} className="cf-thumb" />;
 }
 
 /** Picture sheets by URL (64 mixes to a sheet), and the one scratch canvas their pixels are read through. */
@@ -101,31 +107,11 @@ function MixThumb({ at, cat, version, palette }: { at: number; cat: Catalogue; v
       s.drawImage(img, (cell % cols) * cw, Math.floor(cell / cols) * ch, cw, ch, 0, 0, cw, ch);
       const px = s.getImageData(0, 0, cw, ch), d = px.data;
       for (let i = 0; i < d.length; i += 4) { const k = d[i] * 4; d[i] = palette[k]; d[i + 1] = palette[k + 1]; d[i + 2] = palette[k + 2]; d[i + 3] = palette[k + 3]; }
-      cv.getContext("2d")!.putImageData(px, 0, 0);
+      cv.getContext("2d")!.putImageData(px, -CROP.x, -CROP.y);
     }).catch(() => undefined);
     return () => { live = false; };
   }, [at, per, cols, cw, ch, version, palette]);
-  return <canvas ref={ref} width={cw} height={ch} className="cf-thumb" />;
-}
-
-/** One still frame of a stage item, drawn by the shared frame store (the same pixels the stage shows). */
-function Still({ frames, item, color }: { frames: FrameStore; item: StageItem; color: string }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const animation = actionsFor(item)[0]?.id ?? "stand";
-    const draw = () => {
-      const cv = ref.current; if (!cv) return;
-      const f = frames.get(item, { facing: 896, turret: 0, tick: 0, timeMs: 0, loop: false, animation, color, shadow: true, tint: [1, 1, 1], airborne: item.spec.category === "aircraft" });
-      const x = cv.getContext("2d")!; x.clearRect(0, 0, cv.width, cv.height);
-      if (!f) return;
-      const z = item.spec.category === "infantry" ? 2 : 1;
-      x.imageSmoothingEnabled = false;
-      x.drawImage(f.canvas, Math.round(cv.width / 2 - f.anchorX * z), Math.round(cv.height * 0.66 - f.anchorY * z), f.width * z, f.height * z);
-    };
-    draw();
-    return frames.subscribe(draw);
-  }, [frames, item, color]);
-  return <canvas ref={ref} width={88} height={64} />;
+  return <canvas ref={ref} width={CROP.w} height={CROP.h} className="cf-thumb" />;
 }
 
 function Bars({ stats }: { stats: Record<string, number> }) {
@@ -155,25 +141,31 @@ export function ConceptForge() {
   const [weapon, setWeapon] = useState("");
   const [query, setQuery] = useState("");
   const [donor, setDonor] = useState<{ h?: string; t?: string } | null>(null);
-  const [shuffle, setShuffle] = useState(0);
-  const [routedTo, setRoutedTo] = useState<string>("");
-  const [pageAt, setPageAt] = useState({ key: "", n: 0 });
+  // Mixes start shuffled: in catalogue order one hull's sixty mixes sit side by side and the wall looks like one tank.
+  const [order, setOrder] = useState<Record<Source, number>>({ originals: 0, mixes: 1, game: 0 });
+  const shuffle = order[source];
+  const setShuffle = (to: number | ((n: number) => number)) => setOrder(o => ({ ...o, [source]: typeof to === "function" ? to(o[source]) : to }));
+  const [sentTo, setSentTo] = useState<string>("");
+  const [more, setMore] = useState({ key: "", n: 0 });
+  /** The concept on the stage; empty while the wall shows. */
   const [sel, setSel] = useState<string>("");
-  const [faction, setFaction] = useState<string>("");
+  /** The faction whose colours the stage tries on while its "Give it to" button is under the pointer. */
+  const [tryOn, setTryOn] = useState<string>("");
   const [player, setPlayer] = useState(PLAYER);
-  const [lineup, setLineup] = useState(false);
   const [gameUnits, setGameUnits] = useState<GameUnits | null>(null);
   useEffect(() => { void fetch(`${API}/game-units`).then(r => r.json()).then(setGameUnits).catch(() => undefined); }, []);
   const [frames] = useState(() => new FrameStore());
   useEffect(() => { frames.revive(); return () => frames.dispose(); }, [frames]);
   const { muted } = useSoundPrefs();
-  const listRef = useRef<HTMLElement>(null);
+  const wallRef = useRef<HTMLElement>(null);
+  const wallTop = useRef(0);
+  const endRef = useRef<HTMLDivElement>(null);
 
   // The drafts change while a wave renders: the page asks every 20 s whether anything is new and reloads what is.
   const stamp = useRef("");
   const reload = useCallback(() => fetch(`${API}/index`).then(r => r.json()).then((d: Index) => {
     setIndex(d);
-    setSel(s => s || new URLSearchParams(location.search).get("concept") || d.concepts[0]?.id || "");
+    setSel(s => s || new URLSearchParams(location.search).get("concept") || "");
     return fetch(forgeFile("catalogue.json")).then(r => (r.ok ? r.json() as Promise<Catalogue> : null)).catch(() => null);
   }).then(c => {
     if (c) { sheets.clear(); setCat(v => ({ data: c, version: (v?.version ?? 0) + 1 })); }
@@ -190,7 +182,7 @@ export function ConceptForge() {
     }, 20000);
     return () => window.clearInterval(timer);
   }, [reload]);
-  // The faction palettes, for painting the mixes' list pictures.
+  // The faction palettes, for painting the mixes' pictures.
   const game = index?.game ?? null;
   useEffect(() => {
     if (!game) return;
@@ -212,24 +204,40 @@ export function ConceptForge() {
     return f && u?.art ? { faction: f, unit: u, item: { key: sel, spec: u.art.spec, sprite: u.art.sprite } as StageItem } : null;
   }, [sel, gameUnits]);
 
-  // The list: one source (or everything routed to a faction), filtered, in pages.
+  // The wall: one source (or everything given to a faction), filtered; it grows as its end comes into view.
   const originalEntries = useMemo(() => originals.map((c): Entry => ({ id: c.id, name: c.name, role: c.role, kind: c.kind, faction: c.faction, weapons: (c.weapons ?? []).map(w => w.kind), at: -1 })), [originals]);
   const mixEntries = useMemo(() => mixes.map((m, i): Entry => ({ id: m.id, name: m.n, role: m.r, kind: m.k, faction: m.f, weapons: m.w, at: i, h: m.h, t: m.t })), [mixes]);
+  const gameEntries = useMemo(() => (gameUnits?.factions ?? []).flatMap(f => f.units.map((u): Entry => (
+    { id: `game:${f.id}:${u.id}`, name: u.name, role: u.role, kind: "game", faction: f.id, weapons: [], at: -2, cameo: u.cameo, group: f.name }))), [gameUnits]);
   const routing = index?.routing;
+  const ofGame = source === "game" && !sentTo;
   const entries = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const from = routedTo ? [...originalEntries, ...mixEntries].filter(e => routing?.[e.id]?.factions?.includes(routedTo)) : source === "mixes" ? mixEntries : source === "originals" ? originalEntries : [];
-    const list = from.filter(e => (kind === "all" || e.kind === kind) && (!weapon || (weapon === "none" ? !e.weapons.length : e.weapons.includes(weapon)))
+    const from = sentTo ? [...originalEntries, ...mixEntries].filter(e => routing?.[e.id]?.factions?.includes(sentTo)) : source === "mixes" ? mixEntries : source === "originals" ? originalEntries : gameEntries;
+    const list = from.filter(e => (ofGame || ((kind === "all" || e.kind === kind) && (!weapon || (weapon === "none" ? !e.weapons.length : e.weapons.includes(weapon)))))
       && (!q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q)) && (!donor?.h || e.h === donor.h) && (!donor?.t || e.t === donor.t));
     return shuffle ? shuffled(list, shuffle) : list;
-  }, [originalEntries, mixEntries, routing, routedTo, source, kind, weapon, query, donor, shuffle]);
-  const filterKey = `${source}|${kind}|${weapon}|${query}|${donor?.h ?? ""}|${donor?.t ?? ""}|${routedTo}|${shuffle}`;
-  const pages = Math.max(1, Math.ceil(entries.length / PAGE));
-  const page = Math.min(pages - 1, pageAt.key === filterKey ? pageAt.n : 0);
-  const shown = useMemo(() => entries.slice(page * PAGE, page * PAGE + PAGE), [entries, page]);
-  const go = (n: number) => { setPageAt({ key: filterKey, n: Math.max(0, Math.min(pages - 1, n)) }); listRef.current?.scrollTo({ top: 0 }); };
+  }, [originalEntries, mixEntries, gameEntries, routing, sentTo, ofGame, source, kind, weapon, query, donor, shuffle]);
+  const filterKey = `${source}|${kind}|${weapon}|${query}|${donor?.h ?? ""}|${donor?.t ?? ""}|${sentTo}|${shuffle}`;
+  const limit = STEP + (more.key === filterKey ? more.n : 0);
+  const shown = useMemo(() => entries.slice(0, limit), [entries, limit]);
+  const hasMore = shown.length < entries.length;
+  useEffect(() => {
+    const end = endRef.current;
+    if (!end || !hasMore) return;
+    const io = new IntersectionObserver(seen => {
+      if (seen.some(s => s.isIntersecting)) setMore(m => ({ key: filterKey, n: (m.key === filterKey ? m.n : 0) + STEP }));
+    }, { root: wallRef.current, rootMargin: "800px" });
+    io.observe(end);
+    return () => io.disconnect();
+  }, [filterKey, hasMore, limit]);
+  const at = useMemo(() => (sel ? entries.findIndex(e => e.id === sel) : -1), [entries, sel]);
+  const near = useMemo(() => (at < 0 ? [] : entries.slice(Math.max(0, at - NEAR), at + NEAR + 1)), [entries, at]);
 
-  const paintAs = faction || concept?.faction || mix?.f || "iran";
+  // A concept wears its own faction's colours, or those of the first faction it was given to.
+  const routeId = concept?.id ?? mix?.id;
+  const given = routeId ? routing?.[routeId]?.factions?.[0] : undefined;
+  const paintAs = tryOn || given || concept?.faction || mix?.f || "iran";
   const art = useMemo(() => {
     if (concept) return concept.art;
     const h = mix ? byId.get(mix.h)?.art : null, t = mix ? byId.get(mix.t)?.art : null;
@@ -245,7 +253,7 @@ export function ConceptForge() {
   const self = gameUnit ? (gameUnit.unit.health ? { health: gameUnit.unit.health, armor: gameUnit.unit.armor ?? "none" } : null) : art ? { health: art.health, armor: art.armor } : null;
   // Versus: every original (in its own faction's paint) and every game unit, except the one on the stage.
   const opponents = useMemo((): Opponent[] => {
-    if (!game) return [];
+    if (!game || !sel) return [];
     const fromConcepts = originals.flatMap((c): Opponent[] => (c.art && c.id !== sel ? [{
       id: `forge:${c.id}`, name: c.name, group: KIND_GROUP[c.kind], item: conceptItem(c.art, game, c.faction), weapons: conceptWeapons(c.art),
       health: c.art.health, armor: c.art.armor, sounds: conceptSounds(c.art),
@@ -259,24 +267,47 @@ export function ConceptForge() {
     }));
     return [...fromConcepts, ...fromGame];
   }, [originals, game, gameUnits, sel]);
-  const facItems = useMemo(() => (art && game ? Object.keys(game.palettes).map(f => [f, conceptItem(art, game, f)] as const) : []), [art, game]);
   // How many mixes stand on the selected concept's hull, and how many carry its turret.
   const related = useMemo(() => {
     const h = mix?.h ?? concept?.id, t = mix?.t ?? concept?.id;
     return { h, t, onHull: h ? mixes.reduce((n, m) => n + (m.h === h ? 1 : 0), 0) : 0, withTurret: t ? mixes.reduce((n, m) => n + (m.t === t ? 1 : 0), 0) : 0 };
   }, [mixes, mix, concept]);
 
-  const select = useCallback((id: string) => {
-    setSel(id); soundEngine.stopAll();
-    const u = new URL(location.href); u.searchParams.set("concept", id); history.replaceState(null, "", u);
+  /** Put a concept on the stage, or go back to the wall (an empty id). The address follows, so Back works. */
+  const show = useCallback((id: string, fromWall = false) => {
+    soundEngine.stopAll();
+    if (fromWall) wallTop.current = wallRef.current?.scrollTop ?? 0;
+    const u = new URL(location.href);
+    if (id) u.searchParams.set("concept", id); else u.searchParams.delete("concept");
+    if (fromWall) history.pushState(null, "", u); else history.replaceState(null, "", u);
+    setTryOn("");
+    setSel(id);
   }, []);
-  const browse = (d: { h?: string; t?: string }) => { setDonor(d); setSource("mixes"); setRoutedTo(""); setKind("all"); setWeapon(""); setQuery(""); setLineup(false); };
-  const speak = useCallback((action: string, as = paintAs) => {
+  useEffect(() => {
+    const back = () => { soundEngine.stopAll(); setSel(new URLSearchParams(location.search).get("concept") ?? ""); };
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  useEffect(() => { if (!sel && wallRef.current) wallRef.current.scrollTop = wallTop.current; }, [sel]);
+  const step = useCallback((by: number) => { const e = at < 0 ? undefined : entries[at + by]; if (e) show(e.id); }, [at, entries, show]);
+  useEffect(() => {
+    if (!sel) return;
+    const key = (ev: KeyboardEvent) => {
+      const t = ev.target as HTMLElement | null;
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.getAttribute("role") === "slider")) return;
+      if (ev.key === "Escape") show("");
+      else if (ev.key === "ArrowRight") step(1);
+      else if (ev.key === "ArrowLeft") step(-1);
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [sel, show, step]);
+  const browse = (d: { h?: string; t?: string }) => { setDonor(d); setSource("mixes"); setSentTo(""); setKind("all"); setWeapon(""); setQuery(""); wallTop.current = 0; show(""); };
+  const speak = useCallback((action: string) => {
     if (gameUnit && effects) playAction(shownSounds(gameUnit.unit, null, effects), action);
-    else if (art) void soundEngine.playAny(actionSounds(art, index?.voices, as, action));
+    else if (art) void soundEngine.playAny(actionSounds(art, index?.voices, paintAs, action));
   }, [gameUnit, effects, art, index, paintAs]);
 
-  const routeId = concept?.id ?? mix?.id;
   const route = async (body: { factions?: string[]; verdict?: string | null; note?: string }) => {
     if (!routeId) return;
     const r = await fetch(`${API}/routing`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: routeId, ...body }) });
@@ -290,12 +321,24 @@ export function ConceptForge() {
   const r = routeId ? index.routing[routeId] : undefined;
   const routed = r?.factions ?? [];
   const facIds = Object.keys(pal.factions);
-  const gameCount = gameUnits?.factions.reduce((n, f) => n + f.units.length, 0) ?? 0;
-  const info = concept ? { role: concept.role, name: concept.name, idea: concept.idea, description: concept.description, stats: concept.stats, fits: concept.factions }
-    : mix ? { role: mix.r, name: mix.n, idea: mix.i, description: mix.d, stats: { armour: mix.s[0], firepower: mix.s[1], speed: mix.s[2], range: mix.s[3] }, fits: mix.ff } : null;
-  const picture = (e: Entry) => (e.at < 0 ? <Thumb id={e.id} kind={e.kind} faction={faction || e.faction} />
-    : cat ? <MixThumb at={e.at} cat={cat.data} version={cat.version} palette={palettes[faction || e.faction]} /> : <span className="cf-thumb" />);
-  const SOURCES: [Source, string, number][] = [["originals", "Originals", originals.length], ["mixes", "Mixes", mixes.length], ["game", "Game units", gameCount]];
+  const sent = facIds.map(f => [f, Object.values(index.routing).filter(x => x.factions?.includes(f)).length] as const).filter(([f, n]) => n > 0 || f === sentTo);
+  const info = concept ? { role: concept.role, name: concept.name, idea: concept.idea, stats: concept.stats }
+    : mix ? { role: mix.r, name: mix.n, idea: mix.i, stats: { armour: mix.s[0], firepower: mix.s[1], speed: mix.s[2], range: mix.s[3] } } : null;
+  const picture = (e: Entry) => (e.at === -2
+    // eslint-disable-next-line @next/next/no-img-element -- the game's own cameo, pixel art
+    ? (e.cameo ? <img className="cf-thumb cf-cameo" src={e.cameo} alt="" /> : <span className="cf-thumb" />)
+    : e.at < 0 ? <Thumb id={e.id} kind={e.kind} faction={sentTo || e.faction} />
+      : cat ? <MixThumb at={e.at} cat={cat.data} version={cat.version} palette={palettes[sentTo || e.faction]} /> : <span className="cf-thumb" />);
+  const SOURCES: [Source, string, number, string][] = [["originals", "Originals", originals.length, "Concepts rendered by the forge"],
+    ["mixes", "Mixes", mixes.length, "Every rendered turret on every hull or base it fits"], ["game", "Game units", gameEntries.length, "The units in the game today"]];
+  const what = sentTo ? `given to ${pal.factions[sentTo]?.name ?? sentTo}` : source === "mixes" ? "mixes" : source === "originals" ? "originals" : "game units";
+  const toSource = (id: Source) => {
+    setSource(id); setSentTo(""); setDonor(null);
+    if (id === "mixes" && kind === "infantry") setKind("all");
+    wallTop.current = 0; wallRef.current?.scrollTo({ top: 0 });
+    if (sel) show("");
+  };
+  const part = mix?.k === "defence" || concept?.kind === "defence" ? "base" : "hull";
 
   return (
     <div className="cf">
@@ -303,139 +346,113 @@ export function ConceptForge() {
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- standalone Studio entry */}
         <a className="cf-back" href="/art/review">← Faction Studio</a>
         <h1>Concept Forge</h1>
-        <nav className="cf-kinds">{SOURCES.map(([id, label, n]) => (
-          <button key={id} className={source === id && !routedTo ? "on" : ""} onClick={() => { setSource(id); setRoutedTo(""); setDonor(null); if (id === "mixes" && kind === "infantry") setKind("all"); }}
-            title={id === "originals" ? "Concepts rendered by the forge" : id === "mixes" ? "Every rendered turret on every hull or base it fits" : "The game's own units"}>{label}<em>{count(n)}</em></button>
+        <nav className="cf-tabs">{SOURCES.map(([id, label, n, hint]) => (
+          <button key={id} className={source === id && !sentTo ? "on" : ""} onClick={() => toSource(id)} title={hint}><em>{count(n)}</em>{label}</button>
         ))}</nav>
-        <span className="cf-total">{count(originals.length + mixes.length)} concepts</span>
-        <div className="cf-paint">
-          <span>Paint</span>
-          <button className={!faction ? "on" : ""} onClick={() => setFaction("")} title="Each concept in its own faction">Own</button>
-          {facIds.map(f => <button key={f} className={faction === f ? "on" : ""} onClick={() => setFaction(f)} title={pal.factions[f].name}
-            style={{ background: pal.factions[f].paint, color: pal.factions[f].dark }}>{pal.factions[f].name.slice(0, 3)}</button>)}
-        </div>
-        <button className={`cf-sound ${lineup ? "on" : ""}`} onClick={() => setLineup(l => !l)}>{lineup ? "Back to stage" : "Lineup"}</button>
-        <a className="cf-sound" href={`${API}/plan`} target="_blank" rel="noreferrer" title="The routing as a plan, per faction">Plan</a>
-        <button className={`cf-sound ${muted ? "" : "on"}`} onClick={() => soundEngine.setPrefs({ muted: !muted })}>{muted ? "Sound off" : "Sound on"}</button>
+        <a className="cf-quiet" href={`${API}/plan`} target="_blank" rel="noreferrer" title="What has been given to each faction">Plan</a>
+        <button className={`cf-quiet ${muted ? "" : "on"}`} onClick={() => soundEngine.setPrefs({ muted: !muted })}>{muted ? "Sound off" : "Sound on"}</button>
       </header>
 
-      <aside className="cf-list" ref={listRef}>
-        {source !== "game" || routedTo ? <div className="cf-filters">
-          <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name or role" aria-label="Search concepts" />
-          <select value={kind} onChange={e => setKind(e.target.value)} aria-label="Kind">{KINDS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>
-          <select value={weapon} onChange={e => setWeapon(e.target.value)} aria-label="Weapon">{WEAPONS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>
-          {donor ? <button className="cf-chip" onClick={() => setDonor(null)} title="Show every mix again">
-            {donor.h ? `On: ${byId.get(donor.h)?.name ?? donor.h}` : `With: ${byId.get(donor.t ?? "")?.name ?? donor.t}`} ✕</button> : null}
-          <div className="cf-pager">
-            <button onClick={() => go(page - 1)} disabled={page === 0} aria-label="Previous page">‹</button>
-            <span>{page + 1} / {pages}<small>{count(entries.length)} found</small></span>
-            <button onClick={() => go(page + 1)} disabled={page >= pages - 1} aria-label="Next page">›</button>
-            <button onClick={() => setShuffle(s => s + 1)} title="Shuffle the order">Shuffle</button>
-            {shuffle ? <button onClick={() => setShuffle(0)} title="Back to the catalogue order">Sorted</button> : null}
+      <section className="cf-wall" ref={wallRef} hidden={!!sel}>
+        <div className="cf-filters">
+          <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search" aria-label="Search by name or role" />
+          {!ofGame ? <div className="cf-chips">{KINDS.filter(([id]) => !(source === "mixes" && !sentTo && id === "infantry")).map(([id, label]) => (
+            <button key={id} className={kind === id ? "on" : ""} onClick={() => setKind(id)}>{label}</button>
+          ))}</div> : null}
+          {!ofGame ? <select value={weapon} onChange={e => setWeapon(e.target.value)} aria-label="Weapon">{WEAPONS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select> : null}
+          <div className="cf-chips">
+            <button className={shuffle ? "on" : ""} onClick={() => setShuffle(s => s + 1)} title="A new random order">Shuffle</button>
+            {shuffle ? <button onClick={() => setShuffle(0)}>In order</button> : null}
           </div>
-        </div> : null}
-        <div className="cf-routed" aria-label="Routed to factions">{facIds.map(f => {
-          const n = Object.values(index.routing).filter(x => x.factions?.includes(f)).length;
-          return <button key={f} className={routedTo === f ? "on" : ""} disabled={!n && routedTo !== f} onClick={() => setRoutedTo(x => (x === f ? "" : f))}
-            title={`${pal.factions[f].name}: ${n} routed`} style={{ ["--fac" as string]: pal.factions[f].paint }}><i />{n}</button>;
-        })}</div>
-        {source === "game" && !routedTo ? (gameUnits?.factions ?? []).map(f => (
-          <div key={f.id} className="cf-game-faction">
-            <h4>{f.name}</h4>
-            {f.units.map(u => {
-              const key = `game:${f.id}:${u.id}`;
-              return (
-                <button key={key} className={`cf-card ${key === sel ? "on" : ""}`} onClick={() => select(key)}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- the game's own cameo, pixel art */}
-                  {u.cameo ? <img className="cf-thumb cf-cameo" src={u.cameo} alt="" /> : <span className="cf-thumb" />}
-                  <span className="cf-card-name">{u.name}</span>
-                  <span className="cf-card-role">{u.role}</span>
-                </button>
-              );
-            })}
-          </div>
-        )) : shown.map(e => {
+          {donor ? <button className="cf-donor" onClick={() => setDonor(null)} title="Show every mix again">
+            {donor.h ? `On the ${byId.get(donor.h)?.name ?? donor.h}` : `With the turret of the ${byId.get(donor.t ?? "")?.name ?? donor.t}`} ✕</button> : null}
+          {sent.length ? <div className="cf-chips cf-given" aria-label="Given to a faction">{sent.map(([f, n]) => (
+            <button key={f} className={sentTo === f ? "on" : ""} onClick={() => setSentTo(x => (x === f ? "" : f))} title={`Given to ${pal.factions[f].name}`}
+              style={{ ["--fac" as string]: pal.factions[f].paint }}><i />{pal.factions[f].name}<em>{n}</em></button>
+          ))}</div> : null}
+          <span className="cf-found"><b>{count(entries.length)}</b> {what}</span>
+        </div>
+        <div className="cf-grid">{shown.map((e, i) => {
           const rr = index.routing[e.id];
           return (
-            <button key={e.id} className={`cf-card ${e.id === sel ? "on" : ""} ${rr?.verdict ?? ""}`} onClick={() => select(e.id)}>
-              {picture(e)}
-              <span className="cf-card-name">{e.name}</span>
-              <span className="cf-card-role">{e.role}</span>
-              {rr?.factions?.length ? <span className="cf-card-routed">{rr.factions.map(f => <i key={f} style={{ background: pal.factions[f]?.paint }} title={pal.factions[f]?.name} />)}</span> : null}
-            </button>
+            <Fragment key={e.id}>
+              {ofGame && e.group && e.group !== shown[i - 1]?.group ? <h3 className="cf-group">{e.group}</h3> : null}
+              <button className={`cf-tile ${rr?.verdict ?? ""}`} onClick={() => show(e.id, true)} title={e.role}>
+                {picture(e)}
+                <span>{e.name}</span>
+                {rr?.factions?.length ? <i className="cf-sent">{rr.factions.map(f => <b key={f} style={{ background: pal.factions[f]?.paint }} title={pal.factions[f]?.name} />)}</i> : null}
+              </button>
+            </Fragment>
           );
-        })}
-        {(source !== "game" || routedTo) && !shown.length ? <p className="cf-none">{source === "mixes" && !mixes.length ? "No mixes yet: run forge_mix.py in RTSAI-Art." : "Nothing matches these filters."}</p> : null}
-      </aside>
+        })}</div>
+        {hasMore ? <div className="cf-end" ref={endRef}>More below…</div> : null}
+        {!shown.length ? <p className="cf-none">{source === "mixes" && !mixes.length ? "No mixes yet: run forge_mix.py in RTSAI-Art." : "Nothing matches."}</p> : null}
+      </section>
 
-      <main className="cf-main">
-        {lineup ? <div className="cf-lineup">{shown.map(e => (
-          <button key={e.id} onClick={() => { select(e.id); setLineup(false); }} className="cf-lineup-cell">
-            {picture(e)}
-            <span>{e.name}</span>
-          </button>
-        ))}</div> : null}
-        <div className="cf-stagehost viewer-stage-slot" hidden={lineup}>
-          {item ? <ViewerStage frames={frames} item={item} color={player} onColor={setPlayer} weapons={weapons} dummies={index.dummies}
-            sounds={sounds} onAction={id => speak(id)} self={self} opponents={opponents}>
-            <div className="viewer-stage-name"><h1>{gameUnit?.unit.name ?? info?.name}</h1><span>{gameUnit ? `${gameUnit.faction.name} · game unit` : info?.role}</span></div>
-          </ViewerStage> : <div className="cf-empty">{sel.includes("~") && !cat ? "Opening the mixes…" : "This concept has no game-format art yet."}</div>}
-        </div>
-      </main>
-
-      {gameUnit ? (
-        <section className="cf-info">
-          <p className="cf-role">{gameUnit.faction.name} · in the game</p>
-          <h2>{gameUnit.unit.name}</h2>
-          <p className="cf-idea">{gameUnit.unit.role}</p>
-          <p className="cf-desc">{gameUnit.unit.description}</p>
-          {gameUnit.unit.health ? <p className="cf-meta">{gameUnit.unit.health} HP · {gameUnit.unit.armor} armor</p> : null}
-          <ul className="cf-weapons">{weapons.map(w => (
-            <li key={w.id}><b>{w.label}</b><span>{w.damage} damage{w.burst > 1 ? ` ×${w.burst}` : ""} · {w.range} cells · {seconds(w.reloadTicks)} reload{w.targets.includes("Air") ? " · hits aircraft" : ""}</span></li>
-          ))}</ul>
-          <p className="cf-meta">The game&apos;s own unit, exactly as the Faction viewer shows it. Pick a concept in Versus to see them fight.</p>
-        </section>
-      ) : info ? (
-        <section className="cf-info">
-          <p className="cf-role">{info.role}</p>
-          <h2>{info.name}</h2>
-          <p className="cf-idea">{info.idea}</p>
-          <p className="cf-desc">{info.description}</p>
-          <Bars stats={info.stats} />
-          {art ? <p className="cf-meta">{art.health} HP · {art.armor} armor</p> : null}
-          <ul className="cf-weapons">{weapons.map(w => (
-            <li key={w.id}><b>{w.label}</b><span>{w.damage} damage{w.burst > 1 ? ` ×${w.burst}` : ""} · {w.range} cells · {seconds(w.reloadTicks)} reload{w.targets.includes("Air") ? " · hits aircraft" : ""}</span></li>
-          ))}</ul>
-          {mix || related.onHull || related.withTurret ? <>
-            <h3>{mix ? "Made from" : "Mixes"}</h3>
-            <div className="cf-donors">
-              {mix ? <button onClick={() => select(mix.h)}>Hull: {byId.get(mix.h)?.name ?? mix.h}</button> : null}
-              {mix ? <button onClick={() => select(mix.t)}>Turret: {byId.get(mix.t)?.name ?? mix.t}</button> : null}
-              {related.onHull ? <button onClick={() => browse({ h: related.h })}>{count(related.onHull)} on this {mix?.k === "defence" || concept?.kind === "defence" ? "base" : "hull"}</button> : null}
-              {related.withTurret ? <button onClick={() => browse({ t: related.t })}>{count(related.withTurret)} with this turret</button> : null}
-            </div>
+      {sel ? <section className="cf-view">
+        <div className="cf-viewbar">
+          <button className="cf-towall" onClick={() => show("")} title="Back to the wall (Esc)">← {count(entries.length)} {what}</button>
+          {at >= 0 ? <>
+            <button onClick={() => step(-1)} disabled={at <= 0} aria-label="Previous" title="Previous (←)">‹</button>
+            <span>{count(at + 1)} of {count(entries.length)}</span>
+            <button onClick={() => step(1)} disabled={at >= entries.length - 1} aria-label="Next" title="Next (→)">›</button>
           </> : null}
-          <h3>In every faction</h3>
-          <div className="cf-facrow">{facItems.map(([f, it]) => (
-            <button key={f} title={`${pal.factions[f]?.name}: click to hear its voice`} onMouseEnter={() => setFaction(f)} onMouseLeave={() => setFaction("")} onClick={() => speak("select", f)}>
-              <Still frames={frames} item={it} color={player} />
-              <span>{pal.factions[f]?.name}</span>
-            </button>
-          ))}</div>
-          <h3>Send to faction</h3>
-          <div className="cf-route">{facIds.map(f => {
-            const on = routed.includes(f); const fit = info.fits.includes(f);
-            return <button key={f} className={`${on ? "on" : ""} ${fit ? "fit" : ""}`} onClick={() => void route({ factions: on ? routed.filter(x => x !== f) : [...routed, f] })}
-              onMouseEnter={() => setFaction(f)} onMouseLeave={() => setFaction("")} style={{ ["--fac" as string]: pal.factions[f].paint }}>
-              <i />{pal.factions[f].name}{fit ? <em>fits</em> : null}</button>;
-          })}</div>
-          <div className="cf-verdict">{(["keep", "rework", "drop"] as const).map(v => (
-            <button key={v} className={r?.verdict === v ? `on ${v}` : v} onClick={() => void route({ verdict: r?.verdict === v ? null : v })}>{v === "keep" ? "Keep" : v === "rework" ? "Rework" : "Drop"}</button>
-          ))}</div>
-          <textarea placeholder="Notes for the next pass" defaultValue={r?.note ?? ""} key={routeId} onBlur={e => void route({ note: e.target.value })} />
-          <p className="cf-meta">{concept ? `Draft · ${concept.built ?? ""} · ${Object.values(concept.layers).reduce((n, l) => n + l.count, 0)} frames` : "A mix: its two donors' pictures, no files of its own"} · plays on the Faction viewer&apos;s stage</p>
-        </section>
-      ) : null}
+        </div>
+        <div className="cf-stagecol">
+          <div className="cf-stagehost viewer-stage-slot">
+            {item ? <ViewerStage frames={frames} item={item} color={player} onColor={setPlayer} weapons={weapons} dummies={index.dummies}
+              sounds={sounds} onAction={id => speak(id)} self={self} opponents={opponents}>
+              <div className="viewer-stage-name"><h1>{gameUnit?.unit.name ?? info?.name}</h1><span>{gameUnit ? `${gameUnit.faction.name} · in the game` : info?.role}</span></div>
+            </ViewerStage> : <div className="cf-empty">{sel.includes("~") && !cat ? "Opening the mixes…" : "This one has no pictures yet."}</div>}
+          </div>
+          {near.length > 1 ? <div className="cf-strip">{near.map(e => (
+            <button key={e.id} className={e.id === sel ? "on" : ""} onClick={() => show(e.id)} title={e.name}>{picture(e)}</button>
+          ))}</div> : null}
+        </div>
+        {gameUnit ? (
+          <aside className="cf-info">
+            <p className="cf-idea">{gameUnit.unit.role}</p>
+            <p className="cf-desc">{gameUnit.unit.description}</p>
+            {gameUnit.unit.health ? <p className="cf-meta">{gameUnit.unit.health} HP · {gameUnit.unit.armor} armor</p> : null}
+            <ul className="cf-weapons">{weapons.map(w => (
+              <li key={w.id}><b>{w.label}</b><span>{w.damage} damage{w.burst > 1 ? ` ×${w.burst}` : ""} · {w.range} cells · {seconds(w.reloadTicks)}{w.targets.includes("Air") ? " · hits aircraft" : ""}</span></li>
+            ))}</ul>
+          </aside>
+        ) : info ? (
+          <aside className="cf-info">
+            <p className="cf-idea">{info.idea}</p>
+            <Bars stats={info.stats} />
+            {art ? <p className="cf-meta">{art.health} HP · {art.armor} armor</p> : null}
+            <ul className="cf-weapons">{weapons.map(w => (
+              <li key={w.id}><b>{w.label}</b><span>{w.damage} damage{w.burst > 1 ? ` ×${w.burst}` : ""} · {w.range} cells · {seconds(w.reloadTicks)}{w.targets.includes("Air") ? " · hits aircraft" : ""}</span></li>
+            ))}</ul>
+            {mix ? <>
+              <h3>Made from</h3>
+              <div className="cf-donors">{([[part, mix.h], ["turret", mix.t]] as const).map(([label, id]) => {
+                const d = byId.get(id);
+                return d ? <button key={label} onClick={() => show(d.id)} title={`Open the ${d.name}`}>
+                  <Thumb id={d.id} kind={d.kind} faction={d.faction} />
+                  <span><em>{label}</em>{d.name}</span>
+                </button> : null;
+              })}</div>
+            </> : null}
+            {related.onHull || related.withTurret ? <div className="cf-like">
+              {related.onHull ? <button onClick={() => browse({ h: related.h })}><b>{count(related.onHull)}</b> mixes on this {part}</button> : null}
+              {related.withTurret ? <button onClick={() => browse({ t: related.t })}><b>{count(related.withTurret)}</b> mixes with this turret</button> : null}
+            </div> : null}
+            <h3>Give it to</h3>
+            <div className="cf-route">{facIds.map(f => {
+              const on = routed.includes(f);
+              return <button key={f} className={on ? "on" : ""} onClick={() => void route({ factions: on ? routed.filter(x => x !== f) : [...routed, f] })}
+                onMouseEnter={() => setTryOn(f)} onMouseLeave={() => setTryOn("")} style={{ ["--fac" as string]: pal.factions[f].paint }}><i />{pal.factions[f].name}</button>;
+            })}</div>
+            <div className="cf-verdict">{(["keep", "rework", "drop"] as const).map(v => (
+              <button key={v} className={r?.verdict === v ? `on ${v}` : v} onClick={() => void route({ verdict: r?.verdict === v ? null : v })}>{v === "keep" ? "Keep" : v === "rework" ? "Rework" : "Drop"}</button>
+            ))}</div>
+            <textarea placeholder="Notes for the next pass" defaultValue={r?.note ?? ""} key={routeId} onBlur={e => void route({ note: e.target.value })} />
+          </aside>
+        ) : <aside className="cf-info" />}
+      </section> : null}
     </div>
   );
 }
