@@ -11,8 +11,9 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import type { AssetSource } from "./asset-source";
 import { localAssetSource } from "./asset-source-server";
-import { child, parseMiniYaml, type YamlNode } from "./miniyaml";
-import { classicConfig, findYrDir, resolveStock, yrConfig, type OriginalsConfig, type RosterPayload, type StockRun } from "./originals";
+import { child, childValue, parseMiniYaml, type Yaml, type YamlNode } from "./miniyaml";
+import { classicConfig, encodePng, findYrDir, resolveStock, yrConfig, type OriginalsConfig, type RosterPayload, type StockRun } from "./originals";
+import { decodePngSheet } from "./png-sheet";
 import { loadModData, type ModReader } from "./resolve";
 import { computeRosters } from "./roster";
 
@@ -120,6 +121,33 @@ export function mountPlan(lib: ModLibraryConfig, mod: ExternalMod) {
   };
 }
 
+/**
+ * A mod's own faction flags: the `flags` collection of its chrome.yaml (one sheet, a region per faction id), cut out
+ * as small PNGs. Empty when the mod has none or its sheet is not a true-colour PNG on this machine.
+ */
+function factionFlags(plan: ReturnType<typeof mountPlan>, modDir: string, ids: string[]): Map<string, string> {
+  const out = new Map<string, string>();
+  try {
+    const files = (expandManifest(modDir).find(n => n.key === "Chrome")?.value.nodes ?? []).map(n => plan.packages(n.key.trim())).filter((p): p is string => !!p && existsSync(p));
+    const collections = new Map<string, Yaml>(files.flatMap(f => parseMiniYaml(readFileSync(f, "utf8"), f)).map(n => [n.key, n.value]));
+    const flags = collections.get("flags");
+    let image: string | null = null;
+    for (let c = flags, depth = 0; c && !image && depth < 4; depth++) { image = childValue(c, "Image"); c = collections.get(childValue(c, "Inherits") ?? ""); }
+    const sheetPath = image ? [...plan.high, ...plan.low].map(d => join(d, image)).find(p => existsSync(p)) : undefined;
+    const sheet = sheetPath ? decodePngSheet(new Uint8Array(readFileSync(sheetPath))) : null;
+    const rgba = sheet?.frames.length === 1 ? sheet.frames[0].rgba : undefined;
+    if (!flags || !sheet || !rgba) return out;
+    for (const id of ids) {
+      const [x, y, w, h] = (childValue(child(flags, "Regions")?.value, id) ?? "").split(",").map(v => Number(v.trim()));
+      if (!(w > 0 && h > 0) || x < 0 || y < 0 || x + w > sheet.width || y + h > sheet.height) continue;
+      const cut = new Uint8ClampedArray(w * h * 4);
+      for (let row = 0; row < h; row++) cut.set(rgba.subarray(4 * ((y + row) * sheet.width + x), 4 * ((y + row) * sheet.width + x + w)), 4 * row * w);
+      out.set(id, `data:image/png;base64,${Buffer.from(encodePng(w, h, cut)).toString("base64")}`);
+    }
+  } catch { /* no flags: the picker shows the faction's initials */ }
+  return out;
+}
+
 const memo = new Map<string, Promise<RosterPayload>>();
 export function modRosterPayload(base: OriginalsConfig, lib: ModLibraryConfig, id: string, refresh = false): Promise<RosterPayload> {
   if (!refresh && memo.has(id)) return memo.get(id)!;
@@ -161,6 +189,18 @@ async function buildModPayload(base: OriginalsConfig, lib: ModLibraryConfig, id:
     dirs: plan.high, low: plan.low, content, packages: plan.packages, archive: plan.archive, modeParam: `mod:${id}`, paletteFallback: "player",
     rules: `${mod.name} · ${mod.repo}${commit ? `@${commit}` : ""}`,
     source: (file, path, bytes) => (path ? credit(path) : localAssetSource(file, content?.mode === "classic" ? "classic" : "ra2", undefined, bytes, null)),
+  });
+  const flags = factionFlags(plan, join(plan.repo, "mods", mod.modId), factions.map(f => f.id));
+  for (const f of factions) { const flag = flags.get(f.id); if (flag) f.flag = flag; }
+  // In "All units", a unit that several countries each have their own copy of (same name, same pictures; only its
+  // numbers differ) is one row that counts the rest. Each country's own list still has its copy.
+  const looks = (i: string) => { const s = stock[i]; return s ? JSON.stringify([s.spec.cameo, s.sprite?.image ?? null, s.sprite?.shp ?? null, s.spec.voxel ?? null]) : i; };
+  const kept = new Map<string, (typeof factions)[number]["units"][number]>();
+  factions[0].units = factions[0].units.filter(u => {
+    const key = `${u.name}|${u.category}|${looks(u.id)}`, first = kept.get(key);
+    if (!first) { kept.set(key, u); return true; }
+    (first.variants ??= []).push(u.id);
+    return false;
   });
   return {
     mode: "ra2", factions, stock, unresolved: [...ids].filter(i => !stock[i]),

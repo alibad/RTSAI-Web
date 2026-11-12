@@ -79,3 +79,17 @@ test("a downloaded mod (OpenHV) lists every unit with its own art and palette (s
   assert.deepEqual(units.filter(u => !u.spec.palette || !u.spec.cameo).map(u => u.spec.id), [], "every unit has a palette and a build icon");
   assert.ok(units.every(u => u.sources?.model.kind === "third-party"), "credited to the mod, not to RTS AI or EA");
 });
+
+test("a mod with per-country copies (RA+): one row per unit in All units, its own faction names and flags (skipped without the checkout)", async t => {
+  const lib = modLibraryConfig(web), mod = EXTERNAL_MODS.find(m => m.id === "raplus")!;
+  if (!existsSync(join(lib.upstreams, mod.repo, "mods", mod.modId, "chrome.yaml"))) return t.skip("no RA+ checkout");
+  const roster = await modRosterPayload(originalsConfig(web), lib, "raplus");
+  const [all, ...factions] = roster.factions;
+  const light = all.units.filter(u => u.name === "Light Tank");
+  assert.equal(light.length, 1, "the countries' copies of one tank are one row");
+  assert.ok((light[0].variants?.length ?? 0) >= 2 && light[0].variants!.every(id => roster.stock[id]), "which counts the copies it folds");
+  assert.ok(factions.every(f => f.units.every(u => !u.variants)), "a country's own list keeps its copy");
+  const england = factions.find(f => f.id === "england")!;
+  assert.notEqual(england.name, "england", "the faction's name as the mod writes it, not its id");
+  assert.match(england.flag ?? "", /^data:image\/png;base64,/, "the mod's own flag");
+});

@@ -13,7 +13,9 @@ import { backdrops } from "../PixelCanvas";
 import type { MapTint } from "../viewSettings";
 import { flagImage, prewarmFlags, useFlagBitmaps } from "./flag-bitmaps";
 import { setLab, useLab } from "./lab-store";
-import type { ReviewUnit } from "./versions";
+import { stageItem, type ReviewUnit } from "./versions";
+import type { FrameStore } from "./frames";
+import { ModelThumb } from "./Filmstrip";
 
 export const slotNames: Record<SlotId, string> = { model: "Model", icon: "Icon", concept: "Concept" };
 
@@ -105,10 +107,11 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
 }
 
 export type Origin = "new" | "original" | "modified";
-export type RailRow = { unit: ReviewUnit; origin: Origin; count: number; needs: boolean };
+/** variants: other units with the same name and pictures, folded into this row (a mod's "All units"). */
+export type RailRow = { unit: ReviewUnit; origin: Origin; count: number; needs: boolean; variants?: number };
 export type RailFilter = "all" | "original" | "new" | "candidates" | "needs";
 /** added: how many of its actors are the project's own (new) units; 0 for an original country. */
-export type FactionSummary = { id: string; name: string; units: number; added: number; withCandidates: number; decided: number };
+export type FactionSummary = { id: string; name: string; units: number; added: number; withCandidates: number; decided: number; /** A mod's own flag (a data URL). */ flag?: string | null };
 
 export const railFilters: { id: RailFilter; label: string; test: (r: RailRow) => boolean }[] = [
   { id: "all", label: "All", test: () => true },
@@ -122,9 +125,9 @@ const groupNames: Record<string, string> = { infantry: "Infantry", vehicle: "Veh
 const groupOrder = ["infantry", "vehicle", "aircraft", "ship", "defense", "structure"];
 const originTitle: Record<Origin, string> = { new: "New: our art in the game today", original: "Original: base game art", modified: "Modified: modified game art" };
 
-export function Flag({ id, size = "m" }: { id: string; size?: "s" | "m" | "l" }) {
+export function Flag({ id, size = "m", image }: { id: string; size?: "s" | "m" | "l"; /** Another project's own flag for the faction. */ image?: string | null }) {
   useFlagBitmaps();
-  const src = flagImage(id);
+  const src = image ?? flagImage(id);
   return src ? <img className={`lab-flag is-${size}`} src={src} alt="" draggable={false} /> : <span className={`lab-flag is-${size} is-code`} aria-hidden="true">{({america:"US",england:"GB",france:"FR",germany:"DE",korea:"KR",russia:"RU",ukraine:"UA",cuba:"CU",libya:"LY",iraq:"IQ"} as Record<string,string>)[id] ?? id.slice(0,2).toUpperCase()}</span>;
 }
 
@@ -140,7 +143,7 @@ function FactionPicker({ factions, faction, onFaction, compact }: { factions: Fa
   const options = useMemo(() => {
     const mixed = factions.some(f => f.added) && factions.some(f => !f.added);
     return [...factions].sort((a, b) => Number(!a.added) - Number(!b.added)).map(f => ({
-      value: f.id, label: f.name, leading: <Flag id={f.id} size="m" />,
+      value: f.id, label: f.name, leading: <Flag id={f.id} size="m" image={f.flag} />,
       description: `${f.units} actors${f.withCandidates ? ` · ${f.decided}/${f.withCandidates} decided` : ""}`,
       group: mixed ? (f.added ? "RTS AI factions" : "Original countries") : undefined,
     }));
@@ -160,17 +163,37 @@ function FactionPicker({ factions, faction, onFaction, compact }: { factions: Fa
   );
 }
 
-const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: { row: RailRow; current: boolean; collapsed: boolean; onSelect: (id: string) => void }) {
-  const { unit, origin, count, needs } = row;
+/**
+ * The unit itself as its list picture, for a unit whose build icon cannot be painted (Shattered Paradise's icons need
+ * Tiberian Sun's palette, which is not on this machine). Drawn while the row is near the screen.
+ */
+function RailModel({ unit, frames, tints }: { unit: ReviewUnit; frames: FrameStore; tints: MapTint[] }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  // Only the rows near the screen hold a picture: each one redraws when the stage turns.
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(e => setNear(e[e.length - 1].isIntersecting), { rootMargin: "300px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const item = useMemo(() => (near ? stageItem(unit, null) : null), [near, unit]);
+  return <span ref={ref} className="lab-noicon lab-railmodel">{item && <ModelThumb item={item} frames={frames} tints={tints} zoom={1} width={60} height={48} radius={null} />}</span>;
+}
+
+const RailItem = memo(function RailItem({ row, current, collapsed, onSelect, frames, tints }: { row: RailRow; current: boolean; collapsed: boolean; onSelect: (id: string) => void; frames?: FrameStore; tints?: MapTint[] }) {
+  const { unit, origin, count, needs, variants = 0 } = row;
   const status = count ? (needs ? "Needs decision" : "Decided") : null;
   return (
     <li>
       <button type="button" aria-current={current ? "true" : undefined} onClick={() => onSelect(unit.id)}
         title={`${unit.name} · ${originTitle[origin]}${count ? ` · ${count} candidate${count === 1 ? "" : "s"}, ${status!.toLowerCase()}` : ""}`}>
         <span className="lab-cameo">
-          {(unit.identity ?? unit.spec.cameo) ? <img src={(unit.identity ?? unit.spec.cameo)!} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="lab-noicon" />}
+          {(unit.identity ?? unit.spec.cameo) ? <img src={(unit.identity ?? unit.spec.cameo)!} width={60} height={48} alt="" loading="lazy" decoding="async" draggable={false} />
+            : frames && tints ? <RailModel unit={unit} frames={frames} tints={tints} /> : <span className="lab-noicon" />}
         </span>
-        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b><small>{sourceLabel(unit)}</small></span>}
+        {!collapsed && <span className="lab-rail-text"><b>{unit.name}</b><small>{sourceLabel(unit)}{variants ? ` · ${variants + 1} versions` : ""}</small></span>}
         {count > 0 && (
           <span className={`lab-count${needs ? " is-needs" : " is-done"}`} aria-label={`${count} candidates, ${status}`}>
             {!needs && <Check size={12} strokeWidth={3} aria-hidden="true" />}{count}
@@ -185,7 +208,10 @@ const RailItem = memo(function RailItem({ row, current, collapsed, onSelect }: {
  * The faction's whole build roster, grouped like the build palette (base buildings last, folded): every unit
  * shows its static cameo (lazy-loaded), whether its art is New or Original RA2, and how many candidates wait.
  */
-export const UnitRail = memo(function UnitRail({ rows, selected, faction, factions, onFaction, filter, onFilter, onSelect, collapsed, onCollapse, onSounds }: {
+export const UnitRail = memo(function UnitRail({ rows, selected, faction, factions, onFaction, filter, onFilter, onSelect, collapsed, onCollapse, onSounds, frames, tints }: {
+  /** With these, a unit with no build icon shows itself in the list. */
+  frames?: FrameStore;
+  tints?: MapTint[];
   /** Opens the faction's sounds (announcer, voices, music); absent where there are none (Classic). */
   onSounds?: () => void;
   rows: RailRow[];
@@ -229,7 +255,7 @@ export const UnitRail = memo(function UnitRail({ rows, selected, faction, factio
                   <ChevronRight size={14} aria-hidden="true" /><span>{groupNames[g.cat]}</span><small>{g.rows.length}</small>
                 </button>
               : <h2 className="lab-group-head"><span>{groupNames[g.cat]}</span><small>{g.rows.length}</small></h2>)}
-            {!folded && <ol>{g.rows.map(r => <RailItem key={r.unit.id} row={r} current={selected === r.unit.id} collapsed={collapsed} onSelect={onSelect} />)}</ol>}
+            {!folded && <ol>{g.rows.map(r => <RailItem key={r.unit.id} row={r} current={selected === r.unit.id} collapsed={collapsed} onSelect={onSelect} frames={frames} tints={tints} />)}</ol>}
           </section>
         );
       })}

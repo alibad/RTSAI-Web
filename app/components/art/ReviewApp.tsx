@@ -197,7 +197,8 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
       const modeParam = params.get("mode") ?? "";
       if (modeParam === "classic" || isModMode(modeParam)) setMode(modeParam);
       const surface = params.get("view");
-      if (surface === "arena" || surface === "board") setSurface(surface);
+      // Another project's mod has no Encounter (it runs RTS AI's own game).
+      if ((surface === "arena" && !isModMode(modeParam)) || surface === "board") setSurface(surface);
       if (params.get("authored") === "1") { setAuthored(true); setFilter("new"); }
       if (factionParam) setFaction(factionParam);
       if (unit) setSelected(unit);
@@ -281,20 +282,20 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
   const rostersById = useMemo(() => new Map(factionIds.map(id => {
     const f = roster?.factions.find(x => x.id === id);
     const ids = f ? f.units.map(u => u.id) : units.filter(u => u.factionId === id).map(u => u.id);
-    const list = ids.flatMap(i => { const u = unitIn(i, id); return u ? [rowFor(u)] : []; });
+    const list = ids.flatMap(i => { const u = unitIn(i, id), folded = rosterInfo.get(`${id}:${i}`)?.variants?.length; return u ? [folded ? { ...rowFor(u), variants: folded } : rowFor(u)] : []; });
     return [id, authored ? list.filter(r => r.origin === "new") : list] as const;
-  })), [factionIds, roster, units, unitIn, rowFor, authored]);
+  })), [factionIds, roster, units, unitIn, rowFor, authored, rosterInfo]);
   const factionSummaries: FactionSummary[] = useMemo(() => factionIds.map(id => {
     const list = rostersById.get(id) ?? [];
     const withCandidates = list.filter(r => r.count > 0);
     const name = roster?.factions.find(f => f.id === id)?.name ?? units.find(u => u.factionId === id)?.factionName ?? id;
-    return { id, name, units: list.length, added: list.filter(r => r.origin === "new").length, withCandidates: withCandidates.length, decided: withCandidates.filter(r => !r.needs).length };
+    return { id, name, units: list.length, added: list.filter(r => r.origin === "new").length, withCandidates: withCandidates.length, decided: withCandidates.filter(r => !r.needs).length, flag: roster?.factions.find(f => f.id === id)?.flag ?? null };
   }), [factionIds, rostersById, roster, units]);
   const factionId = faction && factionIds.includes(faction) ? faction
     : factionSummaries.find(f => (rostersById.get(f.id) ?? []).some(r => r.needs))?.id ?? factionIds[0] ?? "china";
   const factionName = factionSummaries.find(f => f.id === factionId)?.name ?? factionId;
   const factionRows = useMemo(() => rostersById.get(factionId) ?? [], [rostersById, factionId]);
-  const railRows: RailRow[] = useMemo(() => factionRows.map(r => ({ unit: r.unit, origin: r.origin, count: r.count, needs: r.needs })), [factionRows]);
+  const railRows: RailRow[] = useMemo(() => factionRows.map(r => ({ unit: r.unit, origin: r.origin, count: r.count, needs: r.needs, variants: "variants" in r ? r.variants : undefined })), [factionRows]);
   const visibleRows = useMemo(() => {
     const test = railFilters.find(f => f.id === filter)?.test ?? (() => true);
     return railRows.filter(test);
@@ -585,12 +586,12 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
       {sourcesOpen && <SourceLibrary shared={shared} mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" && !shared ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
       {unit && <UnitSounds soundsKey={unitSoundKey} frames={frames} item={focused?.item ?? null} takeSelect={takeSelect} />}
       {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
-      <StudioBar shared={shared} viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} mods={mods} onMode={m => { setMode(m); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <StudioBar shared={shared} viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} mods={mods} onMode={m => { setMode(m); if (isModMode(m) && surface === "arena") setSurface("art"); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
       <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
         tally={mode === "ra2" && !shared ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}
-          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} onSounds={mode === "ra2" && !shared ? openSounds : undefined} />}
+          filter={filter} onFilter={setFilter} onSelect={selectUnit} collapsed={collapsed} onCollapse={collapse} frames={frames} tints={tints} onSounds={mode === "ra2" && !shared ? openSounds : undefined} />}
         <main className={`lab-main${showShelf ? " has-actions" : ""}${chain && surface === "art" ? " has-chain" : ""}`} id="main-content">
           {chain && surface === "art" && state && <AssetChain soundsKey={unitSoundKey} data={chain} step={iconMode ? null : chainStep} onStep={openStep} frames={frames} tints={tints} zoom={chainZoom} radius={radius} />}
           {error ? <p className="lab-empty">{error}</p>

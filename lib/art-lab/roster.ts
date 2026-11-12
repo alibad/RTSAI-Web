@@ -26,6 +26,8 @@ export const domainOf = (u: Pick<RosterUnit, "category">): Domain => DOMAINS[u.c
 export type RosterUnit = {
   id: string;
   name: string;
+  /** Other units folded into this row of a mod's "All units": same name and pictures (a country's own copy). */
+  variants?: string[];
   category: ArtCategory;
   queue: string;
   order: number;
@@ -43,6 +45,8 @@ export type RosterUnit = {
 export type FactionRoster = {
   id: string;
   name: string;
+  /** A mod's own flag for the faction (its chrome.yaml `flags`), as a small PNG data URL. */
+  flag?: string;
   side: string;
   units: RosterUnit[];
   /** Stock units this faction can no longer build (`~!faction.<id>`): what its new units replace. */
@@ -197,6 +201,9 @@ export function pickReference(unit: RosterUnit, replaced: RosterUnit[], stock: R
   return found ? { id: found.id, why: found.why } : null;
 }
 
+const factionName = (said: string | null, messages: ReadonlyMap<string, string>) =>
+  (said && messages.get(said)) || (said && !/^[a-z0-9-]+\.[a-z0-9-]+$/.test(said) ? said : null);
+
 /** Faction traits on the World actor: OpenRA's `Faction`, or a mod's own kind of it (Cameo's `FactionCA`). */
 function factionTraits(world: Yaml) {
   return world.nodes.filter(n => /^Faction[A-Za-z0-9]*(@|$)/.test(n.key) && childValue(n.value, "InternalName") !== null);
@@ -247,7 +254,8 @@ export function computeRosters(data: ModData, factionIds: readonly string[] = pl
     }
     units.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category) || (a.origin === b.origin ? 0 : a.origin === "new" ? -1 : 1) || a.order - b.order || a.id.localeCompare(b.id));
     return {
-      id, name: data.messages.get(childValue(trait?.value, "Name") ?? "") ?? id, side: childValue(trait?.value, "Side") ?? "",
+      // Name is a message key in current mods and the plain name in older ones (RA+); a key with no message falls back to the id.
+      id, name: factionName(childValue(trait?.value, "Name"), data.messages) ?? id, side: childValue(trait?.value, "Side") ?? "",
       units, replaced: replaced.map(r => r.id),
     };
   });
