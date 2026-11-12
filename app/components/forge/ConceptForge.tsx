@@ -23,6 +23,7 @@ import type { ViewerDummy } from "../../../lib/weapon-demo";
 import type { ViewerUnit } from "../../../lib/viewer";
 import type { PublicClip } from "../../../lib/faction-audio";
 import { actionSounds, API, conceptItem, conceptSounds, conceptWeapons, forgeFile, mixArt, type ConceptArt, type ConceptGame, type Voices } from "./stage-item";
+import { MakerBar, useSiteBeside } from "../MakerBar";
 import "../art/viewer/viewer.css";
 import "./forge.css";
 
@@ -161,6 +162,7 @@ export function ConceptForge() {
   const [frames] = useState(() => new FrameStore());
   useEffect(() => { frames.revive(); return () => frames.dispose(); }, [frames]);
   const { muted } = useSoundPrefs();
+  const site = useSiteBeside();
   const wallRef = useRef<HTMLDivElement>(null);
   /** The concept that was on the stage before this render. */
   const was = useRef("");
@@ -362,10 +364,8 @@ export function ConceptForge() {
 
   return (
     <div className="cf">
+      <MakerBar active="forge" site={site} />
       <header className="cf-top">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- standalone Studio entry */}
-        <a className="cf-back" href="/art/review">← Faction Studio</a>
-        <h1>Concept Forge</h1>
         <nav className="cf-tabs">{SOURCES.map(([id, label, n, hint]) => (
           <button key={id} className={source === id && !sentTo ? "on" : ""} onClick={() => toSource(id)} title={hint}><em>{count(n)}</em>{label}</button>
         ))}</nav>

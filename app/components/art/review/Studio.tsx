@@ -1,10 +1,10 @@
 "use client";
-import { useSyncExternalStore } from "react";
-import { Film, Swords, Palette, Library, Check, X, Minus, LayoutGrid, Flag, Map as MapIcon, Eye, BookOpen, FlaskConical, Gamepad2, Trophy, Sparkles } from "lucide-react";
+import { Film, Swords, Library, Check, X, Minus } from "lucide-react";
 import { failingFirst, type ActionCheck } from "../../../../lib/art-lab/chain";
 import type { MeasuredGroup, MeasuredRow } from "../../../../lib/art-lab/measurements";
 import type { Candidate } from "../../../../lib/art-lab/review";
 import { ActorSourceDetails } from "./Sources";
+import { MakerBar, useSiteBeside, type MakerPlace } from "../../MakerBar";
 import { SoundControls } from "./SoundControls";
 import { OptionSelect } from "../../ui/fields";
 import { isModMode, type ModListing, type StudioMode } from "../../../../lib/art-lab/review-ui";
@@ -16,17 +16,29 @@ import { AnimationReadiness } from "./AnimationReadiness";
 import { voxelAnimationParts, voxelCycleLabel } from "../../../../lib/art-lab/voxel-animation";
 import { FIRE_ACTION, fireActions } from "../../../../lib/art-lab/fire";
 
-const noSubscribe = () => () => {};
-/** The installed local app (scripts/local-app.ps1) serves the website beside the Studio and marks the page for it. */
-const useLocalSite = () => useSyncExternalStore(noSubscribe, () => document.body.dataset.site === "1", () => false);
+/**
+ * The Studio's place in the maker bar (MakerBar): the review board and the unit studio are this page's own views;
+ * everything else is a link. The Viewer and the Battle simulator open on the unit the Studio has open.
+ */
+export function StudioBar({ mode, shared = false, surface, onSurface, viewerHref, simulatorHref }: {
+  mode: StudioMode; shared?: boolean; surface: "art" | "arena" | "board"; onSurface: (s: "art" | "arena" | "board") => void;
+  viewerHref?: string;
+  /** The game's battle simulator with the Studio's unit placed (RTS AI's Red Alert 2). */
+  simulatorHref?: string;
+}) {
+  const site = useSiteBeside();
+  const pick = (id: MakerPlace) => {
+    if (id === "unit") { onSurface("art"); return true; }
+    // The board reviews RTS AI's own new units: from Classic or another project's mod, its link reloads into them.
+    if (id === "board" && mode === "ra2" && !shared) { onSurface("board"); return true; }
+    return false;
+  };
+  return <MakerBar active={surface === "board" ? "board" : "unit"} shared={shared} site={shared || site} hrefs={{ viewer: viewerHref, simulator: simulatorHref }} onPick={pick} />;
+}
 
-export function StudioBar({ mode, mods = [], shared = false, onMode, surface, onSurface, onSources, viewerHref, encounterHref }: { viewerHref?: string; mods?: ModListing[]; shared?: boolean;
-  /** RA2: the Encounter is the browser game's battle sandbox, opened as its own page (it needs cross-origin isolation). */
-  encounterHref?: string; mode: StudioMode; onMode: (m: StudioMode) => void; surface: "art" | "arena" | "board"; onSurface: (s: "art" | "arena" | "board") => void; onSources: () => void }) {
-  const site = useLocalSite();
-  return <header className="studio-bar"><div className="studio-title"><img src="/brand/faction-studio/icon-192.png?v=command-red-2531" width={24} height={24} alt="" /><b>Faction Studio</b><span>{shared ? "SHARED" : "LOCAL"}</span></div><nav className="studio-navigation" aria-label="Studio workspace">{([{ id: "board", label: "Review board", Icon: LayoutGrid }, { id: "art", label: "Unit studio", Icon: Palette }, { id: "arena", label: "Encounter", Icon: Swords }] as const).filter(t => (t.id !== "board" || (mode === "ra2" && !shared)) && (t.id !== "arena" || !isModMode(mode))).map(({ id, label, Icon }) => (id === "arena" && encounterHref
-    ? <a key={id} href={encounterHref} target="_blank" rel="noreferrer" title="The battle sandbox: the game's own simulation, in a new tab"><Icon size={16} />{label}</a>
-    : <button key={id} aria-current={surface === id ? "page" : undefined} onClick={() => onSurface(id)}><Icon size={16} />{label}</button>))}{!shared && <a href="/art/forge" title="Concept Forge: exploratory soldiers, vehicles and defences with their full behaviour and sounds; route them to factions"><Sparkles size={16} />Concept Forge</a>}{site && <><span className="studio-nav-divider" aria-hidden="true" /><a href="/play/" title="Play the browser game (top-level page: it needs cross-origin isolation)"><Gamepad2 size={16} /><span>Play</span></a><a href="/factions" title="Factions"><Flag size={16} /><span>Factions</span></a><a href={viewerHref ?? "/viewer"} title="The public Faction viewer, as players see it"><Eye size={16} /><span>Viewer</span></a><a href="/workshop" title="Workshop"><MapIcon size={16} /><span>Workshop</span></a><span className="studio-nav-divider" aria-hidden="true" /><span className="studio-admin" role="group" aria-label="Admin tools"><small>Admin</small><a href="/workshop/campaigns?mode=ra2" title="Campaign studio"><BookOpen size={16} /><span>Campaigns</span></a><a href="/workshop/arena?mode=ra2" title="AI Arena: brains play the live game against the built-in AIs and you"><Trophy size={16} /><span>AI Arena</span></a><a href="/workshop/evals?mode=ra2" title="AI testing"><FlaskConical size={16} /><span>AI testing</span></a></span></>}</nav><SoundControls /><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><OptionSelect<StudioMode> className="studio-mode" aria-label="Game mode" value={mode} onValueChange={onMode} options={[{ value: "ra2", label: "Red Alert 2", group: "RTS AI" }, { value: "classic", label: "Red Alert · Classic", group: "RTS AI" }, ...mods.map(m => ({ value: `mod:${m.id}` as StudioMode, label: m.name, group: "Mod library" }))]} /></header>; // eslint-disable-line @next/next/no-html-link-for-pages -- full page loads into the website the local app serves beside this standalone Studio
+/** The Studio's own controls, in its second row: sound, where the artwork comes from, and which game or mod is open. */
+export function StudioTools({ mode, mods = [], onMode, onSources }: { mode: StudioMode; mods?: ModListing[]; onMode: (m: StudioMode) => void; onSources: () => void }) {
+  return <><SoundControls /><button className="lab-ghost studio-sources-trigger" onClick={onSources}><Library size={16}/>Sources</button><OptionSelect<StudioMode> className="studio-mode" aria-label="Game mode" value={mode} onValueChange={onMode} options={[{ value: "ra2", label: "Red Alert 2", group: "RTS AI" }, { value: "classic", label: "Red Alert · Classic", group: "RTS AI" }, ...mods.map(m => ({ value: `mod:${m.id}` as StudioMode, label: m.name, group: "Mod library" }))]} /></>;
 }
 
 /** Actions live beside the art they control; unsupported rotations are explained rather than faked. */
@@ -39,7 +51,7 @@ export function ActionShelf({ unit, version,mode,onEncounter,fireUnknown=false }
   const facing = useLab(s => s.facing), turret = useLab(s => s.turret);
   const turns = Boolean(spec.voxel) || options.some(a => Math.abs(a.body?.facings ?? 1) > 1);
   const hasTurret = Boolean(sprite?.turret || spec.voxel?.parts.some(p => p.turretOffset !== null));
-  return <section className="studio-action-shelf" aria-label="Artwork and behavior"><div className="studio-action-heading"><span>Preview behavior{version?.kind==="candidate"?" / candidate":""}</span>{!isModMode(mode) && <button className="lab-ghost" onClick={onEncounter}><Swords size={14} />Test against another actor</button>}</div><div className="studio-action-list">{options.map(a => <button key={a.id} aria-pressed={animation === a.id} onClick={() => setLab({ animation: a.id, playing: true, view3d: "off" })}><Film size={13} />{a.label}</button>)}{!options.length && <span className="lab-hint">Voxel model · movement and combat in Encounter</span>}</div><div className="studio-pose-controls">{turns ? <label>Body facing<input aria-label="Body facing" type="range" min={0} max={1023} value={facing} onChange={e => setLab({ facing: Number(e.target.value), spin: false })} /></label> : <span className="lab-hint">Fixed isometric artwork · this building has one authored view.</span>}{hasTurret && <label>Turret aim<input aria-label="Turret aim" type="range" min={-512} max={512} value={turret} onChange={e => setLab({ turret: Number(e.target.value), spin: false })} /></label>}</div><p className="lab-hint">Sequence preview from game artwork.{isModMode(mode) ? "" : " Encounter measures movement, damage and destruction in OpenRA."}</p>{options.find(a=>a.id===animation)?.note&&<p className="lab-hint">{options.find(a=>a.id===animation)?.note}</p>}{version?.candidate?.previewNote&&<p className="lab-hint">{version.candidate.previewNote}</p>}<AnimationReadiness actor={unit.id} mode={mode}/></section>;
+  return <section className="studio-action-shelf" aria-label="Artwork and behavior"><div className="studio-action-heading"><span>Preview behavior{version?.kind==="candidate"?" / candidate":""}</span>{!isModMode(mode) && <button className="lab-ghost" onClick={onEncounter}><Swords size={14} />Test against another actor</button>}</div><div className="studio-action-list">{options.map(a => <button key={a.id} aria-pressed={animation === a.id} onClick={() => setLab({ animation: a.id, playing: true, view3d: "off" })}><Film size={13} />{a.label}</button>)}{!options.length && <span className="lab-hint">Voxel model · movement and combat in Encounter</span>}</div><div className="studio-pose-controls">{turns ? <label>Body facing<input aria-label="Body facing" type="range" min={0} max={1023} value={facing} onChange={e => setLab({ facing: Number(e.target.value), spin: false })} /></label> : <span className="lab-hint">Fixed isometric artwork · this building has one authored view.</span>}{hasTurret && <label>Turret aim<input aria-label="Turret aim" type="range" min={-512} max={512} value={turret} onChange={e => setLab({ turret: Number(e.target.value), spin: false })} /></label>}</div><p className="lab-hint">Sequence preview from game artwork.{isModMode(mode) ? "" : " A battle measures movement, damage and destruction: test against another actor."}</p>{options.find(a=>a.id===animation)?.note&&<p className="lab-hint">{options.find(a=>a.id===animation)?.note}</p>}{version?.candidate?.previewNote&&<p className="lab-hint">{version.candidate.previewNote}</p>}<AnimationReadiness actor={unit.id} mode={mode}/></section>;
 }
 
 /** The Animations step: one row of the version's own actions (click to play); drag the stage to turn it. */

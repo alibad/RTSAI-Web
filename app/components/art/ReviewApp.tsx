@@ -11,7 +11,7 @@ import { useFeedbackStore } from "../../../lib/stores/feedback-store";
 import type { RosterPayload } from "../../../lib/art-lab/originals";
 import { railFilters, slotNames, TopBar, UnitRail, type FactionSummary, type Origin, type RailFilter, type RailRow } from "./review/Chrome";
 import { DecisionPanel, type Decide } from "./review/DecisionPanel";
-import { ActionRow, ActionShelf, BehaviorPanel, ChecksPanel, StudioBar } from "./review/Studio";
+import { ActionRow, ActionShelf, BehaviorPanel, ChecksPanel, StudioBar, StudioTools } from "./review/Studio";
 import { isFieldKey } from "./review/keys";
 import { SourceLibrary } from "./review/Sources";
 import { Arena } from "./review/Arena";
@@ -586,8 +586,8 @@ export function ReviewApp({ units, tints, shared = false }: { units: ReviewUnit[
       {sourcesOpen && <SourceLibrary shared={shared} mode={mode} roster={roster} onClose={() => setSourcesOpen(false)} onSounds={mode === "ra2" && !shared ? () => { setSourcesOpen(false); setSoundsOpen(true); } : undefined} />}
       {unit && <UnitSounds soundsKey={unitSoundKey} frames={frames} item={focused?.item ?? null} takeSelect={takeSelect} />}
       {soundsOpen && <FactionSounds factions={soundFactions} initial={factionId} onClose={() => setSoundsOpen(false)} />}
-      <StudioBar shared={shared} viewerHref={viewerLink} encounterHref={encounterLink} onSources={() => setSourcesOpen(true)} mode={mode} mods={mods} onMode={m => { setMode(m); if (isModMode(m) && surface === "arena") setSurface("art"); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
-      <TopBar slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
+      <StudioBar shared={shared} viewerHref={viewerLink} simulatorHref={encounterLink} mode={mode} surface={surface} onSurface={s => { setSurface(s); setLab({ spin: false, playing: false }); if (s === "board") frames.hold(150); if (s !== "art") { setIconMode(false); setStep(AUTO); } }} />
+      <TopBar tools={<StudioTools mode={mode} mods={mods} onSources={() => setSourcesOpen(true)} onMode={m => { setMode(m); if (isModMode(m) && surface === "arena") setSurface("art"); setState(null); setLibrary(null); setPreview(null); setRoster(null); setSelected(null); setFaction(null); setFilter(authored ? "new" : "all"); setStep(AUTO); setFocusKey(AUTO); frames.clearQueue(); setLab({ spin: false, zoom: null, animation: "stand" }); }} />} slot={iconMode ? "icon" : "model"} counts={slotCounts} onSlot={changeSlot} decided={progress.decided} total={progress.total} tints={tints} help={help} onHelp={setHelp} name={unit?.name} encounter={surface === "arena"} heading={board ? "Review board" : null}
         tally={mode === "ra2" && !shared ? <RosterTally counts={counts} /> : null} />
       <div className={`lab-body${collapsed ? " is-collapsed" : ""}`}>
         {surface === "art" && <UnitRail rows={railRows} selected={unit?.id ?? null} faction={factionId} factions={factionSummaries} onFaction={changeFaction}

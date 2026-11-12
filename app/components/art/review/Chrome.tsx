@@ -73,7 +73,9 @@ export function HelpPopover({ open, onOpenChange }: { open: boolean; onOpenChang
   );
 }
 
-export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false, tally = null, heading = null }: {
+export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHelp, name, encounter = false, tally = null, heading = null, tools = null }: {
+  /** The page's own controls (the Studio's sound, sources and game picker). */
+  tools?: React.ReactNode;
   slot: SlotId;
   counts: Record<SlotId, number>;
   onSlot: (slot: SlotId) => void;
@@ -99,6 +101,7 @@ export function TopBar({ slot, counts, onSlot, decided, total, tints, help, onHe
           <i style={{ ["--done" as string]: total ? decided / total : 0 }} aria-hidden="true" />
           {decided} of {total} units decided
         </span>}
+        {tools}
         <HelpPopover open={help} onOpenChange={onHelp} />
         <ViewPopover tints={tints} />
       </div>

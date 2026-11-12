@@ -5,11 +5,8 @@
 .cf [hidden] { display: none !important; }
 .cf-empty { padding: 48px; color: #ddd; background: #141614; height: 100%; font: 15px Arial, sans-serif; }
 
-/* Top: where you are, and the three sources with how much each holds. */
+/* Under the maker bar: the three sources with how much each holds. */
 .cf-top { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: #111311; }
-.cf-top h1 { font-size: 17px; margin: 0; letter-spacing: .02em; color: var(--gold); font-weight: 700; }
-.cf-back { color: var(--mute); text-decoration: none; font-size: 13px; }
-.cf-back:hover { color: var(--ink); }
 .cf-tabs { display: flex; gap: 6px; margin-right: auto; }
 .cf-tabs button { display: flex; align-items: baseline; gap: 8px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 5px 14px; color: var(--mute);
   transition: border-color .12s, background .12s, color .12s; }

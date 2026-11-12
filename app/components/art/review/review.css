@@ -28,7 +28,7 @@
   inset: 0;
   z-index: 1;
   display: grid;
-  grid-template-rows: 56px 48px minmax(0, 1fr);
+  grid-template-rows: auto minmax(48px, auto) minmax(0, 1fr);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-geist), Arial, sans-serif;
@@ -310,14 +310,13 @@
 }
 
 /* Local faction studio: reuse the lab's controls, palette and spacing. */
-.studio-bar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 16px; background:#111711; border-bottom:1px solid var(--line-2); }
-.studio-sound { display:flex; align-items:center; gap:6px; margin-left:auto; }
+.studio-sound { display:flex; align-items:center; gap:6px; }
+/* The Studio's own controls sit in its second row; on a narrow window that row grows instead of overflowing. */
+@media (max-width: 1100px) { .lab-top { padding-block: 6px; } .lab-top-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; } .lab-top-right .studio-mode { width: 190px; flex: none; } }
 .studio-sound button { padding:6px; }
 .studio-sound button[aria-pressed="false"] { color:var(--faint); }
 .studio-sound input { width:76px; accent-color:var(--gold); }
 .studio-sound input:disabled { opacity:.4; }
-.studio-title { display:flex; gap:10px; align-items:center; color:var(--gold); }
-.studio-title span { font-size:10px; letter-spacing:.12em; color:var(--muted); border:1px solid var(--line-2); border-radius:4px; padding:3px 5px; }
 .studio-rail-tools { display:grid; gap:8px; margin-top:12px; }
 .studio-rail-tools input { width:100%; min-width:0; padding:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2); border-radius:var(--r); }
 .studio-facts { display:block; overflow-y:auto; padding:24px 20px; }
@@ -377,7 +376,7 @@
 .arena-events summary { font-size:11px; color:var(--muted); cursor:pointer; }
 .arena-events details p { margin-top:8px; }
 .arena-camera { display:flex; align-items:center; justify-content:flex-end; gap:8px; font-size:11px; color:var(--muted); }
-@media(max-width:1000px) { .studio-title span {display:none} .arena {padding:16px} .arena-matchup {gap:8px} .arena-options {gap:8px} .studio-bar {gap:8px} }
+@media(max-width:1000px) { .arena {padding:16px} .arena-matchup {gap:8px} .arena-options {gap:8px} }
 
 .arena > * { flex-shrink:0; }
 
@@ -386,19 +385,8 @@
 .lab, .lab * { scroll-behavior: auto; }
 
 /* One workspace hierarchy: game selector → actor → artwork and behavior. */
-.studio-navigation { display:flex; align-self:stretch; gap:24px; align-items:stretch; }
-.studio-navigation button { display:flex; align-items:center; gap:8px; border:0; border-bottom:2px solid transparent; padding:0 4px; background:none; color:var(--muted); white-space:nowrap; }
-.studio-navigation button[aria-current=page] { border-color:var(--gold); color:var(--text); }
-.studio-navigation a { display:flex; align-items:center; gap:8px; padding:0 4px; border-bottom:2px solid transparent; color:var(--muted); text-decoration:none; white-space:nowrap; }
-.studio-navigation a:hover, .studio-navigation button:hover { color:var(--text); }
-.studio-nav-divider { width:1px; margin:16px 0; background:var(--line-2); }
 /* Admin tools (local app only): quieter than the workspaces, labelled as admin. */
-.studio-admin { display:flex; align-items:stretch; gap:16px; }
-.studio-admin small { align-self:center; color:var(--faint); font:600 10px/1 var(--font-mono), monospace; letter-spacing:.1em; text-transform:uppercase; }
-.studio-admin a { font-size:13px; }
 /* The site and admin links fold to icons first (their names stay as titles); the workspaces keep their names. */
-@media (max-width: 1760px) { .studio-navigation { gap:16px; } .studio-admin small { display:none; } .studio-navigation a > span { display:none; } .studio-navigation a { padding:0 6px; } }
-.studio-title b { white-space:nowrap; }
 .studio-mode { min-width:180px; }
 .lab-top { grid-template-columns:minmax(0,1fr) auto auto; gap:12px; }
 .lab-brand { min-width:0; overflow:hidden; text-overflow:ellipsis; }
@@ -429,8 +417,6 @@
   .lab-body { grid-template-columns:var(--rail-w) minmax(0,1fr) var(--panel-w); }
   .lab-rail-head [data-slot=select-trigger], .lab-rail-text { display:block; }
   .lab-rail li > button { grid-template-columns:60px minmax(0,1fr) auto; justify-items:stretch; }
-  .studio-title span { display:none; }
-  .studio-navigation { gap:12px; }
 }
 
 /* Encounter has one palette and one field, without the studio's nested rails. */
@@ -497,11 +483,7 @@
 @media (max-width: 620px) { .arena.enc-layout { display: flex; flex-direction: column; overflow: auto; } .enc-library { max-height: 330px; flex-shrink: 0; border-right: 0; border-bottom: 1px solid var(--line); } .enc-palette header { display: none; } .enc-workspace { overflow: visible; } .enc-order-buttons { flex-wrap: wrap; } .enc-field .arena-caption { max-width: calc(100% - 24px); } }
 @media(max-width:760px) {
   .lab { position:relative; inset:auto; height:auto; min-height:100dvh; grid-template-rows:auto auto auto; overflow:visible; }
-  .studio-bar { flex-wrap:wrap; padding:12px; gap:12px; }
-  .studio-title { flex:1; font-size:14px; }
   .studio-mode { min-width:0; max-width:160px; }
-  .studio-navigation { order:3; width:100%; height:36px; gap:24px; overflow-x:auto; scrollbar-width:none; }
-  .studio-navigation button { font-size:13px; }
   .lab-top { padding:10px 12px; grid-template-columns:minmax(0,1fr) auto; }
   .lab-top-right { grid-column:1 / -1; justify-self:stretch; min-width:0; flex-wrap:wrap; }
   .lab-top-right .chain-tally { flex-wrap:wrap; row-gap:6px; }
@@ -545,7 +527,7 @@
 .arena-options input[type=range] { width:54px; }
 .arena-options button { padding:9px 10px; font-size:12px; }
 .arena-field { min-height:320px; }
-.lab.is-rebuild { grid-template-rows:56px minmax(0,1fr); }
+.lab.is-rebuild { grid-template-rows:auto minmax(0,1fr); }
 .rebuild { min-height:0; overflow-y:auto; padding:32px clamp(20px,4vw,60px); }
 .rebuild-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:24px; }
 .rebuild-heading h1 { font-size:32px; letter-spacing:-.03em; margin:8px 0; }
@@ -587,7 +569,7 @@
 
 @media(max-width:760px) {
   .lab { grid-template-columns:minmax(0,1fr); }
-  .studio-bar, .lab-top, .lab-body { min-width:0; }
+  .lab-top, .lab-body { min-width:0; }
   .lab-body { min-height:auto; }
   .lab-body > * { width:100%; min-width:0; flex-shrink:0; }
   .lab-rail.is-collapsed { height:60px; }

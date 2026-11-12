@@ -5,6 +5,22 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { localContentBuild, contentCodeCurrent } from './local-content-build';
 const run = promisify(execFile);
 
+/**
+ * The local game is closed (its code or content changed since the last tested build): say so, and offer the released
+ * game, which has the same simulator and takes the same link.
+ */
+export function closedPage(search: string) {
+  const query = search.replace(/&/g, '&amp;').replace(/"/g, '%22').replace(/</g, '%3C');
+  const button = 'display:inline-block;padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>The local game needs a new build</title></head>`
+    + `<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0e110e;color:#f0eee6;font:16px/1.5 Arial,sans-serif"><main style="max-width:540px;padding:32px">`
+    + `<h1 style="margin:0 0 12px;font-size:22px;color:#f1d28b">The local game needs a new build</h1>`
+    + `<p style="margin:0 0 22px;color:#a9a99d">The game's code or content changed since the last tested build on this PC, so the local game stays closed until it is built and tested again. Your games and edits are safe.</p>`
+    + `<p style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px"><a style="${button};background:#f1d28b;color:#111711" href="https://rtsai.net/play/${query}">Open it in the released game</a>`
+    + `<a style="${button};border:1px solid rgba(240,238,230,.26);color:#f0eee6" href="/art/review">Back to the Studio</a></p>`
+    + `<p style="margin:0;font-size:13px;color:#7d8176">To open the local game again: in the Faction Studio, choose Build &amp; test locally.</p></main></body></html>`;
+}
+
 /** New sessions use the shared candidate. Old asset URLs keep their existing server and rules. */
 export function contentPlayEntry(webRoot: string, fallback: (req: IncomingMessage, res: ServerResponse) => void) {
   return async (req: IncomingMessage, res: ServerResponse) => {
@@ -23,7 +39,7 @@ export function contentPlayEntry(webRoot: string, fallback: (req: IncomingMessag
       if (!target.searchParams.has('profile')) target.searchParams.set('profile', url.searchParams.get('game') === 'classic' ? 'public-classic' : 'public');
       res.writeHead(302, { location: target.href, 'cache-control': 'no-store' }).end();
     } catch {
-      res.writeHead(409, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }).end('<!doctype html><title>Build current content</title><p>The saved content or game code needs a new verified build. Your existing games and edits are preserved.</p><p><a href="/art/review">Open Faction Studio</a> and choose Build &amp; test locally.</p>');
+      res.writeHead(409, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }).end(closedPage(url.search));
     }
   };
 }

@@ -1,7 +1,9 @@
 import { Gamepad2, Github } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { ADMIN_BUILD } from "../../lib/admin";
 import { AccountNav } from "./AccountNav";
+import { LocalMakerBar } from "./LocalMakerBar";
 
 export const gameSource = "https://github.com/alibad/OpenRA-AI";
 export const modSource = "https://github.com/alibad/RTSAI-Mod";
@@ -16,6 +18,8 @@ function Brand({ footer = false }: { footer?: boolean }) {
 }
 
 export function SiteHeader() {
+  // The local app: the maker pages (Workshop, Viewer) carry the one maker bar in place of the public header.
+  if (ADMIN_BUILD) return <><a className="skip-link" href="#main-content">Skip to main content</a><LocalMakerBar /></>;
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to main content</a>

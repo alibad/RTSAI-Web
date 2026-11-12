@@ -1,0 +1,33 @@
+/* The maker bar (MakerBar.tsx): one navigation on every maker page. It carries its own colours and fonts, so it looks
+   the same, with every item in the same place, on the Studio's pages and on the website's pages in day or night. */
+.maker-bar { --mk-bg: #111711; --mk-line: rgba(240, 238, 230, .16); --mk-text: #f0eee6; --mk-muted: #a9a99d; --mk-faint: #7d8176; --mk-gold: #f1d28b;
+  position: sticky; top: 0; z-index: 60; box-sizing: border-box; display: flex; align-items: stretch; gap: 0 20px; min-height: 56px; padding: 0 16px;
+  background: var(--mk-bg); border-bottom: 1px solid var(--mk-line); color: var(--mk-text); font: 14px/1.2 Arial, Helvetica, sans-serif; }
+.maker-bar a { text-decoration: none; }
+.maker-brand { flex: none; display: flex; align-items: center; gap: 10px; color: var(--mk-gold); white-space: nowrap; }
+.maker-brand b { font-weight: 700; }
+.maker-brand span { font-size: 10px; letter-spacing: .12em; color: var(--mk-muted); border: 1px solid var(--mk-line); border-radius: 4px; padding: 3px 5px; }
+.maker-nav { display: flex; align-items: stretch; min-width: 0; }
+.maker-group { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 14px; border-left: 1px solid var(--mk-line); }
+.maker-group:last-child { border-right: 1px solid var(--mk-line); }
+.maker-group small { padding-left: 8px; font: 700 10px/1 Consolas, "Courier New", monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint); }
+.maker-group > div { display: flex; gap: 2px; }
+.maker-group a { display: flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 6px; color: var(--mk-muted); font-size: 13.5px; white-space: nowrap;
+  transition: color .12s, background .12s; }
+.maker-group a i { font-style: normal; font-size: 11px; color: var(--mk-faint); }
+.maker-group a:hover { color: var(--mk-text); background: rgba(240, 238, 230, .08); }
+.maker-group a:active { background: rgba(240, 238, 230, .14); }
+.maker-group a:focus-visible, .maker-brand:focus-visible { outline: 2px solid var(--mk-gold); outline-offset: 1px; }
+/* Where you are: colour only, never weight, so no item moves from one page to the next. */
+.maker-group a[aria-current=page] { color: var(--mk-gold); background: rgba(241, 210, 139, .16); box-shadow: inset 0 0 0 1px rgba(241, 210, 139, .35); }
+
+/* Narrower windows: the name goes first, then the bar scrolls sideways inside itself rather than the page. */
+@media (max-width: 1280px) { .maker-brand b { display: none; } .maker-group { padding: 6px 9px; } .maker-group a { padding: 5px 6px; } }
+@media (max-width: 1040px) {
+  .maker-bar { gap: 0 10px; padding: 0 10px; }
+  .maker-brand span { display: none; }
+  .maker-nav { overflow-x: auto; scrollbar-width: none; }
+}
+
+/* The website's maker pages in the local app: the bar sits at the very top, as on the Studio's own pages. */
+body:has(.maker-local) > .ea-top-notice { display: none; }
