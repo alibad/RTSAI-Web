@@ -12,10 +12,10 @@ test("narrative sections stay hidden until the catalog has the texts", () => {
 });
 
 test("identity and rival views read the catalog shape; voice ideas and unknown rivals are dropped", () => {
-  const base = factionById("hezbollah")!;
+  const base = factionById("lebanon")!;
   const sample = { ...base,
     identity: { motto: "Hold the ridge.", story: "First line.\n\nSecond line.", keywords: ["One", "Two", " "] },
-    rivalViews: [{ rival: "israel", kind: "propaganda", text: "A view." }, { rival: "nowhere", kind: "grievance", text: "Dropped." }, { rival: "hezbollah", kind: "grievance", text: "Not its own rival." }],
+    rivalViews: [{ rival: "israel", kind: "propaganda", text: "A view." }, { rival: "nowhere", kind: "grievance", text: "Dropped." }, { rival: "lebanon", kind: "grievance", text: "Not its own rival." }],
     flavour: { voiceIdeas: ["Not for the website"] } };
   const n = factionNarrative(sample as unknown as typeof base)!;
   assert.deepEqual(n.identity, { motto: "Hold the ridge.", story: ["First line.", "Second line."], keywords: ["One", "Two"] });

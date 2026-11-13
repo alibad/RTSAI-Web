@@ -1,4 +1,4 @@
-// Bind the Israel and Hezbollah art that RTSAI-Mod references but its ART-PROVENANCE.json does not record.
+// Bind the Israel and Lebanon art that RTSAI-Mod references but its ART-PROVENANCE.json does not record.
 //
 //   node --import tsx scripts/bind-levant-provenance.mjs            # write data/levant-art-binding.json
 //   node --import tsx scripts/bind-levant-provenance.mjs --check    # fail if the binding is stale
@@ -36,7 +36,7 @@ const python = resolve(web, arg("python", "../OpenRA-AI/.venv/Scripts/python.exe
 const check = process.argv.includes("--check");
 const output = join(web, "data/levant-art-binding.json");
 
-const GENERATOR_COMMIT = "18eb108"; // OpenRA-AI: "Catalog and author Israel and Hezbollah faction packs ..."
+const GENERATOR_COMMIT = "18eb108"; // OpenRA-AI: "Catalog and author Israel and Lebanon faction packs ..."
 const GENERATOR_SCRIPT = "scripts/build-levant-art.py";
 const LEVANT_RECORD = `${ART_DIR}/levant-art-provenance.json`;
 
@@ -87,11 +87,11 @@ function reproduce() {
     const inputs = [
       [join(modRoot, "engine/OpenRA.Mods.Cnc/Traits/World/VoxelNormalsPalette.cs"), "RTSAI-Mod/engine/OpenRA.Mods.Cnc/Traits/World/VoxelNormalsPalette.cs"],
       [join(classicRoot, "mods/common/FreeSansBold.ttf"), "OpenRA/mods/common/FreeSansBold.ttf"],
-      ...["israel", "hezbollah", "levant-common"].map(name => [join(classicRoot, `mods/ra/rules/${name}.yaml`), `OpenRA/mods/ra/rules/${name}.yaml`]),
+      ...["israel", "lebanon", "levant-common"].map(name => [join(classicRoot, `mods/ra/rules/${name}.yaml`), `OpenRA/mods/ra/rules/${name}.yaml`]),
     ];
     for (const [from, to] of inputs) { mkdirSync(dirname(join(sandbox, to)), { recursive: true }); copyFileSync(from, join(sandbox, to)); }
     for (const dir of ["RTSAI-Mod/mods/rtsai/modern-factions/icons", "RTSAI-Mod/mods/rtsai/modern-factions/voxels", "RTSAI-Mod/mods/rtsai/modern-factions/israel-art",
-      "RTSAI-Mod/mods/rtsai/modern-factions/hezbollah-art", "OpenRA/mods/ra/sequences", "OpenRA/mods/ra/bits/levant", "OpenRA/mods/ra/uibits", "RTSAI-Art/rebuild"]) mkdirSync(join(sandbox, dir), { recursive: true });
+      "RTSAI-Mod/mods/rtsai/modern-factions/lebanon-art", "OpenRA/mods/ra/sequences", "OpenRA/mods/ra/bits/levant", "OpenRA/mods/ra/uibits", "RTSAI-Art/rebuild"]) mkdirSync(join(sandbox, dir), { recursive: true });
     const runner = "import runpy,sys,PIL;sys.path.insert(0,'.');g=runpy.run_path('build-levant-art.py');g['main']();print('PIL',PIL.__version__,'python',sys.version.split()[0])";
     const log = execFileSync(python, ["-c", runner], { cwd: join(scripts, "scripts"), encoding: "utf8" });
     const versions = log.trim().split(/\r?\n/).pop();
@@ -140,7 +140,7 @@ for (const key of unbound) {
 const binding = {
   schemaVersion: 1,
   generatedBy: "scripts/bind-levant-provenance.mjs",
-  scope: "Israel and Hezbollah art files referenced by RTSAI-Mod rules or sequences but absent from modern-factions/ART-PROVENANCE.json.",
+  scope: "Israel and Lebanon art files referenced by RTSAI-Mod rules or sequences but absent from modern-factions/ART-PROVENANCE.json.",
   generator: {
     repo: "OpenRA-AI (local; commit not on origin when bound)", commit: generatorCommit, script: GENERATOR_SCRIPT,
     kind: "project-geometry: CPU renders and exports of meshes defined in Python. Inputs: project code, project material colours, OpenRA's GPL-3.0 voxel normal table (format data) and the GPL-2.0 FreeSans font used only for Classic icons. No image, SHP, VXL, HVA, PAL or MIX input.",

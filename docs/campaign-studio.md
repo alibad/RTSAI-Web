@@ -28,7 +28,7 @@ Return to Campaign records the measured browser result. Attach Map & Return also
 
 ## Starter fiction
 
-**Between the Lines** contains five chapters about a civilian engineer, paramedic and a conflicted local volunteer in fictional Lebanese districts. It presents personal experiences and contested memories under Hezbollah's influence without endorsing the organization or portraying its violence as heroic. It is explicitly fictional and is not a verified historical account. Game actor factions do not establish the characters' affiliation.
+**Between the Lines** contains five chapters about a civilian engineer, paramedic and a conflicted local volunteer in fictional Lebanese districts. It presents personal experiences and contested memories under Lebanon's influence without endorsing the organization or portraying its violence as heroic. It is explicitly fictional and is not a verified historical account. Game actor factions do not establish the characters' affiliation.
 
 ## Verification
 

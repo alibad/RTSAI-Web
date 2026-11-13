@@ -40,7 +40,7 @@ test("release coverage is mode-specific and unknown inputs are safe", () => {
   assert.equal(downloadHref("china", "ra2"), "/download?faction=china&mode=ra2");
 });
 test("both new factions expose complete native domains; release claims come only from the published manifest", () => {
-  for (const id of ["israel", "hezbollah"]) for (const mode of ["ra", "ra2"] as const) {
+  for (const id of ["israel", "lebanon"]) for (const mode of ["ra", "ra2"] as const) {
     const faction = factionById(id)!;
     assert.equal(availability(faction, mode), mode === "ra2" ? ra2Release(id) : "Development · release unconfirmed");
     const roster = rosterFactionById(id, mode)!;

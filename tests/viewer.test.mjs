@@ -19,7 +19,7 @@ const adminBuild = process.env.RTSAI_ADMIN === "1";
 const adminOnly = /Open in the Studio|Historical|History<\/summary>|candidate|\/api\/art-review|\/api\/sound-review|Sound desk/;
 
 test("the Faction viewer: every modern faction, its units drawn from the game's art, doctrine and campaigns", async () => {
-  for (const id of ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah"]) {
+  for (const id of ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "lebanon"]) {
     const response = await render(`/viewer/${id}`);
     assert.equal(response.status, 200, id);
     const html = await response.text();
@@ -39,7 +39,7 @@ test("the Faction viewer: every modern faction, its units drawn from the game's 
 });
 
 test("the Faction viewer carries each faction's narrative: its own voice, its rivals' views with the framing, no flavour", async () => {
-  const html = (await (await render("/viewer/hezbollah")).text()).replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"');
+  const html = (await (await render("/viewer/lebanon")).text()).replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"');
   assert.match(html, /Patience is our armor\./, "the motto, in the faction's voice");
   assert.match(html, /In their own words/);
   assert.match(html, /Through their rivals’ eyes/);
@@ -115,7 +115,7 @@ test("the faction bar offers all sixteen factions at once: the modern ones by na
   const html = await (await render("/viewer/russia/ttnk")).text();
   const nav = /<nav class="viewer-factions"[^>]*>([\s\S]*?)<\/nav>/.exec(html)?.[1] ?? "";
   const links = [...nav.matchAll(/href="\/viewer\/([a-z-]+)"/g)].map(m => m[1]);
-  assert.deepEqual(links, ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah", "america", "germany", "england", "france", "korea", "cuba", "libya", "iraq", "russia"]);
+  assert.deepEqual(links, ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "lebanon", "america", "germany", "england", "france", "korea", "cuba", "libya", "iraq", "russia"]);
   assert.match(nav, /class="viewer-factions-group is-original" role="group" aria-label="Original countries"/, "the original countries are one compact group");
   assert.match(nav, /aria-current="page" title="Russia"/, "the current one is marked (and named)");
   const cssDir = new URL("../dist/client/_next/static/css/", import.meta.url);
@@ -137,7 +137,7 @@ test("faction and unit pages link into the viewer, and it is in the sitemap", as
   assert.match(await (await render("/factions/china?mode=ra2")).text(), /href="\/viewer\/china/);
   assert.match(await (await render("/units/cnqilin?mode=ra2")).text(), /href="\/viewer\/china\/r2qilin"/);
   const sitemap = await (await render("/sitemap.xml")).text();
-  for (const id of ["china", "saudi-arabia", "hezbollah", "america", "russia"]) assert.match(sitemap, new RegExp(`/viewer/${id}<`));
+  for (const id of ["china", "saudi-arabia", "lebanon", "america", "russia"]) assert.match(sitemap, new RegExp(`/viewer/${id}<`));
 });
 
 test("public builds carry no admin viewer code", { skip: adminBuild }, () => {

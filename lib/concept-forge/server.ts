@@ -26,7 +26,7 @@ import { projectEffects } from "../faction-audio";
 export const forgeRoot = () => resolve(process.env.RTSAI_FORGE_DIR ?? "D:/Generated/RTSAI/art/concept-forge");
 
 const MIME: Record<string, string> = { ".png": "image/png", ".ogg": "audio/ogg", ".json": "application/json", ".wav": "audio/wav", ".pal": "application/octet-stream" };
-const FACTION_IDS = new Set(["iran", "china", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah"]);
+const FACTION_IDS = new Set(["iran", "china", "turkey", "saudi-arabia", "yemen", "israel", "lebanon"]);
 const VERDICTS = new Set(["keep", "rework", "drop"]);
 
 export type Routing = Record<string, { factions: string[]; verdict: string | null; note: string; at: string }>;

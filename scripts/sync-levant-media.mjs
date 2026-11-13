@@ -1,5 +1,5 @@
 /**
- * Israel and Hezbollah dossier media, from the approved (promoted) art. Never opens original game content.
+ * Israel and Lebanon dossier media, from the approved (promoted) art. Never opens original game content.
  * - roster: the faction lineup that scripts/export-faction-art.py composites from the approved unit renders
  *   (data/faction-art.json); run `npm run sync:faction-art` first when the art changes.
  * - <unit>-source: the approved unit render (RTSAI-Art units/<actor>/candidates/cameo-v3-render/render-x4.png, the
@@ -17,7 +17,7 @@ const web = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const games = resolve(web, '..');
 const art = resolve(process.env.RTSAI_ART_DIR ?? join(games, 'RTSAI-Art'));
 const mod = resolve(process.env.RTSAI_MOD_DIR ?? join(games, 'RTSAI-Mod'));
-const levant = ['israel', 'hezbollah'];
+const levant = ['israel', 'lebanon'];
 const hash = bytes => createHash('sha256').update(bytes).digest('hex').slice(0, 12);
 const fromGames = path => '../' + path.slice(games.length + 1).replaceAll('\\', '/');
 

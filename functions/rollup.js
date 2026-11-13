@@ -14,7 +14,7 @@ export const VIEWS = ["isometric", "classic"];
 export const RESULTS = ["won", "lost", "left", "error"];
 export const MAP_KINDS = ["random", "bundled", "earth", "campaign"];
 /** The game's nations (RTSAI-WebGame web/src/ui/Flag.tsx) and its random pick. */
-export const FACTIONS = ["america", "china", "cuba", "england", "france", "germany", "hezbollah", "iran", "iraq", "israel",
+export const FACTIONS = ["america", "china", "cuba", "england", "france", "germany", "lebanon", "iran", "iraq", "israel",
   "korea", "libya", "russia", "saudi", "turkey", "ukraine", "yemen", "random"];
 export const FEEDBACK_CATEGORIES = { "Bug": "bug", "Feature Request": "feature", "UI/UX": "ui", "Gameplay": "gameplay",
   "Mission Generator": "missions", "AI Companion": "ai", "General": "general" };

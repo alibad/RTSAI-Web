@@ -9,7 +9,7 @@ const projectRoot = resolve(import.meta.dirname, "..");
 test("ships a complete content-hashed faction archive", async () => {
   const manifest = JSON.parse(await readFile(resolve(projectRoot, "public/game-media/manifest.json"), "utf8"));
   assert.ok(manifest.length >= 200, `expected at least 200 assets, found ${manifest.length}`);
-  assert.deepEqual([...new Set(manifest.map((asset) => asset.faction))].sort(), ["china", "hezbollah", "iran", "israel", "red-sea", "turkey"]);
+  assert.deepEqual([...new Set(manifest.map((asset) => asset.faction))].sort(), ["china", "iran", "israel", "lebanon", "red-sea", "turkey"]);
   assert.ok(new Set(manifest.map((asset) => asset.id)).size === manifest.length, "asset ids must be unique");
   assert.ok(manifest.some((asset) => asset.category === "concept"));
   assert.ok(manifest.some((asset) => asset.category === "live"));

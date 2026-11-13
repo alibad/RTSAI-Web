@@ -9,7 +9,7 @@
 // SHA-256 against that record. A referenced file outside the record fails the sync, so no RA2 data is
 // ever published. The generator lookup reads the OpenRA-AI builders at the pinned commits (optional).
 //
-// The Israel and Hezbollah packs are not in ART-PROVENANCE.json yet. data/levant-art-binding.json (written by
+// The Israel and Lebanon packs are not in ART-PROVENANCE.json yet. data/levant-art-binding.json (written by
 // scripts/bind-levant-provenance.mjs) binds them; each binding is re-verified here against the mod's own
 // records before it joins the record, and the same publication guard then checks every file's bytes.
 import { createHash } from "node:crypto";

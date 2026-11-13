@@ -15,7 +15,7 @@ const web = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const art = JSON.parse(readFileSync(join(web, "data/faction-art.json"), "utf8"));
-const order = ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "hezbollah"];
+const order = ["china", "iran", "turkey", "saudi-arabia", "yemen", "israel", "lebanon"];
 const flagId = id => (id === "saudi-arabia" ? "saudi" : id);
 // Inline data URIs: a page set from a string may not load file:// images.
 const mime = { ".webp": "image/webp", ".svg": "image/svg+xml", ".png": "image/png" };

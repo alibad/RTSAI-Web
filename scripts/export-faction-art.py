@@ -17,8 +17,7 @@ Everything exported here is made by the project. No EA/RA2 file is ever opened.
                  OpenRA's PlayerColorRemap does.
   lineups        one composite per modern faction, built from that faction's unit renders.
   flags          national flags from lipis/flag-icons v7.3.2 (MIT), taken from the Studio's local copy in
-                 app/components/art/review/flags.ts; plus the Hezbollah flag (non-free; owner decision 2026-10-07,
-                 risks in docs/faction-art.md), from the same copy with its editor metadata removed.
+                 app/components/art/review/flags.ts.
 
 Outputs are content-hashed (immutable caching). data/faction-art.json is the slim manifest the pages read;
 data/faction-art-provenance.json records every output's source files and SHA-256s. Neither is served.
@@ -69,19 +68,12 @@ REMAP = range(16, 32)               # PlayerColorPalette RemapIndex of every ove
 SHADOW_RGBA = (0, 0, 0, 140)        # OpenRA ShadowIndex alpha
 RENDER_WIDTHS = (480, 240)
 LINEUP_WIDTHS = (1440, 720)
-# Factions whose flag is never published. Empty since the owner's decision of 2026-10-07 (docs/faction-art.md).
+# Factions whose flag is never published (the pages then show the faction's emblem). Empty: every faction shows its
+# national flag (docs/faction-art.md).
 NO_FLAG: set[str] = set()
-# Flags that are not national flags from flag-icons: published by owner decision, with their own source and licence
-# record. The Studio's copy (app/components/art/review/flags.ts) is the source; see docs/faction-art.md for the risks.
-ORGANISATION_FLAGS = {
-    "hezbollah": {
-        "licence": "Non-free: the organisation's own emblem. Wikipedia lists the file as a non-free logo (fair use, "
-                   "copyright held by a sanctioned organisation); no free licence applies. Published by owner decision "
-                   "of 2026-10-07; risks in docs/faction-art.md.",
-        "source": "https://en.wikipedia.org/wiki/File:Flag_of_Hezbollah.svg "
-                  "(https://upload.wikimedia.org/wikipedia/en/0/08/Flag_of_Hezbollah.svg, downloaded 2026-10-04)",
-    },
-}
+# Flags that are not national flags from flag-icons, each with its own source and licence record. Empty since
+# 2026-11-13: the seventh modern faction is Lebanon and shows the flag-icons national flag.
+ORGANISATION_FLAGS: dict[str, dict[str, str]] = {}
 
 # Hero lineup per faction: back to front. Slots place each unit's trimmed render on the lineup canvas.
 LINEUPS = {
@@ -91,7 +83,7 @@ LINEUPS = {
     "saudi-arabia": {"air": "r2f15sa", "sea": "r2riyadh", "def": "r2sapatriot", "veh": "r2bradley", "inf": "r2sang", "main": "r2m1a2s"},
     "yemen": {"air": "r2samad", "sea": "r2mokha", "def": "r2ycoastal", "veh": "r2ymlr", "inf": "r2ymr", "main": "r2technical"},
     "israel": {"air": "r2ilfalcon", "sea": "r2ilfrigate", "def": "r2ilbattery", "veh": "r2namer", "inf": "r2ilrifle", "main": "r2merkava"},
-    "hezbollah": {"air": "r2hzdrone", "sea": "r2hzmissileboat", "def": "r2hzaanest", "veh": "r2hzrockets", "inf": "r2hzrifle", "main": "r2hzrecoilless"},
+    "lebanon": {"air": "r2hzdrone", "sea": "r2hzmissileboat", "def": "r2hzaanest", "veh": "r2hzrockets", "inf": "r2hzrifle", "main": "r2hzrecoilless"},
 }
 LINEUP_SIZE = (1440, 560)
 # slot: (centre x, anchor y, anchor ("top" | "bottom"), max width, max height, shade) as fractions of the canvas
@@ -575,7 +567,7 @@ def build() -> tuple[dict[str, bytes], dict, dict]:
     provenance = {
         "schemaVersion": 1,
         "generatedBy": "scripts/export-faction-art.py",
-        "policy": "Only project-made images, MIT national flags and the organisation flags the owner approved (docs/faction-art.md). No EA/RA2 file is opened or exported.",
+        "policy": "Only project-made images and MIT national flags (docs/faction-art.md). No EA/RA2 file is opened or exported.",
         "sources": {"RTSAI-Art": git_head(ART), "art-preview overlay": git_head(OVERLAY_REPO), "RTSAI-Mod main": git_head(MAIN_REPO),
                     "flag-icons": {"version": "7.3.2", "licence": "MIT", "url": "https://github.com/lipis/flag-icons/tree/v7.3.2/flags/4x3"}},
         "files": sorted(w.records, key=lambda r: r["path"]),

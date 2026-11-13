@@ -25,7 +25,7 @@ Apache final recorder verification: local job `1d525d2f-c459-49ec-94b5-92ff6d031
 
 Combat runs in the local OpenRA engine. Browser position/yaw interpolation smooths five-tick samples; health and deaths remain discrete observations. Turret aim is reconstructed from targets. Hit flashes, tracers, explosion rings, smoke, animation timing and darkened living artwork used for wrecks are illustrative. Exact engine projectile/effect rendering, full maps, service bases and balance conclusions are outside this verification. Infantry death sequence previews use authored art but do not identify the native damage-specific death sequence.
 
-The three failing tests expose the stale public art manifest for Israel/Hezbollah and the missing bound publication provenance for their 113 mod art files. The sync guard refused those files; it was not bypassed. Local Studio reads their current native rosters. Shared faction catalog and project-owned gallery/cameo renders were refreshed separately. Nothing was published.
+The three failing tests expose the stale public art manifest for Israel/Lebanon and the missing bound publication provenance for their 113 mod art files. The sync guard refused those files; it was not bypassed. Local Studio reads their current native rosters. Shared faction catalog and project-owned gallery/cameo renders were refreshed separately. Nothing was published.
 
 Performance traces were truncated by the browser event buffer; they are not a complete performance-budget sign-off. Paused views render on demand; only playing encounters schedule animation frames. No new GPU/model job was launched.
 

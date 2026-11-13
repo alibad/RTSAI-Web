@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "generatedBy": "scripts/export-faction-art.py",
- "policy": "Only project-made images, MIT national flags and the organisation flags the owner approved (docs/faction-art.md). No EA/RA2 file is opened or exported.",
+ "policy": "Only project-made images and MIT national flags (docs/faction-art.md). No EA/RA2 file is opened or exported.",
  "sources": {
   "RTSAI-Art": {
    "commit": "c3b862c5736ead2acafac7a90445f062e7023232",
@@ -1987,19 +1987,19 @@
    "method": "root id attribute removed; drawing unchanged"
   },
   {
-   "path": "public/faction-art/flags/hezbollah.1b5a14ae4a8d.svg",
-   "bytes": 73390,
-   "sha256": "1b5a14ae4a8def7b05ab0fb609a848bd17e0b28218eab47a1f3564b803e95f43",
-   "kind": "organisation flag",
-   "faction": "hezbollah",
-   "licence": "Non-free: the organisation's own emblem. Wikipedia lists the file as a non-free logo (fair use, copyright held by a sanctioned organisation); no free licence applies. Published by owner decision of 2026-10-07; risks in docs/faction-art.md.",
+   "path": "public/faction-art/flags/lebanon.2a0a307c2b63.svg",
+   "bytes": 2751,
+   "sha256": "2a0a307c2b63ac9ef9524274add9c7b4c83ab576a483b8b5f9e92cd0884b6ed3",
+   "kind": "national flag",
+   "faction": "lebanon",
+   "licence": "MIT (lipis/flag-icons v7.3.2, flags/LICENSE.txt)",
    "derivedFrom": [
     {
-     "role": "organisation flag, as embedded in the Studio; source https://en.wikipedia.org/wiki/File:Flag_of_Hezbollah.svg (https://upload.wikimedia.org/wikipedia/en/0/08/Flag_of_Hezbollah.svg, downloaded 2026-10-04)",
+     "role": "flag-icons v7.3.2 4x3 SVG, as embedded in the Studio",
      "path": "RTSAI-Web/app/components/art/review/flags.ts"
     }
    ],
-   "method": "editor metadata removed (prolog, comments, Inkscape data, ids, mm size); drawing unchanged"
+   "method": "root id attribute removed; drawing unchanged"
   },
   {
    "path": "public/faction-art/flags/iran.2049ff18bb4f.svg",
@@ -2288,11 +2288,11 @@
    "method": "composited from the faction's unit renders, 720px wide, avif"
   },
   {
-   "path": "public/faction-art/lineups/hezbollah-1440.a259fa42f7e4.webp",
+   "path": "public/faction-art/lineups/lebanon-1440.a259fa42f7e4.webp",
    "bytes": 68858,
    "sha256": "a259fa42f7e48ed5ae4f8318c78f9d72800378c38689a4b73c755b320a3ea0dc",
    "kind": "faction lineup",
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "derivedFrom": [
     {
      "role": "unit render",
@@ -2322,11 +2322,11 @@
    "method": "composited from the faction's unit renders, 1440px wide, webp"
   },
   {
-   "path": "public/faction-art/lineups/hezbollah-1440.b267283aaa0d.avif",
+   "path": "public/faction-art/lineups/lebanon-1440.b267283aaa0d.avif",
    "bytes": 56136,
    "sha256": "b267283aaa0da7b7068a114c12ac02813d192b4a38a7ca05cfc6bf70644df41d",
    "kind": "faction lineup",
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "derivedFrom": [
     {
      "role": "unit render",
@@ -2356,11 +2356,11 @@
    "method": "composited from the faction's unit renders, 1440px wide, avif"
   },
   {
-   "path": "public/faction-art/lineups/hezbollah-720.37b810f42e5d.avif",
+   "path": "public/faction-art/lineups/lebanon-720.37b810f42e5d.avif",
    "bytes": 25511,
    "sha256": "37b810f42e5d971378f4f287fc7395f2f66863c89a536b544fa3c860c5460ece",
    "kind": "faction lineup",
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "derivedFrom": [
     {
      "role": "unit render",
@@ -2390,11 +2390,11 @@
    "method": "composited from the faction's unit renders, 720px wide, avif"
   },
   {
-   "path": "public/faction-art/lineups/hezbollah-720.f0c9438cbcb9.webp",
+   "path": "public/faction-art/lineups/lebanon-720.f0c9438cbcb9.webp",
    "bytes": 29284,
    "sha256": "f0c9438cbcb90ef3f6292b4d324540d308fdae3528fac5cad87a5252b5674a9c",
    "kind": "faction lineup",
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "derivedFrom": [
     {
      "role": "unit render",
@@ -4047,7 +4047,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4077,7 +4077,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4132,7 +4132,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4162,7 +4162,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod/mods/rtsai/modern-factions/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod/mods/rtsai/modern-factions/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4192,7 +4192,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4277,7 +4277,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4332,7 +4332,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4387,7 +4387,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],
@@ -4417,7 +4417,7 @@
     },
     {
      "role": "installed sprite data",
-     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/hezbollah-prerender.pal",
+     "path": "RTSAI-Mod-wt-art-preview/mods/rtsai/art-preview/vehicles/lebanon-prerender.pal",
      "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e"
     }
    ],

@@ -193,7 +193,7 @@ npm run check:art    # fail if the committed copy is stale
 - It copies only files recorded in `mods/rtsai/modern-factions/ART-PROVENANCE.json`
   whose bytes match the recorded SHA-256; anything else fails the sync, so no
   RA2 game data is published.
-- The Israel and Hezbollah packs are not in that record yet. `data/levant-art-binding.json`
+- The Israel and Lebanon packs are not in that record yet. `data/levant-art-binding.json`
   (`node --import tsx scripts/bind-levant-provenance.mjs`) binds each of their files by
   checkable evidence: the generator's own hash in `levant-art-provenance.json`, a
   byte-identical re-run of `OpenRA-AI scripts/build-levant-art.py` in a temporary

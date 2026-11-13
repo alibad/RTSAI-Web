@@ -12,7 +12,7 @@ export function CategoryIcon({ category, size = 16 }: { category: string; size?:
 
 /**
  * Original faction marks, drawn for this site from simple geometry in the faction colour. They carry no national,
- * party or organisational symbol. Non-state factions use one in place of a flag (docs/faction-art.md).
+ * party or organisational symbol. A faction listed in the exporter's NO_FLAG shows one in place of a flag (docs/faction-art.md).
  */
 const emblemGlyphs: Record<string, ReactNode> = {
   // Haitan Network: coordination, nodes linked into one net.
@@ -28,11 +28,11 @@ const emblemGlyphs: Record<string, ReactNode> = {
   // Precision support: a reticle inside the formation.
   israel: <><path d="M32 12 52 32 32 52 12 32Z" fill="none" strokeWidth="3" /><circle cx="32" cy="32" r="7" fill="none" strokeWidth="3" /><path d="M32 18v8M32 38v8M18 32h8M38 32h8" strokeWidth="2.5" /></>,
   // Concealed defense: a ridge line with a firing slit beneath. Original mark, kept but not shown (retiredEmblems).
-  hezbollah: <><path d="M10 38 22 22l8 9 8-13 16 20" fill="none" strokeWidth="3.5" strokeLinejoin="round" /><path d="M14 46h36" strokeWidth="3" /><path d="M24 46h16" strokeWidth="6" /></>,
+  lebanon: <><path d="M10 38 22 22l8 9 8-13 16 20" fill="none" strokeWidth="3.5" strokeLinejoin="round" /><path d="M14 46h36" strokeWidth="3" /><path d="M24 46h16" strokeWidth="6" /></>,
 };
 
-/** Emblems kept in the repo but not shown: on 2026-10-07 the owner chose Hezbollah's real flag (docs/faction-art.md). */
-const retiredEmblems = new Set(["hezbollah"]);
+/** Emblems kept in the repo but not shown: Lebanon shows its national flag (docs/faction-art.md). */
+const retiredEmblems = new Set(["lebanon"]);
 
 export function FactionEmblem({ factionId, accent, size = 56, label, includeRetired = false }: { factionId: string; accent: string; size?: number; label?: string; includeRetired?: boolean }) {
   const glyph = emblemGlyphs[factionId];
@@ -44,7 +44,7 @@ export function FactionEmblem({ factionId, accent, size = 56, label, includeReti
   </svg>;
 }
 
-/** The faction's flag (national flags: flag-icons, MIT; Hezbollah: its own flag, docs/faction-art.md), else an emblem. */
+/** The faction's flag (national flags: flag-icons, MIT; Lebanon: its own flag, docs/faction-art.md), else an emblem. */
 export function FactionFlag({ factionId, name, accent, size = "md", eager = false }: { factionId: string; name: string; accent: string; size?: "sm" | "md" | "lg"; eager?: boolean }) {
   const src = flagSrc(factionId);
   const px = { sm: 32, md: 48, lg: 96 }[size];

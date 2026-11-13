@@ -3047,7 +3047,7 @@
    }
   },
   "r2hzrifle": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "infantry",
    "render": {
     "width": 480,
@@ -3076,7 +3076,7 @@
    }
   },
   "r2hzat": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "infantry",
    "render": {
     "width": 480,
@@ -3105,7 +3105,7 @@
    }
   },
   "r2hzfpv": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "infantry",
    "render": {
     "width": 480,
@@ -3134,7 +3134,7 @@
    }
   },
   "r2hzspotter": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "infantry",
    "render": {
     "width": 480,
@@ -3163,7 +3163,7 @@
    }
   },
   "r2hzscout": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "infantry",
    "render": {
     "width": 480,
@@ -3192,7 +3192,7 @@
    }
   },
   "r2hztechnical": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "vehicle",
    "render": {
     "width": 480,
@@ -3221,7 +3221,7 @@
    }
   },
   "r2hzrecoilless": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "vehicle",
    "render": {
     "width": 480,
@@ -3250,7 +3250,7 @@
    }
   },
   "r2hzescort": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "vehicle",
    "render": {
     "width": 480,
@@ -3279,7 +3279,7 @@
    }
   },
   "r2hzrail": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "vehicle",
    "render": {
     "width": 480,
@@ -3308,7 +3308,7 @@
    }
   },
   "r2hzrockets": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "vehicle",
    "render": {
     "width": 480,
@@ -3337,7 +3337,7 @@
    }
   },
   "r2hzdrone": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "aircraft",
    "render": {
     "width": 480,
@@ -3366,7 +3366,7 @@
    }
   },
   "r2hzskiff": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "ship",
    "render": {
     "width": 480,
@@ -3395,7 +3395,7 @@
    }
   },
   "r2hzmissileboat": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "ship",
    "render": {
     "width": 480,
@@ -3424,7 +3424,7 @@
    }
   },
   "r2hzsurvey": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "ship",
    "render": {
     "width": 480,
@@ -3453,7 +3453,7 @@
    }
   },
   "r2hzbunker": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "defense",
    "render": {
     "width": 480,
@@ -3482,7 +3482,7 @@
    }
   },
   "r2hzaanest": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "defense",
    "render": {
     "width": 480,
@@ -3511,7 +3511,7 @@
    }
   },
   "r2hzcoastal": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "defense",
    "render": {
     "width": 480,
@@ -3540,7 +3540,7 @@
    }
   },
   "r2hzrelay": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "defense",
    "render": {
     "width": 480,
@@ -3569,7 +3569,7 @@
    }
   },
   "r2hzworkshop": {
-   "faction": "hezbollah",
+   "faction": "lebanon",
    "category": "defense",
    "render": {
     "width": 480,
@@ -3719,7 +3719,7 @@
     "720": "/faction-art/lineups/israel-720.a071498677cb.webp"
    }
   },
-  "hezbollah": {
+  "lebanon": {
    "actors": [
     "r2hzdrone",
     "r2hzmissileboat",
@@ -3731,12 +3731,12 @@
    "width": 1440,
    "height": 560,
    "avif": {
-    "1440": "/faction-art/lineups/hezbollah-1440.b267283aaa0d.avif",
-    "720": "/faction-art/lineups/hezbollah-720.37b810f42e5d.avif"
+    "1440": "/faction-art/lineups/lebanon-1440.b267283aaa0d.avif",
+    "720": "/faction-art/lineups/lebanon-720.37b810f42e5d.avif"
    },
    "webp": {
-    "1440": "/faction-art/lineups/hezbollah-1440.a259fa42f7e4.webp",
-    "720": "/faction-art/lineups/hezbollah-720.f0c9438cbcb9.webp"
+    "1440": "/faction-art/lineups/lebanon-1440.a259fa42f7e4.webp",
+    "720": "/faction-art/lineups/lebanon-720.f0c9438cbcb9.webp"
    }
   }
  },
@@ -3821,9 +3821,9 @@
    "width": 640,
    "height": 480
   },
-  "hezbollah": {
-   "src": "/faction-art/flags/hezbollah.1b5a14ae4a8d.svg",
-   "width": 720,
+  "lebanon": {
+   "src": "/faction-art/flags/lebanon.2a0a307c2b63.svg",
+   "width": 640,
    "height": 480
   }
  }

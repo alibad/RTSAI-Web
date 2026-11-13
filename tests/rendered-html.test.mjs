@@ -60,7 +60,7 @@ test("campaign studio renders real editing, local video and fictional civilian s
 });
 
 test("new faction dossiers show their art, complete rosters and honest release status in both modes", async () => {
-  for (const faction of ["israel", "hezbollah"]) for (const mode of ["ra", "ra2"]) {
+  for (const faction of ["israel", "lebanon"]) for (const mode of ["ra", "ra2"]) {
     const response = await render(`/factions/${faction}?mode=${mode}`);
     assert.equal(response.status, 200);
     const html = await response.text();
@@ -70,8 +70,8 @@ test("new faction dossiers show their art, complete rosters and honest release s
     assert.ok((html.match(/class="roster-card"/g) ?? []).length >= 16, `${faction}/${mode} shows its own units as cards`);
     assert.match(html, faction === "israel" ? /Coordination Relay/ : /Signal Post/);
     if (faction === "israel") assert.match(html, /src="\/faction-art\/flags\/israel\.[0-9a-f]{12}\.svg"/);
-    // Owner decision (2026-10-07): Hezbollah shows its own flag like every other faction; its original emblem is retired.
-    else { assert.match(html, /src="\/faction-art\/flags\/hezbollah\.[0-9a-f]{12}\.svg"/); assert.doesNotMatch(html, /faction emblem|class="faction-emblem"/); }
+    // Lebanon shows its national flag like every other faction; its original emblem is retired.
+    else { assert.match(html, /src="\/faction-art\/flags\/lebanon\.[0-9a-f]{12}\.svg"/); assert.doesNotMatch(html, /faction emblem|class="faction-emblem"/); }
   }
   const observer = await (await render('/units/ilobserver?mode=ra')).text();
   assert.match(observer, /light defensive weapon/);
@@ -130,7 +130,7 @@ test("renders a focused homepage: the standalone RTS AI promise, real flags, app
     assert.doesNotMatch(html, /<video/, "without trailer files the CompanionDemo remains visible");
   }
   assert.match(html, /Review before applying/);
-  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"]) assert.match(html, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
+  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "lebanon"]) assert.match(html, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
   assert.ok((html.match(/\/faction-art\/lineups\/[a-z-]+-1440\.[0-9a-f]{12}\.avif/g) ?? []).length >= 7, "the front line shows every faction's lineup");
   assert.match(html, /Türkiye/);
   // Standalone: no Red Alert in the headlines or the metadata, and nothing claimed as live or free.
@@ -339,7 +339,7 @@ test("terms: plain words, marked as a draft until the owner signs off, linked fr
 
 test("faction pages are visual and player-facing: flags, project art only, no admin material", async () => {
   const directory = await (await render("/factions?mode=ra2")).text();
-  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah", "america", "russia"]) assert.match(directory, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
+  for (const id of ["china", "iran", "turkey", "saudi", "yemen", "israel", "lebanon", "america", "russia"]) assert.match(directory, new RegExp(`/faction-art/flags/${id}\\.[0-9a-f]{12}\\.svg`), `${id} flag`);
   // Identity and Rivals' view come from the catalog (approved 2026-10-07); flavour lines and voice ideas never ship.
   const { catalog } = JSON.parse(await readFile(new URL("../data/factions.generated.json", import.meta.url), "utf8"));
   const escape = text => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("'", "&#x27;").replaceAll('"', "&quot;");
@@ -359,7 +359,7 @@ test("faction pages are visual and player-facing: flags, project art only, no ad
   assert.doesNotMatch(american, /\/faction-art\/(units|cameos|sprites|lineups)\//, "original factions show flags and text only");
   assert.match(american, /Between the Lines/, "campaigns appear on the faction they are played as");
   assert.doesNotMatch(american, /href="\/workshop\/campaigns/, "no editor link on public pages");
-  for (const path of ["/factions?mode=ra2", "/factions/china?mode=ra2", "/factions/hezbollah?mode=ra", "/units/cnqilin?mode=ra2", "/units/hzrifle?mode=ra2"]) {
+  for (const path of ["/factions?mode=ra2", "/factions/china?mode=ra2", "/factions/lebanon?mode=ra", "/units/cnqilin?mode=ra2", "/units/hzrifle?mode=ra2"]) {
     const html = await (await render(path)).text();
     assert.doesNotMatch(html, /\b(candidates?|unreviewed|approval pending|visual approval|review status|version history)\b/i, `${path} carries no admin material`);
     assert.doesNotMatch(html, /src="(?!\/)(?!data:)[^"]*\.(png|webp|avif|svg)"/, `${path} loads images only from this site`);

@@ -20,7 +20,7 @@ test("native world axes map to OpenRA yaw and precomputed bounds survive deaths"
   assert.equal(eventActor(samples,10,0,1)?.health,60);
 });
 test("every selectable faction in both modes has a local flag, including stock countries", () => {
-  for (const id of "america germany england france korea cuba libya iraq russia ukraine israel china iran turkey saudi yemen hezbollah".split(" ")) {
+  for (const id of "america germany england france korea cuba libya iraq russia ukraine israel china iran turkey saudi yemen lebanon".split(" ")) {
     const src=flagSrc(id); assert.ok(src?.startsWith("data:image/svg+xml"),id);
     const svg=decodeURIComponent(src!.split(",").slice(1).join(","));
     assert.match(svg,/<svg\b/); assert.doesNotMatch(svg,/<script\b|onload=/i);

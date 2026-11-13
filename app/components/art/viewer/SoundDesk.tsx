@@ -19,8 +19,8 @@ import { isFieldKey } from "../review/keys";
 import "./sound-desk.css";
 
 const API = "/api/sound-review";
-const MODERN = ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"];
-const FACTION_NAMES: Record<string, string> = { china: "China", iran: "Iran", turkey: "Türkiye", saudi: "Saudi Arabia", yemen: "Yemen", israel: "Israel", hezbollah: "Hezbollah" };
+const MODERN = ["china", "iran", "turkey", "saudi", "yemen", "israel", "lebanon"];
+const FACTION_NAMES: Record<string, string> = { china: "China", iran: "Iran", turkey: "Türkiye", saudi: "Saudi Arabia", yemen: "Yemen", israel: "Israel", lebanon: "Lebanon" };
 
 /** What the stage's Attack demo plays for one weapon while the desk auditions it. */
 export type Audition = { weapon: string; report?: string[]; impact?: string[] };

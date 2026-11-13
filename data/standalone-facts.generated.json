@@ -3,7 +3,7 @@
   "source": {
     "modIdentity": "cb3614f9c846f2142c0e44e089316955e55d9eacd5b05b944f581a46e75f00a1",
     "engineIdentity": "6356cacd12e2caead26804fd12847529f7c196efca0865192587789d144124e7",
-    "catalogSha256": "e41571fcd9391c919f8186fdc1564d262ee21795c33fafdf051df63b01fb2a62",
+    "catalogSha256": "55ddfc766a0098ba86fad645946288e49cbec8af6c4abefa533b5156a2749487",
     "modHead": "b6794bd228b52bed0433a24c069e3949223d10eb",
     "enginePin": "53424ddb7954c9f30f6cb11f4f8163b86595bdf1"
   },
@@ -22523,9 +22523,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -26154,9 +26154,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -29835,9 +29835,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -33503,9 +33503,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -40966,9 +40966,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -55103,9 +55103,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -55421,8 +55421,8 @@
           ]
         },
         {
-          "id": "hezbollah",
-          "name": "Hezbollah",
+          "id": "lebanon",
+          "name": "Lebanon",
           "side": "Soviets",
           "units": [
             {
@@ -55571,7 +55571,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
                 "evidence": "configured"
               },
@@ -55730,7 +55730,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
                 "evidence": "configured"
               },
@@ -55912,7 +55912,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
                 "evidence": "configured"
               },
@@ -56079,7 +56079,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
                 "evidence": "configured"
               },
@@ -56249,7 +56249,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
                 "evidence": "configured"
               },
@@ -56584,7 +56584,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Fast and inexpensive machine-gun vehicle. Strong against exposed infantry, weak against armor and air attacks.",
                 "evidence": "configured"
               },
@@ -56721,7 +56721,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
                 "evidence": "configured"
               },
@@ -56857,7 +56857,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Fragile mobile anti-air escort. Its ground fire discourages infantry; tanks and artillery counter it.",
                 "evidence": "configured"
               },
@@ -57002,7 +57002,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
                 "evidence": "configured"
               },
@@ -57152,7 +57152,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
                 "evidence": "configured"
               },
@@ -57705,7 +57705,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
                 "evidence": "configured"
               },
@@ -57827,7 +57827,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Inexpensive one-way attack boat. Requires a reachable water target and is consumed on impact. Patrol screens and concentrated fire counter it.",
                 "evidence": "configured"
               },
@@ -57965,7 +57965,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
                 "evidence": "configured"
               },
@@ -58125,7 +58125,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Light patrol and reconnaissance craft with sonar and fleet guidance. Prioritize its sensors; heavy warships outgun it.",
                 "evidence": "configured"
               },
@@ -58322,7 +58322,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Stationary concealed machine-gun defense. Firing or taking damage reveals it. Detection and artillery counter the position.",
                 "evidence": "configured"
               },
@@ -58406,7 +58406,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Low-cost anti-air emplacement. Cannot substitute for armor defense. Artillery attacks outside its range.",
                 "evidence": "configured"
               },
@@ -58499,7 +58499,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
                 "evidence": "configured"
               },
@@ -58571,7 +58571,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
                 "evidence": "configured"
               },
@@ -58619,7 +58619,7 @@
                   {
                     "id": "aura:repair",
                     "label": "Support aura",
-                    "detail": "Grants hezbollah-repair within 4 cells to Ally when !lowpower && !build-incomplete."
+                    "detail": "Grants lebanon-repair within 4 cells to Ally when !lowpower && !build-incomplete."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -58633,7 +58633,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Powered four-cell repair zone for eligible vehicles. Repairs two health per second only below 70% health. Bonuses do not stack; protect this unarmed structure.",
                 "evidence": "configured"
               },
@@ -58940,9 +58940,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -81773,9 +81773,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -85404,9 +85404,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -89085,9 +89085,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -92753,9 +92753,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -100216,9 +100216,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -114353,9 +114353,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -114671,8 +114671,8 @@
           ]
         },
         {
-          "id": "hezbollah",
-          "name": "Hezbollah",
+          "id": "lebanon",
+          "name": "Lebanon",
           "side": "Soviets",
           "units": [
             {
@@ -114821,7 +114821,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
                 "evidence": "configured"
               },
@@ -114980,7 +114980,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
                 "evidence": "configured"
               },
@@ -115162,7 +115162,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
                 "evidence": "configured"
               },
@@ -115329,7 +115329,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
                 "evidence": "configured"
               },
@@ -115499,7 +115499,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
                 "evidence": "configured"
               },
@@ -115834,7 +115834,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Fast and inexpensive machine-gun vehicle. Strong against exposed infantry, weak against armor and air attacks.",
                 "evidence": "configured"
               },
@@ -115971,7 +115971,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
                 "evidence": "configured"
               },
@@ -116107,7 +116107,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Fragile mobile anti-air escort. Its ground fire discourages infantry; tanks and artillery counter it.",
                 "evidence": "configured"
               },
@@ -116252,7 +116252,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
                 "evidence": "configured"
               },
@@ -116402,7 +116402,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon.yaml",
                 "description": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
                 "evidence": "configured"
               },
@@ -116955,7 +116955,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
                 "evidence": "configured"
               },
@@ -117077,7 +117077,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Inexpensive one-way attack boat. Requires a reachable water target and is consumed on impact. Patrol screens and concentrated fire counter it.",
                 "evidence": "configured"
               },
@@ -117215,7 +117215,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
                 "evidence": "configured"
               },
@@ -117375,7 +117375,7 @@
                   }
                 ],
                 "footprint": null,
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Light patrol and reconnaissance craft with sonar and fleet guidance. Prioritize its sensors; heavy warships outgun it.",
                 "evidence": "configured"
               },
@@ -117572,7 +117572,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Stationary concealed machine-gun defense. Firing or taking damage reveals it. Detection and artillery counter the position.",
                 "evidence": "configured"
               },
@@ -117656,7 +117656,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Low-cost anti-air emplacement. Cannot substitute for armor defense. Artillery attacks outside its range.",
                 "evidence": "configured"
               },
@@ -117749,7 +117749,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
                 "evidence": "configured"
               },
@@ -117821,7 +117821,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
                 "evidence": "configured"
               },
@@ -117869,7 +117869,7 @@
                   {
                     "id": "aura:repair",
                     "label": "Support aura",
-                    "detail": "Grants hezbollah-repair within 4 cells to Ally when !lowpower && !build-incomplete."
+                    "detail": "Grants lebanon-repair within 4 cells to Ally when !lowpower && !build-incomplete."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",
@@ -117883,7 +117883,7 @@
                   }
                 ],
                 "footprint": "1, 1",
-                "source": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+                "source": "mods/rtsai/modern-factions/lebanon-roster.yaml",
                 "description": "Powered four-cell repair zone for eligible vehicles. Repairs two health per second only below 70% health. Bonuses do not stack; protect this unarmed structure.",
                 "evidence": "configured"
               },
@@ -118190,9 +118190,9 @@
                     "detail": "Grants r2-ye-link within 6 cells to Ally when yemen-relay."
                   },
                   {
-                    "id": "aura:hezbollah-relay",
+                    "id": "aura:lebanon-relay",
                     "label": "Support aura",
-                    "detail": "Grants r2-hz-link within 6 cells to Ally when hezbollah-relay."
+                    "detail": "Grants r2-hz-link within 6 cells to Ally when lebanon-relay."
                   },
                   {
                     "id": "DamageMultiplier:R2DESIGNATED",

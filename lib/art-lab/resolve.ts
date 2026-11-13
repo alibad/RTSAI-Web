@@ -26,7 +26,7 @@ export type ModReader = {
  */
 export type Ra2Hook = { record(name: string): string | null; bytes(name: string): Uint8Array };
 
-export const MODERN_FACTIONS = ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"] as const;
+export const MODERN_FACTIONS = ["china", "iran", "turkey", "saudi", "yemen", "israel", "lebanon"] as const;
 export const MOD_DIR = "mods/rtsai";
 /** The optional add-on that plays the original countries with the player's own RA2 files (`classic|` package). */
 export const CLASSIC_DIR = "mods/rtsai-classic";
@@ -146,7 +146,7 @@ export type Resolution = {
   shadowColor: [number, number, number, number];
 };
 
-const FACTION_ACCENTS: Record<string, string> = { china: "#cb4c3b", iran: "#3f9a5b", turkey: "#d9473f", saudi: "#2e8b57", yemen: "#b8873b", israel: "#80b8ff", hezbollah: "#b3b881" };
+const FACTION_ACCENTS: Record<string, string> = { china: "#cb4c3b", iran: "#3f9a5b", turkey: "#d9473f", saudi: "#2e8b57", yemen: "#b8873b", israel: "#80b8ff", lebanon: "#b3b881" };
 
 export function resolveArtLab(reader: ModReader, data: ModData): Resolution {
   const files = new Map<string, FileUse>();

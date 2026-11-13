@@ -21,7 +21,7 @@ const list = (dir: string): string[] => readdirSync(dir).flatMap(name => {
 });
 
 test("manifest: seven factions, 124 buildable units, every one with a cameo and drawable art", () => {
-  assert.deepEqual(data.factions.map(f => f.id), ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"]);
+  assert.deepEqual(data.factions.map(f => f.id), ["china", "iran", "turkey", "saudi", "yemen", "israel", "lebanon"]);
   assert.equal(Object.keys(data.actors).length, 124);
   for (const faction of data.factions) for (const id of faction.actors) {
     const actor = data.actors[id];
@@ -66,10 +66,10 @@ test("published files: exactly the manifest's files, byte-identical to their pro
   for (const key of referenced) assert.ok(data.files[key], `${key} referenced and published`);
 });
 
-test("Levant binding: every Israel/Hezbollah file outside ART-PROVENANCE.json carries checked evidence", () => {
+test("Levant binding: every Israel/Lebanon file outside ART-PROVENANCE.json carries checked evidence", () => {
   const binding = JSON.parse(readFileSync(join(web, "data/levant-art-binding.json"), "utf8"));
   assert.deepEqual(binding.summary.unbound, [], "nothing is published without evidence");
-  const levantFiles = Object.entries(data.files).filter(([key]) => /(^israel-art\/|^hezbollah-art\/|r2il|r2hz|r2merkava|r2namer)/.test(key));
+  const levantFiles = Object.entries(data.files).filter(([key]) => /(^israel-art\/|^lebanon-art\/|r2il|r2hz|r2merkava|r2namer)/.test(key));
   assert.ok(levantFiles.length >= 80, "both Levant packs are published");
   for (const [key, file] of levantFiles) {
     const bound = binding.files[key];
@@ -113,7 +113,7 @@ test("resolver: art outside modern-factions is recorded as external, never publi
   const files: Record<string, string | Uint8Array> = {
     "mods/rtsai/mod.yaml": "Rules:\n\tra2|rules/r.yaml\nSequences:\n\tra2|sequences/s.yaml\nModelSequences:\n\tra2|sequences/v.yaml\nFluentMessages:\n\tra2|f.ftl\n",
     "mods/rtsai/rules/r.yaml": [
-      "World:", "\tFaction@c:", "\t\tName: c-name", "\t\tInternalName: china", ...["iran", "turkey", "saudi", "yemen", "israel", "hezbollah"].flatMap(f => [`\tFaction@${f}:`, `\t\tInternalName: ${f}`]),
+      "World:", "\tFaction@c:", "\t\tName: c-name", "\t\tInternalName: china", ...["iran", "turkey", "saudi", "yemen", "israel", "lebanon"].flatMap(f => [`\tFaction@${f}:`, `\t\tInternalName: ${f}`]),
       "\tPaletteFromFile@p:", "\t\tName: p", "\t\tFilename: ra2|modern-factions/x.pal",
       "\tPlayerColorPalette@p:", "\t\tBasePalette: p", "\t\tBaseName: pp", "\t\tRemapIndex: 16, 17",
       "^Inf:", "\tWithInfantryBody:", "\tRenderSprites:", "\t\tPlayerPalette: pp",

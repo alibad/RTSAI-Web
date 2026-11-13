@@ -30,7 +30,7 @@ import { applySoundAction, licenceVerdict, pendingSlots, readSoundReview, slotSl
 import { announcerSlots, deathChain, familyLabel, guessDeathSize, soundFamily, unitSlots, usageIndex, type DeskLine, type DeskSlot } from "./slots";
 
 export const SOUND_REVIEW_ROUTE = "/api/sound-review";
-export const MODERN = ["china", "iran", "turkey", "saudi", "yemen", "israel", "hezbollah"] as const;
+export const MODERN = ["china", "iran", "turkey", "saudi", "yemen", "israel", "lebanon"] as const;
 
 export type DeskCandidate = {
   id: string;

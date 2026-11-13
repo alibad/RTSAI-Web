@@ -3,13 +3,13 @@
  "generatedBy": "scripts/sync-mod-art.mjs",
  "mod": {
   "repo": "alibad/RTSAI-Mod",
-  "commit": "b8e5c7efa9d14678c6b80f18070ed417627c8513",
+  "commit": "5f904deabc6c44afd8da579fcfc096520797251f",
   "provenanceGeneratedBy": "tools/art-provenance.py",
-  "provenanceSha256": "e3320fb073bee8d765561ffb244b67e4adbb2a51e4f39e82847d146346d881a5",
+  "provenanceSha256": "3fbdee9baa81a8ee4046bf1d5ad791e41112f358416ff746f01dde96fb750b15",
   "commercialRa2Data": "None found. Every unit sprite and cameo is a render of the project's own 3D model (a GLB generated locally from the project's concept picture), installed from a committed RTSAI-Art candidate with the same bytes; original RA2 files were read only locally to measure target statistics, never as input pixels; the flags are drawn from code. See docs/art-provenance.md.",
   "levantBinding": {
    "generatedBy": "scripts/bind-levant-provenance.mjs",
-   "sha256": "97770b8be0a8cec4da8d1a0e143bc7a33ca6e9d35bf71fac8e6d09122158945d",
+   "sha256": "96aa923e631e4467892f1d764865a22588e7e090fe1c6a7cfa325feafd7a3c5f",
    "files": 0
   }
  },
@@ -124,9 +124,9 @@
    ],
    "definedBy": "World PaletteFromFile@r2prerender-israel"
   },
-  "r2prerender-hezbollah": {
-   "name": "r2prerender-hezbollah",
-   "file": "vehicles/hezbollah-prerender.pal",
+  "r2prerender-lebanon": {
+   "name": "r2prerender-lebanon",
+   "file": "vehicles/lebanon-prerender.pal",
    "remap": [],
    "basePalette": null,
    "transparent": [
@@ -135,7 +135,7 @@
    "shadow": [
     1
    ],
-   "definedBy": "World PaletteFromFile@r2prerender-hezbollah"
+   "definedBy": "World PaletteFromFile@r2prerender-lebanon"
   },
   "r2basij-glb": {
    "name": "r2basij-glb",
@@ -1019,9 +1019,9 @@
    ],
    "definedBy": "World PlayerColorPalette@r2prerender-israel"
   },
-  "r2prerender-hezbollahplayer": {
-   "name": "r2prerender-hezbollahplayer",
-   "file": "vehicles/hezbollah-prerender.pal",
+  "r2prerender-lebanonplayer": {
+   "name": "r2prerender-lebanonplayer",
+   "file": "vehicles/lebanon-prerender.pal",
    "remap": [
     16,
     17,
@@ -1040,14 +1040,14 @@
     30,
     31
    ],
-   "basePalette": "r2prerender-hezbollah",
+   "basePalette": "r2prerender-lebanon",
    "transparent": [
     0
    ],
    "shadow": [
     1
    ],
-   "definedBy": "World PlayerColorPalette@r2prerender-hezbollah"
+   "definedBy": "World PlayerColorPalette@r2prerender-lebanon"
   },
   "r2basij-glb-player": {
    "name": "r2basij-glb-player",
@@ -2831,9 +2831,9 @@
    ]
   },
   {
-   "id": "hezbollah",
-   "catalogId": "hezbollah",
-   "name": "Hezbollah",
+   "id": "lebanon",
+   "catalogId": "lebanon",
+   "name": "Lebanon",
    "side": "Soviets",
    "accent": "#b3b881",
    "actors": [
@@ -33199,7 +33199,7 @@
   },
   "r2hzrifle": {
    "id": "r2hzrifle",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Line Fighter",
    "description": "Veteran rifle infantry, fewer and stronger: leaves the barracks Veteran and takes less damage on rough ground. Conceals while stationary; moving, firing or taking damage reveals it. Detectors and splash defeat it.",
    "category": "infantry",
@@ -33611,13 +33611,13 @@
     "infantry/r2hzrifle.pal",
     "infantry/r2hzrifle.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzrifle",
    "generator": []
   },
   "r2hzat": {
    "id": "r2hzat",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Ridge Missile Team",
    "description": "Veteran ambush team with a basic shoulder-fired rocket. Conceals while stationary; a signal post or spotter improves range and reload. Vulnerable to infantry, detectors and air attacks.",
    "category": "infantry",
@@ -34029,13 +34029,13 @@
     "infantry/r2hzat.pal",
     "infantry/r2hzat.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzat",
    "generator": []
   },
   "r2hzfpv": {
    "id": "r2hzfpv",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "FPV Team",
    "description": "Veteran drone team that launches three one-way FPV micro-drones at targets in range and regrows one every few seconds. Strong against infantry and light vehicles. Drones crash outside the team's link; anti-air and small arms shoot them down, and killing the team downs them.",
    "category": "infantry",
@@ -34447,13 +34447,13 @@
     "infantry/r2hzfpv.pal",
     "infantry/r2hzfpv.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzfpv",
    "generator": []
   },
   "r2hzspotter": {
    "id": "r2hzspotter",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Field Spotter",
    "description": "Veteran reconnaissance specialist who detects cloaked units, guides nearby missile teams, rocket vehicles and FPV teams, and relays the FPV drone link. A weak weapon makes escorts essential.",
    "category": "infantry",
@@ -34865,13 +34865,13 @@
     "infantry/r2hzspotter.pal",
     "infantry/r2hzspotter.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzspotter",
    "generator": []
   },
   "r2hzscout": {
    "id": "r2hzscout",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Cedar Scout",
    "description": "The faction's hero: one concealed Veteran scout with a suppressed carbine and demolition ability. Firing or damage breaks concealment. Vulnerable once detected.",
    "category": "infantry",
@@ -35283,13 +35283,13 @@
     "infantry/r2hzscout.pal",
     "infantry/r2hzscout.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzscout",
    "generator": []
   },
   "r2hztechnical": {
    "id": "r2hztechnical",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Cedar Technical",
    "description": "Fast and inexpensive machine-gun vehicle. Strong against exposed infantry, weak against armor and air attacks.",
    "category": "vehicle",
@@ -35311,7 +35311,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hztechnical",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 88,
      "height": 78,
@@ -35511,16 +35511,16 @@
    },
    "files": [
     "icons/r2hztechnical.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hztechnical.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon.yaml",
    "catalogUnitId": "hztechnical",
    "generator": []
   },
   "r2hzrecoilless": {
    "id": "r2hzrecoilless",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Recoilless Technical",
    "description": "Inexpensive mobile anti-armor fire on a fragile chassis. Signal coverage improves range and reload. Infantry and aircraft punish exposed vehicles.",
    "category": "vehicle",
@@ -35542,7 +35542,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzrecoilless",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 84,
      "height": 74,
@@ -35742,16 +35742,16 @@
    },
    "files": [
     "icons/r2hzrecoilless.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzrecoilless.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon.yaml",
    "catalogUnitId": "hzrecoilless",
    "generator": []
   },
   "r2hzescort": {
    "id": "r2hzescort",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Escort Gun Truck",
    "description": "Fragile mobile anti-air escort. Its ground fire discourages infantry; tanks and artillery counter it.",
    "category": "vehicle",
@@ -35773,7 +35773,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzescort",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 82,
      "height": 76,
@@ -35973,16 +35973,16 @@
    },
    "files": [
     "icons/r2hzescort.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzescort.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon.yaml",
    "catalogUnitId": "hzescort",
    "generator": []
   },
   "r2hzrail": {
    "id": "r2hzrail",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Rail Technical",
    "description": "Inexpensive rocket pickup: four unguided rockets with scatter, a minimum range and a slow reload; no radar needed. Spotters or signal posts improve range and reload. Fragile up close.",
    "category": "vehicle",
@@ -36004,7 +36004,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzrail",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 74,
      "height": 60,
@@ -36196,16 +36196,16 @@
    },
    "files": [
     "icons/r2hzrail.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzrail.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon.yaml",
    "catalogUnitId": "hzrail",
    "generator": []
   },
   "r2hzrockets": {
    "id": "r2hzrockets",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Mobile Rocket Battery",
    "description": "Rocket artillery: a volley of eight unguided rockets with wide scatter, a minimum range and a slow reload. Must stop to set up its stabilized firing cycle. Spotters or signal posts improve range and reload; close attacks force withdrawal.",
    "category": "vehicle",
@@ -36227,7 +36227,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzrockets",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 82,
      "height": 68,
@@ -36445,16 +36445,16 @@
    },
    "files": [
     "icons/r2hzrockets.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzrockets.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon.yaml",
    "catalogUnitId": "hzrockets",
    "generator": []
   },
   "r2hzdrone": {
    "id": "r2hzdrone",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Loiter Drone",
    "description": "Light one-way airborne attack that consumes the drone. Scout the target first. Anti-air fire destroys it before impact.",
    "category": "aircraft",
@@ -36476,7 +36476,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzdrone",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 50,
      "height": 46,
@@ -36651,16 +36651,16 @@
    },
    "files": [
     "icons/r2hzdrone.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzdrone.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzdrone",
    "generator": []
   },
   "r2hzskiff": {
    "id": "r2hzskiff",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Attack Skiff",
    "description": "Inexpensive one-way attack boat. Requires a reachable water target and is consumed on impact. Patrol screens and concentrated fire counter it.",
    "category": "ship",
@@ -36682,7 +36682,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzskiff",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 78,
      "height": 54,
@@ -36847,16 +36847,16 @@
    },
    "files": [
     "icons/r2hzskiff.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzskiff.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzskiff",
    "generator": []
   },
   "r2hzmissileboat": {
    "id": "r2hzmissileboat",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Coastal Missile Boat",
    "description": "Light missile craft firing three-missile salvos. Coverage from a scout boat supports coordinated fire; poor armor demands spacing and an escort.",
    "category": "ship",
@@ -36878,7 +36878,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzmissileboat",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 92,
      "height": 58,
@@ -37070,16 +37070,16 @@
    },
    "files": [
     "icons/r2hzmissileboat.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzmissileboat.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzmissileboat",
    "generator": []
   },
   "r2hzsurvey": {
    "id": "r2hzsurvey",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Coastal Survey Boat",
    "description": "Light patrol and reconnaissance craft with sonar and fleet guidance. Prioritize its sensors; heavy warships outgun it.",
    "category": "ship",
@@ -37101,7 +37101,7 @@
    "voxel": null,
    "sprite": {
     "image": "r2hzsurvey",
-    "palette": "r2prerender-hezbollahplayer",
+    "palette": "r2prerender-lebanonplayer",
     "shp": {
      "width": 94,
      "height": 70,
@@ -37327,16 +37327,16 @@
    },
    "files": [
     "icons/r2hzsurvey.png",
-    "vehicles/hezbollah-prerender.pal",
+    "vehicles/lebanon-prerender.pal",
     "vehicles/r2hzsurvey.shp"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzsurvey",
    "generator": []
   },
   "r2hzbunker": {
    "id": "r2hzbunker",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Concealed Bunker",
    "description": "Stationary concealed machine-gun defense. Firing or taking damage reveals it. Detection and artillery counter the position.",
    "category": "defense",
@@ -37606,13 +37606,13 @@
     "buildings/r2hzbunker.shp",
     "icons/r2hzbunker.png"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzbunker",
    "generator": []
   },
   "r2hzaanest": {
    "id": "r2hzaanest",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Short-Range AA Nest",
    "description": "Low-cost anti-air emplacement. Cannot substitute for armor defense. Artillery attacks outside its range.",
    "category": "defense",
@@ -37967,13 +37967,13 @@
     "buildings/r2hzaanest.shp",
     "icons/r2hzaanest.png"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzaanest",
    "generator": []
   },
   "r2hzcoastal": {
    "id": "r2hzcoastal",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Coastal Missile Emplacement",
    "description": "Concealed missile defense firing four-missile salvos at ground vehicles and ships. Minimum range leaves a close-attack window. Detection and infantry counter it.",
    "category": "defense",
@@ -38328,13 +38328,13 @@
     "buildings/r2hzcoastal.shp",
     "icons/r2hzcoastal.png"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzcoastal",
    "generator": []
   },
   "r2hzrelay": {
    "id": "r2hzrelay",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Signal Post",
    "description": "Powered six-cell support, FPV drone link and five-cell cloak detection. Eligible guided units gain range and reload bonuses; bonuses do not stack.",
    "category": "defense",
@@ -38596,13 +38596,13 @@
     "buildings/r2hzrelay.shp",
     "icons/r2hzrelay.png"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzrelay",
    "generator": []
   },
   "r2hzworkshop": {
    "id": "r2hzworkshop",
-   "factionId": "hezbollah",
+   "factionId": "lebanon",
    "name": "Field Workshop",
    "description": "Powered four-cell repair zone for eligible vehicles. Repairs two health per second only below 70% health. Bonuses do not stack; protect this unarmed structure.",
    "category": "defense",
@@ -38800,7 +38800,7 @@
     "buildings/r2hzworkshop.shp",
     "icons/r2hzworkshop.png"
    ],
-   "definedIn": "mods/rtsai/modern-factions/hezbollah-roster.yaml",
+   "definedIn": "mods/rtsai/modern-factions/lebanon-roster.yaml",
    "catalogUnitId": "hzworkshop",
    "generator": []
   }
@@ -45472,38 +45472,6 @@
     "date": "2026-10-05"
    }
   },
-  "vehicles/hezbollah-prerender.pal": {
-   "url": "/art-lab/vehicles/hezbollah-prerender.pal",
-   "modPath": "mods/rtsai/modern-factions/vehicles/hezbollah-prerender.pal",
-   "bytes": 768,
-   "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e",
-   "provenance": {
-    "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e",
-    "type": "palette (index 0 transparent, 1 shadow, 16-31 player remap)",
-    "origin": "procedural",
-    "generator": "project-geometry",
-    "script": "computed by the route from the project's material classes and faction colours",
-    "geometry": {
-     "mesh": "units/r2hzdrone/candidates/mesh-v1-role-rebuild/mesh.glb",
-     "sha256": "edf05fbe1d36a2b5b5ae0d9be9c6212c3e8d3a179e5f9433d22e3cad6e5c05a1",
-     "madeBy": "TRELLIS.2 (local trellis-cli), seed 42",
-     "fromImage": "units/r2hzdrone/candidates/cameo-v1-role-rebuild/master.png",
-     "concept": {
-      "candidate": "units/r2hzdrone/candidates/cameo-v1-role-rebuild",
-      "model": "built-in image generation tool (model ID unavailable)",
-      "costUsd": null
-     }
-    },
-    "source": {
-     "repo": "RTSAI-Art (local)",
-     "path": "units/r2hzdrone/candidates/sprite-v6-prerender/hezbollah-prerender.pal",
-     "commit": "88a31bfb980e69d6f573c32908e8505156a05707",
-     "date": "2026-10-06"
-    },
-    "tool": "tools/glb_prerender.py",
-    "date": "2026-10-06"
-   }
-  },
   "vehicles/iran-prerender.pal": {
    "url": "/art-lab/vehicles/iran-prerender.pal",
    "modPath": "mods/rtsai/modern-factions/vehicles/iran-prerender.pal",
@@ -45563,6 +45531,38 @@
      "path": "units/r2ilfalcon/candidates/sprite-v6-prerender/israel-prerender.pal",
      "commit": "88a31bfb980e69d6f573c32908e8505156a05707",
      "date": "2026-10-06"
+    },
+    "tool": "tools/glb_prerender.py",
+    "date": "2026-10-06"
+   }
+  },
+  "vehicles/lebanon-prerender.pal": {
+   "url": "/art-lab/vehicles/lebanon-prerender.pal",
+   "modPath": "mods/rtsai/modern-factions/vehicles/lebanon-prerender.pal",
+   "bytes": 768,
+   "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e",
+   "provenance": {
+    "sha256": "aba688f1569970a0d336696e8dc5fa3150f4ebe45c679ebd93c357cf0a35031e",
+    "type": "palette (index 0 transparent, 1 shadow, 16-31 player remap)",
+    "origin": "procedural",
+    "generator": "project-geometry",
+    "script": "computed by the route from the project's material classes and faction colours",
+    "geometry": {
+     "mesh": "units/r2hzdrone/candidates/mesh-v1-role-rebuild/mesh.glb",
+     "sha256": "edf05fbe1d36a2b5b5ae0d9be9c6212c3e8d3a179e5f9433d22e3cad6e5c05a1",
+     "madeBy": "TRELLIS.2 (local trellis-cli), seed 42",
+     "fromImage": "units/r2hzdrone/candidates/cameo-v1-role-rebuild/master.png",
+     "concept": {
+      "candidate": "units/r2hzdrone/candidates/cameo-v1-role-rebuild",
+      "model": "built-in image generation tool (model ID unavailable)",
+      "costUsd": null
+     }
+    },
+    "source": {
+     "repo": "RTSAI-Art (local)",
+     "path": "units/r2hzdrone/candidates/sprite-v6-prerender/lebanon-prerender.pal",
+     "commit": "89e6756d4ccc4844ed4e20024fe0db6240f1643b",
+     "date": "2026-11-13"
     },
     "tool": "tools/glb_prerender.py",
     "date": "2026-10-06"

@@ -2,7 +2,7 @@
 // /api/sound-review dev API mounted) at http://localhost:3470 and opens the Faction viewer with the desk open.
 //
 //   npm run sound-desk                 China's announcer and units
-//   npm run sound-desk -- iran         another faction (china, iran, turkey, saudi-arabia, yemen, israel, hezbollah)
+//   npm run sound-desk -- iran         another faction (china, iran, turkey, saudi-arabia, yemen, israel, lebanon)
 //   npm run sound-desk -- --no-open    do not open a browser
 //
 // Reads RTSAI-Mod (read-only) and writes decisions to RTSAI-Art/sound-review.json, both found beside this checkout

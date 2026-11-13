@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "generatedBy": "scripts/bind-levant-provenance.mjs",
- "scope": "Israel and Hezbollah art files referenced by RTSAI-Mod rules or sequences but absent from modern-factions/ART-PROVENANCE.json.",
+ "scope": "Israel and Lebanon art files referenced by RTSAI-Mod rules or sequences but absent from modern-factions/ART-PROVENANCE.json.",
  "generator": {
   "repo": "OpenRA-AI (local; commit not on origin when bound)",
   "commit": "18eb1082b4c761a19edfa1a8f7419406e3dbb562",
@@ -24,15 +24,15 @@
   "reproducedOnly": 66,
   "copyOfRecorded": 2,
   "recordedButNotReproduced": [
-   "hezbollah-art/r2hzrelay.shp",
-   "hezbollah-art/r2hzworkshop.shp",
+   "lebanon-art/r2hzrelay.shp",
+   "lebanon-art/r2hzworkshop.shp",
    "israel-art/r2ilrelay.shp",
    "israel-art/r2ilworkshop.shp"
   ],
   "unbound": []
  },
  "files": {
-  "hezbollah-art/hezbollah-voxels.pal": {
+  "lebanon-art/lebanon-voxels.pal": {
    "sha256": "a80f079ad829ca3b53b7536e9a873f98dafb905237bddedc5e23523cdf1f41e8",
    "type": "voxel palette",
    "origin": "procedural",
@@ -46,7 +46,7 @@
    "evidence": "reproduced",
    "reproduced": true
   },
-  "hezbollah-art/hezbollah.pal": {
+  "lebanon-art/lebanon.pal": {
    "sha256": "a80f079ad829ca3b53b7536e9a873f98dafb905237bddedc5e23523cdf1f41e8",
    "type": "palette",
    "origin": "procedural",
@@ -60,7 +60,7 @@
    "evidence": "reproduced",
    "reproduced": true
   },
-  "hezbollah-art/r2hzaanest.shp": {
+  "lebanon-art/r2hzaanest.shp": {
    "sha256": "1220fca076175df3491859164b96854f7bb4d9677ca92235bcf252a5e735bcde",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -74,7 +74,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzat.shp": {
+  "lebanon-art/r2hzat.shp": {
    "sha256": "7c3830acf4e7cd98d515a3a8ff5b4a88b952eaf2e8d334757b0ecd9239bb700c",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -88,7 +88,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzbunker.shp": {
+  "lebanon-art/r2hzbunker.shp": {
    "sha256": "0e9c5b56230ea895a134fb13beb5c8ce2cb5ab0dacecb0611312ca56747cad7e",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -102,7 +102,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzcoastal.shp": {
+  "lebanon-art/r2hzcoastal.shp": {
    "sha256": "aa175d466c1737932394f21c8ea305eee828d4d9ef29ee52ded3614fb9589175",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -116,7 +116,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzrelay.shp": {
+  "lebanon-art/r2hzrelay.shp": {
    "sha256": "783499b80d0f3462e8f1453c2e875edaf27e7ae4c65ca600ba6b5e0fede59c63",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -130,7 +130,7 @@
    "evidence": "generator-record",
    "reproduced": false
   },
-  "hezbollah-art/r2hzrifle.shp": {
+  "lebanon-art/r2hzrifle.shp": {
    "sha256": "6986e2594068c144d91ab4a63770b5036fbf5971ed49a8e425f94d49b6af7531",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -144,7 +144,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzscout.shp": {
+  "lebanon-art/r2hzscout.shp": {
    "sha256": "9b67f38de8cf81f27d91630816dcc70ab09d0a37471e445c61f803b5b222313f",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -158,7 +158,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzspotter.shp": {
+  "lebanon-art/r2hzspotter.shp": {
    "sha256": "24ad2e2a8f9c07d5556dbdec2ae6d775636a01239b6c06a9ae5fdcd5d5c23863",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
@@ -172,7 +172,7 @@
    "evidence": "generator-record",
    "reproduced": true
   },
-  "hezbollah-art/r2hzworkshop.shp": {
+  "lebanon-art/r2hzworkshop.shp": {
    "sha256": "e40ad1265c3a3f008ba90f538a550ce66c255faa1b6bc4f4932ffcc840eab840",
    "type": "SHP sprite (infantry 713 frames, 50x39; defence/structure 42 frames, 96x96)",
    "origin": "rendered-from-project-geometry",
