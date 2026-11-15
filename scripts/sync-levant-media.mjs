@@ -21,7 +21,7 @@ const levant = ['israel', 'lebanon'];
 const hash = bytes => createHash('sha256').update(bytes).digest('hex').slice(0, 12);
 const fromGames = path => '../' + path.slice(games.length + 1).replaceAll('\\', '/');
 
-const catalog = JSON.parse(await readFile(join(games, 'OpenRA-AI/catalog/factions.json'), 'utf8'));
+const catalog = JSON.parse(await readFile(join(mod, 'catalog/factions.json'), 'utf8'));
 const factionArt = JSON.parse(await readFile(join(web, 'data/faction-art.json'), 'utf8'));
 const manifestPath = join(web, 'public/game-media/manifest.json');
 const assets = JSON.parse(await readFile(manifestPath, 'utf8')).filter(a => !levant.includes(a.faction));

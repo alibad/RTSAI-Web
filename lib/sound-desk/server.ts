@@ -628,7 +628,7 @@ export function createSoundReviewMiddleware(cfg: SoundDeskConfig) {
 
 /** meta.json beside a regenerated take: engine, voice, text, seed and licence (the generator's own record). */
 function writeTakeMeta(clip: string, meta: Record<string, unknown>) {
-  const record = { ...meta, file: "clip.wav", sha256: existsSync(clip) ? sha256(clip) : null, generator: "RTSAI-Web tools/sound-desk-voice.py (OpenRA-AI voice_engines.py)" };
+  const record = { ...meta, file: "clip.wav", sha256: existsSync(clip) ? sha256(clip) : null, generator: "RTSAI-Web tools/sound-desk-voice.py (RTSAI-Mod companion voice_engines.py)" };
   writeFileSync(join(dirname(clip), "meta.json"), JSON.stringify(record, null, 2) + "\n");
 }
 

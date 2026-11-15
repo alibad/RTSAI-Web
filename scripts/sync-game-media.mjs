@@ -6,6 +6,10 @@ import { spawnSync } from "node:child_process";
 
 const webRoot = resolve(import.meta.dirname, "..");
 const gameRoot = resolve(process.env.RTSAI_GAME_REPO || join(webRoot, "..", "OpenRA-AI"));
+// The tracked media stay in the archived OpenRA-AI checkout. Its local generated/ and .artifacts/ folders moved to
+// RTSAI-Mod/companion on 1 Nov 2026, so each source is looked up in both, with the same relative path.
+const gameRoots = [gameRoot, resolve(process.env.RTSAI_COMPANION_DIR || join(webRoot, "..", "RTSAI-Mod", "companion"))];
+const fromGame = (...parts) => gameRoots.map(root => resolve(root, ...parts)).find(existsSync) ?? resolve(gameRoot, ...parts);
 const publicRoot = resolve(webRoot, "public", "game-media");
 const generatedModule = resolve(webRoot, "lib", "game-media.generated.ts");
 const generatedManifest = resolve(publicRoot, "manifest.json");
@@ -35,51 +39,51 @@ const actorNames = {
 
 const sources = [
   {
-    faction: "red-sea", root: resolve(gameRoot, "generated", "red-sea-sprites"), mode: "pixel",
+    faction: "red-sea", root: fromGame("generated", "red-sea-sprites"), mode: "pixel",
   },
   {
-    faction: "iran", root: resolve(gameRoot, "generated", "iran-sprites"), mode: "pixel",
+    faction: "iran", root: fromGame("generated", "iran-sprites"), mode: "pixel",
   },
   {
-    faction: "turkey", root: resolve(gameRoot, "generated", "turkey-sprites"), mode: "pixel",
+    faction: "turkey", root: fromGame("generated", "turkey-sprites"), mode: "pixel",
   },
   {
-    faction: "china", root: resolve(gameRoot, ".artifacts", "china-faction", "pre-clean-sprite-staging-20260812"), mode: "pixel",
+    faction: "china", root: fromGame(".artifacts", "china-faction", "pre-clean-sprite-staging-20260812"), mode: "pixel",
   },
 ];
 
 const featured = [
-  ["red-sea-key-art", "red-sea", resolve(gameRoot, "assets", "red-sea-2026", "red-sea-key-art.png"), "Red Sea 2026 key art", "concept", "Authored theatre key art", "Source artwork"],
-  ["red-sea-hodeidah-live", "red-sea", resolve(gameRoot, "artifacts", "red-sea-live-final", "hodeidah-1470.png"), "Hodeidah Lifeline live build", "live", "Current OpenRA renderer", "Live validated"],
-  ["red-sea-f15-live", "red-sea", resolve(gameRoot, "artifacts", "air-warfare", "live-f15-saudi-base.png"), "F-15SA at the Saudi airbase", "live", "Native air-warfare test", "Live validated"],
-  ["red-sea-samad-live", "red-sea", resolve(gameRoot, "artifacts", "air-warfare", "live-samad-dive-4.png"), "Samad terminal dive", "live", "Native air-warfare test", "Live validated"],
-  ["red-sea-saudi-infantry", "red-sea", resolve(gameRoot, "assets", "red-sea-2026", "infantry-concepts", "saudi-infantry-concept.png"), "Saudi infantry concept", "concept", "Production concept source", "Source artwork"],
-  ["red-sea-yemen-infantry", "red-sea", resolve(gameRoot, "assets", "red-sea-2026", "infantry-concepts", "yemen-infantry-concept.png"), "Yemen infantry concept", "concept", "Production concept source", "Source artwork"],
-  ["red-sea-jizan-mission", "red-sea", resolve(gameRoot, "assets", "red-sea-2026", "jizan-mission-preview.png"), "Jizan Corridor mission", "mission", "Mission browser art", "Shipped asset"],
-  ["red-sea-hodeidah-mission", "red-sea", resolve(gameRoot, "assets", "red-sea-2026", "hodeidah-mission-preview.png"), "Hodeidah Lifeline mission", "mission", "Mission browser art", "Shipped asset"],
-  ["red-sea-mandab-mission", "red-sea", resolve(gameRoot, "assets", "red-sea-2026", "mandab-mission-preview.png"), "Bab al-Mandab Passage mission", "mission", "Mission browser art", "Shipped asset"],
+  ["red-sea-key-art", "red-sea", fromGame("assets", "red-sea-2026", "red-sea-key-art.png"), "Red Sea 2026 key art", "concept", "Authored theatre key art", "Source artwork"],
+  ["red-sea-hodeidah-live", "red-sea", fromGame("artifacts", "red-sea-live-final", "hodeidah-1470.png"), "Hodeidah Lifeline live build", "live", "Current OpenRA renderer", "Live validated"],
+  ["red-sea-f15-live", "red-sea", fromGame("artifacts", "air-warfare", "live-f15-saudi-base.png"), "F-15SA at the Saudi airbase", "live", "Native air-warfare test", "Live validated"],
+  ["red-sea-samad-live", "red-sea", fromGame("artifacts", "air-warfare", "live-samad-dive-4.png"), "Samad terminal dive", "live", "Native air-warfare test", "Live validated"],
+  ["red-sea-saudi-infantry", "red-sea", fromGame("assets", "red-sea-2026", "infantry-concepts", "saudi-infantry-concept.png"), "Saudi infantry concept", "concept", "Production concept source", "Source artwork"],
+  ["red-sea-yemen-infantry", "red-sea", fromGame("assets", "red-sea-2026", "infantry-concepts", "yemen-infantry-concept.png"), "Yemen infantry concept", "concept", "Production concept source", "Source artwork"],
+  ["red-sea-jizan-mission", "red-sea", fromGame("assets", "red-sea-2026", "jizan-mission-preview.png"), "Jizan Corridor mission", "mission", "Mission browser art", "Shipped asset"],
+  ["red-sea-hodeidah-mission", "red-sea", fromGame("assets", "red-sea-2026", "hodeidah-mission-preview.png"), "Hodeidah Lifeline mission", "mission", "Mission browser art", "Shipped asset"],
+  ["red-sea-mandab-mission", "red-sea", fromGame("assets", "red-sea-2026", "mandab-mission-preview.png"), "Bab al-Mandab Passage mission", "mission", "Mission browser art", "Shipped asset"],
 
-  ["iran-cameo-roster", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "00-production-cameos.png"), "Iran production roster", "concept", "Complete production cameo sheet", "Live validated"],
-  ["iran-doctrine-range", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "01-doctrine-range.png"), "Distributed denial doctrine", "live", "Live range and counterplay evidence", "Live validated"],
-  ["iran-live-headings", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "02-live-headings.png"), "Directional movement in engine", "audit", "Heading and movement evidence", "Live validated"],
-  ["iran-toufan-rearmed", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "03-toufan-rearmed.png"), "Toufan rearm cycle", "live", "Finite ammunition and rearm evidence", "Live validated"],
-  ["iran-shadow-sabotage", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "04-shadow-sabotage.png"), "Shadow One sabotage", "live", "Hero counterplay evidence", "Live validated"],
-  ["iran-loitering-attack", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "05-loitering-attack.png"), "Simorgh loitering attack", "live", "One-way munition evidence", "Live validated"],
-  ["iran-naval-combat", "iran", resolve(gameRoot, "docs", "iran-faction-evidence", "06-naval-combat.png"), "Littoral combat", "live", "Native naval combat evidence", "Live validated"],
+  ["iran-cameo-roster", "iran", fromGame("docs", "iran-faction-evidence", "00-production-cameos.png"), "Iran production roster", "concept", "Complete production cameo sheet", "Live validated"],
+  ["iran-doctrine-range", "iran", fromGame("docs", "iran-faction-evidence", "01-doctrine-range.png"), "Distributed denial doctrine", "live", "Live range and counterplay evidence", "Live validated"],
+  ["iran-live-headings", "iran", fromGame("docs", "iran-faction-evidence", "02-live-headings.png"), "Directional movement in engine", "audit", "Heading and movement evidence", "Live validated"],
+  ["iran-toufan-rearmed", "iran", fromGame("docs", "iran-faction-evidence", "03-toufan-rearmed.png"), "Toufan rearm cycle", "live", "Finite ammunition and rearm evidence", "Live validated"],
+  ["iran-shadow-sabotage", "iran", fromGame("docs", "iran-faction-evidence", "04-shadow-sabotage.png"), "Shadow One sabotage", "live", "Hero counterplay evidence", "Live validated"],
+  ["iran-loitering-attack", "iran", fromGame("docs", "iran-faction-evidence", "05-loitering-attack.png"), "Simorgh loitering attack", "live", "One-way munition evidence", "Live validated"],
+  ["iran-naval-combat", "iran", fromGame("docs", "iran-faction-evidence", "06-naval-combat.png"), "Littoral combat", "live", "Native naval combat evidence", "Live validated"],
 
-  ["turkey-roster-concept", "turkey", resolve(gameRoot, "assets", "turkey-faction", "concept-sources", "turkey-roster-concept.png"), "Anatolian Guard roster", "concept", "Complete faction concept board", "Source artwork"],
-  ["turkey-straits-opening", "turkey", resolve(gameRoot, "artifacts", "turkey-faction", "live", "straits-shield-opening.png"), "Straits Shield opening", "live", "Current OpenRA renderer", "Live validated"],
-  ["turkey-straits-combat", "turkey", resolve(gameRoot, "artifacts", "turkey-faction", "live", "straits-shield-live-combat.png"), "Straits Shield combat", "live", "Current OpenRA renderer", "Live validated"],
-  ["turkey-ai-progression", "turkey", resolve(gameRoot, "artifacts", "turkey-faction", "turkey-ai-progression.png"), "Native bot progression", "live", "Normal-bot build telemetry", "Live validated"],
-  ["turkey-facing-audit", "turkey", resolve(gameRoot, "artifacts", "turkey-faction", "directional-audit", "all-facing-composites.png"), "Ground roster facing audit", "audit", "Full hull and turret facing sets", "Structurally audited"],
-  ["turkey-cardinal-audit", "turkey", resolve(gameRoot, "artifacts", "turkey-faction", "directional-audit", "cardinal-handedness-check.png"), "Cardinal handedness check", "audit", "North, east, south, west landmarks", "Structurally audited"],
+  ["turkey-roster-concept", "turkey", fromGame("assets", "turkey-faction", "concept-sources", "turkey-roster-concept.png"), "Anatolian Guard roster", "concept", "Complete faction concept board", "Source artwork"],
+  ["turkey-straits-opening", "turkey", fromGame("artifacts", "turkey-faction", "live", "straits-shield-opening.png"), "Straits Shield opening", "live", "Current OpenRA renderer", "Live validated"],
+  ["turkey-straits-combat", "turkey", fromGame("artifacts", "turkey-faction", "live", "straits-shield-live-combat.png"), "Straits Shield combat", "live", "Current OpenRA renderer", "Live validated"],
+  ["turkey-ai-progression", "turkey", fromGame("artifacts", "turkey-faction", "turkey-ai-progression.png"), "Native bot progression", "live", "Normal-bot build telemetry", "Live validated"],
+  ["turkey-facing-audit", "turkey", fromGame("artifacts", "turkey-faction", "directional-audit", "all-facing-composites.png"), "Ground roster facing audit", "audit", "Full hull and turret facing sets", "Structurally audited"],
+  ["turkey-cardinal-audit", "turkey", fromGame("artifacts", "turkey-faction", "directional-audit", "cardinal-handedness-check.png"), "Cardinal handedness check", "audit", "North, east, south, west landmarks", "Structurally audited"],
 
-  ["china-cameo-atlas", "china", resolve(gameRoot, "assets", "china-faction", "icon-sources", "china-unit-cameo-atlas-v1.png"), "China combined-arms roster", "concept", "Original unit concept atlas", "Source artwork"],
-  ["china-gap-atlas", "china", resolve(gameRoot, "assets", "china-faction", "icon-sources", "china-gap-cameo-atlas-v2.png"), "China specialist roster", "concept", "Follow-up cameo concept atlas", "Source artwork"],
-  ["china-native-renderer", "china", resolve(gameRoot, ".artifacts", "china-faction", "live", "04-native-renderer.png"), "Haitian Network native renderer", "live", "Current OpenRA renderer", "Live validated"],
-  ["china-deployment", "china", resolve(gameRoot, ".artifacts", "china-faction", "live", "01-china-deployment.png"), "China live deployment", "live", "Headless battlefield telemetry", "Live validated"],
-  ["china-network-maneuver", "china", resolve(gameRoot, ".artifacts", "china-faction", "live", "02-network-and-amphibious-maneuver.png"), "Network and amphibious maneuver", "live", "Headless battlefield telemetry", "Live validated"],
-  ["china-combined-arms", "china", resolve(gameRoot, ".artifacts", "china-faction", "live", "03-combined-arms-contact.png"), "Combined-arms contact", "live", "Headless battlefield telemetry", "Live validated"],
+  ["china-cameo-atlas", "china", fromGame("assets", "china-faction", "icon-sources", "china-unit-cameo-atlas-v1.png"), "China combined-arms roster", "concept", "Original unit concept atlas", "Source artwork"],
+  ["china-gap-atlas", "china", fromGame("assets", "china-faction", "icon-sources", "china-gap-cameo-atlas-v2.png"), "China specialist roster", "concept", "Follow-up cameo concept atlas", "Source artwork"],
+  ["china-native-renderer", "china", fromGame(".artifacts", "china-faction", "live", "04-native-renderer.png"), "Haitian Network native renderer", "live", "Current OpenRA renderer", "Live validated"],
+  ["china-deployment", "china", fromGame(".artifacts", "china-faction", "live", "01-china-deployment.png"), "China live deployment", "live", "Headless battlefield telemetry", "Live validated"],
+  ["china-network-maneuver", "china", fromGame(".artifacts", "china-faction", "live", "02-network-and-amphibious-maneuver.png"), "Network and amphibious maneuver", "live", "Headless battlefield telemetry", "Live validated"],
+  ["china-combined-arms", "china", fromGame(".artifacts", "china-faction", "live", "03-combined-arms-contact.png"), "Combined-arms contact", "live", "Headless battlefield telemetry", "Live validated"],
 ];
 
 function listRootPngs(root) {
@@ -114,7 +118,8 @@ function sheetTitle(fileName) {
 }
 
 function relativeSource(sourcePath) {
-  if (sourcePath.startsWith(gameRoot + sep)) return relative(gameRoot, sourcePath).replaceAll("\\", "/");
+  const root = gameRoots.find(r => sourcePath.startsWith(r + sep));
+  if (root) return relative(root, sourcePath).replaceAll("\\", "/");
   return relative(webRoot, sourcePath).replaceAll("\\", "/");
 }
 

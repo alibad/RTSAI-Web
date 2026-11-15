@@ -3,6 +3,7 @@
 //   node --import tsx scripts/bind-levant-provenance.mjs            # write data/levant-art-binding.json
 //   node --import tsx scripts/bind-levant-provenance.mjs --check    # fail if the binding is stale
 //   options: --mod=../RTSAI-Mod --product=../OpenRA-AI --python=<python with Pillow>
+//   --product stays the archived OpenRA-AI checkout: the pinned generator commit is in its history only.
 //
 // The Levant packs were built by OpenRA-AI scripts/build-levant-art.py (CPU geometry, no image or game-data
 // input). The mod keeps that generator's own record, modern-factions/levant-art-provenance.json, which hashes
@@ -32,7 +33,7 @@ const arg = (name, fallback) => process.argv.find(a => a.startsWith(`--${name}=`
 const modRoot = resolve(web, arg("mod", "../RTSAI-Mod"));
 const product = resolve(web, arg("product", "../OpenRA-AI"));
 const classicRoot = resolve(web, arg("classic", "../OpenRA"));
-const python = resolve(web, arg("python", "../OpenRA-AI/.venv/Scripts/python.exe"));
+const python = resolve(web, arg("python", "../RTSAI-Mod/companion/.venv/Scripts/python.exe"));
 const check = process.argv.includes("--check");
 const output = join(web, "data/levant-art-binding.json");
 

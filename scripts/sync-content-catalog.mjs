@@ -43,7 +43,7 @@ if (currentSnapshot.derivation?.type === "standalone-frozen-facts") {
   console.log("Validated standalone catalog from repository-owned frozen facts; publication and human approvals unchanged");
   process.exit(0);
 }
-const product = resolve(process.argv.find(arg => arg.startsWith("--product="))?.slice(10) ?? "../OpenRA-AI");
+const product = resolve(process.argv.find(arg => arg.startsWith("--product="))?.slice(10) ?? "../RTSAI-Mod/companion");
 const engine = resolve(process.argv.find(arg => arg.startsWith("--engine="))?.slice(9) ?? "../OpenRA");
 const python = process.env.CATALOG_PYTHON ?? (process.platform === "win32" ? resolve(product, ".venv/Scripts/python.exe") : "python3");
 execFileSync(python, [resolve(product, "scripts/content_catalog.py"), "--engine", engine], { stdio: "inherit" });

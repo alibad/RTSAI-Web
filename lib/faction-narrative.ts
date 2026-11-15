@@ -1,9 +1,9 @@
 /**
  * Per-faction narrative for the faction pages and the Studio's Faction viewer: "Identity" (what the faction fights for,
  * in its own in-game voice) and "Rivals' view" (the same faction through its rivals' eyes). Data-driven from the shared
- * catalog (OpenRA-AI/catalog/factions.json -> npm run sync:content); each section stays hidden until its data exists.
+ * catalog (RTSAI-Mod/catalog/factions.json -> npm run sync:content); each section stays hidden until its data exists.
  *
- * Catalog fields (written by the narrative work, validated by OpenRA-AI scripts/content_catalog.py):
+ * Catalog fields (written by the narrative work, validated by RTSAI-Mod companion/scripts/content_catalog.py):
  *   catalog.narrative.framing                          in-world disclaimer, shown with the rival views
  *   faction.identity  { motto, story, keywords[] }     the faction's own voice
  *   faction.rivalViews[] { rival, kind: "propaganda" | "grievance", text }
