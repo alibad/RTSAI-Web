@@ -6,8 +6,8 @@
  * the Workshop's row and the game's menu.
  *
  * It holds navigation only: a page's own controls stay in the page. The links are plain <a>, because the Studio pages
- * are a standalone build served beside the website (scripts/art-lab-preview.ts). The game is its own app, so its two
- * entries open in a new tab and the bar stays where it was.
+ * are a standalone build served beside the website (scripts/art-lab-preview.ts). The game is its own app, so its
+ * entries (Battle simulator, Map editor, Play) open in a new tab and the bar stays where it was.
  *
  * The read-only Studio on rtsai.net (`shared`) shows the same bar with only what players can open.
  */
@@ -35,7 +35,9 @@ const GROUPS: { label: string; items: Item[] }[] = [
   ] },
   { label: "Battles", items: [
     { id: "simulator", label: "Battle simulator", href: "/play/?mode=sandbox", site: true, game: true, title: "The game's own simulation: place units for two sides and fight (opens the game)" },
-    { id: "map", label: "Map editor", href: "/workshop?mode=ra2", site: true, title: "Build a battlefield" },
+    // The game's own editor, not the website's old /workshop (owner, 14 Oct and 15 Nov 2026): one editor and one
+    // simulator, both in the game. Its "Test in simulator" opens the Battle simulator on the map.
+    { id: "map", label: "Map editor", href: "/play/?mode=editor", site: true, game: true, title: "The game's map editor: a real place, a random or a blank map, then test it in the Battle simulator (opens the game)" },
     { id: "campaigns", label: "Campaigns", href: "/workshop/campaigns?mode=ra2", own: true, site: true, title: "Campaign studio: the story, the missions and their briefings" },
   ] },
   { label: "AI", items: [
