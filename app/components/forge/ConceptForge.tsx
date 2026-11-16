@@ -3,7 +3,8 @@
  * Faction Studio > Concept Forge (local only): exploratory soldiers, vehicles and defences made by RTSAI-Art
  * tools/forge, next to the game's own units. The page opens as a wall of pictures; a click puts one on the stage,
  * and the wall stays beside it as a list (with its search and filters) unless the owner hides it.
- *   Originals   concepts rendered by the forge (forge_build.py, forge_infantry.py)
+ *   Originals   concepts rendered by the forge (forge_build.py, forge_infantry.py): soldiers, vehicles, defences and
+ *               base buildings (forge_buildings.py, every building shape in every faction's style)
  *   Mixes       every rendered turret on every hull or base it fits (forge_mix.py): thousands, with no files of their
  *               own; a mix's art is built here from its two donors' art
  *   Game units  the game's own units, exactly as the Faction viewer has them
@@ -34,7 +35,7 @@ import "./forge.css";
 
 type Faction = { name: string; paint: string; dark: string };
 type Concept = {
-  id: string; kind: "infantry" | "vehicle" | "defence"; name: string; idea: string; description: string; role: string;
+  id: string; kind: "infantry" | "vehicle" | "defence" | "building"; name: string; idea: string; description: string; role: string;
   factions: string[]; faction: string; stats: Record<string, number>; built?: string; weapons?: { kind: string }[];
   layers: Record<string, { count: number }>; art: ConceptArt | null;
 };
@@ -51,7 +52,7 @@ type GameUnits = { factions: { id: string; name: string; units: ViewerUnit[] }[]
 type Entry = { id: string; name: string; role: string; kind: string; faction: string; weapons: string[]; at: number; h?: string; t?: string; cameo?: string | null; group?: string };
 type Source = "originals" | "mixes" | "game" | "story";
 
-const KINDS = [["all", "All"], ["infantry", "Soldiers"], ["vehicle", "Vehicles"], ["defence", "Defences"]] as const;
+const KINDS = [["all", "All"], ["infantry", "Soldiers"], ["vehicle", "Vehicles"], ["defence", "Defences"], ["building", "Buildings"]] as const;
 /** The weapon filter: a short fixed list, each with its colour (the colour of that weapon's shot). */
 const WEAPONS = [["any", "Any weapon", "#8a8f80"], ["shell", "Guns", "#e0b84a"], ["bullet", "Machine guns, autocannon", "#e8e1c4"], ["rocket", "Rockets", "#ef7a3c"],
   ["missile", "Missiles", "#f4f4fa"], ["mortar", "Mortars, howitzers", "#b08654"], ["beam", "Beams", "#6fe3ff"], ["arc", "Arc", "#9db4ff"],
@@ -59,7 +60,7 @@ const WEAPONS = [["any", "Any weapon", "#8a8f80"], ["shell", "Guns", "#e0b84a"],
 const WEAPON_OPTIONS = WEAPONS.map(([value, label, colour]) => ({ value, label, leading: <i className="cf-wdot" style={{ background: colour }} /> }));
 /** The flag table keys Saudi Arabia as "saudi". */
 const flagId = (faction: string) => (faction === "saudi-arabia" ? "saudi" : faction);
-const KIND_GROUP: Record<string, string> = { infantry: "Concepts: soldiers", vehicle: "Concepts: vehicles", defence: "Concepts: defences" };
+const KIND_GROUP: Record<string, string> = { infantry: "Concepts: soldiers", vehicle: "Concepts: vehicles", defence: "Concepts: defences", building: "Concepts: buildings" };
 const PLAYER = "F21818";   // the stage's red (houseColors)
 const STEP = 240;          // pictures added to the wall each time its end comes into view
 const NEAR = 4;            // neighbours shown on each side under the stage
@@ -411,7 +412,7 @@ export function ConceptForge() {
     : source === "story" ? `in ${pal.factions[told]?.name ?? told}'s story` : "game units";
   const toSource = (id: Source) => {
     setSource(id); setSentTo(""); setDonor(null);
-    if (id === "mixes" && kind === "infantry") setKind("all");
+    if (id === "mixes" && (kind === "infantry" || kind === "building")) setKind("all");
     if (sel && !listBeside()) show("");   // with the list beside the stage, the stage keeps its concept
   };
   /** Open a faction's war on the Story wall; the unit on the stage stays (it is in that chapter). */
@@ -438,7 +439,7 @@ export function ConceptForge() {
               <button key={f} className={told === f ? "on" : ""} onClick={() => setStoryFaction(f)} title={stories[f].title}>
                 <Flag id={flagId(f)} size="s" />{pal.factions[f]?.name ?? f}<em>{Object.keys(stories[f].units ?? {}).length}</em></button>
             ))}</div> : null}
-            {!ofGame && !ofStory ? <div className="cf-chips">{KINDS.filter(([id]) => !(source === "mixes" && !sentTo && id === "infantry")).map(([id, label]) => (
+            {!ofGame && !ofStory ? <div className="cf-chips">{KINDS.filter(([id]) => !(source === "mixes" && !sentTo && (id === "infantry" || id === "building"))).map(([id, label]) => (
               <button key={id} className={kind === id ? "on" : ""} onClick={() => setKind(id)}>{label}</button>
             ))}</div> : null}
             {!ofGame && !ofStory ? <OptionSelect aria-label="Weapon" size="sm" className="cf-weapon" value={weapon || "any"} onValueChange={v => setWeapon(v === "any" ? "" : v)} options={WEAPON_OPTIONS} /> : null}

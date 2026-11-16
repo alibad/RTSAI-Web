@@ -17,7 +17,7 @@ export const forgeFile = (path: string) => `${API}/file/${path.split("/").map(en
 export type ConceptWeapon = RulesWeapon & { label: string; report: string | null; impact: string | null };
 /** art.json (forge_export.py). */
 export type ConceptArt = {
-  id: string; name: string; kind: "infantry" | "vehicle" | "defence"; category: ArtCategory; health: number; armor: string;
+  id: string; name: string; kind: "infantry" | "vehicle" | "defence" | "building"; category: ArtCategory; health: number; armor: string;
   sequences: SpriteSequence[]; turret: { sequence: string; name: string; initialFacing: number } | null;
   /** The turret's pivot over the body, screen px at 1x: one per body facing (32), or one for a defence. */
   pivots: [number, number][] | null; turretLocked: boolean; airAltitude: number | null;
@@ -83,7 +83,7 @@ export function conceptItem(art: ConceptArt, game: ConceptGame, faction: string)
   const fac = game.palettes[faction] ? faction : Object.keys(game.palettes)[0];
   const sequences = art.sequences.map(s => ({ ...s, file: s.file ? forgeFile(rooted(art, s.file)) : null }));
   const pick = (name: string) => sequences.find(s => s.name === name) ?? null;
-  const turns = art.kind !== "defence";
+  const turns = art.kind !== "defence" && art.kind !== "building";
   const sprite: SpriteArt = {
     image: art.id, palette: `forge-${fac}`, shp: null, sequences, quantizedFacings: null,
     turret: art.turret ? { ...art.turret, offset: fitTurretOffset(art.pivots, turns) } : null,
@@ -117,6 +117,7 @@ export function actionSounds(art: ConceptArt, voices: Voices | undefined, factio
   const cue = (name: string | undefined) => (name ? [forgeFile(`sounds/${name}.ogg`)] : []);
   if (action === "make") return cue(art.sounds.build);
   if (/^(die|dead|husk)/.test(action)) return cue(art.sounds.die);
+  if (art.kind === "building") return cue(art.sounds.select);      // a building hums; it has no crew voice
   const line = /move|run/.test(action) ? set?.move : /attack|shoot|fire/.test(action) ? set?.attack : set?.select;
   return (line ?? []).map(forgeFile).concat(line?.length ? [] : cue(art.sounds.select));
 }
