@@ -7,7 +7,9 @@ import { flagSrc } from "../../lib/faction-art";
 import "./workshop.css";
 import "./campaigns/campaigns.css";
 
-export const metadata:Metadata={title:"Map Workshop | RTS AI",description:"Generate terrain, place every faction's units and buildings, and experiment with browser battles. Save scenes and export maps for OpenRA.",alternates:{canonical:"/workshop"}};
+// The old Map Workshop: replaced by the game's Map editor and Battle simulator (owner, 14 Oct and 16 Nov 2026), so it
+// stays out of search until it is retired. The Campaign studio's mission preview and AI testing still open it.
+export const metadata:Metadata={title:"Map Workshop | RTS AI",description:"Generate terrain, place every faction's units and buildings, and experiment with browser battles. Save scenes and export maps for OpenRA.",alternates:{canonical:"/workshop"},robots:{index:false,follow:true}};
 export default async function WorkshopPage({searchParams}:{searchParams:Promise<{mode?:string|string[];campaign?:string}>}){
   const params=await searchParams,mode=resolveMode(params.mode);
   // National flags for the faction picker (public/faction-art; the art manifest stays on the server).

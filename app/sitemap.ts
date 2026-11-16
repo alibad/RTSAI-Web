@@ -5,8 +5,9 @@ import { viewerFactionIds } from "../lib/viewer";
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date("2026-10-04");
   const factionPaths = [...new Set(rosters.factions.map(f => `/factions/${dossierForRoster(f)?.id ?? f.id}${rosters.factions.some(other => other.id === f.id && other.mode === "ra2") ? "" : "?mode=ra"}`))];
+  // No /workshop: the old Map Workshop is replaced by the game's own Map editor and Battle simulator (owner, 14 Oct and
+  // 16 Nov 2026) and is noindex until it is retired.
   return [
-    { url: "https://rtsai.net/workshop", lastModified, changeFrequency: "weekly", priority: 0.8 },
     { url: "https://rtsai.net/factions", lastModified, changeFrequency: "weekly", priority: 0.9 },
     ...factionPaths.map(path => ({ url: `https://rtsai.net${path}`, lastModified })),
     ...units.map(unit => ({ url: `https://rtsai.net/units/${unit.id}`, lastModified: new Date("2026-10-02") })),
