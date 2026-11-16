@@ -14,6 +14,7 @@ import { soundEngine } from "../review/sound";
 import { AIR_ALTITUDE, CELL, PX_X, PX_Y, duelLabel, facingVector, holdFire, planAttack, settleDuel, unitPoseAt, type AttackPlan, type Shot, type UnitShape } from "./attack";
 import { aimPoint, arcHeight, blit, drawDamage, drawDeath, drawHealth, drawRangeRing, drawReload, drawResult, drawShots, drawTarget, dummyHeight, type FxView } from "./attack-draw";
 import { EffectGlyph, TargetGlyph } from "./attack-icons";
+import { SearchSelect } from "../../ui/fields";
 
 const DEFAULT_FACING = 896;
 const SPIN_MS = 110;
@@ -79,7 +80,9 @@ type AttackPick = { weapon: number; target: DummyKind };
 type AttackState = AttackPick & { plan: AttackPlan; versus?: number };
 export type AttackSounds = (weaponId: string) => { report: string[]; impact: string[] };
 /** A unit the stage can fight in Versus: its art, armaments, health and armour, and its weapon sounds. */
-export type Opponent = { id: string; name: string; group?: string; item: StageItem; weapons: DemoWeapon[]; health: number; armor: string; sounds?: AttackSounds };
+export type Opponent = { id: string; name: string; group?: string; item: StageItem; weapons: DemoWeapon[]; health: number; armor: string; sounds?: AttackSounds;
+  /** Its list picture (a cameo), shown in the Versus picker. */
+  cameo?: string | null };
 /** What the stage needs to know to move a unit: its actions by kind, its attack shape and its flying height (1x px). */
 type Described = { first: string; fireA: string | null; runA: string | null; dieA: string | null; shape: UnitShape; lift: number };
 type Geo = { reach: number; height: number };
@@ -135,6 +138,12 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   const [attack, setAttack] = useState<AttackState | null>(null);
   const [running, setRunning] = useState(false);
   const [rings, setRings] = useState(false);
+  // Versus: a searchable list of every unit it can fight, each with its picture (hundreds in the Concept Forge).
+  const versusOptions = useMemo(() => [{ value: -1, label: "Versus…" }, ...opponents.map((o, i) => ({
+    value: i, label: o.name, group: o.group,
+    // eslint-disable-next-line @next/next/no-img-element -- a game cameo, pixel art
+    leading: o.cameo ? <img className="viewer-versus-cameo" src={o.cameo} alt="" loading="lazy" /> : <span className="viewer-versus-cameo" aria-hidden="true" />,
+  }))], [opponents]);
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const view = useRef({ facing: DEFAULT_FACING, time: 0 });
@@ -518,15 +527,8 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
           <div className="viewer-colors" role="radiogroup" aria-label="Player colour">
             {houseColors.map(c => <button key={c.id} type="button" role="radio" aria-checked={color === c.hex} aria-label={c.name} title={c.name} style={{ background: `#${c.hex}` }} onClick={() => onColor(c.hex)} />)}
           </div>
-          {self && opponents.length > 0 && <select className="viewer-tool viewer-versus" aria-label="Versus: fight another unit" value={attack?.versus ?? ""}
-            style={{ maxWidth: 190, background: "var(--raised)", color: "var(--paper)", border: "1px solid var(--line)", borderRadius: 6, padding: "4px 6px", font: "inherit", fontSize: 13 }}
-            onChange={e => (e.target.value === "" ? stopAttack() : startDuel(Number(e.target.value)))}>
-            <option value="">Versus…</option>
-            {[...new Set(opponents.map(o => o.group ?? ""))].map(g => {
-              const list = opponents.flatMap((o, i) => ((o.group ?? "") === g ? [<option key={o.id} value={i}>{o.name}</option>] : []));
-              return g ? <optgroup key={g} label={g}>{list}</optgroup> : list;
-            })}
-          </select>}
+          {self && opponents.length > 0 && <SearchSelect<number> size="sm" className="viewer-versus" aria-label="Versus: fight another unit" placeholder="Find a unit to fight"
+            value={attack?.versus ?? -1} onValueChange={v => (v < 0 ? stopAttack() : startDuel(v))} options={versusOptions} />}
           {weapons.length > 0 && <button type="button" className="viewer-tool" aria-pressed={rings} onClick={() => { setRings(r => !r); if (!attack) setZoomOverride(null); }} title="Weapon range on the ground, to scale"><Radar size={15} aria-hidden="true" /><span>Range</span></button>}
           {turns(item) && <button type="button" className="viewer-tool" aria-pressed={spin} disabled={running} onClick={() => setSpin(s => !s)} title="Spin (Space)"><RotateCw size={15} aria-hidden="true" /><span>Spin</span></button>}
           <div className="viewer-zoom" role="group" aria-label="Zoom">

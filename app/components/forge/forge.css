@@ -2,6 +2,7 @@
 .cf { --bg: #141614; --panel: #1c1f1b; --line: #2e322c; --ink: #e9e4d6; --mute: #9b9686; --gold: #d7ae5f; --red: #c8483a; --sand: #8d7f5c;
   display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--ink); font: 14px/1.45 Arial, sans-serif; overflow: hidden; }
 .cf button { font: inherit; color: inherit; cursor: pointer; }
+body:has(.cf) { font-family: Arial, sans-serif; }   /* the pickers' lists open outside .cf, at the body */
 .cf [hidden] { display: none !important; }
 .cf-empty { padding: 48px; color: #ddd; background: #141614; height: 100%; font: 15px Arial, sans-serif; }
 
@@ -23,9 +24,12 @@
 .cf-filters { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 18px; }
 .cf-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 18px 32px; }
 .cf-scroll, .cf-info { scrollbar-width: thin; scrollbar-color: #454a40 transparent; }
-.cf-filters input, .cf-filters select { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; font: 13px Arial, sans-serif; }
+.cf-filters input { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; font: 13px Arial, sans-serif; }
 .cf-filters input { width: 220px; }
-.cf-filters input:focus, .cf-filters select:focus { outline: none; border-color: var(--gold); }
+.cf-filters input:focus { outline: none; border-color: var(--gold); }
+.cf-filters .cf-weapon { width: auto; min-width: 178px; height: 33px; background: var(--panel); border-color: var(--line); border-radius: 7px; color: var(--ink); }
+.cf-wdot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px #0009; }
+.cf-tellers .lab-flag { width: 20px; height: 15px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px #0008; }
 .cf-chips { display: flex; gap: 4px; }
 .cf-chips button, .cf-donor { display: flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 6px 12px; font-size: 13px;
   transition: border-color .12s, background .12s; }
@@ -120,6 +124,38 @@
 .cf-verdict button.on.keep { background: #2f4a2a; border-color: #7fc46b; }
 .cf-verdict button.on.rework { background: #4a3f22; border-color: var(--gold); }
 .cf-verdict button.on.drop { background: #4a2622; border-color: var(--red); }
+/* Story: the faction's war on the wall (an opening, then each chapter above its units), and each unit's own story
+   beside the stage. The Broker's file wears the Directorate's look: black glass and one cold white strobe. */
+.cf-arc { display: flex; gap: 14px; align-items: center; margin: 2px 0 14px; padding: 14px 16px; border-radius: 10px; background: linear-gradient(90deg, #22251f, #181a17); border: 1px solid var(--line); }
+.cf-arc .lab-flag { width: 54px; height: 40px; border-radius: 4px; object-fit: cover; box-shadow: 0 0 0 1px #000a; flex: none; }
+.cf-arc h2 { margin: 0; font-size: 20px; color: var(--gold); }
+.cf-arc p { margin: 3px 0 0; color: #d6d0bf; font-size: 14px; max-width: 70ch; }
+.cf-chapter { grid-column: 1 / -1; margin: 18px 0 4px; padding-left: 12px; border-left: 3px solid var(--gold); }
+.cf-chapter:first-child { margin-top: 0; }
+.cf-chapter span { display: flex; gap: 10px; align-items: baseline; font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .06em; }
+.cf-chapter em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--gold); }
+.cf-chapter h3 { margin: 2px 0 3px; font-size: 17px; color: var(--ink); }
+.cf-chapter p { margin: 0; color: #c9c4b4; font-size: 13px; max-width: 78ch; }
+.cf-body.split .cf-chapter p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cf-callsign { display: inline-block; margin-left: 8px; color: var(--gold); font-style: italic; }
+.cf-callsign::before { content: "“"; } .cf-callsign::after { content: "”"; }
+.cf-refit { margin: -4px 0 10px; color: var(--mute); font-size: 13px; }
+.cf-story { display: grid; gap: 9px; margin: 0 0 16px; padding: 0 0 14px; border-bottom: 1px solid var(--line); }
+.cf-chapterchip { display: grid; justify-items: start; gap: 0; background: #22251f; border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 7px; padding: 6px 10px; text-align: left;
+  transition: border-color .12s, background .12s; }
+.cf-chapterchip:hover { border-color: var(--gold); background: #2c2a1f; }
+.cf-chapterchip b { font-size: 13px; }
+.cf-chapterchip em { font-style: normal; font-size: 12px; color: var(--mute); }
+.cf-tale { margin: 0; font-size: 14px; line-height: 1.5; color: #eee8d8; }
+.cf-origin { margin: 0; font-size: 13px; color: #b9b3a2; }
+.cf-radio { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cf-radio li { position: relative; padding: 5px 10px 5px 28px; border-radius: 7px; background: #1a2219; color: #bfe0a8; font: 13px/1.35 "Consolas", "Courier New", monospace; }
+.cf-radio li::before { content: ""; position: absolute; left: 10px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: #7fc46b; box-shadow: 0 0 6px #7fc46b; }
+.cf-broker { position: relative; margin: 0; padding: 9px 12px 10px 30px; border-radius: 8px; background: linear-gradient(160deg, #0b0c0d, #1b1e22); border: 1px solid #2a2e33; color: #d9dde2; font-size: 13px; }
+.cf-broker i { position: absolute; left: 12px; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px 2px #ffffffaa; animation: cf-strobe 2.4s infinite; }
+.cf-broker b { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8d96a0; margin-bottom: 2px; }
+@keyframes cf-strobe { 0%, 86%, 100% { opacity: .25; } 90% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cf-broker i { animation: none; opacity: .8; } }
 .cf-info textarea { width: 100%; min-height: 64px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 8px; font: 13px Arial; resize: vertical; box-sizing: border-box; }
 
 @media (min-width: 1900px) { .cf-body.split .cf-wall { width: 478px; } }   /* four across */

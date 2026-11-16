@@ -9,8 +9,11 @@
  *                                          viewer's training targets, routing
  *   GET  /api/concept-forge/game-units     the game's own units per modern faction, exactly as the Faction viewer
  *                                          has them (art, armaments, health, sounds), to play and fight next to concepts
- *   GET  /api/concept-forge/stamp          when the index and the mix catalogue last changed (the page polls it and
- *                                          reloads, so concepts appear while a wave renders)
+ *   GET  /api/concept-forge/stamp          when the index, the mix catalogue and the stories last changed (the page
+ *                                          polls it and reloads, so concepts appear while a wave renders)
+ *   GET  /api/concept-forge/stories        every faction's story drafts (D:\Generated\RTSAI\stories\<faction>.json,
+ *                                          RTSAI_STORIES_DIR to override): the faction's war in chapters and each
+ *                                          unit's own story, for originals and the game's units alike
  *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder; also catalogue.json (the
  *                                          mixes: every turret on every hull it fits, tools/forge/forge_mix.py) and
  *                                          its picture sheets (atlas/)
@@ -24,6 +27,8 @@ import { viewerDummies, viewerFaction, viewerFactionLinks } from "../viewer";
 import { projectEffects } from "../faction-audio";
 
 export const forgeRoot = () => resolve(process.env.RTSAI_FORGE_DIR ?? "D:/Generated/RTSAI/art/concept-forge");
+/** Unit stories are drafts made with AI, so they wait outside git until the owner approves them (AGENTS.md). */
+export const storiesRoot = () => resolve(process.env.RTSAI_STORIES_DIR ?? "D:/Generated/RTSAI/stories");
 
 const MIME: Record<string, string> = { ".png": "image/png", ".ogg": "audio/ogg", ".json": "application/json", ".wav": "audio/wav", ".pal": "application/octet-stream" };
 const FACTION_IDS = new Set(["iran", "china", "turkey", "saudi-arabia", "yemen", "israel", "lebanon"]);
@@ -40,7 +45,8 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
-export function createConceptForgeMiddleware(root = forgeRoot()) {
+export function createConceptForgeMiddleware(root = forgeRoot(), stories = storiesRoot()) {
+  const storyFiles = () => [...FACTION_IDS].map(f => [f, resolve(stories, `${f}.json`)] as const).filter(([, file]) => existsSync(file));
   return async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     const path = url.pathname.replace(/^\/api\/concept-forge/, "");
@@ -59,7 +65,13 @@ export function createConceptForgeMiddleware(root = forgeRoot()) {
       }
       if (req.method === "GET" && path === "/stamp") {
         const at = (file: string) => { try { return Math.round(statSync(resolve(root, file)).mtimeMs); } catch { return 0; } };
-        send(res, 200, { index: at("index.json"), catalogue: at("catalogue.json") });
+        const told = Math.max(0, ...storyFiles().map(([, file]) => Math.round(statSync(file).mtimeMs)));
+        send(res, 200, { index: at("index.json"), catalogue: at("catalogue.json"), stories: told });
+        return;
+      }
+      if (req.method === "GET" && path === "/stories") {
+        // A file that does not parse (one being written) is left out until the next poll.
+        send(res, 200, { factions: Object.fromEntries(storyFiles().map(([f, file]) => [f, readJson<unknown>(file, null)]).filter(([, s]) => s)) });
         return;
       }
       if (req.method === "GET" && path === "/game-units") {

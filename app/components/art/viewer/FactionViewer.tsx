@@ -89,7 +89,7 @@ export function FactionViewer({ faction, factions, initial, marks, lineup, artFa
   const opponents = useMemo(() => units.flatMap((u): Opponent[] => {
     const it = items.get(u.id);
     if (!it || u.id === unit?.id || !u.health) return [];
-    return [{ id: u.id, name: u.name, group: GROUPS[u.category] ?? "Other", item: it, weapons: u.attack, health: u.health, armor: u.armor ?? "none",
+    return [{ id: u.id, name: u.name, group: GROUPS[u.category] ?? "Other", item: it, weapons: u.attack, health: u.health, armor: u.armor ?? "none", cameo: u.cameo,
       sounds: weaponId => weaponSounds(u, shownSounds(u, snapSounds, faction.effects), snapSounds, faction.effects, weaponId) }];
   }), [units, items, unit, snapSounds, faction.effects]);
 

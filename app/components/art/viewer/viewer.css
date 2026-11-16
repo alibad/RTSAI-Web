@@ -105,6 +105,8 @@
 .viewer-tool { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; min-width: 32px; padding: 0 9px; border: 0; border-radius: 6px; background: var(--raised); color: var(--paper); font-size: 13px; cursor: pointer; }
 .viewer-tool:disabled { opacity: 0.4; cursor: default; }
 .viewer-tool[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+.viewer-versus { width: 200px; height: 32px; background: var(--raised); color: var(--paper); border-color: var(--line); }
+.viewer-versus-cameo { width: 32px; height: 24px; flex: none; object-fit: contain; image-rendering: pixelated; border-radius: 3px; background: #8d7f5c; }
 .viewer-zoom { display: inline-flex; align-items: center; gap: 4px; }
 .viewer-zoom span { min-width: 28px; text-align: center; color: var(--muted); font: 600 12px/1 var(--font-mono); }
 
