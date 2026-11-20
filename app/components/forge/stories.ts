@@ -44,6 +44,8 @@ export type Person = {
   arc: { chapter: string; text: string }[];
   /** The units (story keys in this file) they crew, built, command or are remembered in. */
   units: string[];
+  /** A campaign commander's published portrait (an https address); everyone else wears their initials. */
+  portrait?: string;
 };
 export type FactionStory = { faction: string; title: string; line: string; chapters: Chapter[]; cast?: Person[]; units: Record<string, UnitStory> };
 export type Stories = Record<string, FactionStory>;

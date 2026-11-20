@@ -145,7 +145,7 @@ function StoryCard({ story, chapter, onChapter, people, paint, onPerson }: { sto
         <b>{chapter.title}</b>{chapter.campaign ? <em>{chapter.campaign}</em> : <em>{chapter.when}</em>}
       </button> : null}
       {people.length ? <div className="cf-who" aria-label="People in this story">{people.map(p => (
-        <button key={p.id} onClick={() => onPerson(p.id)} title={`${p.role} Follow ${p.name} through the war.`}><Face name={p.name} paint={paint} />{p.name}</button>
+        <button key={p.id} onClick={() => onPerson(p.id)} title={`${p.role} Follow ${p.name} through the war.`}><Face name={p.name} paint={paint} portrait={p.portrait} />{p.name}</button>
       ))}</div> : null}
       <p className="cf-tale">{story.story}</p>
       <p className="cf-origin">{story.origin}</p>
@@ -155,9 +155,15 @@ function StoryCard({ story, chapter, onChapter, people, paint, onPerson }: { sto
   );
 }
 
-/** A person's badge: their initials on their faction's colour. */
-function Face({ name, paint }: { name: string; paint?: string }) {
-  return <i className="cf-face" style={{ ["--fac" as string]: paint ?? "#6b6f63" }} aria-hidden="true">{initials(name)}</i>;
+/** A person's badge: a campaign commander's portrait, or anyone else's initials on their faction's colour. */
+function Face({ name, paint, portrait }: { name: string; paint?: string; portrait?: string }) {
+  const [broken, setBroken] = useState(false);
+  return <i className={`cf-face${portrait && !broken ? " pic" : ""}`} style={{ ["--fac" as string]: paint ?? "#6b6f63" }} aria-hidden="true">
+    {portrait && !broken
+      // eslint-disable-next-line @next/next/no-img-element -- the campaign's published portrait, served by its CDN
+      ? <img src={portrait} alt="" loading="lazy" onError={() => setBroken(true)} />
+      : initials(name)}
+  </i>;
 }
 
 /** A repeatable shuffle (the same seed gives the same order, so paging through a shuffle works). */
@@ -474,11 +480,11 @@ export function ConceptForge() {
             {ofStory && tale?.cast?.length ? <div className="cf-cast" aria-label="The people in this war">{tale.cast.map(p => (
               <button key={p.id} className={p.id === who?.id ? "on" : ""} onClick={() => setPerson(x => (x === p.id ? "" : p.id))}
                 title={p.id === who?.id ? "Show the whole war again" : `Follow ${p.name} through the war`}>
-                <Face name={p.name} paint={pal.factions[told]?.paint} /><b>{p.name}</b><span>{p.rank ? `${p.rank} · ` : ""}{p.role}</span>
+                <Face name={p.name} paint={pal.factions[told]?.paint} portrait={p.portrait} /><b>{p.name}</b><span>{p.rank ? `${p.rank} · ` : ""}{p.role}</span>
               </button>
             ))}</div> : null}
             {ofStory && who ? <section className="cf-person">
-              <Face name={who.name} paint={pal.factions[told]?.paint} />
+              <Face name={who.name} paint={pal.factions[told]?.paint} portrait={who.portrait} />
               <h3>{who.name}{who.rank ? <small>{who.rank}</small> : null}</h3>
               <q>{who.line}</q>
               <p>{who.bio}</p>
