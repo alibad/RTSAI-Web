@@ -111,6 +111,22 @@ file may be just the list:
 A clip that is already in the inbox is refused. `--replace` swaps a broken recording (same round, the owner's answer
 is kept). `node tools/review.mjs remove <clip>...` takes clips out again.
 
+#### Films must not stutter
+
+`add` (and `fixed --video`) measures every film before uploading it and refuses one that stutters: **judder over 2%**,
+judder being 1 to 3 held frames with motion on both sides. A screencast that cannot keep up with the page holds a
+frame and then jumps; the owner sees flicker and takes it for the game (20 November 2026: 16 of the first 17 battle
+clips, up to 24% of their frames). A clean recording measures under 1%. A still stretch over 0.3 s between motion is
+printed too, but not refused: briefings and menus pause on purpose. Check that yours is a real pause.
+
+```sh
+node tools/review.mjs stutter <file or folder>...   # measure without adding
+```
+
+Film again so every frame is drawn: fights with RTSAI-WebGame `tools/battle-clips.mjs`, which draws the film from the
+simulator's per-tick recording; a screencast only on a quiet PC, or at a lower frame rate or size. A clip that shows a
+slow game on purpose goes in with `--stutter-ok`, and carries its numbers as a chip.
+
 ### 2. Read the owner's answers
 
 ```sh
@@ -140,6 +156,9 @@ tool, which runs Whisper on this machine; nothing is sent anywhere or billed), a
 node tools/review.mjs fixed <clip> --reply "what changed, in one sentence" --in <commit or build> \
   --video <re-recorded clip.mp4> --poster <its poster.jpg>
 ```
+
+When the owner said what is wrong somewhere else (to a session, in chat), give their words with `--heard "..." --at
+<second>`: they become the clip's note, so the fix comes back to them as a "Fixed / Still wrong" check like any other.
 
 Every open note of the clip moves to **re-check** with your reply, and the clip returns to the top of the inbox as
 "Fixed, check again", with the old video kept for a before/after switch. The owner answers **Fixed** (the notes

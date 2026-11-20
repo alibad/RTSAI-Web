@@ -27,6 +27,8 @@ multiplayer, maps, art, sound, the website). How-to: `docs/review-inbox.md`.
   the transcript, and how to fetch the audio and the pictures the owner circled: `review.mjs audio` and `files`).
 - After a fix: film the clip again and send it back with `node tools/review.mjs fixed <clip> --reply "..." --video ...`.
 - Keep clips short and few: each needs a reason to exist. Never mass-produce them.
+- `add` refuses a film that stutters (judder over 2%: frames held, then jumping); `node tools/review.mjs stutter <files>`
+  measures one first. Re-film it so every frame is drawn (docs/review-inbox.md, "Films must not stutter").
 
 ## Where things live (owner, 1 Nov 2026)
 

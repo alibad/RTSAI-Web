@@ -8,6 +8,8 @@
 //   node tools/review.mjs files <clip> <note> [--out <folder>] a note's pictures (a frame the owner circled, a screenshot) and videos
 //   node tools/review.mjs transcript <clip> <note> --text ".." store a transcript made locally (Whisper)
 //   node tools/review.mjs fixed <clip> --reply "what changed" [--in <commit or build>] [--video <file>] [--poster <file>] [--note <id>]...
+//                                   [--heard "the owner's words" --at <second>]  (what the owner said outside the inbox)
+//   node tools/review.mjs stutter <file or folder>...         does a film stutter? (add and fixed check it themselves)
 //   node tools/review.mjs status [--front battles] [--json]   every clip and the owner's answer
 //   node tools/review.mjs remove <clip>...                    take clips out of the inbox, with their notes (a broken recording)
 //
@@ -20,7 +22,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -29,7 +31,7 @@ const verb = argv[0];
 const flag = (k) => argv.includes(`--${k}`);
 const opt = (k, d) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
 const opts = (k) => argv.flatMap((a, i) => (a === `--${k}` ? [argv[i + 1]] : []));
-const VALUE_FLAGS = new Set(["front", "out", "text", "reply", "in", "video", "poster", "note", "serve-dir", "serve-url", "by"]);
+const VALUE_FLAGS = new Set(["front", "out", "text", "reply", "in", "video", "poster", "note", "serve-dir", "serve-url", "by", "heard", "at"]);
 const positional = argv.slice(1).filter((a, i, all) => !a.startsWith("--") && !(all[i - 1]?.startsWith("--") && VALUE_FLAGS.has(all[i - 1].slice(2))));
 const die = (message) => { console.error(message); process.exit(1); };
 
@@ -156,6 +158,60 @@ function publish(folder, files, batch) {
 }
 const stamp = () => new Date().toISOString().replace(/[-:]/g, "").slice(0, 15);
 
+// ---- does a film stutter?
+// A screencast that cannot keep up with the page holds a frame, then jumps: the owner sees flicker and takes it for
+// the game (20 Nov 2026: 16 of the first 17 battle clips, up to 24% of their frames). Measured on a small grey copy:
+// a step is still when the picture barely changes (mean difference under 0.1 of 255), moving above 0.4. Judder is
+// 1 to 3 still frames with motion on both sides: a film never pauses that briefly on purpose. A longer still stretch
+// between motion can be a real pause (a briefing, a menu), so it is only reported.
+export const STUTTER_LIMIT = { judder: 2, stillSeconds: 0.3 };
+async function stutterOf(file) {
+  const W = 320, H = 180, size = W * H;
+  const [num, den] = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "${file}"`, { encoding: "utf8" }).trim().split("/").map(Number);
+  const fps = num / (den || 1);
+  const ff = spawn("ffmpeg", ["-v", "error", "-i", file, "-vf", `scale=${W}:${H}:flags=area,format=gray`, "-f", "rawvideo", "pipe:1"]);
+  const chunks = [];
+  ff.stdout.on("data", (c) => chunks.push(c));
+  await new Promise((r) => ff.on("close", r));
+  const raw = Buffer.concat(chunks), frames = Math.floor(raw.length / size), motion = [];
+  for (let i = 1; i < frames; i++) {
+    let d = 0;
+    for (let j = 0; j < size; j++) d += Math.abs(raw[i * size + j] - raw[(i - 1) * size + j]);
+    motion.push(d / size);
+  }
+  const steps = motion.length, STILL = 0.1, MOVING = 0.4;
+  let judderSteps = 0, judders = 0, longest = 0;
+  for (let i = 0; i < steps;) {
+    if (motion[i] >= STILL) { i++; continue; }
+    let j = i;
+    while (j < steps && motion[j] < STILL) j++;
+    if (i > 0 && j < steps && motion[i - 1] > MOVING && motion[j] > MOVING) {
+      longest = Math.max(longest, j - i);
+      if (j - i <= 3) { judders++; judderSteps += j - i; }
+    }
+    i = j;
+  }
+  const judder = +((judderSteps / Math.max(1, steps)) * 100).toFixed(1), stillSeconds = +(longest / fps).toFixed(2);
+  return { judder, judders, stillSeconds, seconds: +(frames / fps).toFixed(1), bad: judder > STUTTER_LIMIT.judder };
+}
+const stutterLine = (name, m) => `  film  ${name}: judder ${m.judder}% (${m.judders} short freezes in ${m.seconds} s)${m.stillSeconds > STUTTER_LIMIT.stillSeconds ? `, a still stretch of ${m.stillSeconds} s between motion (a real pause?)` : ""}${m.bad ? "   STUTTERS" : ""}`;
+/** Measures each film; dies when one stutters, unless --stutter-ok (then the clip says so on a chip). */
+async function checkFilms(films) {
+  const measured = [];
+  for (const { name, file } of films) {
+    const m = await stutterOf(file);
+    console.log(stutterLine(name, m));
+    measured.push({ name, m });
+  }
+  const bad = measured.filter((x) => x.m.bad);
+  if (bad.length && !flag("stutter-ok"))
+    die(`\n${bad.length} film(s) stutter (judder over ${STUTTER_LIMIT.judder}%: frames held, then jumping). The owner takes that for the game.
+Film them again so every frame is drawn: for fights, RTSAI-WebGame tools/battle-clips.mjs draws the film from the
+simulator's recording; a screencast must keep up with the page (a quiet PC, a lower frame rate or resolution).
+If a clip shows a slow game on purpose, add --stutter-ok: it goes in with its numbers on it. (docs/review-inbox.md)`);
+  return Object.fromEntries(measured.map((x) => [x.name, x.m]));
+}
+
 // ---- reading
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const sideLine = (side) => `${side.name}: ${side.units.map((u) => `${u.count}× ${u.name}`).join(", ")}`;
@@ -213,6 +269,9 @@ if (verb === "add") {
       }
     }
   }
+  // Every film is measured before anything is uploaded: a stuttering one is refused (checkFilms).
+  const films = await checkFilms(list.filter((c) => !isUrl(c.file) && fs.existsSync(path.join(folder, c.file))).map((c) => ({ name: c.id, file: path.join(folder, c.file) })));
+  for (const c of list) if (films[c.id]?.bad) c.chips.push({ label: "Film", value: `stutters: ${films[c.id].judder}% of frames held` });
   const local = (v) => (typeof v === "string" && v && !isUrl(v) ? [v] : []);
   const files = list.flatMap((c) => [...local(c.file), ...local(c.poster), ...(c.sides ?? []).flatMap((s) => [...local(s.flag), ...s.units.flatMap((u) => local(u.icon))])]);
   const fronts = [...new Set(list.map((c) => c.front))];
@@ -296,12 +355,23 @@ if (verb === "add") {
   await requireReleased();
   const clip = await get(`reviewClips/${clipId}`) ?? die(`No clip ${clipId}.`);
   const notes = await list(`reviewClips/${clipId}/notes`);
+  // What the owner said about this clip outside the inbox (to a session, in chat): it becomes the clip's note, in
+  // their words, so the fix comes back to them for the same "Fixed / Still wrong" check.
+  const heard = opt("heard");
+  if (heard) {
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (v) => "abcdefghijklmnopqrstuvwxyz0123456789"[v % 36]).join("");
+    const note = { t: Math.max(0, Number(opt("at", 0)) || 0), text: heard.trim().slice(0, 4000), said: "typed", transcript: "typed", state: "open", round: clip.round, created: new Date() };
+    await put(`reviewClips/${clipId}/notes/${id}`, note);
+    notes.push({ id, ...note });
+    console.log(`note ${id}: the owner's words, at ${clock(note.t)}`);
+  }
   const ids = opts("note");
   const answered = notes.filter((n) => (ids.length ? ids.includes(n.id) : n.state === "open"));
-  if (!answered.length) die("No open note to answer on that clip.");
+  if (!answered.length) die('No open note to answer on that clip. If the owner said it outside the inbox, pass their words with --heard "..." --at <second>.');
   const video = opt("video"), poster = opt("poster");
   let urls = {};
   if (video) {
+    await checkFilms([{ name: path.basename(video), file: path.resolve(video) }]);
     const folder = path.dirname(path.resolve(video));
     if (poster && path.dirname(path.resolve(poster)) !== folder) die("Keep the new video and its poster in one folder.");
     urls = publish(folder, [path.basename(video), ...(poster ? [path.basename(poster)] : [])], `${clip.front}/${stamp()}-round${clip.round + 1}`);
@@ -312,6 +382,12 @@ if (verb === "add") {
     ...(video ? { before: clip.video, video: urls[path.basename(video)], ...(poster ? { poster: urls[path.basename(poster)] } : {}) } : {}),
   });
   console.log(`${clipId}: back in the inbox as "fixed, check again" (round ${clip.round + 1}); ${answered.length} note(s) answered${video ? "; new video uploaded" : "; same video (pass --video for a re-recording)"}.`);
+} else if (verb === "stutter") {
+  if (!positional.length) die("usage: node tools/review.mjs stutter <file or folder>...");
+  const files = positional.flatMap((p) => (fs.statSync(p).isDirectory() ? fs.readdirSync(p).filter((f) => /\.(mp4|webm|mov)$/i.test(f)).map((f) => path.join(p, f)) : [p]));
+  let bad = 0;
+  for (const f of files) { const m = await stutterOf(f); console.log(stutterLine(path.basename(f), m)); if (m.bad) bad++; }
+  console.log(`\n${bad} of ${files.length} stutter (judder over ${STUTTER_LIMIT.judder}%).`);
 } else if (verb === "status") {
   const front = opt("front");
   const clips = await clipsWithNotes(front, () => true);
@@ -331,5 +407,5 @@ if (verb === "add") {
     console.log(`${clipId}: removed (its files stay where they were uploaded)`);
   }
 } else {
-  die("usage: node tools/review.mjs add|feedback|audio|files|transcript|fixed|status|remove ...   (docs/review-inbox.md)");
+  die("usage: node tools/review.mjs add|feedback|audio|files|transcript|fixed|stutter|status|remove ...   (docs/review-inbox.md)");
 }
