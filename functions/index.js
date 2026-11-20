@@ -42,8 +42,9 @@ import { relayServers } from "./relay.js";
 
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 const TURN_KEY_API_TOKEN = defineSecret("TURN_KEY_API_TOKEN");
-// The Cloudflare TURN key (Realtime > TURN Server in the Cloudflare dashboard). Its id is not a secret; its token is.
-const TURN_KEY_ID = process.env.TURN_KEY_ID || "";
+// The Cloudflare TURN key: the "rtsai-multiplayer" app under Realtime > TURN Server in the Cloudflare dashboard
+// (created 20 Nov 2026). Its id is not a secret; its token is (TURN_KEY_API_TOKEN).
+const TURN_KEY_ID = process.env.TURN_KEY_ID || "a71c061da6e2d02e39ef1357f3e82a58";
 // The web game calls the relay function from its own page: rtsai.net/play, or a local test build.
 const GAME_ORIGINS = [/^https:\/\/(www\.)?rtsai\.net$/, /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/];
 // Not secrets; the local emulator test points them at its own SMTP server (functions/.env.local).
