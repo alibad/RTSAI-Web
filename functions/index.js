@@ -14,6 +14,10 @@
 //                      https://europe-west1-rtsai-net.cloudfunctions.net/sendDigestNow
 //                  ?preview=1 returns the email's HTML without sending; ?window=lastWeek covers last Monday to Sunday
 //                  (default: the last 7 days up to now).
+//   relay          the web game's multiplayer relay (relay.js): a signed-in player's browser asks for short-lived
+//                  Cloudflare TURN credentials before it connects to the other players, so two networks that cannot
+//                  reach each other still play. The relay key's secret is TURN_KEY_API_TOKEN:
+//                    firebase functions:secrets:set TURN_KEY_API_TOKEN --project rtsai-net     (once)
 // Why calls and not Firestore triggers: a trigger must run in the database's region, and rtsai-net's database is in
 // me-central2 (Dammam), where Google offers no Cloud Functions or Cloud Run without a sales agreement. Firebase
 // Extensions shut down on 31 March 2027 anyway. The mailbox password is the SMTP_PASSWORD secret:
@@ -34,8 +38,14 @@ import { EVENT_NAMES } from "./rollup.js";
 import { digestWindow, renderDigest } from "./digest.js";
 import { gatherDigest, sendDigest, TEAM_GROUP } from "./weekly.js";
 import { deletionNotice, eraseAccount, exportAccount, recentLogin } from "./account.js";
+import { relayServers } from "./relay.js";
 
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
+const TURN_KEY_API_TOKEN = defineSecret("TURN_KEY_API_TOKEN");
+// The Cloudflare TURN key (Realtime > TURN Server in the Cloudflare dashboard). Its id is not a secret; its token is.
+const TURN_KEY_ID = process.env.TURN_KEY_ID || "";
+// The web game calls the relay function from its own page: rtsai.net/play, or a local test build.
+const GAME_ORIGINS = [/^https:\/\/(www\.)?rtsai\.net$/, /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/];
 // Not secrets; the local emulator test points them at its own SMTP server (functions/.env.local).
 const SMTP_URI = process.env.SMTP_URI || "smtps://humanque@mail.humanquest.net:465";
 const defaults = { from: process.env.MAIL_FROM || "RTS AI <info@humanquest.net>", replyTo: process.env.MAIL_REPLY_TO || "ali@humanquest.net" };
@@ -116,6 +126,27 @@ export const account = onRequest(
       logger.error(JSON.stringify({ severity: "ERROR", message: `account ${req.method} failed`, uid: user.uid, error: short(error) }));
       // Auth goes last, so after a failure the account still exists and trying again finishes the job.
       res.status(500).json({ error: req.method === "GET" ? "Your data could not be gathered. Try again." : "Deleting stopped part way. Your account is still there: try again." });
+    }
+  },
+);
+
+// Signed-in players only (never anonymous): every credential can carry traffic the account pays for, so it goes to a
+// verified account and expires after a few hours (RELAY_TTL_S). A failure answers 503 and the game connects without
+// a relay, as before.
+export const relay = onRequest(
+  { region, secrets: [TURN_KEY_API_TOKEN], maxInstances: 5, timeoutSeconds: 20, memory: "256MiB", cors: GAME_ORIGINS },
+  async (req, res) => {
+    if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
+    let user;
+    try { user = await getAuth().verifyIdToken(bearer(req)); } catch { res.status(401).json({ error: "Sign in required" }); return; }
+    if (user.firebase?.sign_in_provider === "anonymous") { res.status(403).json({ error: "Players only" }); return; }
+    try {
+      const { iceServers, ttl } = await relayServers({ keyId: TURN_KEY_ID, token: TURN_KEY_API_TOKEN.value() });
+      logger.info(JSON.stringify({ message: "relay credentials", uid: user.uid }));
+      res.set("Cache-Control", "no-store").status(200).json({ iceServers, expires: Date.now() + ttl * 1000 });
+    } catch (error) {
+      logger.error(JSON.stringify({ severity: "ERROR", message: "relay credentials failed", uid: user.uid, error: short(error) }));
+      res.status(503).json({ error: "No relay right now" });
     }
   },
 );
