@@ -100,6 +100,8 @@ function publish(folder, files, batch) {
   const unique = [...new Set(files)];
   for (const f of unique) if (!fs.existsSync(path.join(folder, f))) die(`Missing file: ${path.join(folder, f)}`);
   for (const f of unique) if (!MIME[path.extname(f).toLowerCase()]) die(`Not a clip, poster or icon file: ${f}`);
+  // Cloudflare Pages takes files up to 25 MiB.
+  for (const f of unique) if (fs.statSync(path.join(folder, f)).size > 25 * 1024 * 1024) die(`${f} is over 25 MiB: encode it smaller (a 30-second clip at 1080p fits easily at CRF 24 to 26).`);
   if (emulator) {
     const dir = opt("serve-dir", process.env.REVIEW_SERVE_DIR), url = opt("serve-url", process.env.REVIEW_SERVE_URL);
     if (!dir || !url) die("With --emulator, pass --serve-dir <folder> and --serve-url <its address> (tools/review-preview.mjs prints both).");
