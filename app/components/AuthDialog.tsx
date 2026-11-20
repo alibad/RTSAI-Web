@@ -127,7 +127,7 @@ export function AuthDialog({ reason, onClose }: { reason: string; onClose: () =>
           <span className="auth-emblem"><LockKeyhole size={23} /></span>
           <span className="eyebrow">Commander account</span>
           <h2 id="auth-title">{mode === "signup" ? "Create your free profile." : "Welcome back, Commander."}</h2>
-          <p>{reason}. One free account opens the browser game, multiplayer, the Workshop, the Faction Studio and Earth Studio. Downloads stay public.</p>
+          <p>{reason}. One free account opens the browser game, multiplayer, the map editor, the battle simulator and the Faction Studio. Downloads stay public.</p>
         </div>
 
         <div className="auth-tabs" role="tablist" aria-label="Account action">

@@ -7,5 +7,5 @@ export const metadata: Metadata = { title: "Sign in | RTS AI", robots: { index: 
 
 /** /signin?next=/play/… — where the browser game sends signed-out players; returns them once they're in. */
 export default function SignInPage() {
-  return <SignInGate feature="game" title="Sign in to play RTS AI" shell={pathShell} header={<PathQuestbar />} footer={<PathFooter />}><ContinueTo /></SignInGate>;
+  return <SignInGate feature="game" title="Sign in to play RTS AI" openAccount shell={pathShell} header={<PathQuestbar />} footer={<PathFooter />}><ContinueTo /></SignInGate>;
 }
