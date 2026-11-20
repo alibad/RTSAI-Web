@@ -292,7 +292,7 @@ test("Mac alpha download is independent of the preserved Windows release", async
     assert.match(html, /macOS 15\+/);
     assert.match(html, /bundled companion supports Apple silicon only/);
     assert.match(html, /Intel execution and another Mac remain pending/);
-    assert.match(html, /ad-hoc signature and is not notarized/);
+    assert.match(html, macAlpha.signing === "developer-id" ? /signed with Human Quest LLC(&#x27;|')s Developer ID but not notarized yet/ : /ad-hoc signature and is not notarized/);
     assert.doesNotMatch(html, /candidate is not a public download/);
   } else {
     assert.doesNotMatch(html, /Download Mac alpha/);

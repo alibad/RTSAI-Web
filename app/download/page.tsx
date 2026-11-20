@@ -3,7 +3,7 @@ import { Apple, BrainCircuit, CalendarDays, Cpu, Download, ExternalLink, FileArc
 import Link from "next/link";
 import { getGameRelease } from "../../lib/release";
 import { getModRelease, isPublished, macInstaller, windowsInstaller, type ModReleaseAsset } from "../../lib/mod-release";
-import { getMacAlphaRelease } from "../../lib/mac-release";
+import { getMacAlphaRelease, macSigningSentence } from "../../lib/mac-release";
 import { availability, CLASSIC_ADDON_NOTE, factionById, modeLabel, resolveMode, rosterFactionById } from "../../lib/game-content";
 import "./download.css";
 import { FrontLine } from "../components/FrontLine";
@@ -255,7 +255,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
           <div className="download-intro">
             <span className="section-number">{macAlphaRelease ? "MAC ALPHA / SEPARATE PRERELEASE" : "LOCAL ACCEPTANCE / NOT PUBLISHED"}</span>
             <h2 id="local-mac-title">{macAlphaRelease ? "Standalone Mac alpha." : "Standalone Mac candidate."}</h2>
-            <p>The macOS 15+ build passed local checks in both modes. It uses an ad-hoc signature and is not notarized. Game binaries are universal; the bundled companion supports Apple silicon only. Intel execution and another Mac remain pending. No model, microphone transcription or speech runtime is included. Grounded advice and individually reviewed native orders were checked locally; neural inference and voice conversations were not.</p>
+            <p>{`The macOS 15+ build passed local checks in both modes. ${macSigningSentence(macAlphaRelease)} Game binaries are universal; the bundled companion supports Apple silicon only. Intel execution and another Mac remain pending. No model, microphone transcription or speech runtime is included. Grounded advice and individually reviewed native orders were checked locally; neural inference and voice conversations were not.`}</p>
             <p>Native and browser unit-voice settings support faction-language defaults and an English override. Fluent listening review remains pending.</p>
             {macAlphaRelease ? <>
               <a className="primary-action" href={macAlphaRelease.asset.url} data-analytics-event="mod_download" data-platform="macos-alpha-dmg"><Download size={17} /> Download Mac alpha</a>
