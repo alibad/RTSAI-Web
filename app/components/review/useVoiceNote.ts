@@ -3,8 +3,14 @@
  * A voice note: the microphone recorded as audio (MediaRecorder, Opus) while the browser's own speech recognition
  * writes the words. The audio is what is kept as the truth; the transcript is a convenience, and a session can
  * transcribe the audio again locally when the browser gave none (tools/review.mjs transcript).
+ *
+ * Why not the site's useVoiceRecorder (app/components/feedback/media.ts): that one records audio only. A note here also
+ * writes the words while the owner talks and shows the microphone's level, which needs the microphone stream the
+ * shared recorder keeps to itself; media.ts must stay identical to the game's copy, so it is not changed for this.
+ * The limits are the shared ones (canRecordVoice, ten minutes).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { canRecordVoice, MAX_VOICE_SECONDS } from "../feedback/media";
 
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
 type Recognition = {
@@ -28,7 +34,10 @@ const PROBLEMS: Record<string, string> = {
   NotReadableError: "Another app is holding the microphone. Close it, or type instead (T).",
 };
 
-export function useVoiceNote() {
+/** onLimit: called once when a note reaches the ten-minute limit (the inbox saves it then). */
+export function useVoiceNote(options: { onLimit?: () => void } = {}) {
+  const latest = useRef(options);
+  useEffect(() => { latest.current = options; });
   const [recording, setRecording] = useState(false);
   const [words, setWords] = useState("");
   const [seconds, setSeconds] = useState(0);
@@ -63,7 +72,7 @@ export function useVoiceNote() {
 
   const start = useCallback(async () => {
     setProblem("");
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") { setProblem("This browser cannot record. Type instead (T)."); return false; }
+    if (!canRecordVoice()) { setProblem("This browser cannot record. Type instead (T)."); return false; }
     try {
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     } catch (e) {
@@ -80,7 +89,12 @@ export function useVoiceNote() {
     text.current = { final: "", interim: "" };
     setWords("");
     setSeconds(0);
-    tick.current = setInterval(() => setSeconds((performance.now() - startedAt.current) / 1000), 250);
+    let limited = false;
+    tick.current = setInterval(() => {
+      const elapsed = (performance.now() - startedAt.current) / 1000;
+      setSeconds(elapsed);
+      if (elapsed >= MAX_VOICE_SECONDS && !limited) { limited = true; latest.current.onLimit?.(); }
+    }, 250);
 
     // The level meter: how loud the microphone hears you, so a dead microphone shows at once.
     try {
@@ -149,5 +163,5 @@ export function useVoiceNote() {
   const cancel = useCallback(() => { const rec = recorder.current; recorder.current = null; try { rec?.stop(); } catch { /* not started */ } release(); setWords(""); }, [release]);
 
   const meterRef = useCallback((el: HTMLElement | null) => { meter.current = el; }, []);
-  return { recording, words, seconds, problem, meterRef, start, stop, cancel };
+  return { recording, words, seconds, limit: MAX_VOICE_SECONDS, problem, meterRef, start, stop, cancel };
 }

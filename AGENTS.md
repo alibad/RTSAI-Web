@@ -24,7 +24,7 @@ multiplayer, maps, art, sound, the website). How-to: `docs/review-inbox.md`.
 - Add clips: `node tools/review.mjs add <folder with clips.json>`. Watch them yourself first and attach what you
   suspect is wrong.
 - Read the answers: `node tools/review.mjs feedback [--front <front>]` (open notes with each clip's facts, the second,
-  the transcript, and how to fetch the audio).
+  the transcript, and how to fetch the audio and the pictures the owner circled: `review.mjs audio` and `files`).
 - After a fix: film the clip again and send it back with `node tools/review.mjs fixed <clip> --reply "..." --video ...`.
 - Keep clips short and few: each needs a reason to exist. Never mass-produce them.
 

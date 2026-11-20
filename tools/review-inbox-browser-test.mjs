@@ -103,10 +103,42 @@ try {
 
   await playing();
   await page.keyboard.press("t");
+  const save = page.locator('[data-testid="rv-save"]');
+  assert.ok(await save.isDisabled(), "an empty note cannot be saved");
+  assert.match(await save.textContent(), /Type a note or add a picture first/, "and the button says why");
   await page.locator(".rv-talk textarea").fill("The ship turns on the spot.");
+  await page.waitForTimeout(400); // the colour fades in over 0.12 s
+  const look = await save.evaluate((b) => { const s = getComputedStyle(b); return { disabled: b.disabled, background: s.backgroundColor, color: s.color }; });
+  assert.deepEqual(look, { disabled: false, background: "rgb(255, 122, 92)", color: "rgb(29, 11, 6)" }, "Save is a solid button with dark text");
+  step("T types a note; Save says why it waits, then shows solid with dark text (7.4:1)");
+
+  // Grab the clip's frame at the note's second and circle the problem in the markup editor.
+  await page.locator('[data-testid="rv-grab"]').click();
+  await page.waitForSelector(".fbk-annotator canvas", { timeout: 20000 });
+  await page.locator('.fbk-tool[aria-label="Ellipse"]').click();
+  const box = await page.locator(".fbk-annotator canvas").boundingBox();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.6, { steps: 8 });
+  await page.mouse.up();
+  await shot("3a-markup");
+  await page.locator(".fbk-done").click();
+  await page.waitForFunction(() => document.querySelectorAll(".rv-pics .fbk-shot").length === 1);
+  // Paste a screenshot (Ctrl+V): one picture opens in the markup editor too.
+  await page.evaluate(async () => {
+    const c = document.createElement("canvas"); c.width = 320; c.height = 200;
+    const g = c.getContext("2d"); g.fillStyle = "#c0392b"; g.fillRect(0, 0, 320, 200);
+    const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+    const dt = new DataTransfer(); dt.items.add(new File([blob], "screenshot.png", { type: "image/png" }));
+    window.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt }));
+  });
+  await page.waitForSelector(".fbk-annotator canvas", { timeout: 20000 });
+  await page.locator(".fbk-done").click();
+  await page.waitForFunction(() => document.querySelectorAll(".rv-pics .fbk-shot").length === 2);
+  await shot("3b-pictures");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture four");
-  step("T types a note instead");
+  step("a grabbed frame is circled and a screenshot pasted into the note; Enter saves both with the words");
 
   await ready("rv-skip");
   await page.keyboard.press("s");
@@ -131,11 +163,21 @@ try {
   assert.equal(suspect.text, "The launcher on the left never fires.");
   assert.ok(Math.abs(voice.t - 3) < 0.6, `the voice note is pinned where the owner started talking (got ${voice.t})`);
   assert.ok(voice.audio.bytes > 3000 && voice.audio.seconds > 4, "the voice note has audio");
-  assert.equal(feedback.find((c) => c.id === id("c")).notes[0].text, "The ship turns on the spot.");
+  const typedNote = feedback.find((c) => c.id === id("c")).notes[0];
+  assert.equal(typedNote.text, "The ship turns on the spot.");
+  assert.deepEqual(typedNote.files.map((f) => [f.kind, f.type]), [["picture", "image/jpeg"], ["picture", "image/jpeg"]]);
+  assert.deepEqual([typedNote.files[0].width, typedNote.files[0].height], [640, 360], "the grabbed frame is the clip's own picture");
   const text = review("feedback", "--front", "test");
   assert.match(text, /Iran: 3× Test launcher\s+vs\s+America: 2× Test bunker\s+\[Siege\]/);
   assert.match(text, /build: test fixture, page 0000000, rt-test, data-test/);
-  step("the feedback command lists the open notes with each clip's facts, time and transcript");
+  assert.match(text, new RegExp(`2 attached \\(picture 640x360 \\d+ KB, picture 320x200 \\d+ KB\\): node tools/review.mjs files ${id("c")} ${typedNote.id}`));
+  const pictures = path.join(work, "pictures");
+  review("files", id("c"), typedNote.id, "--out", pictures);
+  const got = fs.readdirSync(pictures).sort();
+  assert.equal(got.length, 2);
+  for (const f of got) assert.deepEqual([...fs.readFileSync(path.join(pictures, f)).subarray(0, 3)], [0xff, 0xd8, 0xff], `${f} is a JPEG`);
+  if (shots) for (const f of got) fs.copyFileSync(path.join(pictures, f), path.join(shots, `note-${f.split("-").pop()}`));
+  step("the feedback command lists the open notes with each clip's facts, time, transcript and pictures; `files` fetches them");
 
   const out = path.join(work, "note.webm");
   review("audio", id("b"), voice.id, "--out", out);
@@ -179,6 +221,8 @@ try {
   assert.equal(await as(strangerToken, "GET", `/reviewClips/${id("a")}`), 403, "another verified account: no");
   assert.equal(await as(strangerToken, "GET", `/reviewClips/${id("b")}/notes`), 403);
   assert.equal(await as(strangerToken, "GET", `/reviewClips/${id("b")}/audio/${voice.id}_0`), 403);
+  assert.equal(await as(strangerToken, "GET", `/reviewClips/${id("c")}/files/${typedNote.files[0].id}_0`), 403, "nor the pictures");
+  assert.equal(await as(ownerToken, "GET", `/reviewClips/${id("c")}/files/${typedNote.files[0].id}_0`), 200);
   assert.equal(await as(strangerToken, "PATCH", `/reviewClips/${id("a")}?updateMask.fieldPaths=state`, { fields: { state: { stringValue: "good" } } }), 403);
   assert.equal(await as(ownerToken, "GET", `/reviewClips/${id("a")}`), 200, "the owner: yes");
   assert.equal(await as(ownerToken, "PATCH", `/reviewClips/${id("a")}?updateMask.fieldPaths=title`, { fields: { title: { stringValue: "Rewritten" } } }), 403, "the owner's browser cannot rewrite what a clip shows");

@@ -7,6 +7,8 @@
  *   reviewClips/{clipId}                 ReviewClip: what the clip shows (written by sessions) and the owner's answer
  *     notes/{noteId}                     ReviewNote: what is wrong, at which second; typed, or the transcript of a voice note
  *     audio/{noteId}_{index}             { data: Bytes }: the voice note itself, in chunks of at most 900 KiB
+ *     files/{fileId}_{index}             { data: Bytes }: a note's pictures (a grabbed frame, a pasted screenshot,
+ *                                        marked up) and videos, chunked as the site's feedback files (report-files.ts)
  * The clip files (video, poster, unit icons) are static files named by full URL in the clip.
  */
 
@@ -77,6 +79,8 @@ export type ReviewClip = {
 };
 
 export type NoteAudio = { type: string; bytes: number; chunks: number; seconds: number };
+/** A picture or video in a note; its bytes are in reviewClips/{clip}/files/{id}_{index}. */
+export type NoteFile = { id: string; kind: "picture" | "video"; type: string; bytes: number; chunks: number; name: string; width?: number; height?: number };
 export type ReviewNote = {
   id: string;
   /** Seconds into the clip where the owner started talking or typing. */
@@ -87,6 +91,8 @@ export type ReviewNote = {
   /** Where `text` came from; "none": a voice note the browser could not transcribe (sessions transcribe it locally). */
   transcript: "browser" | "typed" | "whisper" | "none";
   audio?: NoteAudio;
+  /** Pictures (a frame of the clip, a pasted screenshot, marked up) and videos the owner added to the note. */
+  files?: NoteFile[];
   state: NoteState;
   /** The clip's round when the note was made. */
   round: number;
@@ -101,6 +107,9 @@ export const REVIEW_CHUNK_BYTES = 900 * 1024;
 /** A voice note: at most 4 chunks (3.5 MiB, about ten minutes of speech). */
 export const REVIEW_MAX_AUDIO_CHUNKS = 4;
 export const REVIEW_MAX_TEXT = 4000;
+/** A note's pictures and videos: at most 4, each at most 10 MiB (12 chunks), as the site's feedback files. */
+export const REVIEW_MAX_NOTE_FILES = 4;
+export const REVIEW_MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 /** The inbox's order: clips to check again first, then new ones, oldest first; answered clips after them. */
 export function inboxOrder(a: ReviewClip, b: ReviewClip) {

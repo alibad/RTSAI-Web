@@ -8,6 +8,10 @@ a time, each answered with one click or key. Any session working on the game can
   - `G` Looks good, `S` Skip, `V` a voice note pinned to the second where the owner started talking (`Enter` saves and
     moves on, `M` saves and stays for another note), `T` type instead, `Z` undo, `Space` play or pause, arrows step a
     second, `B` before/after on a fixed clip.
+  - **Pictures in a note**, with the site's own feedback parts (`app/components/feedback`): **Grab this frame** (`F`)
+    takes the clip's picture at the note's second into the markup editor, to circle or arrow what is wrong; `Ctrl+V`
+    pastes a screenshot (and opens a typed note if none is open); a picture or video can also be dropped or picked. Up
+    to 4 per note, 10 MB each. A note may be only pictures, with no words.
   - Suspects a session attached show under the clip: **Wrong** turns one into a note, **Fine** waves it off.
   - Clips a session fixed come back first, marked **Fixed, check again**, with the owner's note and the session's reply.
 - **A front** is one line of work: `battles`, `campaign`, `ai-opponent`, `multiplayer`, `look-and-sound`,
@@ -117,11 +121,12 @@ node tools/review.mjs status                   # every clip and its answer
 
 `feedback` prints, for each clip with open notes: its facts (sides, units, mode, map, seed, the link into the game,
 the build), then each note with the second it is pinned to, how it was given (voice, typed, or one of your suspects
-that the owner confirmed), the transcript, and the command that fetches its audio. Suspects the owner waved off are
-listed too, so you stop chasing them.
+that the owner confirmed), the transcript, and the commands that fetch its audio and its pictures. Suspects the owner
+waved off are listed too, so you stop chasing them.
 
 ```sh
 node tools/review.mjs audio <clip> <note> --out note.webm       # the owner's voice, as recorded (Opus)
+node tools/review.mjs files <clip> <note> --out <folder>        # the pictures the owner circled, and any video
 node tools/review.mjs transcript <clip> <note> --text "..."     # store a transcript you made
 ```
 
@@ -150,10 +155,15 @@ agreed). A clip's states: `new`, `good`, `skipped`, `noted`, `recheck`.
 |---|---|---|
 | Clips' facts, the owner's answers, notes | Firestore `rtsai-net`, `reviewClips/{clip}` and its `notes` | free tier |
 | Voice notes | Firestore, `reviewClips/{clip}/audio`, chunks of at most 900 KiB (the project has no Storage bucket) | free tier |
+| Pictures and videos in notes | Firestore, `reviewClips/{clip}/files`, the same chunks as the site's feedback files (`report-files.ts`) | free tier |
 | Clip files | Cloudflare Pages project `rtsai-review` | free |
 | Transcripts | the browser's speech recognition; local Whisper as the fallback | free |
 
-A 30-second voice note is about 120 KB. Nothing here adds a Vercel function, a Blob store or a bill.
+A 30-second voice note is about 120 KB; a marked-up frame is a JPEG of about 200 to 500 KB (one or two writes). The
+free tier holds 1 GiB and takes 20,000 writes and 50,000 reads a day: about 2,000 pictures before storage would bill.
+A video can be 10 MB, so videos are the thing to watch. The owner's rule puts files in Cloud Storage, but `rtsai-net`
+has no Storage bucket yet; making one is the owner's call. Until then the bytes stay in Firestore chunks, as the
+site's feedback files do. Nothing here adds a Vercel function, a Blob store or a bill.
 
 ## Trying it without releasing anything
 

@@ -5,6 +5,7 @@
 //   node tools/review.mjs add <folder>                        the clips named by <folder>/clips.json
 //   node tools/review.mjs feedback [--front battles] [--json] open notes with each clip's facts, time, transcript
 //   node tools/review.mjs audio <clip> <note> [--out <file>]  a voice note's audio
+//   node tools/review.mjs files <clip> <note> [--out <folder>] a note's pictures (a frame the owner circled, a screenshot) and videos
 //   node tools/review.mjs transcript <clip> <note> --text ".." store a transcript made locally (Whisper)
 //   node tools/review.mjs fixed <clip> --reply "what changed" [--in <commit or build>] [--video <file>] [--poster <file>] [--note <id>]...
 //   node tools/review.mjs status [--front battles] [--json]   every clip and the owner's answer
@@ -248,6 +249,10 @@ if (verb === "add") {
         console.log(`  ● ${clock(n.t)}  [${how}]  note ${n.id}  (round ${n.round})`);
         console.log(`      ${n.text ? JSON.stringify(n.text) : "(no transcript yet: fetch the audio, transcribe it, store it with `transcript`)"}`);
         if (n.audio) console.log(`      audio: node tools/review.mjs audio ${c.id} ${n.id}${emulator ? " --emulator" : ""}`);
+        if (n.files?.length) {
+          const what = n.files.map((f) => `${f.kind}${f.width ? ` ${f.width}x${f.height}` : ""} ${Math.round(f.bytes / 1024)} KB`).join(", ");
+          console.log(`      ${n.files.length} attached (${what}): node tools/review.mjs files ${c.id} ${n.id} --out <folder>${emulator ? " --emulator" : ""}`);
+        }
       }
       for (const i of c.dismissed ?? []) if (c.suspects?.[i]) console.log(`  ○ ${clock(c.suspects[i].t)}  the owner says this suspect is fine: ${JSON.stringify(c.suspects[i].text)}`);
     }
@@ -263,6 +268,21 @@ if (verb === "add") {
   const out = path.resolve(opt("out", `${clipId}-${noteId}.${ext}`));
   fs.writeFileSync(out, Buffer.concat(parts));
   console.log(`${out}  (${Buffer.concat(parts).length} bytes, ${note.audio.type}, ${clock(note.audio.seconds)}, pinned at ${clock(note.t)})`);
+} else if (verb === "files") {
+  const [clipId, noteId] = positional;
+  if (!clipId || !noteId) die("usage: node tools/review.mjs files <clip> <note> [--out <folder>]");
+  const note = await get(`reviewClips/${clipId}/notes/${noteId}`) ?? die(`No note ${noteId} on ${clipId}.`);
+  if (!note.files?.length) die("That note has no pictures or videos.");
+  const folder = path.resolve(opt("out", "."));
+  fs.mkdirSync(folder, { recursive: true });
+  const EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "video/webm": "webm", "video/mp4": "mp4", "video/quicktime": "mov" };
+  for (const [k, f] of note.files.entries()) {
+    const parts = [];
+    for (let i = 0; i < f.chunks; i++) parts.push((await get(`reviewClips/${clipId}/files/${f.id}_${i}`) ?? die(`Chunk ${i} of ${f.name} is missing.`)).data);
+    const out = path.join(folder, `${clipId}-${noteId}-${k + 1}.${EXT[f.type] ?? "bin"}`);
+    fs.writeFileSync(out, Buffer.concat(parts));
+    console.log(`${out}  (${f.kind}, ${f.name}${f.width ? `, ${f.width}x${f.height}` : ""}, ${Buffer.concat(parts).length} bytes, note pinned at ${clock(note.t)})`);
+  }
 } else if (verb === "transcript") {
   const [clipId, noteId] = positional, text = opt("text");
   if (!clipId || !noteId || !text) die('usage: node tools/review.mjs transcript <clip> <note> --text "what the owner said"');
@@ -306,10 +326,10 @@ if (verb === "add") {
   // Taking something back out is always allowed, also before the release.
   for (const clipId of positional) {
     if (!await get(`reviewClips/${clipId}`)) { console.log(`${clipId}: not in the inbox`); continue; }
-    for (const sub of ["notes", "audio"]) for (const d of await list(`reviewClips/${clipId}/${sub}`)) await call("DELETE", `/reviewClips/${clipId}/${sub}/${d.id}`);
+    for (const sub of ["notes", "audio", "files"]) for (const d of await list(`reviewClips/${clipId}/${sub}`)) await call("DELETE", `/reviewClips/${clipId}/${sub}/${d.id}`);
     await call("DELETE", `/reviewClips/${clipId}`);
     console.log(`${clipId}: removed (its files stay where they were uploaded)`);
   }
 } else {
-  die("usage: node tools/review.mjs add|feedback|audio|transcript|fixed|status|remove ...   (docs/review-inbox.md)");
+  die("usage: node tools/review.mjs add|feedback|audio|files|transcript|fixed|status|remove ...   (docs/review-inbox.md)");
 }

@@ -5,6 +5,10 @@
  * Skip (S), or a voice note (V) pinned to the second where the owner started talking and saved as audio with its
  * transcript. T types instead. Clips a session fixed come back first, as "fixed, check again".
  *
+ * A note can carry pictures, with the site's feedback parts (app/components/feedback): "Grab this frame" (F) takes the
+ * clip's frame at the note's second into the markup editor to circle what is wrong; Ctrl+V pastes a screenshot (it
+ * opens a typed note when none is open); a picture or video can be dropped or picked.
+ *
  * A clip belongs to a front (battles, campaign, AI, ...): every session can add clips (tools/review.mjs add) and read
  * the answers (tools/review.mjs feedback). Data and its owner-only rule: lib/review/model.ts, firestore.rules.
  */
@@ -12,14 +16,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Firestore } from "firebase/firestore";
 import {
-  Anchor, ArrowRight, Building2, Check, CircleCheck, Crosshair, ExternalLink, Footprints, Keyboard, Mic, MoveRight, Pause, Plane, Play,
+  Anchor, ArrowRight, Building2, Camera, Check, CircleCheck, Crosshair, ExternalLink, Footprints, Image as ImageIcon, Keyboard, Mic, MoveRight, Pause, Plane, Play,
   Radar, RotateCcw, Shield, Ship, SkipForward, Swords, Target, ThumbsDown, ThumbsUp, Truck, Undo2, Volume2, X, Zap,
 } from "lucide-react";
 import { useAuth } from "../AuthProvider";
+import { DropZone, FileChips, ShotStrip, usePastedFiles } from "../feedback/FeedbackMedia";
+import { ScreenshotAnnotator } from "../feedback/ScreenshotAnnotator";
+import { captureTab, checkAttachment, isCoarsePointer, MAX_SCREENSHOTS, toJpeg, withWidgetHidden } from "../feedback/media";
 import { getFirebaseAuth, getFirebaseFirestore } from "../../../lib/firebase-client";
 import { OWNER_EMAILS } from "../../../lib/admin";
-import { clock, frontLabel, inboxOrder, waiting, type ClipSide, type ClipState, type ClipUnit, type NoteState, type ReviewClip, type ReviewNote } from "../../../lib/review/model";
-import { addNote, answerClip, deleteNote, dismissSuspect, loadClips, loadNotes, noteAudio, updateNote } from "../../../lib/review/store";
+import { clock, frontLabel, inboxOrder, waiting, type ClipSide, type ClipState, type ClipUnit, type NoteFile, type NoteState, type ReviewClip, type ReviewNote } from "../../../lib/review/model";
+import { addNote, answerClip, deleteNote, dismissSuspect, loadClips, loadNotes, noteAudio, noteFile, updateNote, type NoteAttachment } from "../../../lib/review/store";
 import { useVoiceNote } from "./useVoiceNote";
 import "./review.css";
 
@@ -58,6 +65,49 @@ function NoteSound({ db, clipId, note }: { db: Firestore; clipId: string; note: 
   return <button type="button" className="rv-mini" title="Hear this note" onClick={async () => { const blob = await noteAudio(db, clipId, note); if (blob) setUrl(URL.createObjectURL(blob)); }}><Volume2 size={13} aria-hidden="true" /> {clock(note.audio.seconds)}</button>;
 }
 
+/** A note's pictures and videos, fetched when asked for. */
+function NoteFiles({ db, clipId, files }: { db: Firestore; clipId: string; files: NoteFile[] }) {
+  const [loaded, setLoaded] = useState<{ file: NoteFile; url: string }[] | null>(null);
+  useEffect(() => () => { for (const l of loaded ?? []) URL.revokeObjectURL(l.url); }, [loaded]);
+  if (!loaded) return <button type="button" className="rv-mini" title="See the pictures in this note" onClick={async () => {
+    const blobs = await Promise.all(files.map((f) => noteFile(db, clipId, f)));
+    setLoaded(files.flatMap((file, i) => (blobs[i] ? [{ file, url: URL.createObjectURL(blobs[i]) }] : [])));
+  }}><ImageIcon size={13} aria-hidden="true" /> {files.length}</button>;
+  return <span className="rv-note-files">{loaded.map(({ file, url }) => file.kind === "picture"
+    ? <a key={file.id} href={url} target="_blank" rel="noreferrer" title={file.name}><img src={url} alt={file.name} /></a>
+    // eslint-disable-next-line jsx-a11y/media-has-caption -- a video the owner attached to their own note.
+    : <video key={file.id} src={url} controls title={file.name} />)}</span>;
+}
+
+/** One frame of a clip, as a PNG. The clip is read again with CORS, so the frame can be read back out of a canvas. */
+async function clipFrame(src: string, at: number): Promise<Blob> {
+  const v = document.createElement("video");
+  v.crossOrigin = "anonymous"; v.muted = true; v.preload = "auto"; v.playsInline = true;
+  const settle = (event: "loadeddata" | "seeked") => new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`no ${event}`)), 15000);
+    v.addEventListener(event, () => { clearTimeout(timer); resolve(); }, { once: true });
+    v.addEventListener("error", () => { clearTimeout(timer); reject(new Error("the clip could not be read")); }, { once: true });
+  });
+  try {
+    const loaded = settle("loadeddata");
+    v.src = src;
+    await loaded;
+    const seeked = settle("seeked");
+    v.currentTime = Math.max(0.01, Math.min(at, (v.duration || at + 1) - 0.05));
+    await seeked;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+    canvas.getContext("2d")!.drawImage(v, 0, 0);
+    // Throws when the clip's host does not allow reading its pixels; the caller falls back to the tab capture.
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("empty frame");
+    return blob;
+  } finally { v.removeAttribute("src"); v.load(); }
+}
+
+type Attachment = NoteAttachment & { id: string; url: string };
+let attachmentSeq = 0;
+
 export function ReviewInbox() {
   const { user, loading: authLoading, openAuth } = useAuth();
   const [db, setDb] = useState<Firestore | null>(null);
@@ -79,7 +129,14 @@ export function ReviewInbox() {
   const video = useRef<HTMLVideoElement | null>(null);
   const fill = useRef<HTMLElement | null>(null);
   const timeLabel = useRef<HTMLSpanElement | null>(null);
-  const { words: voiceWords, seconds: voiceSeconds, problem: voiceProblem, meterRef, start: voiceStart, stop: voiceStop, cancel: voiceCancel } = useVoiceNote();
+  // A voice note at the ten-minute limit is saved, and the owner stays on the clip.
+  const atLimit = useRef(() => {});
+  const { words: voiceWords, seconds: voiceSeconds, limit: voiceLimit, problem: voiceProblem, meterRef, start: voiceStart, stop: voiceStop, cancel: voiceCancel } = useVoiceNote({ onLimit: () => atLimit.current() });
+  // The note's pictures and videos, and the one being marked up.
+  const [pics, setPics] = useState<Attachment[]>([]);
+  const picsRef = useRef<Attachment[]>([]);
+  const [annotating, setAnnotating] = useState<{ src: string; owned: boolean; name: string; replace?: string } | null>(null);
+  const [grabbing, setGrabbing] = useState(false);
 
   // ---- sign-in and loading
   useEffect(() => { void getFirebaseFirestore().then(setDb); }, []);
@@ -121,8 +178,17 @@ export function ReviewInbox() {
     return () => { live = false; };
   }, [db, clip, notes]);
 
+  // ---- a note's pictures
+  const setAttachments = useCallback((next: Attachment[]) => {
+    for (const old of picsRef.current) if (!next.includes(old)) URL.revokeObjectURL(old.url);
+    picsRef.current = next;
+    setPics(next);
+  }, []);
+  const addAttachment = useCallback((a: NoteAttachment) => setAttachments([...picsRef.current, { ...a, id: `a${++attachmentSeq}`, url: URL.createObjectURL(a.blob) }]), [setAttachments]);
+  useEffect(() => () => { for (const a of picsRef.current) URL.revokeObjectURL(a.url); }, []);
+
   // A new clip starts from its beginning, playing, with nothing half-said.
-  const openClip = useCallback((id: string | null) => { setCurrentId(id); setPanel("watch"); setTyped(""); setShowBefore(false); setLength(0); setPaused(false); }, []);
+  const openClip = useCallback((id: string | null) => { setCurrentId(id); setPanel("watch"); setTyped(""); setAttachments([]); setShowBefore(false); setLength(0); setPaused(false); }, [setAttachments]);
   const pickFront = useCallback((id: string) => { setFront(id); openClip((clips ?? []).find((c) => waiting(c) && (id === "all" || c.front === id))?.id ?? null); }, [clips, openClip]);
   const typeBox = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { if (panel === "type") typeBox.current?.focus(); }, [panel]);
@@ -170,11 +236,12 @@ export function ReviewInbox() {
     } catch (e) { fail(e); } finally { setBusy(false); }
   }, [db, clip, busy, clipNotes, patchClip, goNext, fail]);
 
-  const saveNote = useCallback(async (input: { t: number; text: string; said: ReviewNote["said"]; transcript: ReviewNote["transcript"]; voice?: { blob: Blob; seconds: number } }, stay: boolean) => {
+  const saveNote = useCallback(async (input: { t: number; text: string; said: ReviewNote["said"]; transcript: ReviewNote["transcript"]; voice?: { blob: Blob; seconds: number }; files?: NoteAttachment[] }, stay: boolean) => {
     if (!db || !clip) return;
     setBusy(true); setError("");
     try {
       const note = await addNote(db, clip.id, { ...input, round: clip.round });
+      if (input.files?.length) setAttachments([]);
       // A new note on a clip that came back fixed means the fix did not land: its earlier notes are open again.
       const reopened = clipNotes.filter((n) => n.state === "recheck");
       for (const n of reopened) await updateNote(db, clip.id, n.id, { state: "open" });
@@ -184,7 +251,7 @@ export function ReviewInbox() {
       setPanel("watch"); setTyped("");
       if (stay) void video.current?.play().catch(() => {}); else goNext(clip.id, { [clip.id]: "noted" });
     } catch (e) { fail(e); } finally { setBusy(false); }
-  }, [db, clip, clipNotes, patchClip, goNext, fail]);
+  }, [db, clip, clipNotes, patchClip, goNext, fail, setAttachments]);
 
   const startVoice = useCallback(async () => {
     if (!clip || busy || panel !== "watch") return;
@@ -196,11 +263,72 @@ export function ReviewInbox() {
   const endVoice = useCallback(async (stay: boolean) => {
     const take = await voiceStop();
     if (!take) { setPanel("watch"); return; }
-    await saveNote({ t: pinned, text: take.text, said: "voice", transcript: take.text ? "browser" : "none", voice: { blob: take.blob, seconds: take.seconds } }, stay);
+    await saveNote({ t: pinned, text: take.text, said: "voice", transcript: take.text ? "browser" : "none", voice: { blob: take.blob, seconds: take.seconds }, files: picsRef.current }, stay);
   }, [voiceStop, saveNote, pinned]);
-  const cancelNote = useCallback(() => { voiceCancel(); setPanel("watch"); setTyped(""); void video.current?.play().catch(() => {}); }, [voiceCancel]);
-  const startTyping = useCallback(() => { if (!clip || busy || panel !== "watch") return; setPinned(video.current?.currentTime ?? 0); video.current?.pause(); setPanel("type"); }, [clip, busy, panel]);
-  const saveTyped = useCallback((stay: boolean) => { if (typed.trim()) void saveNote({ t: pinned, text: typed, said: "typed", transcript: "typed" }, stay); }, [typed, pinned, saveNote]);
+  useEffect(() => { atLimit.current = () => void endVoice(true); });
+  const cancelNote = useCallback(() => { voiceCancel(); setPanel("watch"); setTyped(""); setAttachments([]); void video.current?.play().catch(() => {}); }, [voiceCancel, setAttachments]);
+  /** Opens a typed note at the clip's current second; returns that second, or null when a note cannot start now. */
+  const startTyping = useCallback(() => {
+    if (!clip || busy || panel !== "watch") return null;
+    const at = video.current?.currentTime ?? 0;
+    setPinned(at); video.current?.pause(); setPanel("type");
+    return at;
+  }, [clip, busy, panel]);
+  const canSaveTyped = !!typed.trim() || pics.length > 0;
+  const saveTyped = useCallback((stay: boolean) => { if (typed.trim() || picsRef.current.length) void saveNote({ t: pinned, text: typed, said: "typed", transcript: "typed", files: picsRef.current }, stay); }, [typed, pinned, saveNote]);
+
+  // ---- pictures: grab the clip's frame, paste, drop or pick; one picture opens in the markup editor
+  const room = MAX_SCREENSHOTS - pics.length;
+  const grabFrame = useCallback(async (at: number) => {
+    if (!clip || grabbing || picsRef.current.length >= MAX_SCREENSHOTS) return;
+    setGrabbing(true); setError("");
+    const name = `frame-${clock(at).replace(":", "m")}s.jpg`;
+    try {
+      let blob: Blob | null;
+      try { blob = await clipFrame(showBefore && clip.before ? clip.before : clip.video, at); }
+      catch {
+        // The clip's host does not let the page read its pixels: take this tab instead (the browser asks once).
+        const frame = await withWidgetHidden(captureTab);
+        blob = await new Promise<Blob | null>((resolve) => frame.toBlob(resolve, "image/png"));
+      }
+      if (!blob) throw new Error("empty");
+      setAnnotating({ src: URL.createObjectURL(blob), owned: true, name });
+    } catch { setError("The frame could not be taken. Paste a screenshot instead (Ctrl+V)."); }
+    finally { setGrabbing(false); }
+  }, [clip, grabbing, showBefore]);
+  const addFiles = useCallback(async (files: File[]) => {
+    setError("");
+    let left = MAX_SCREENSHOTS - picsRef.current.length;
+    let markUp = files.length === 1 && !isCoarsePointer();
+    for (const file of files) {
+      const check = checkAttachment(file);
+      if (!check.ok) { setError(check.error); continue; }
+      const picture = check.contentType.startsWith("image/"), clipFile = check.contentType.startsWith("video/");
+      if (!picture && !clipFile) { setError(`“${file.name}” can’t go in a note: pictures and videos only.`); continue; }
+      if (left <= 0) { setError(`Up to ${MAX_SCREENSHOTS} pictures or videos in one note.`); break; }
+      left--;
+      if (picture && markUp) { setAnnotating({ src: URL.createObjectURL(file), owned: true, name: file.name.replace(/\.[^.]+$/, ".jpg") }); markUp = false; continue; }
+      if (picture) {
+        try { const jpeg = await toJpeg(await createImageBitmap(file)); addAttachment({ blob: jpeg.blob, kind: "picture", type: "image/jpeg", name: file.name.replace(/\.[^.]+$/, ".jpg"), width: jpeg.width, height: jpeg.height }); }
+        catch { setError(`“${file.name}” could not be read.`); }
+      } else addAttachment({ blob: file, kind: "video", type: check.contentType, name: file.name });
+    }
+  }, [addAttachment]);
+  const finishMarkup = useCallback((result: { blob: Blob; width: number; height: number } | null) => {
+    const open = annotating;
+    if (!open) return;
+    if (result) {
+      const made: NoteAttachment = { blob: result.blob, kind: "picture", type: "image/jpeg", name: open.name, width: result.width, height: result.height };
+      if (open.replace) setAttachments(picsRef.current.map((a) => (a.id === open.replace ? { ...made, id: a.id, url: URL.createObjectURL(made.blob) } : a)));
+      else addAttachment(made);
+    }
+    if (open.owned) URL.revokeObjectURL(open.src);
+    setAnnotating(null);
+    // Back to the words, so Enter saves the note.
+    requestAnimationFrame(() => typeBox.current?.focus());
+  }, [annotating, addAttachment, setAttachments]);
+  // Ctrl+V anywhere: the picture goes into the open note, or opens a typed note at this second.
+  usePastedFiles(!!clip && !annotating && !busy, (files) => { if (panel === "watch" && startTyping() === null) return; void addFiles(files); });
 
   const removeNote = useCallback(async (note: ReviewNote) => {
     if (!db || !clip) return;
@@ -241,19 +369,22 @@ export function ReviewInbox() {
   const hasOpen = clipNotes.some((n) => n.state === "open");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // The markup editor has its own keys.
+      if (e.metaKey || e.ctrlKey || e.altKey || annotating) return;
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT" || el.isContentEditable)) return;
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (panel === "voice") {
         if (key === "Enter" || key === "v") { e.preventDefault(); void endVoice(false); }
         else if (key === "m") { e.preventDefault(); void endVoice(true); }
+        else if (key === "f") { e.preventDefault(); void grabFrame(pinned); }
         else if (key === "Escape") { e.preventDefault(); cancelNote(); }
         return;
       }
       if (panel !== "watch" || !clip) { if (key === "z") void undo(); return; }
       if (key === "v") { e.preventDefault(); void startVoice(); }
       else if (key === "t") { e.preventDefault(); startTyping(); }
+      else if (key === "f") { e.preventDefault(); const at = startTyping(); if (at !== null) void grabFrame(at); }
       else if (key === "g" || (key === "Enter" && !hasOpen)) { e.preventDefault(); if (!hasOpen) void answer("good"); }
       else if (key === "Enter" || key === "n") { e.preventDefault(); if (hasOpen) goNext(clip.id); }
       else if (key === "s") { e.preventDefault(); if (!hasOpen) void answer("skipped"); }
@@ -265,7 +396,7 @@ export function ReviewInbox() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel, clip, hasOpen, answer, startVoice, startTyping, endVoice, cancelNote, goNext, undo, togglePlay, seek]);
+  }, [panel, clip, hasOpen, annotating, pinned, answer, startVoice, startTyping, endVoice, cancelNote, grabFrame, goNext, undo, togglePlay, seek]);
 
   // ---- what to draw
   if (!user && !authLoading) return <main id="main-content" className="rv rv-empty"><div className="rv-card">
@@ -283,22 +414,42 @@ export function ReviewInbox() {
   const mark = (t: number) => ({ left: `${Math.min(100, (t / total) * 100)}%` }) as CSSProperties;
   const counts = { good: strip.filter((c) => c.state === "good").length, noted: strip.filter((c) => c.state === "noted").length, skipped: strip.filter((c) => c.state === "skipped").length };
 
+  // The note's pictures: grab the clip's frame, the ones added so far (click to mark up), and paste, drop or pick.
+  const pictures = <div className="rv-pics" data-testid="rv-pics">
+    <button type="button" className="rv-grab" data-testid="rv-grab" disabled={grabbing || room <= 0} onClick={() => void grabFrame(pinned)}
+      title="Take the clip's picture at this second, then circle what is wrong"><Camera size={16} aria-hidden="true" /> {grabbing ? "Taking the frame…" : "Grab this frame"}{panel === "voice" && <kbd>F</kbd>}</button>
+    <ShotStrip shots={pics.filter((a) => a.kind === "picture").map((a) => ({ id: a.id, url: a.url }))}
+      onMarkUp={(id) => { const a = pics.find((p) => p.id === id); if (a) setAnnotating({ src: a.url, owned: false, name: a.name, replace: id }); }}
+      onRemove={(id) => setAttachments(picsRef.current.filter((a) => a.id !== id))} />
+    <FileChips files={pics.filter((a) => a.kind === "video").map((a) => ({ id: a.id, name: a.name, size: a.blob.size, contentType: a.type }))}
+      onRemove={(id) => setAttachments(picsRef.current.filter((a) => a.id !== id))} />
+    {room > 0 && <DropZone onFiles={(files) => void addFiles(files)} label="Paste a screenshot (Ctrl+V), drop one here, or pick a picture or video" />}
+  </div>;
+  // Save says what it waits for when there is nothing to save yet.
+  const saveLabel = (ready: boolean) => (busy ? "Saving…" : ready ? <>Save, next <kbd>⏎</kbd></> : "Type a note or add a picture first");
+
   let actions: ReactNode;
   if (panel === "voice") actions = <div className="rv-talk" data-testid="rv-recording">
-    <span className="rv-meter" ref={meterRef} aria-hidden="true"><Mic size={22} /></span>
-    <div className="rv-talk-words"><small>At {clock(pinned)} · {clock(voiceSeconds)}</small><p>{voiceWords || "Listening. Say what is wrong."}</p></div>
-    <button type="button" className="rv-go" disabled={busy} onClick={() => void endVoice(false)}>Save, next <kbd>⏎</kbd></button>
-    <button type="button" className="rv-quiet" disabled={busy} onClick={() => void endVoice(true)}>Save, more to say <kbd>M</kbd></button>
-    <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+    <div className="rv-talk-row">
+      <span className="rv-meter" ref={meterRef} aria-hidden="true"><Mic size={22} /></span>
+      <div className="rv-talk-words"><small>At {clock(pinned)} · {clock(voiceSeconds)}{voiceSeconds > voiceLimit - 60 ? ` · saves itself at ${clock(voiceLimit)}` : ""}</small><p>{voiceWords || "Listening. Say what is wrong."}</p></div>
+      <button type="button" className="rv-go" data-testid="rv-save" disabled={busy} aria-busy={busy} onClick={() => void endVoice(false)}>{saveLabel(true)}</button>
+      <button type="button" className="rv-quiet" disabled={busy} onClick={() => void endVoice(true)}>Save, more to say <kbd>M</kbd></button>
+      <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+    </div>
+    {pictures}
   </div>;
-  else if (panel === "type") actions = <div className="rv-talk">
-    <span className="rv-meter is-still" aria-hidden="true"><Keyboard size={20} /></span>
-    <div className="rv-talk-words"><small>At {clock(pinned)}</small>
-      <textarea ref={typeBox} value={typed} maxLength={4000} placeholder="What is wrong here?" onChange={(e) => setTyped(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveTyped(false); } else if (e.key === "Escape") cancelNote(); }} /></div>
-    <button type="button" className="rv-go" disabled={busy || !typed.trim()} onClick={() => saveTyped(false)}>Save, next <kbd>⏎</kbd></button>
-    <button type="button" className="rv-quiet" disabled={busy || !typed.trim()} onClick={() => saveTyped(true)}>Save, more to say</button>
-    <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+  else if (panel === "type") actions = <div className="rv-talk" data-testid="rv-typing">
+    <div className="rv-talk-row">
+      <span className="rv-meter is-still" aria-hidden="true"><Keyboard size={20} /></span>
+      <div className="rv-talk-words"><small>At {clock(pinned)}</small>
+        <textarea ref={typeBox} value={typed} maxLength={4000} placeholder="What is wrong here?" onChange={(e) => setTyped(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveTyped(false); } else if (e.key === "Escape") cancelNote(); }} /></div>
+      <button type="button" className="rv-go" data-testid="rv-save" disabled={busy || !canSaveTyped} aria-busy={busy} onClick={() => saveTyped(false)}>{saveLabel(canSaveTyped)}</button>
+      <button type="button" className="rv-quiet" disabled={busy || !canSaveTyped} onClick={() => saveTyped(true)}>Save, more to say</button>
+      <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+    </div>
+    {pictures}
   </div>;
   else actions = <div className="rv-answers">
     {hasOpen
@@ -359,8 +510,9 @@ export function ReviewInbox() {
       {(suspects.length > 0 || answered.length > 0 || mine.length > 0) && <div className="rv-notes">
         {answered.map((n) => <div key={n.id} className="rv-note is-recheck">
           <button type="button" className="rv-at" onClick={() => seek(n.t)}>{clock(n.t)}</button>
-          <div><p>You: {n.text || "(voice note)"}</p>{n.reply && <p className="rv-reply">Fixed: {n.reply}{n.fixedIn ? ` (${n.fixedIn})` : ""}</p>}</div>
+          <div><p>You: {n.text || (n.files?.length ? "(pictures)" : "(voice note)")}</p>{n.reply && <p className="rv-reply">Fixed: {n.reply}{n.fixedIn ? ` (${n.fixedIn})` : ""}</p>}</div>
           {db && <NoteSound db={db} clipId={clip.id} note={n} />}
+          {db && n.files?.length ? <NoteFiles db={db} clipId={clip.id} files={n.files} /> : null}
         </div>)}
         {suspects.map((s) => <div key={`s${s.index}`} className="rv-note is-suspect" data-testid="rv-suspect">
           <button type="button" className="rv-at" onClick={() => seek(s.t)}>{clock(s.t)}</button>
@@ -370,8 +522,9 @@ export function ReviewInbox() {
         </div>)}
         {mine.map((n) => <div key={n.id} className={`rv-note is-${n.state}`} data-testid="rv-note">
           <button type="button" className="rv-at" onClick={() => seek(n.t)}>{clock(n.t)}</button>
-          <div><p>{n.text || "Voice note saved. The words will be added from the audio."}</p></div>
+          <div><p>{n.text || (n.audio ? "Voice note saved. The words will be added from the audio." : "Pictures saved.")}</p></div>
           {db && <NoteSound db={db} clipId={clip.id} note={n} />}
+          {db && n.files?.length ? <NoteFiles db={db} clipId={clip.id} files={n.files} /> : null}
           {n.state === "open" && <button type="button" className="rv-mini" onClick={() => void removeNote(n)} title="Remove this note" aria-label="Remove this note"><X size={13} aria-hidden="true" /></button>}
           {n.state === "fixed" && <CircleCheck size={15} className="rv-ok" aria-label="Fixed" />}
         </div>)}
@@ -394,5 +547,6 @@ export function ReviewInbox() {
         <i aria-hidden="true">{c.state === "good" ? <Check size={11} /> : c.state === "skipped" ? <SkipForward size={11} /> : c.state === "noted" ? <Mic size={11} /> : c.state === "recheck" ? <RotateCcw size={11} /> : null}</i>
       </button>)}
     </nav>}
+    {annotating && <ScreenshotAnnotator src={annotating.src} onSave={finishMarkup} onCancel={() => finishMarkup(null)} />}
   </main>;
 }

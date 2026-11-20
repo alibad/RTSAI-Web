@@ -201,11 +201,26 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['answered']) || request.resource.data.answered == request.time)
         && (!('dismissed' in request.resource.data) || (request.resource.data.dismissed is list && request.resource.data.dismissed.size() <= 40));
 
-      // What is wrong, at which second of the clip: typed, or a voice note's transcript.
+      // A picture or video in a note: named by the note, its bytes already written (the files below).
+      function noteFile(f) {
+        return f is map && f.keys().hasOnly(['id', 'kind', 'type', 'bytes', 'chunks', 'name', 'width', 'height'])
+          && f.keys().hasAll(['id', 'kind', 'type', 'bytes', 'chunks', 'name'])
+          && f.id is string && f.id.matches('^[a-z0-9]{16}$')
+          && ((f.kind == 'picture' && f.type in ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+            || (f.kind == 'video' && f.type in ['video/webm', 'video/mp4', 'video/quicktime']))
+          && f.bytes is int && f.bytes > 0 && f.bytes <= 10485760
+          && f.chunks is int && f.chunks >= 1 && f.chunks <= 12
+          && (f.chunks - 1) * 921600 < f.bytes && f.bytes <= f.chunks * 921600
+          && f.name is string && f.name.size() <= 120
+          && (!('width' in f) || f.width is int) && (!('height' in f) || f.height is int)
+          && exists(/databases/$(database)/documents/reviewClips/$(clipId)/files/$(f.id + '_0'));
+      }
+
+      // What is wrong, at which second of the clip: typed, or a voice note's transcript, with pictures if any.
       match /notes/{noteId} {
         allow read, delete: if owner();
         allow create: if owner() && noteId.matches('^[a-z0-9]{16}$')
-          && request.resource.data.keys().hasOnly(['t', 'text', 'said', 'transcript', 'audio', 'state', 'round', 'created'])
+          && request.resource.data.keys().hasOnly(['t', 'text', 'said', 'transcript', 'audio', 'files', 'state', 'round', 'created'])
           && request.resource.data.keys().hasAll(['t', 'text', 'said', 'transcript', 'state', 'round', 'created'])
           && request.resource.data.t is number && request.resource.data.t >= 0 && request.resource.data.t <= 3600
           && request.resource.data.text is string && request.resource.data.text.size() <= 4000
@@ -219,7 +234,13 @@ service cloud.firestore {
             && request.resource.data.audio.bytes is int && request.resource.data.audio.bytes > 0 && request.resource.data.audio.bytes <= 3686400
             && request.resource.data.audio.chunks is int && request.resource.data.audio.chunks >= 1 && request.resource.data.audio.chunks <= 4
             && request.resource.data.audio.seconds is number && request.resource.data.audio.seconds >= 0 && request.resource.data.audio.seconds <= 900
-            && exists(/databases/$(database)/documents/reviewClips/$(clipId)/audio/$(noteId + '_0'))));
+            && exists(/databases/$(database)/documents/reviewClips/$(clipId)/audio/$(noteId + '_0'))))
+          && (!('files' in request.resource.data) || (request.resource.data.files is list
+            && request.resource.data.files.size() >= 1 && request.resource.data.files.size() <= 4
+            && noteFile(request.resource.data.files[0])
+            && (request.resource.data.files.size() < 2 || noteFile(request.resource.data.files[1]))
+            && (request.resource.data.files.size() < 3 || noteFile(request.resource.data.files[2]))
+            && (request.resource.data.files.size() < 4 || noteFile(request.resource.data.files[3]))));
         // The owner's check of a fix (fixed, or open again), or a corrected transcript.
         allow update: if owner()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'text', 'transcript'])
@@ -232,6 +253,17 @@ service cloud.firestore {
       match /audio/{chunkId} {
         allow read, delete: if owner();
         allow create: if owner() && chunkId.matches('^[a-z0-9]{16}_[0-3]$')
+          && request.resource.data.keys().hasOnly(['data'])
+          && request.resource.data.data is bytes
+          && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 921600;
+        allow update: if false;
+      }
+
+      // A note's pictures and videos, {fileId}_{index}: at most 12 chunks of 900 KiB (10 MiB, the same limit as the
+      // site's feedback files), each written once.
+      match /files/{chunkId} {
+        allow read, delete: if owner();
+        allow create: if owner() && chunkId.matches('^[a-z0-9]{16}_([0-9]|1[01])$')
           && request.resource.data.keys().hasOnly(['data'])
           && request.resource.data.data is bytes
           && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 921600;

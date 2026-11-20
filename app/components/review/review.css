@@ -1,11 +1,14 @@
 /* The Review inbox (ReviewInbox.tsx): one screen, the clip as large as the window allows, answers under it. */
 .rv-page { height: 100dvh; display: flex; flex-direction: column; background: #0c100c; }
-.rv { --rv-line: rgba(240, 238, 230, .14); --rv-panel: #141a15; --rv-text: #f0eee6; --rv-muted: #a4a898; --rv-faint: #747a6c; --rv-gold: #f1d28b;
+.rv { --rv-line: rgba(240, 238, 230, .14); --rv-panel: #141a15; --rv-text: #f0eee6; --rv-muted: #a4a898; --rv-faint: #8b9183; --rv-gold: #f1d28b;
   --rv-good: #86d67c; --rv-bad: #ef5b3f; --rv-amber: #f0b65a; --rv-voice: #ff7a5c;
   flex: 1; min-height: 0; overflow-y: auto; width: min(1500px, 100%); margin: 0 auto; padding: 10px 18px 12px; display: flex; flex-direction: column; gap: 8px; color: var(--rv-text); }
 .rv kbd { font: 600 10px/1 var(--font-mono), monospace; padding: 3px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: .6; }
-.rv button { font: inherit; color: inherit; cursor: pointer; }
-.rv button:disabled { cursor: default; opacity: .45; }
+/* :where() keeps these at the weight of a bare element, so every button's own class decides its colour. (As ".rv button"
+   they beat ".rv-go" and drew the Save button's text white on pale gold, 1.3:1: it looked switched off.) */
+:where(.rv) button { font: inherit; color: inherit; cursor: pointer; }
+:where(.rv) button:disabled { cursor: default; opacity: .45; }
+:where(.rv) button:focus-visible { outline: 2px solid var(--rv-text); outline-offset: 2px; }
 
 .rv-top { display: flex; align-items: center; gap: 14px; min-height: 34px; }
 .rv-top h1 { margin: 0; font-size: 17px; font-weight: 620; letter-spacing: -.01em; }
@@ -96,7 +99,8 @@
 .rv-type { align-self: center; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; background: none; color: var(--rv-faint); font-size: 12.5px; }
 .rv-type:hover { color: var(--rv-text); }
 
-.rv-talk { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255, 122, 92, .6); background: rgba(255, 122, 92, .08); }
+.rv-talk { display: grid; gap: 8px; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255, 122, 92, .6); background: rgba(255, 122, 92, .08); }
+.rv-talk-row { display: flex; align-items: center; gap: 12px; min-height: 42px; }
 .rv-meter { --level: 0; flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--rv-voice); color: #1d0b06;
   box-shadow: 0 0 0 calc(3px + var(--level) * 16px) rgba(255, 122, 92, .3); transition: box-shadow .06s linear; }
 .rv-meter.is-still { background: rgba(255, 255, 255, .1); color: var(--rv-text); box-shadow: none; }
@@ -106,11 +110,34 @@
 .rv-talk-words textarea { width: 100%; height: 44px; resize: none; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--rv-line); background: rgba(0, 0, 0, .35); color: var(--rv-text); font: inherit; font-size: 14px; line-height: 1.35; outline: none; }
 .rv-talk-words textarea:focus { border-color: var(--rv-gold); }
 .rv-go, .rv-quiet { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 15px; border-radius: 9px; font-size: 14px; font-weight: 600; transition: transform .06s, background .12s; }
-.rv-go { border: 0; background: var(--rv-gold); color: #1b1608; }
-.rv-go:hover:not(:disabled) { background: #f7dfa6; }
+/* Save: the note's own colour, solid, dark text (7.4:1), a white ring for the keyboard. With nothing to save it is an
+   empty dashed outline that says what is missing. */
+.rv .rv-go { border: 1px solid transparent; background: var(--rv-voice); color: #1d0b06; font-weight: 700; box-shadow: 0 3px 14px rgba(255, 122, 92, .35); }
+.rv .rv-go kbd { opacity: .75; }
+.rv .rv-go:hover:not(:disabled) { background: #ff9576; }
+.rv .rv-go:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.rv .rv-go[aria-busy="true"] { opacity: .8; cursor: progress; }
+.rv .rv-go:disabled:not([aria-busy="true"]) { opacity: 1; background: transparent; border: 1px dashed rgba(240, 238, 230, .4); color: var(--rv-muted); box-shadow: none; font-weight: 560; cursor: not-allowed; }
 .rv-quiet { border: 1px solid var(--rv-line); background: transparent; color: var(--rv-muted); font-weight: 520; }
 .rv-quiet:hover:not(:disabled) { color: var(--rv-text); background: rgba(255, 255, 255, .07); }
 .rv-go:active:not(:disabled), .rv-quiet:active:not(:disabled) { transform: translateY(1px); }
+
+/* Pictures in a note: the site's feedback tray (feedback-kit.css), small, in the inbox's colours. */
+.rv-pics { display: flex; align-items: center; gap: 8px; min-width: 0;
+  --fbk-surface: rgba(0, 0, 0, .3); --fbk-ink: var(--rv-text); --fbk-muted: var(--rv-muted); --fbk-edge: var(--rv-line); --fbk-accent: var(--rv-gold); --fbk-accent-ink: #1b1608; --fbk-radius: 8px; }
+.rv-grab { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 13px; border-radius: 9px; border: 1px solid rgba(241, 210, 139, .6); background: rgba(241, 210, 139, .1); color: var(--rv-gold); font-size: 13.5px; font-weight: 600; }
+.rv-grab:hover:not(:disabled) { background: rgba(241, 210, 139, .2); }
+.rv-pics .fbk-shots { flex: none; flex-wrap: nowrap; gap: 6px; }
+.rv-pics .fbk-shot, .rv-pics .fbk-shot:only-child { width: 104px; height: 58px; aspect-ratio: auto; margin: 0; }
+.rv-pics .fbk-shot:only-child .fbk-shot-image img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
+.rv-pics .fbk-shot-hint { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 10px; }
+.rv-pics .fbk-remove { top: 3px; right: 3px; width: 22px; height: 22px; }
+.rv-pics .fbk-files { flex: none; flex-wrap: nowrap; }
+.rv-pics .fbk-drop { flex: 1; width: auto; min-width: 0; min-height: 40px; }
+.rv-note-files { display: inline-flex; gap: 4px; }
+.rv-note-files a { display: block; width: 52px; height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rv-line); }
+.rv-note-files img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rv-note-files video { height: 30px; max-width: 120px; border-radius: 4px; }
 
 /* Every clip of the front as a picture: where you are, and what you answered. */
 /* Right padding: the site's floating Feedback button sits over that corner. */
@@ -157,5 +184,5 @@
   .rv-facts { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
   .rv-side, .rv-side.is-end { flex-direction: row; }
   .rv-answer { min-width: 0; flex: 1 1 140px; }
-  .rv-talk { flex-wrap: wrap; }
+  .rv-talk-row, .rv-pics { flex-wrap: wrap; }
 }
