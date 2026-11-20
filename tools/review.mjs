@@ -114,15 +114,18 @@ function publish(folder, files, batch) {
     for (const f of unique) { const to = path.join(stage, batch, f); fs.mkdirSync(path.dirname(to), { recursive: true }); fs.copyFileSync(path.join(folder, f), to); }
     // Clip files never change under a name; keep them out of search results.
     fs.writeFileSync(path.join(stage, "_headers"), "/*\n  Cache-Control: public, max-age=31536000, immutable\n  X-Robots-Tag: noindex\n  Access-Control-Allow-Origin: *\n");
-    const wrangler = `npx wrangler pages deploy "${stage}" --project-name ${pagesProject} --branch main --commit-dirty=true`;
+    // Run the uploader from the upload folder itself: from the repository it also finds the site build's
+    // .wrangler/deploy/config.json and any wrangler.jsonc in a folder above, and refuses to choose (20 Nov 2026).
+    const bin = path.join(repo, "node_modules", "wrangler", "bin", "wrangler.js");
+    const wrangler = `node "${bin}" pages deploy "${stage}" --project-name ${pagesProject} --branch main --commit-dirty=true`;
     let out;
-    try { out = execSync(wrangler, { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); }
+    try { out = execSync(wrangler, { cwd: stage, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); }
     catch (e) {
       const text = `${e.stdout ?? ""}${e.stderr ?? ""}`;
-      if (!/Project not found|8000007/i.test(text)) die(`Cloudflare upload failed:\n${text.slice(-1500)}`);
+      if (!/Project not found|8000007|project "[^"]+" does not exist/i.test(text)) die(`Cloudflare upload failed:\n${text.slice(-1500)}`);
       // First upload ever: the project does not exist yet.
-      execSync(`npx wrangler pages project create ${pagesProject} --production-branch main`, { cwd: repo, stdio: "inherit" });
-      out = execSync(wrangler, { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      execSync(`node "${bin}" pages project create ${pagesProject} --production-branch main`, { cwd: stage, stdio: "inherit" });
+      out = execSync(wrangler, { cwd: stage, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     }
     const base = /https:\/\/[a-z0-9]+\.[a-z0-9-]+\.pages\.dev/.exec(out)?.[0];
     if (!base) die(`Cloudflare upload gave no address:\n${out.slice(-1500)}`);
