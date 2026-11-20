@@ -170,6 +170,14 @@ body:has(.cf) { font-family: Arial, sans-serif; }   /* the pickers' lists open o
 .cf-who button:hover { border-color: var(--gold); background: #2c2a1f; }
 .cf-who .cf-face { width: 24px; height: 24px; font-size: 10px; box-shadow: 0 0 0 1px #0009; }
 @media (max-width: 640px) { .cf-person { grid-template-columns: 1fr; } .cf-person > .cf-face { grid-row: auto; } .cf-person h3 { padding-right: 0; } .cf-allwar { position: static; justify-self: start; } }
+/* A chapter with a painted still: the still beside its words on the wall, a small one in a unit's chapter chip. */
+.cf-chapter.art { display: grid; grid-template-columns: minmax(220px, 34%) 1fr; gap: 16px; align-items: center; padding-left: 0; border-left: 0; }
+.cf-chapter.art > img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 9px; box-shadow: 0 0 0 1px #000a, 0 10px 24px #0008; border-left: 3px solid var(--gold); }
+.cf-body.split .cf-chapter.art { grid-template-columns: minmax(150px, 30%) 1fr; gap: 12px; }
+.cf-chapterchip.art { display: flex; align-items: center; gap: 10px; padding: 5px 10px 5px 5px; }
+.cf-chapterchip.art img { width: 74px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 5px; flex: none; }
+.cf-chapterchip > span { display: grid; justify-items: start; }
+@media (max-width: 640px) { .cf-chapter.art { grid-template-columns: 1fr; } }
 .cf-callsign { display: inline-block; margin-left: 8px; color: var(--gold); font-style: italic; }
 .cf-callsign::before { content: "“"; } .cf-callsign::after { content: "”"; }
 .cf-refit { margin: -4px 0 10px; color: var(--mute); font-size: 13px; }

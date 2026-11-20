@@ -14,6 +14,8 @@ export type Chapter = {
   text: string;
   /** The campaign chapter it belongs to ("Act II · Bring the Islands Online"), when it has one. */
   campaign?: string | null;
+  /** A painted still that heads the chapter: a stories-folder path (chapters/<faction>/<id>.webp) or an address. */
+  art?: string;
 };
 export type UnitStory = {
   /** What its crews call it. */
@@ -62,7 +64,7 @@ export function castOf(fs: FactionStory | undefined, id: string): Person[] {
   return (fs?.cast ?? []).filter(p => p.units.includes(id));
 }
 
-/** Where a portrait is fetched from: an address as it is, a stories-folder path through the Forge's API. */
+/** Where a portrait or a chapter's still is fetched from: an address as it is, a stories-folder path through the Forge's API. */
 export function portraitSrc(portrait: string | undefined, api: string) {
   return !portrait ? undefined : /^https?:\/\//.test(portrait) ? portrait : `${api}/story-file/${portrait.split("/").map(encodeURIComponent).join("/")}`;
 }

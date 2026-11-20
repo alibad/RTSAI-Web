@@ -141,8 +141,10 @@ function StoryCard({ story, chapter, onChapter, people, paint, onPerson }: { sto
   people: Person[]; paint?: string; onPerson: (id: string) => void }) {
   return (
     <section className="cf-story">
-      {chapter ? <button className="cf-chapterchip" onClick={onChapter} title="Read this chapter of the war, with every unit in it">
-        <b>{chapter.title}</b>{chapter.campaign ? <em>{chapter.campaign}</em> : <em>{chapter.when}</em>}
+      {chapter ? <button className={`cf-chapterchip${chapter.art ? " art" : ""}`} onClick={onChapter} title="Read this chapter of the war, with every unit in it">
+        {/* eslint-disable-next-line @next/next/no-img-element -- a draft still from the stories folder */}
+        {chapter.art ? <img src={portraitSrc(chapter.art, API)} alt="" loading="lazy" /> : null}
+        <span><b>{chapter.title}</b>{chapter.campaign ? <em>{chapter.campaign}</em> : <em>{chapter.when}</em>}</span>
       </button> : null}
       {people.length ? <div className="cf-who" aria-label="People in this story">{people.map(p => (
         <button key={p.id} onClick={() => onPerson(p.id)} title={`${p.role} Follow ${p.name} through the war.`}><Face name={p.name} paint={paint} portrait={p.portrait} />{p.name}</button>
@@ -497,10 +499,14 @@ export function ConceptForge() {
               return (
                 <Fragment key={e.id}>
                   {ofGame && e.group && e.group !== shown[i - 1]?.group ? <h3 className="cf-group">{e.group}</h3> : null}
-                  {ch ? <header className="cf-chapter">
-                    <span>{ch.when}{ch.campaign ? <em>{ch.campaign}</em> : null}</span>
-                    <h3>{ch.title}</h3>
-                    <p>{ch.text}</p>
+                  {ch ? <header className={`cf-chapter${ch.art ? " art" : ""}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- a draft still from the stories folder */}
+                    {ch.art ? <img src={portraitSrc(ch.art, API)} alt="" loading="lazy" /> : null}
+                    <div>
+                      <span>{ch.when}{ch.campaign ? <em>{ch.campaign}</em> : null}</span>
+                      <h3>{ch.title}</h3>
+                      <p>{ch.text}</p>
+                    </div>
                   </header> : null}
                   <button data-id={e.id} className={`cf-tile ${rr?.verdict ?? ""}${e.id === sel ? " on" : ""}`} onClick={() => show(e.id, !sel)} title={e.role}>
                     {picture(e)}
