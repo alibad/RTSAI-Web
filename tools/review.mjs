@@ -2,7 +2,7 @@
 // The Review inbox from a session's side (docs/review-inbox.md): add clips for the owner, read what the owner
 // answered, fetch a voice note, and send a fixed clip back to be checked again.
 //
-//   node tools/review.mjs add <folder>                        the clips named by <folder>/clips.json
+//   node tools/review.mjs add <folder> [--only id,id]         the clips named by <folder>/clips.json
 //   node tools/review.mjs feedback [--front battles] [--json] open notes with each clip's facts, time, transcript
 //   node tools/review.mjs audio <clip> <note> [--out <file>]  a voice note's audio
 //   node tools/review.mjs files <clip> <note> [--out <folder>] a note's pictures (a frame the owner circled, a screenshot) and videos
@@ -31,7 +31,7 @@ const verb = argv[0];
 const flag = (k) => argv.includes(`--${k}`);
 const opt = (k, d) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
 const opts = (k) => argv.flatMap((a, i) => (a === `--${k}` ? [argv[i + 1]] : []));
-const VALUE_FLAGS = new Set(["front", "out", "text", "reply", "in", "video", "poster", "note", "serve-dir", "serve-url", "by", "heard", "at"]);
+const VALUE_FLAGS = new Set(["front", "out", "text", "reply", "in", "video", "poster", "note", "serve-dir", "serve-url", "by", "heard", "at", "only"]);
 const positional = argv.slice(1).filter((a, i, all) => !a.startsWith("--") && !(all[i - 1]?.startsWith("--") && VALUE_FLAGS.has(all[i - 1].slice(2))));
 const die = (message) => { console.error(message); process.exit(1); };
 
@@ -235,7 +235,10 @@ if (verb === "add") {
   await requireReleased();
   const folder = path.resolve(positional[0] ?? die("usage: node tools/review.mjs add <folder with clips.json>"));
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "clips.json"), "utf8"));
-  const list = Array.isArray(manifest) ? manifest : manifest.clips ?? die("clips.json needs a list of clips.");
+  // --only id,id: some of the folder's clips (a re-film of a few, the others left as they are in the inbox).
+  const only = opt("only")?.split(",").map((x) => x.trim()).filter(Boolean);
+  const list = (Array.isArray(manifest) ? manifest : manifest.clips ?? die("clips.json needs a list of clips.")).filter((c) => !only || only.includes(c.id));
+  if (only && list.length !== only.length) die(`--only names a clip that is not in clips.json: ${only.filter((id) => !list.some((c) => c.id === id)).join(", ")}`);
   const top = Array.isArray(manifest) ? {} : manifest;
   const by = opt("by", top.by ?? top.session ?? "a session");
   const replace = flag("replace");

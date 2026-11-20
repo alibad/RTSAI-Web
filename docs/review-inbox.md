@@ -109,7 +109,7 @@ file may be just the list:
 - The two shapes mix: a short clip can still carry `sides`, `mode`, `repro` or `chips`.
 
 A clip that is already in the inbox is refused. `--replace` swaps a broken recording (same round, the owner's answer
-is kept). `node tools/review.mjs remove <clip>...` takes clips out again.
+is kept); `--only id,id` takes only some of the folder's clips (a re-film of a few). `node tools/review.mjs remove <clip>...` takes clips out again.
 
 #### Films must not stutter
 
