@@ -14,6 +14,8 @@
  *   GET  /api/concept-forge/stories        every faction's story drafts (D:\Generated\RTSAI\stories\<faction>.json,
  *                                          RTSAI_STORIES_DIR to override): the faction's war in chapters and each
  *                                          unit's own story, for originals and the game's units alike
+ *   GET  /api/concept-forge/story-file/<path>   a picture from the stories folder (the cast's draft portraits,
+ *                                          portraits/<faction>/<person>.webp)
  *   GET  /api/concept-forge/file/<path>    a sheet, sound or effect from the drafts folder; also catalogue.json (the
  *                                          mixes: every turret on every hull it fits, tools/forge/forge_mix.py) and
  *                                          its picture sheets (atlas/)
@@ -31,6 +33,8 @@ export const forgeRoot = () => resolve(process.env.RTSAI_FORGE_DIR ?? "D:/Genera
 export const storiesRoot = () => resolve(process.env.RTSAI_STORIES_DIR ?? "D:/Generated/RTSAI/stories");
 
 const MIME: Record<string, string> = { ".png": "image/png", ".ogg": "audio/ogg", ".json": "application/json", ".wav": "audio/wav", ".pal": "application/octet-stream" };
+/** The pictures the stories folder may serve (nothing else in it is fetchable). */
+const PICTURES: Record<string, string> = { ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg" };
 const FACTION_IDS = new Set(["iran", "china", "turkey", "saudi-arabia", "yemen", "israel", "lebanon"]);
 const VERDICTS = new Set(["keep", "rework", "drop"]);
 
@@ -80,6 +84,15 @@ export function createConceptForgeMiddleware(root = forgeRoot(), stories = stori
           return f ? [{ id: f.id, name: f.name, units: f.units.filter(u => u.art) }] : [];
         });
         send(res, 200, { factions, effects: projectEffects() });
+        return;
+      }
+      if (req.method === "GET" && path.startsWith("/story-file/")) {
+        let rel: string;
+        try { rel = decodeURIComponent(path.slice("/story-file/".length)); } catch { res.writeHead(400).end(); return; }
+        const file = resolve(stories, rel);
+        if (!file.startsWith(resolve(stories) + sep) || !PICTURES[extname(file)] || !existsSync(file)) { res.writeHead(404).end(); return; }
+        res.writeHead(200, { "Content-Type": PICTURES[extname(file)], "Cache-Control": "no-store" });
+        res.end(readFileSync(file));
         return;
       }
       if (req.method === "GET" && path.startsWith("/file/")) {

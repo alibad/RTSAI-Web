@@ -44,7 +44,8 @@ export type Person = {
   arc: { chapter: string; text: string }[];
   /** The units (story keys in this file) they crew, built, command or are remembered in. */
   units: string[];
-  /** A campaign commander's published portrait (an https address); everyone else wears their initials. */
+  /** Their portrait: a campaign commander's published one (an https address), or a draft from the stories folder
+   *  (portraits/<faction>/<id>.webp, served by the Forge's story-file route). Without one they wear their initials. */
   portrait?: string;
 };
 export type FactionStory = { faction: string; title: string; line: string; chapters: Chapter[]; cast?: Person[]; units: Record<string, UnitStory> };
@@ -59,6 +60,11 @@ export function storyOf(stories: Stories, faction: string, id: string) {
 /** The people of a faction's cast who are in a unit's story. */
 export function castOf(fs: FactionStory | undefined, id: string): Person[] {
   return (fs?.cast ?? []).filter(p => p.units.includes(id));
+}
+
+/** Where a portrait is fetched from: an address as it is, a stories-folder path through the Forge's API. */
+export function portraitSrc(portrait: string | undefined, api: string) {
+  return !portrait ? undefined : /^https?:\/\//.test(portrait) ? portrait : `${api}/story-file/${portrait.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 /** Initials for a person's badge: the first letters of their first and last names. */

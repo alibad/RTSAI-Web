@@ -29,7 +29,7 @@ import { actionSounds, API, conceptItem, conceptSounds, conceptWeapons, forgeFil
 import { MakerBar, useSiteBeside } from "../MakerBar";
 import { OptionSelect } from "../ui/fields";
 import { Flag } from "../art/review/Chrome";
-import { initials, storyOf, type Chapter, type Person, type Stories, type UnitStory } from "./stories";
+import { initials, portraitSrc, storyOf, type Chapter, type Person, type Stories, type UnitStory } from "./stories";
 import "../art/viewer/viewer.css";
 import "./forge.css";
 
@@ -161,7 +161,7 @@ function Face({ name, paint, portrait }: { name: string; paint?: string; portrai
   return <i className={`cf-face${portrait && !broken ? " pic" : ""}`} style={{ ["--fac" as string]: paint ?? "#6b6f63" }} aria-hidden="true">
     {portrait && !broken
       // eslint-disable-next-line @next/next/no-img-element -- the campaign's published portrait, served by its CDN
-      ? <img src={portrait} alt="" loading="lazy" onError={() => setBroken(true)} />
+      ? <img src={portraitSrc(portrait, API)} alt="" loading="lazy" onError={() => setBroken(true)} />
       : initials(name)}
   </i>;
 }
