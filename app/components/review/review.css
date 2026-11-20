@@ -1,8 +1,8 @@
 /* The Review inbox (ReviewInbox.tsx): one screen, the clip as large as the window allows, answers under it. */
-.rv-page { min-height: 100dvh; display: flex; flex-direction: column; background: #0c100c; }
+.rv-page { height: 100dvh; display: flex; flex-direction: column; background: #0c100c; }
 .rv { --rv-line: rgba(240, 238, 230, .14); --rv-panel: #141a15; --rv-text: #f0eee6; --rv-muted: #a4a898; --rv-faint: #747a6c; --rv-gold: #f1d28b;
   --rv-good: #86d67c; --rv-bad: #ef5b3f; --rv-amber: #f0b65a; --rv-voice: #ff7a5c;
-  flex: 1; min-height: 0; width: min(1500px, 100%); margin: 0 auto; padding: 10px 18px 12px; display: flex; flex-direction: column; gap: 8px; color: var(--rv-text); }
+  flex: 1; min-height: 0; overflow-y: auto; width: min(1500px, 100%); margin: 0 auto; padding: 10px 18px 12px; display: flex; flex-direction: column; gap: 8px; color: var(--rv-text); }
 .rv kbd { font: 600 10px/1 var(--font-mono), monospace; padding: 3px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: .6; }
 .rv button { font: inherit; color: inherit; cursor: pointer; }
 .rv button:disabled { cursor: default; opacity: .45; }
@@ -22,8 +22,9 @@
 .rv-mini.is-bad:hover:not(:disabled) { color: #fff; background: rgba(239, 91, 63, .28); border-color: var(--rv-bad); }
 
 /* The clip takes every pixel the answers leave it. */
-.rv-stage { position: relative; flex: 1 1 0; min-height: 220px; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: #050705; border: 1px solid var(--rv-line); }
-.rv-stage video { width: 100%; height: 100%; object-fit: contain; display: block; cursor: pointer; background: #050705; }
+.rv-stage { position: relative; flex: 1 1 0; min-height: 240px; border-radius: 10px; overflow: hidden; background: #050705; border: 1px solid var(--rv-line); }
+/* Out of the flow: the stage's size comes from the window, never from the clip's own size, and the clip is fitted whole. */
+.rv-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; cursor: pointer; background: #050705; }
 .rv-banner { position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: rgba(240, 182, 90, .94); color: #1b1405; font-size: 12.5px; font-weight: 650; box-shadow: 0 4px 18px rgba(0, 0, 0, .5); }
 .rv-banner.is-done { background: rgba(20, 26, 21, .9); color: var(--rv-muted); border: 1px solid var(--rv-line); font-weight: 520; }
 .rv-before { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--rv-line); background: rgba(12, 16, 12, .86); font-size: 12px; }
@@ -140,6 +141,17 @@
 .rv-card { display: grid; justify-items: start; gap: 10px; padding: 28px; border-radius: 14px; border: 1px solid var(--rv-line); background: var(--rv-panel); }
 .rv-card h1 { margin: 0; font-size: 22px; } .rv-card p { margin: 0; color: var(--rv-muted); }
 
+/* A short window: the clip keeps its room, the rest tightens. */
+@media (max-height: 820px) {
+  .rv { gap: 6px; padding-top: 6px; padding-bottom: 8px; }
+  .rv-facts { padding: 5px 10px; }
+  .rv-unit figcaption, .rv-flag small, .rv-what p { display: none; }
+  .rv-flag img, .rv-flag i { width: 42px; height: 28px; }
+  .rv-unit { width: 52px; } .rv-unit-art, .rv-unit-art img { width: 48px; height: 38px; }
+  .rv-answer { height: 46px; font-size: 15px; }
+  .rv-notes { max-height: 70px; }
+  .rv-strip button { width: 68px; height: 38px; }
+}
 @media (max-width: 900px) {
   .rv { padding: 8px 10px; }
   .rv-facts { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
