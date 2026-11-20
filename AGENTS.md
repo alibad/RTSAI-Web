@@ -19,8 +19,9 @@ The owner gives feedback on the game by watching short clips at `/admin/review` 
 Skip or a voice note. Use it for anything the owner should judge by eye, on any front (battles, campaign, AI,
 multiplayer, maps, art, sound, the website). How-to: `docs/review-inbox.md`.
 
-- Until the owner has released the inbox, add `--emulator` to these commands: clips go to the preview on this PC,
-  and the commands refuse to write to production.
+- The inbox is live on rtsai.net (20 Nov 2026), but the owner answers in the local preview until the one-screen page
+  is live and each front has moved its clips there (`node tools/review.mjs move <clip>...`, which carries the owner's
+  answers). Until your front has moved, add `--emulator` (docs/review-inbox.md, "Moving to the live inbox").
 - Add clips: `node tools/review.mjs add <folder with clips.json>`. Watch them yourself first and attach what you
   suspect is wrong.
 - Read the answers: `node tools/review.mjs feedback [--front <front>]` (open notes with each clip's facts, the second,

@@ -31,6 +31,22 @@ a time, each answered with one click or key. Any session working on the game can
 Run them in `RTSAI-Web`. They talk to the `rtsai-net` Firestore as the signed-in `gcloud` account (the owner's), so
 they need no key in the repository.
 
+### Moving to the live inbox (from 20 November 2026)
+
+The inbox went live on rtsai.net on 20 November 2026 (19:54) while the owner was answering in the local preview, and
+its live page still had the layout the owner rejected. One inbox for the owner, in this order:
+
+1. The one-screen page (RTSAI-Web a92a109) goes live first (the owner's yes; release-check pushes the website).
+2. Each front then moves its own chosen clips: `node tools/review.mjs move <clip>...` (the preview must be running).
+   The clip's files are uploaded and the clip goes live as it stands in the preview: the owner's answer, the suspects
+   they waved off, every note with its voice and pictures, the round and a fixed clip's "before". `--dry` shows what
+   would move. A film that stutters is refused: film it again first. Move only clips worth the owner's time, each with
+   one question (`why`) and one-sentence suspects. Battles go first.
+3. Once a front has moved, its new clips go live with plain `add` (no `--emulator`).
+4. When every front has moved, the preview is stopped (its data stays in its folder).
+
+Until step 1, keep everything in the preview: add `--emulator`.
+
 ### Before the inbox is released
 
 Putting the inbox on rtsai.net is the owner's call (the page, its Firestore rule, the clip host). Until the owner has

@@ -12,6 +12,7 @@
 //   node tools/review.mjs stutter <file or folder>...         does a film stutter? (add and fixed check it themselves)
 //   node tools/review.mjs status [--front battles] [--json]   every clip and the owner's answer
 //   node tools/review.mjs remove <clip>...                    take clips out of the inbox, with their notes (a broken recording)
+//   node tools/review.mjs move <clip>... [--dry]              from the local preview to the live inbox, with the owner's answers
 //
 // Where it talks to:
 //   default        the rtsai-net Firestore, as the signed-in gcloud account (`gcloud auth print-access-token`); clip
@@ -72,6 +73,7 @@ async function requireReleased() {
 // ---- Firestore's typed values
 function toValue(v) {
   if (v === null || v === undefined) return { nullValue: null };
+  if (Buffer.isBuffer(v)) return { bytesValue: v.toString("base64") };
   if (v instanceof Date) return { timestampValue: v.toISOString() };
   if (typeof v === "boolean") return { booleanValue: v };
   if (typeof v === "number") return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
@@ -391,6 +393,46 @@ if (verb === "add") {
   let bad = 0;
   for (const f of files) { const m = await stutterOf(f); console.log(stutterLine(path.basename(f), m)); if (m.bad) bad++; }
   console.log(`\n${bad} of ${files.length} stutter (judder over ${STUTTER_LIMIT.judder}%).`);
+} else if (verb === "move") {
+  // From the local preview (tools/review-preview.mjs, running) to the live inbox: the clip's files go to the clip host,
+  // and the clip goes in as it stands in the preview: the owner's answer, the suspects they waved off, every note with
+  // its voice and pictures, the round and the "before" of a fixed clip. Nothing the owner said is lost or asked again.
+  if (emulator) die("move goes from the preview to the live inbox: run it without --emulator.");
+  if (!positional.length) die("usage: node tools/review.mjs move <clip>... [--dry]   (the preview must be running)");
+  const dry = flag("dry");
+  if (!dry) await requireReleased();
+  const pointer = path.join(repo, ".cache", "review-preview.json");
+  if (!fs.existsSync(pointer)) die("No preview is running (tools/review-preview.mjs): move reads the clips from it.");
+  const preview = JSON.parse(fs.readFileSync(pointer, "utf8"));
+  const from = "http://127.0.0.1:8085/v1/projects/demo-rtsai/databases/(default)/documents";
+  const fromGet = async (doc) => { const r = await fetch(`${from}/${doc}`, { headers: { Authorization: "Bearer owner" } }); return r.status === 404 ? null : docOf(await r.json()); };
+  const fromList = async (col) => { const out = []; let token = ""; do { const page = await (await fetch(`${from}/${col}?pageSize=300${token ? `&pageToken=${encodeURIComponent(token)}` : ""}`, { headers: { Authorization: "Bearer owner" } })).json(); out.push(...(page.documents ?? []).map(docOf)); token = page.nextPageToken ?? ""; } while (token); return out; };
+  const serveUrl = preview.serveUrl.replace(/\/$/, "") + "/";
+  const local = (u) => (typeof u === "string" && u.startsWith(serveUrl) ? decodeURIComponent(u.slice(serveUrl.length)) : null);
+  for (const clipId of positional) {
+    const clip = await fromGet(`reviewClips/${clipId}`) ?? die(`${clipId} is not in the preview.`);
+    if (await get(`reviewClips/${clipId}`)) die(`${clipId} is already in the live inbox: nothing moved. (remove it there first if the preview's copy is the one to keep)`);
+    const notes = await fromList(`reviewClips/${clipId}/notes`), audio = await fromList(`reviewClips/${clipId}/audio`), files = await fromList(`reviewClips/${clipId}/files`);
+    // Every file the clip names, from the preview's clip folder.
+    const urls = [clip.video, clip.poster, clip.before, ...(clip.sides ?? []).flatMap((x) => [x.flag, ...x.units.map((u) => u.icon)])].filter(Boolean);
+    const rel = [...new Set(urls.map(local).filter(Boolean))];
+    if (local(clip.video)) await checkFilms([{ name: clipId, file: path.join(preview.serveDir, local(clip.video)) }]);
+    console.log(`${clipId}: ${clip.state}, round ${clip.round}, ${notes.length} note(s), ${audio.length + files.length} voice/picture chunk(s), ${rel.length} file(s) to upload`);
+    if (dry) continue;
+    const up = rel.length ? publish(preview.serveDir, rel.map((r) => r.split("/").join(path.sep)), `${clip.front}/${stamp()}-moved`) : {};
+    const to = (u) => (local(u) ? up[local(u).split("/").join(path.sep)] : u);
+    for (const c of [...audio.map((d) => ["audio", d]), ...files.map((d) => ["files", d])]) await put(`reviewClips/${clipId}/${c[0]}/${c[1].id}`, { data: c[1].data });
+    for (const n of notes) { const { id, created, ...rest } = n; await put(`reviewClips/${clipId}/notes/${id}`, { ...rest, created: new Date(created || Date.now()) }); }
+    const { created, updated, answered, ...facts } = clip;
+    delete facts.id;
+    await put(`reviewClips/${clipId}`, {
+      ...facts, video: to(clip.video), poster: to(clip.poster), before: to(clip.before),
+      sides: clip.sides?.map((x) => ({ ...x, flag: to(x.flag), units: x.units.map((u) => ({ ...u, icon: to(u.icon) })) })),
+      created: new Date(created || Date.now()), updated: new Date(updated || Date.now()), ...(answered ? { answered: new Date(answered) } : {}),
+    });
+    console.log(`  moved: live as ${clip.state}, round ${clip.round}${notes.length ? `, with ${notes.length} note(s)` : ""}`);
+  }
+  if (dry) console.log("\n--dry: nothing uploaded or written.");
 } else if (verb === "status") {
   const front = opt("front");
   const clips = await clipsWithNotes(front, () => true);
@@ -410,5 +452,5 @@ if (verb === "add") {
     console.log(`${clipId}: removed (its files stay where they were uploaded)`);
   }
 } else {
-  die("usage: node tools/review.mjs add|feedback|audio|files|transcript|fixed|stutter|status|remove ...   (docs/review-inbox.md)");
+  die("usage: node tools/review.mjs add|feedback|audio|files|transcript|fixed|stutter|status|remove|move ...   (docs/review-inbox.md)");
 }
