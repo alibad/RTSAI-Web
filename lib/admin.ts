@@ -20,7 +20,7 @@ export const onThisMachine = () => ADMIN_BUILD && typeof window !== "undefined" 
 /** The local app, where the tools that need this machine run. */
 export const LOCAL_APP = "http://127.0.0.1:3450";
 
-export type AdminSurfaceId = "campaigns" | "arena" | "evals" | "content" | "review" | "forge" | "art";
+export type AdminSurfaceId = "inbox" | "campaigns" | "arena" | "evals" | "content" | "review" | "forge" | "art";
 export type AdminSurface = {
   id: AdminSurfaceId; title: string; href: string; about: string;
   /** What it needs on this machine; null when it works on rtsai.net too. */
@@ -31,6 +31,8 @@ export type AdminSurface = {
 
 /** Every admin surface, what it needs, and so where it works (the /admin hub and each surface's own page). */
 export const ADMIN_SURFACES: AdminSurface[] = [
+  { id: "inbox", title: "Review inbox", href: "/admin/review", needs: null,
+    about: "Clips of the game from every front. Answer each with Looks good, Skip or a voice note; fixed clips come back to check." },
   { id: "campaigns", title: "Campaign studio", href: "/workshop/campaigns?mode=ra2", needs: null,
     about: "Stories, characters, missions and briefings. Drafts stay in the browser you write them in." },
   { id: "arena", title: "AI Arena", href: "/workshop/arena?mode=ra2",

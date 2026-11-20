@@ -14,7 +14,7 @@
 import { useSyncExternalStore } from "react";
 import "./maker-bar.css";
 
-export type MakerPlace = "board" | "unit" | "forge" | "viewer" | "simulator" | "map" | "campaigns" | "arena" | "evals" | "play";
+export type MakerPlace = "board" | "unit" | "forge" | "viewer" | "simulator" | "map" | "campaigns" | "arena" | "evals" | "review" | "play";
 
 type Item = {
   id: MakerPlace; label: string; href: string; title: string;
@@ -45,6 +45,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     { id: "evals", label: "AI testing", href: "/workshop/evals?mode=ra2", own: true, site: true, title: "How the AI behaves, measured" },
   ] },
   { label: "Game", items: [
+    { id: "review", label: "Review", href: "/admin/review", own: true, site: true, title: "Review inbox: clips of the game from every front, answered with Looks good, Skip or a voice note" },
     { id: "play", label: "Play", href: "/play/", site: true, game: true, title: "Play the game (opens the game)" },
   ] },
 ];

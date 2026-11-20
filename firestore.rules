@@ -182,5 +182,61 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // ---- Review inbox (lib/review/model.ts, the /admin/review page): clips of the game the owner answers. Sessions add
+    // clips and read the answers with the owner's Google credentials (tools/review.mjs), which these rules do not
+    // govern. A browser gets in only as the owner: the same verified email as OWNER_EMAILS in lib/admin.ts.
+    function owner() {
+      return member() && request.auth.token.email_verified == true
+        && request.auth.token.email in ['alibadereddin@gmail.com'];
+    }
+    match /reviewClips/{clipId} {
+      allow read: if owner();
+      allow create, delete: if false;
+      // The owner's answer, and the suspects they waved off. What the clip shows stays the sessions' to write.
+      allow update: if owner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'answered', 'dismissed'])
+        && (request.resource.data.state in ['new', 'good', 'skipped', 'noted']
+          || (request.resource.data.state == 'recheck' && resource.data.round > 1))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['answered']) || request.resource.data.answered == request.time)
+        && (!('dismissed' in request.resource.data) || (request.resource.data.dismissed is list && request.resource.data.dismissed.size() <= 40));
+
+      // What is wrong, at which second of the clip: typed, or a voice note's transcript.
+      match /notes/{noteId} {
+        allow read, delete: if owner();
+        allow create: if owner() && noteId.matches('^[a-z0-9]{16}$')
+          && request.resource.data.keys().hasOnly(['t', 'text', 'said', 'transcript', 'audio', 'state', 'round', 'created'])
+          && request.resource.data.keys().hasAll(['t', 'text', 'said', 'transcript', 'state', 'round', 'created'])
+          && request.resource.data.t is number && request.resource.data.t >= 0 && request.resource.data.t <= 3600
+          && request.resource.data.text is string && request.resource.data.text.size() <= 4000
+          && request.resource.data.said in ['voice', 'typed', 'suspect']
+          && request.resource.data.transcript in ['browser', 'typed', 'none']
+          && request.resource.data.state == 'open'
+          && request.resource.data.round is int && request.resource.data.round >= 1
+          && request.resource.data.created == request.time
+          && (!('audio' in request.resource.data) || (request.resource.data.audio.keys().hasOnly(['type', 'bytes', 'chunks', 'seconds'])
+            && request.resource.data.audio.type.matches('audio/.*')
+            && request.resource.data.audio.bytes is int && request.resource.data.audio.bytes > 0 && request.resource.data.audio.bytes <= 3686400
+            && request.resource.data.audio.chunks is int && request.resource.data.audio.chunks >= 1 && request.resource.data.audio.chunks <= 4
+            && request.resource.data.audio.seconds is number && request.resource.data.audio.seconds >= 0 && request.resource.data.audio.seconds <= 900
+            && exists(/databases/$(database)/documents/reviewClips/$(clipId)/audio/$(noteId + '_0'))));
+        // The owner's check of a fix (fixed, or open again), or a corrected transcript.
+        allow update: if owner()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'text', 'transcript'])
+          && request.resource.data.state in ['open', 'recheck', 'fixed']
+          && request.resource.data.text is string && request.resource.data.text.size() <= 4000
+          && request.resource.data.transcript in ['browser', 'typed', 'whisper', 'none'];
+      }
+
+      // A voice note's audio, {noteId}_{index}: at most 4 chunks of 900 KiB, each written once.
+      match /audio/{chunkId} {
+        allow read, delete: if owner();
+        allow create: if owner() && chunkId.matches('^[a-z0-9]{16}_[0-3]$')
+          && request.resource.data.keys().hasOnly(['data'])
+          && request.resource.data.data is bytes
+          && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 921600;
+        allow update: if false;
+      }
+    }
   }
 }

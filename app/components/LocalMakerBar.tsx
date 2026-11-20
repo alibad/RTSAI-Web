@@ -9,7 +9,7 @@ import { MakerBar, type MakerPlace } from "./MakerBar";
 const never = () => () => {};
 const placeOf = (path: string): MakerPlace | null =>
   path.startsWith("/workshop/arena") ? "arena" : path.startsWith("/workshop/evals") ? "evals" : path.startsWith("/workshop/campaigns") ? "campaigns"
-    : path.startsWith("/viewer") ? "viewer" : null; // The old /workshop page is not the Map editor: that is the game's.
+    : path.startsWith("/viewer") ? "viewer" : path.startsWith("/admin/review") ? "review" : null; // The old /workshop page is not the Map editor: that is the game's.
 
 export function LocalMakerBar() {
   // "path|mode": the page's place, and the game mode the Workshop pages carry (ra2, or ra for Classic).
