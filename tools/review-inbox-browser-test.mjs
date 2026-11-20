@@ -64,6 +64,8 @@ const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", (e) => pageErrors.push(String(e)));
 const title = () => page.locator(".rv-what h2").textContent();
+// An answer key counts only once the page has finished saving the last one.
+const ready = (id) => page.waitForSelector(`[data-testid="${id}"]:not([disabled])`, { timeout: 30000 });
 const playing = () => page.waitForFunction(() => { const v = document.querySelector('[data-testid="rv-video"]'); return v && v.currentTime > 0.4; }, null, { timeout: 30000 });
 const shot = async (name) => { if (shots) await page.screenshot({ path: path.join(shots, `${name}.png`) }); };
 let failure = null;
@@ -77,6 +79,7 @@ try {
   await shot("1-clip");
   step("the inbox opens on the first clip, playing, with both sides drawn");
 
+  await ready("rv-good");
   await page.keyboard.press("g");
   await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture two");
   step("G answers Looks good and moves to the next clip");
@@ -105,11 +108,13 @@ try {
   await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture four");
   step("T types a note instead");
 
+  await ready("rv-skip");
   await page.keyboard.press("s");
   await page.waitForSelector('[data-testid="rv-done"]');
   await shot("3-done");
   await page.keyboard.press("z");
   await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture four");
+  await ready("rv-skip");
   await page.keyboard.press("s");
   await page.waitForSelector('[data-testid="rv-done"]');
   step("S skips; Z takes the answer back; the inbox ends on All caught up");
@@ -152,6 +157,7 @@ try {
   assert.match(await page.locator(".rv-notes").textContent(), /Fixed: The launcher fires now\. \(abc1234\)/);
   assert.equal(await page.locator(".rv-before").count(), 1, "before and after can be compared");
   await shot("4-recheck");
+  await ready("rv-good");
   await page.keyboard.press("g");
   await page.waitForSelector('[data-testid="rv-done"]');
   const after = JSON.parse(review("status", "--front", "test", "--json")).find((c) => c.id === id("b"));

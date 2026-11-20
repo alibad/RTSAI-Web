@@ -22,6 +22,15 @@ a time, each answered with one click or key. Any session working on the game can
 Run them in `RTSAI-Web`. They talk to the `rtsai-net` Firestore as the signed-in `gcloud` account (the owner's), so
 they need no key in the repository.
 
+### Before the inbox is released
+
+Putting the inbox on rtsai.net is the owner's call (the page, its Firestore rule, the clip host). Until the owner has
+said go, add `--emulator` to every command below: the clips then go to the preview running on this PC ("Trying it
+without releasing anything"), where the owner can already answer them. Without `--emulator`, `add`, `fixed` and
+`transcript` refuse to run while the deployed Firestore rules do not name `reviewClips`: nothing is uploaded or
+written to production before the release. (On 20 November 2026 one session uploaded a clip before this guard
+existed: the Cloudflare project `rtsai-review` and one clip record, `art-forge-moving-buildings`, are already there.)
+
 ### 1. Add clips
 
 ```sh

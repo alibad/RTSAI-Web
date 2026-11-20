@@ -12,7 +12,8 @@
 //
 // Where it talks to:
 //   default        the rtsai-net Firestore, as the signed-in gcloud account (`gcloud auth print-access-token`); clip
-//                  files go to the Cloudflare Pages project in REVIEW_PAGES_PROJECT (default rtsai-review)
+//                  files go to the Cloudflare Pages project in REVIEW_PAGES_PROJECT (default rtsai-review). Writing
+//                  there is refused until the owner has released the inbox (its Firestore rule is deployed).
 //   --emulator     the local Firebase emulators (`firebase emulators:start --only auth,firestore --project demo-rtsai`);
 //                  clip files are copied to --serve-dir and named by --serve-url (tools/review-preview.mjs serves them)
 import fs from "node:fs";
@@ -46,6 +47,23 @@ async function call(method, url, body) {
   const json = await response.json().catch(() => ({}));
   if (!response.ok && !(method === "GET" && response.status === 404)) die(`Firestore ${method} ${url}: ${response.status} ${JSON.stringify(json).slice(0, 400)}`);
   return response.status === 404 ? null : json;
+}
+
+/**
+ * Nothing is written to production before the owner releases the inbox. The sign that it is released is its rule:
+ * the deployed Firestore rules name reviewClips. Until then clips go to the preview (--emulator). Reading is allowed.
+ */
+async function requireReleased() {
+  if (emulator) return;
+  const rules = "https://firebaserules.googleapis.com/v1";
+  let released = false, why = "";
+  try {
+    const release = await (await fetch(`${rules}/projects/${project}/releases/cloud.firestore`, { headers: headers() })).json();
+    const ruleset = release.rulesetName ? await (await fetch(`${rules}/${release.rulesetName}`, { headers: headers() })).json() : null;
+    released = !!ruleset?.source?.files?.some((f) => f.content.includes("match /reviewClips/"));
+    if (!ruleset) why = ` (the deployed rules could not be read: ${JSON.stringify(release).slice(0, 160)})`;
+  } catch (e) { why = ` (the deployed rules could not be read: ${String(e).slice(0, 160)})`; }
+  if (!released) die(`The Review inbox is not released yet${why}: nothing is written to production, or uploaded, before the owner says go.\nPut your clips in the preview instead: add --emulator to the same command (docs/review-inbox.md, "Before the inbox is released").`);
 }
 
 // ---- Firestore's typed values
@@ -157,6 +175,7 @@ function printClipHead(c) {
 
 // ---- verbs
 if (verb === "add") {
+  await requireReleased();
   const folder = path.resolve(positional[0] ?? die("usage: node tools/review.mjs add <folder with clips.json>"));
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "clips.json"), "utf8"));
   const list = Array.isArray(manifest) ? manifest : manifest.clips ?? die("clips.json needs a list of clips.");
@@ -247,12 +266,14 @@ if (verb === "add") {
 } else if (verb === "transcript") {
   const [clipId, noteId] = positional, text = opt("text");
   if (!clipId || !noteId || !text) die('usage: node tools/review.mjs transcript <clip> <note> --text "what the owner said"');
+  await requireReleased();
   if (!await get(`reviewClips/${clipId}/notes/${noteId}`)) die(`No note ${noteId} on ${clipId}.`);
   await patch(`reviewClips/${clipId}/notes/${noteId}`, { text: text.trim().slice(0, 4000), transcript: "whisper" });
   console.log("transcript stored");
 } else if (verb === "fixed") {
   const clipId = positional[0], reply = opt("reply");
   if (!clipId || !reply) die('usage: node tools/review.mjs fixed <clip> --reply "what changed" [--in <commit or build>] [--video <file>] [--poster <file>] [--note <id>]...');
+  await requireReleased();
   const clip = await get(`reviewClips/${clipId}`) ?? die(`No clip ${clipId}.`);
   const notes = await list(`reviewClips/${clipId}/notes`);
   const ids = opts("note");
@@ -282,6 +303,7 @@ if (verb === "add") {
   }
 } else if (verb === "remove") {
   if (!positional.length) die("usage: node tools/review.mjs remove <clip>...");
+  // Taking something back out is always allowed, also before the release.
   for (const clipId of positional) {
     if (!await get(`reviewClips/${clipId}`)) { console.log(`${clipId}: not in the inbox`); continue; }
     for (const sub of ["notes", "audio"]) for (const d of await list(`reviewClips/${clipId}/${sub}`)) await call("DELETE", `/reviewClips/${clipId}/${sub}/${d.id}`);
