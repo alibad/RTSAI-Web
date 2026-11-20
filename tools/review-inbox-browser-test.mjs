@@ -63,7 +63,7 @@ const context = await browser.newContext({ viewport: { width: 1155, height: 1063
 const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", (e) => pageErrors.push(String(e)));
-const title = () => page.locator(".rv-what h2").textContent();
+const title = () => page.locator(".rv-name h2").textContent();
 // An answer key counts only once the page has finished saving the last one.
 const ready = (id) => page.waitForSelector(`[data-testid="${id}"]:not([disabled])`, { timeout: 30000 });
 const playing = () => page.waitForFunction(() => { const v = document.querySelector('[data-testid="rv-video"]'); return v && v.currentTime > 0.4; }, null, { timeout: 30000 });
@@ -74,23 +74,44 @@ try {
   await page.waitForSelector('[data-testid="review-inbox"]', { timeout: 120000 });
   assert.equal(await title(), "Fixture one");
   await playing();
-  assert.equal(await page.locator(".rv-side").count(), 2, "both sides are drawn");
+  assert.equal(await page.locator(".rv-vs").count(), 2, "both sides are drawn");
   assert.equal(await page.locator(".rv-unit").count(), 2);
   await shot("1-clip");
   step("the inbox opens on the first clip, playing, with both sides drawn");
 
+  // One screen, never a scroll: the owner's short window (20 Nov 2026: 1426x445), a laptop's, and this test's.
+  for (const [w, h] of [[1426, 445], [1280, 720], [1155, 1063]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(400);
+    const fit = await page.evaluate(() => {
+      const box = (sel) => document.querySelector(sel)?.getBoundingClientRect();
+      const v = box('[data-testid="rv-video"]'), good = box('[data-testid="rv-good"]'), skip = box('[data-testid="rv-skip"]');
+      return { scroll: document.documentElement.scrollHeight - innerHeight, inner: Math.max(0, document.querySelector(".rv").scrollHeight - document.querySelector(".rv").clientHeight),
+        top: v.top, bottom: v.bottom, height: v.height, width: v.width, answers: Math.max(good.bottom, skip.bottom) <= innerHeight && good.right <= innerWidth };
+    });
+    assert.ok(fit.scroll <= 0 && fit.inner <= 0, `${w}x${h}: the page does not scroll (${JSON.stringify(fit)})`);
+    assert.ok(fit.top >= 0 && fit.bottom <= h, `${w}x${h}: the whole clip is on screen`);
+    assert.ok(fit.height >= h * 0.5, `${w}x${h}: the clip takes at least half the window's height (${Math.round(fit.height)} px)`);
+    assert.ok(fit.answers, `${w}x${h}: the answers are on screen`);
+    await shot(`1-layout-${w}x${h}`);
+  }
+  step("one screen at 1426x445, 1280x720 and 1155x1063: no scroll, the whole clip and the answers in view");
+
   await ready("rv-good");
   await page.keyboard.press("g");
-  await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture two");
+  await page.waitForFunction(() => document.querySelector(".rv-name h2")?.textContent === "Fixture two");
   step("G answers Looks good and moves to the next clip");
 
   await playing();
-  assert.equal(await page.locator('[data-testid="rv-suspect"]').count(), 2, "the session's two suspects are offered");
-  await page.locator('[data-testid="rv-suspect"]').nth(1).getByText("Fine").click();
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="rv-suspect"]').length === 1);
-  await page.locator('[data-testid="rv-suspect"]').first().getByText("Wrong").click();
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="rv-note"]').length === 1 && !document.querySelector('[data-testid="rv-suspect"]'));
-  step("a suspect is waved off, another confirmed as a note");
+  assert.equal(await page.locator('[data-testid="rv-marker"]').count(), 2, "the session's two suspects are numbered markers on the scrubber");
+  // A marker jumps to its moment and shows its sentence over the clip, with Wrong / Fine.
+  await page.locator('[data-testid="rv-marker"]').nth(1).click();
+  await page.locator('[data-testid="rv-suspect"]').getByText("Fine").click();
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="rv-marker"]').length === 1);
+  await page.keyboard.press("1"); // the key jumps to suspect 1
+  await page.locator('[data-testid="rv-suspect"]').getByText("Wrong").click();
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="rv-note-mark"]').length === 1 && !document.querySelector('[data-testid="rv-marker"]'));
+  step("a suspect is waved off, another confirmed as a note (markers on the scrubber, the sentence over the clip)");
 
   await page.evaluate(() => { const v = document.querySelector('[data-testid="rv-video"]'); v.pause(); v.currentTime = 3; });
   await page.keyboard.press("v");
@@ -98,7 +119,7 @@ try {
   await page.waitForTimeout(5000);
   await shot("2-recording");
   await page.keyboard.press("Enter");
-  await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture three", null, { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelector(".rv-name h2")?.textContent === "Fixture three", null, { timeout: 30000 });
   step("V records a voice note pinned at 0:03; Enter saves it and moves on");
 
   await playing();
@@ -137,7 +158,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll(".rv-pics .fbk-shot").length === 2);
   await shot("3b-pictures");
   await page.keyboard.press("Enter");
-  await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture four");
+  await page.waitForFunction(() => document.querySelector(".rv-name h2")?.textContent === "Fixture four");
   step("a grabbed frame is circled and a screenshot pasted into the note; Enter saves both with the words");
 
   await ready("rv-skip");
@@ -145,7 +166,7 @@ try {
   await page.waitForSelector('[data-testid="rv-done"]');
   await shot("3-done");
   await page.keyboard.press("z");
-  await page.waitForFunction(() => document.querySelector(".rv-what h2")?.textContent === "Fixture four");
+  await page.waitForFunction(() => document.querySelector(".rv-name h2")?.textContent === "Fixture four");
   await ready("rv-skip");
   await page.keyboard.press("s");
   await page.waitForSelector('[data-testid="rv-done"]');
@@ -194,9 +215,11 @@ try {
   await page.waitForSelector(".rv-banner");
   assert.equal(await title(), "Fixture two");
   assert.match(await page.locator(".rv-banner").textContent(), /Fixed · check again/);
-  assert.equal(await page.locator(".rv-note.is-recheck").count(), 2);
-  assert.match(await page.locator(".rv-notes").textContent(), /A transcript made locally\./);
-  assert.match(await page.locator(".rv-notes").textContent(), /Fixed: The launcher fires now\. \(abc1234\)/);
+  assert.equal(await page.locator(".rv-mark.is-recheck").count(), 2);
+  // A fixed clip opens on what was fixed, over the clip.
+  await page.evaluate(() => { const v = document.querySelector('[data-testid="rv-video"]'); v.pause(); v.currentTime = 0; });
+  await page.waitForFunction(() => /A transcript made locally\./.test(document.querySelector('[data-testid="rv-captions"]')?.textContent ?? "")
+    && /Fixed: The launcher fires now\. \(abc1234\)/.test(document.querySelector('[data-testid="rv-captions"]')?.textContent ?? ""), null, { timeout: 10000 });
   assert.equal(await page.locator(".rv-before").count(), 1, "before and after can be compared");
   await shot("4-recheck");
   await ready("rv-good");

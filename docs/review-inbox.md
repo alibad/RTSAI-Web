@@ -3,8 +3,12 @@
 The owner's quick way to say what is right and wrong in the game (asked for on 20 November 2026): short clips, one at
 a time, each answered with one click or key. Any session working on the game can put clips in it and read the answers.
 
-- **The owner's page:** `/admin/review` (the maker bar's **Review**, and a tile on `/admin`). One clip, large and
-  playing, with who fights whom as flags and unit icons.
+- **The owner's page:** `/admin/review` (the maker bar's **Review**, and a tile on `/admin`). One screen, never a
+  scroll, at any window size (owner, 20 Nov 2026: "make me something usable"): the clip as large as the window allows,
+  one title line with "3 of 30" and prev/next (`P`, `N`), the answers in one bar under the clip between the two sides'
+  flags and unit icons. A short, wide window puts the title and the answers in a column beside the clip.
+  - Your suspects and the owner's notes are numbered markers on the scrubber; each sentence shows over the clip at
+    its moment, like a subtitle. A marker click (or `1`-`9`) jumps there.
   - `G` Looks good, `S` Skip, `V` a voice note pinned to the second where the owner started talking (`Enter` saves and
     moves on, `M` saves and stays for another note), `T` type instead, `Z` undo, `Space` play or pause, arrows step a
     second, `B` before/after on a fixed clip.
@@ -12,7 +16,8 @@ a time, each answered with one click or key. Any session working on the game can
     takes the clip's picture at the note's second into the markup editor, to circle or arrow what is wrong; `Ctrl+V`
     pastes a screenshot (and opens a typed note if none is open); a picture or video can also be dropped or picked. Up
     to 4 per note, 10 MB each. A note may be only pictures, with no words.
-  - Suspects a session attached show under the clip: **Wrong** turns one into a note, **Fine** waves it off.
+  - On a suspect's sentence: **Wrong** turns it into a note, **Fine** waves it off. Keep suspects to one short
+    sentence: it is read over the clip.
   - Clips a session fixed come back first, marked **Fixed, check again**, with the owner's note and the session's reply.
 - **A front** is one line of work: `battles`, `campaign`, `ai-opponent`, `multiplayer`, `look-and-sound`,
   `first-five-min`, `maker-tools`, `release-check`, and others (`lib/review/model.ts` gives each its name on the

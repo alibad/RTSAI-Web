@@ -9,6 +9,12 @@
  * clip's frame at the note's second into the markup editor to circle what is wrong; Ctrl+V pastes a screenshot (it
  * opens a typed note when none is open); a picture or video can be dropped or picked.
  *
+ * One screen, never a scroll (owner, 20 Nov 2026: "make me something usable"): the clip as large as the window
+ * allows; one title line with "3 of 30" and prev/next (P, N); the session's suspects and the owner's notes as
+ * numbered markers on the scrubber, each shown over the clip at its moment (click a marker, or 1-9, to jump there);
+ * the answers in one bar under the clip, between the two sides' flags and units. A short, wide window (a laptop,
+ * a browser beside other windows) puts the title and answers in a column beside the clip instead.
+ *
  * A clip belongs to a front (battles, campaign, AI, ...): every session can add clips (tools/review.mjs add) and read
  * the answers (tools/review.mjs feedback). Data and its owner-only rule: lib/review/model.ts, firestore.rules.
  */
@@ -16,12 +22,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Firestore } from "firebase/firestore";
 import {
-  Anchor, ArrowRight, Building2, Camera, Check, CircleCheck, Crosshair, ExternalLink, Footprints, Image as ImageIcon, Keyboard, Mic, MoveRight, Pause, Plane, Play,
+  Anchor, ArrowRight, Building2, Camera, Check, ChevronLeft, ChevronRight, CircleCheck, Crosshair, ExternalLink, Footprints, Image as ImageIcon, Keyboard, Mic, MoveRight, Pause, Plane, Play,
   Radar, RotateCcw, Shield, Ship, SkipForward, Swords, Target, ThumbsDown, ThumbsUp, Truck, Undo2, Volume2, X, Zap,
 } from "lucide-react";
 import { useAuth } from "../AuthProvider";
 import { DropZone, FileChips, ShotStrip, usePastedFiles } from "../feedback/FeedbackMedia";
 import { ScreenshotAnnotator } from "../feedback/ScreenshotAnnotator";
+import { OptionSelect, type Option } from "../ui/fields";
 import { captureTab, checkAttachment, isCoarsePointer, MAX_SCREENSHOTS, toJpeg, withWidgetHidden } from "../feedback/media";
 import { getFirebaseAuth, getFirebaseFirestore } from "../../../lib/firebase-client";
 import { OWNER_EMAILS } from "../../../lib/admin";
@@ -40,20 +47,32 @@ const STATE_WORDS: Record<ClipState, string> = { new: "Waiting", good: "Looks go
 /** The local preview (Firebase emulators, tools/review-preview.mjs) signs the owner in by itself. */
 const PREVIEW = process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1";
 
+/** A unit as the game's build icon, with how many fight; its name on hover. */
 function Unit({ unit }: { unit: ClipUnit }) {
   const Icon = CLASS_ICONS[unit.cls ?? "vehicle"] ?? Truck;
-  return <figure className="rv-unit" title={`${unit.count} × ${unit.name}`}>
-    <span className="rv-unit-art">{unit.icon ? <img src={unit.icon} alt="" width={60} height={48} loading="lazy" /> : <Icon size={22} aria-hidden="true" />}{unit.count > 1 && <b>×{unit.count}</b>}</span>
-    <figcaption>{unit.name}</figcaption>
-  </figure>;
+  return <span className="rv-unit" title={`${unit.count} × ${unit.name}`}>
+    {unit.icon ? <img src={unit.icon} alt={unit.name} width={46} height={36} loading="lazy" /> : <Icon size={20} aria-label={unit.name} />}{unit.count > 1 && <b>×{unit.count}</b>}
+  </span>;
 }
 
-function Side({ side, end }: { side: ClipSide; end?: boolean }) {
-  return <div className={end ? "rv-side is-end" : "rv-side"}>
-    <span className="rv-flag" title={side.name}>{side.flag ? <img src={side.flag} alt="" width={54} height={36} /> : <i>{side.name.slice(0, 2)}</i>}<small>{side.name}</small></span>
-    <div className="rv-units">{side.units.map((u) => <Unit key={u.id} unit={u} />)}</div>
+/** One side of the fight, small: its flag, then its units. */
+function SideMini({ side, end }: { side: ClipSide; end?: boolean }) {
+  return <div className={end ? "rv-vs is-end" : "rv-vs"} title={`${side.name}: ${side.units.map((u) => `${u.count} × ${u.name}`).join(", ")}`}>
+    {side.flag ? <img className="rv-vs-flag" src={side.flag} alt={side.name} width={39} height={26} /> : <i className="rv-vs-flag">{side.name.slice(0, 2)}</i>}
+    {side.units.map((u) => <Unit key={u.id} unit={u} />)}
   </div>;
 }
+
+/** A moment of the clip: a session's suspect (numbered), the owner's note, or a note sent back as fixed. */
+type Moment = { key: string; t: number; kind: "suspect" | "note" | "recheck"; text: string; n?: number; index?: number; note?: ReviewNote };
+
+/** Each front's colour dot in the front picker. */
+const FRONT_COLOURS: Record<string, string> = {
+  battles: "#ef5b3f", campaign: "#f1d28b", ai: "#7fb2ff", "ai-opponent": "#7fb2ff", multiplayer: "#86d67c", maps: "#4fc3b0",
+  art: "#c79bff", sound: "#ff9fc8", "look-and-sound": "#ff9fc8", site: "#a4a898", "first-five-min": "#ffb347", "first-session": "#ffb347",
+  "maker-tools": "#4fc3b0", "release-check": "#a4a898",
+};
+const frontColour = (id: string) => FRONT_COLOURS[id] ?? `hsl(${[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} 60% 62%)`;
 
 /** A voice note's own audio, fetched when asked for. */
 function NoteSound({ db, clipId, note }: { db: Firestore; clipId: string; note: ReviewNote }) {
@@ -124,6 +143,10 @@ export function ReviewInbox() {
   const [error, setError] = useState("");
   const [history, setHistory] = useState<{ id: string; was: ClipState; notes: { id: string; was: NoteState }[] }[]>([]);
   const [showBefore, setShowBefore] = useState(false);
+  /** The clip's second, a few times a second: which suspect or note shows over the clip now. */
+  const [now, setNow] = useState(0);
+  /** A marker the owner clicked: its sentence stays over the clip. */
+  const [focus, setFocus] = useState<string | null>(null);
   const [length, setLength] = useState(0);
   const [paused, setPaused] = useState(false);
   const video = useRef<HTMLVideoElement | null>(null);
@@ -188,7 +211,7 @@ export function ReviewInbox() {
   useEffect(() => () => { for (const a of picsRef.current) URL.revokeObjectURL(a.url); }, []);
 
   // A new clip starts from its beginning, playing, with nothing half-said.
-  const openClip = useCallback((id: string | null) => { setCurrentId(id); setPanel("watch"); setTyped(""); setAttachments([]); setShowBefore(false); setLength(0); setPaused(false); }, [setAttachments]);
+  const openClip = useCallback((id: string | null) => { setCurrentId(id); setPanel("watch"); setTyped(""); setAttachments([]); setShowBefore(false); setLength(0); setPaused(false); setFocus(null); setNow(0); }, [setAttachments]);
   const pickFront = useCallback((id: string) => { setFront(id); openClip((clips ?? []).find((c) => waiting(c) && (id === "all" || c.front === id))?.id ?? null); }, [clips, openClip]);
   const typeBox = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { if (panel === "type") typeBox.current?.focus(); }, [panel]);
@@ -208,6 +231,10 @@ export function ReviewInbox() {
     };
     frame = requestAnimationFrame(follow);
     return () => cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    const id = setInterval(() => { const t = video.current?.currentTime ?? 0; setNow((was) => (Math.abs(was - t) > 0.1 ? t : was)); }, 200);
+    return () => clearInterval(id);
   }, []);
   const seek = useCallback((t: number) => { const v = video.current; if (v) v.currentTime = Math.max(0, Math.min(v.duration || t, t)); }, []);
   const togglePlay = useCallback(() => { const v = video.current; if (!v) return; if (v.paused) void v.play().catch(() => {}); else v.pause(); }, []);
@@ -365,8 +392,26 @@ export function ReviewInbox() {
     } catch (e) { fail(e); } finally { setBusy(false); }
   }, [db, history, busy, patchClip, fail, openClip]);
 
+  // ---- the clip's moments: suspects not answered yet (numbered), the owner's notes, notes sent back as fixed
+  const moments = useMemo<Moment[]>(() => {
+    if (!clip) return [];
+    const open = clip.suspects.map((s, index) => ({ ...s, index })).filter((s) => !clip.dismissed.includes(s.index) && !clipNotes.some((n) => n.said === "suspect" && n.text === s.text)).sort((a, b) => a.t - b.t);
+    return [
+      ...open.map((s, i) => ({ key: `s${s.index}`, t: s.t, kind: "suspect" as const, text: s.text, n: i + 1, index: s.index })),
+      ...clipNotes.map((n) => ({ key: n.id, t: n.t, kind: n.state === "recheck" ? "recheck" as const : "note" as const, text: n.text || (n.audio ? "Voice note saved. The words will be added from the audio." : "Pictures saved."), note: n })),
+    ];
+  }, [clip, clipNotes]);
+  const numbered = useMemo(() => moments.filter((m) => m.n), [moments]);
+
   // ---- keys: the whole inbox works without the mouse
   const hasOpen = clipNotes.some((n) => n.state === "open");
+  const step = useCallback((dir: 1 | -1) => {
+    const ids = strip.map((c) => c.id);
+    if (!ids.length) return;
+    const at = clip ? ids.indexOf(clip.id) : -1;
+    openClip(ids[(at + dir + ids.length) % ids.length]);
+  }, [strip, clip, openClip]);
+  const jump = useCallback((m: Moment) => { setFocus(m.key); seek(Math.max(0, m.t - 1)); void video.current?.play().catch(() => {}); }, [seek]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // The markup editor has its own keys.
@@ -381,22 +426,27 @@ export function ReviewInbox() {
         else if (key === "Escape") { e.preventDefault(); cancelNote(); }
         return;
       }
-      if (panel !== "watch" || !clip) { if (key === "z") void undo(); return; }
+      if (panel !== "watch") { if (key === "z") void undo(); return; }
+      if (key === "n") { e.preventDefault(); step(1); return; }
+      if (key === "p") { e.preventDefault(); step(-1); return; }
+      if (key === "z") { e.preventDefault(); void undo(); return; }
+      if (!clip) return;
       if (key === "v") { e.preventDefault(); void startVoice(); }
       else if (key === "t") { e.preventDefault(); startTyping(); }
       else if (key === "f") { e.preventDefault(); const at = startTyping(); if (at !== null) void grabFrame(at); }
       else if (key === "g" || (key === "Enter" && !hasOpen)) { e.preventDefault(); if (!hasOpen) void answer("good"); }
-      else if (key === "Enter" || key === "n") { e.preventDefault(); if (hasOpen) goNext(clip.id); }
+      else if (key === "Enter") { e.preventDefault(); goNext(clip.id); }
       else if (key === "s") { e.preventDefault(); if (!hasOpen) void answer("skipped"); }
-      else if (key === "z") { e.preventDefault(); void undo(); }
       else if (key === " " || key === "k") { e.preventDefault(); togglePlay(); }
       else if (key === "ArrowLeft") { e.preventDefault(); seek((video.current?.currentTime ?? 0) - 1); }
       else if (key === "ArrowRight") { e.preventDefault(); seek((video.current?.currentTime ?? 0) + 1); }
       else if (key === "b" && clip.before) { e.preventDefault(); setShowBefore((b) => !b); }
+      else if (key === "Escape") setFocus(null);
+      else if (/^[1-9]$/.test(key) && numbered[Number(key) - 1]) { e.preventDefault(); jump(numbered[Number(key) - 1]); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel, clip, hasOpen, annotating, pinned, answer, startVoice, startTyping, endVoice, cancelNote, grabFrame, goNext, undo, togglePlay, seek]);
+  }, [panel, clip, hasOpen, annotating, pinned, numbered, answer, startVoice, startTyping, endVoice, cancelNote, grabFrame, goNext, undo, togglePlay, seek, step, jump]);
 
   // ---- what to draw
   if (!user && !authLoading) return <main id="main-content" className="rv rv-empty"><div className="rv-card">
@@ -406,13 +456,15 @@ export function ReviewInbox() {
   if (!clips) return <main id="main-content" className="rv rv-empty" aria-busy="true"><div className="rv-card"><p>Loading the inbox…</p></div></main>;
 
   const total = clip ? length || clip.seconds || 1 : 1;
-  const suspects = clip ? clip.suspects.map((s, index) => ({ ...s, index })).filter((s) => !clip.dismissed.includes(s.index) && !clipNotes.some((n) => n.said === "suspect" && n.text === s.text)) : [];
-  const answered = clip ? clipNotes.filter((n) => n.state === "recheck") : [];
-  const mine = clip ? clipNotes.filter((n) => n.state !== "recheck") : [];
   const recheck = clip?.state === "recheck";
   const ModeIcon = MODE_ICONS[clip?.mode?.id ?? ""] ?? Swords;
   const mark = (t: number) => ({ left: `${Math.min(100, (t / total) * 100)}%` }) as CSSProperties;
   const counts = { good: strip.filter((c) => c.state === "good").length, noted: strip.filter((c) => c.state === "noted").length, skipped: strip.filter((c) => c.state === "skipped").length };
+  const pos = clip ? strip.findIndex((c) => c.id === clip.id) + 1 : 0;
+  // What shows over the clip: the moment a marker was clicked for, else what is happening now (each sentence from
+  // just before its second to a few seconds after it, as subtitles). A fixed clip opens on what was fixed.
+  const shown = moments.filter((m) => (focus ? m.key === focus : (now >= m.t - 0.3 && now <= m.t + 3.5) || (m.kind === "recheck" && now < 5)));
+  const facts = clip ? [...(clip.chips ?? []).map((c) => `${c.label}: ${c.value}`), clip.build.label, ...[clip.build.page && `page ${clip.build.page}`, clip.build.runtime, clip.build.data].filter(Boolean)].join(" · ") : "";
 
   // The note's pictures: grab the clip's frame, the ones added so far (click to mark up), and paste, drop or pick.
   const pictures = <div className="rv-pics" data-testid="rv-pics">
@@ -423,7 +475,7 @@ export function ReviewInbox() {
       onRemove={(id) => setAttachments(picsRef.current.filter((a) => a.id !== id))} />
     <FileChips files={pics.filter((a) => a.kind === "video").map((a) => ({ id: a.id, name: a.name, size: a.blob.size, contentType: a.type }))}
       onRemove={(id) => setAttachments(picsRef.current.filter((a) => a.id !== id))} />
-    {room > 0 && <DropZone onFiles={(files) => void addFiles(files)} label="Paste a screenshot (Ctrl+V), drop one here, or pick a picture or video" />}
+    {room > 0 && <DropZone onFiles={(files) => void addFiles(files)} label="Paste a screenshot (Ctrl+V), drop one, or pick a picture or video" />}
   </div>;
   // Save says what it waits for when there is nothing to save yet.
   const saveLabel = (ready: boolean) => (busy ? "Saving…" : ready ? <>Save, next <kbd>⏎</kbd></> : "Type a note or add a picture first");
@@ -433,9 +485,11 @@ export function ReviewInbox() {
     <div className="rv-talk-row">
       <span className="rv-meter" ref={meterRef} aria-hidden="true"><Mic size={22} /></span>
       <div className="rv-talk-words"><small>At {clock(pinned)} · {clock(voiceSeconds)}{voiceSeconds > voiceLimit - 60 ? ` · saves itself at ${clock(voiceLimit)}` : ""}</small><p>{voiceWords || "Listening. Say what is wrong."}</p></div>
-      <button type="button" className="rv-go" data-testid="rv-save" disabled={busy} aria-busy={busy} onClick={() => void endVoice(false)}>{saveLabel(true)}</button>
-      <button type="button" className="rv-quiet" disabled={busy} onClick={() => void endVoice(true)}>Save, more to say <kbd>M</kbd></button>
-      <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+      <div className="rv-talk-buttons">
+        <button type="button" className="rv-go" data-testid="rv-save" disabled={busy} aria-busy={busy} onClick={() => void endVoice(false)}>{saveLabel(true)}</button>
+        <button type="button" className="rv-quiet" disabled={busy} onClick={() => void endVoice(true)}>Save, more to say <kbd>M</kbd></button>
+        <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+      </div>
     </div>
     {pictures}
   </div>;
@@ -445,108 +499,100 @@ export function ReviewInbox() {
       <div className="rv-talk-words"><small>At {clock(pinned)}</small>
         <textarea ref={typeBox} value={typed} maxLength={4000} placeholder="What is wrong here?" onChange={(e) => setTyped(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveTyped(false); } else if (e.key === "Escape") cancelNote(); }} /></div>
-      <button type="button" className="rv-go" data-testid="rv-save" disabled={busy || !canSaveTyped} aria-busy={busy} onClick={() => saveTyped(false)}>{saveLabel(canSaveTyped)}</button>
-      <button type="button" className="rv-quiet" disabled={busy || !canSaveTyped} onClick={() => saveTyped(true)}>Save, more to say</button>
-      <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+      <div className="rv-talk-buttons">
+        <button type="button" className="rv-go" data-testid="rv-save" disabled={busy || !canSaveTyped} aria-busy={busy} onClick={() => saveTyped(false)}>{saveLabel(canSaveTyped)}</button>
+        <button type="button" className="rv-quiet" disabled={busy || !canSaveTyped} onClick={() => saveTyped(true)}>Save, more to say</button>
+        <button type="button" className="rv-quiet" onClick={cancelNote}>Cancel <kbd>Esc</kbd></button>
+      </div>
     </div>
     {pictures}
   </div>;
   else actions = <div className="rv-answers">
     {hasOpen
-      ? <button type="button" className="rv-answer is-next" data-testid="rv-next" disabled={busy} onClick={() => clip && goNext(clip.id)}><ArrowRight size={22} aria-hidden="true" /><span>Next clip</span><kbd>⏎</kbd></button>
-      : <button type="button" className="rv-answer is-good" data-testid="rv-good" disabled={busy} onClick={() => void answer("good")}><Check size={22} aria-hidden="true" /><span>{recheck ? "Fixed" : "Looks good"}</span><kbd>G</kbd></button>}
-    <button type="button" className="rv-answer is-voice" data-testid="rv-voice" disabled={busy} onClick={() => void startVoice()}><Mic size={22} aria-hidden="true" /><span>{hasOpen ? "Another note" : recheck ? "Still wrong" : "Voice note"}</span><kbd>V</kbd></button>
-    {!hasOpen && <button type="button" className="rv-answer is-skip" data-testid="rv-skip" disabled={busy} onClick={() => void answer("skipped")}><SkipForward size={22} aria-hidden="true" /><span>Skip</span><kbd>S</kbd></button>}
-    <button type="button" className="rv-type" data-testid="rv-type" onClick={startTyping}><Keyboard size={14} aria-hidden="true" /> Type instead <kbd>T</kbd></button>
+      ? <button type="button" className="rv-answer is-next" data-testid="rv-next" disabled={busy} onClick={() => clip && goNext(clip.id)}><ArrowRight size={20} aria-hidden="true" /><span>Next clip</span><kbd>⏎</kbd></button>
+      : <button type="button" className="rv-answer is-good" data-testid="rv-good" disabled={busy} onClick={() => void answer("good")}><Check size={20} aria-hidden="true" /><span>{recheck ? "Fixed" : "Looks good"}</span><kbd>G</kbd></button>}
+    <button type="button" className="rv-answer is-voice" data-testid="rv-voice" disabled={busy} onClick={() => void startVoice()}><Mic size={20} aria-hidden="true" /><span>{hasOpen ? "Another note" : recheck ? "Still wrong" : "Voice note"}</span><kbd>V</kbd></button>
+    {!hasOpen && <button type="button" className="rv-answer is-skip" data-testid="rv-skip" disabled={busy} onClick={() => void answer("skipped")}><SkipForward size={20} aria-hidden="true" /><span>Skip</span><kbd>S</kbd></button>}
+    <button type="button" className="rv-type" data-testid="rv-type" onClick={startTyping} title="Type instead (T); Ctrl+V pastes a screenshot, F grabs this frame"><Keyboard size={14} aria-hidden="true" /> Type <kbd>T</kbd></button>
   </div>;
 
+  const frontOptions: Option<string>[] = [
+    { value: "all", label: "All fronts", description: `${(clips ?? []).filter(waiting).length} to go`, leading: <span className="rv-dot" style={{ background: "#f0eee6" }} /> },
+    ...fronts.map((f) => ({ value: f.id, label: f.label, description: f.left ? `${f.left} to go` : "done", leading: <span className="rv-dot" style={{ background: frontColour(f.id) }} /> })),
+  ];
+
   return <main id="main-content" className="rv" data-testid="review-inbox">
-    <header className="rv-top">
-      <h1>Review</h1>
-      <div className="rv-fronts" role="group" aria-label="Fronts">
-        {fronts.length > 1 && <button type="button" aria-pressed={front === "all"} onClick={() => pickFront("all")}>All</button>}
-        {fronts.map((f) => <button key={f.id} type="button" aria-pressed={front === f.id || fronts.length === 1} onClick={() => pickFront(f.id)}>{f.label}{f.left > 0 && <b>{f.left}</b>}</button>)}
-      </div>
-      <span className="rv-left" data-testid="rv-left"><b>{left}</b> to go</span>
-      <button type="button" className="rv-mini" disabled={!history.length || busy} onClick={() => void undo()} title="Take back your last answer"><Undo2 size={13} aria-hidden="true" /> Undo <kbd>Z</kbd></button>
-    </header>
-
-    {clip ? <>
-      <section className="rv-stage">
-        <video ref={video} key={`${clip.id}-${showBefore ? "before" : "now"}-${clip.round}`} src={showBefore && clip.before ? clip.before : clip.video} poster={clip.poster} autoPlay muted loop playsInline
-          onClick={togglePlay} onLoadedMetadata={(e) => setLength(e.currentTarget.duration || 0)} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} data-testid="rv-video" />
-        {recheck && <span className="rv-banner"><RotateCcw size={14} aria-hidden="true" /> Fixed · check again</span>}
-        {(clip.state === "good" || clip.state === "skipped") && <span className="rv-banner is-done">{STATE_WORDS[clip.state]}</span>}
-        {clip.before && <button type="button" className="rv-before" aria-pressed={showBefore} onClick={() => setShowBefore((b) => !b)}>{showBefore ? "Before the fix" : "After the fix"} <kbd>B</kbd></button>}
-      </section>
-
-      <div className="rv-timeline">
-        <button type="button" className="rv-play" onClick={togglePlay} aria-label={paused ? "Play" : "Pause"}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
-        <div className="rv-track" role="slider" tabIndex={-1} aria-label="Position in the clip" aria-valuemin={0} aria-valuemax={Math.round(total)} aria-valuenow={0}
-          onPointerDown={(e) => { const box = e.currentTarget.getBoundingClientRect(); const at = (x: number) => seek(((x - box.left) / box.width) * total); at(e.clientX); const move = (m: PointerEvent) => at(m.clientX); const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); }; window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); }}>
-          <i ref={(el) => { fill.current = el; }} />
-          {suspects.map((s) => <span key={`s${s.index}`} className="rv-mark is-suspect" style={mark(s.t)} title={s.text} />)}
-          {clipNotes.map((n) => <span key={n.id} className={`rv-mark is-${n.state}`} style={mark(n.t)} title={n.text} />)}
-          {panel !== "watch" && <span className="rv-mark is-pin" style={mark(pinned)} />}
+    <div className={`rv-grid${panel !== "watch" ? " is-talking" : ""}`}>
+      <header className="rv-head">
+        <div className="rv-nav" role="group" aria-label="Clips">
+          <button type="button" aria-label="Previous clip (P)" title="Previous clip (P)" disabled={!strip.length} onClick={() => step(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
+          <span data-testid="rv-pos">{clip ? <><b>{pos}</b> of {strip.length}</> : `${strip.length} clips`}</span>
+          <button type="button" aria-label="Next clip (N)" title="Next clip (N)" disabled={!strip.length} onClick={() => step(1)}><ChevronRight size={18} aria-hidden="true" /></button>
         </div>
-        <span className="rv-time" ref={timeLabel}>0:00 / {clock(total)}</span>
-      </div>
-
-      <div className="rv-facts">
-        {clip.sides?.[0] ? <Side side={clip.sides[0]} /> : <span />}
-        <div className="rv-what">
-          {clip.mode && <span className="rv-mode"><ModeIcon size={15} aria-hidden="true" /> {clip.mode.label}</span>}
-          <h2>{clip.title}</h2>
-          {clip.why && <p>{clip.why}</p>}
-          <small>
-            {clip.chips?.map((c) => <span key={c.label}>{c.label} <b>{c.value}</b></span>)}
-            <span title={[clip.build.page && `page ${clip.build.page}`, clip.build.runtime, clip.build.data].filter(Boolean).join(" · ")}>{clip.build.label}</span>
-            {clip.repro?.link && <a href={clip.repro.link} target="_blank" rel="noreferrer">Open this fight <ExternalLink size={11} aria-hidden="true" /></a>}
-          </small>
+        {clip && <div className="rv-name">
+          {clip.mode && <span className="rv-mode" title={clip.mode.label}><ModeIcon size={14} aria-hidden="true" /> {clip.mode.label}</span>}
+          <h2 title={clip.title}>{clip.title}</h2>
+          {clip.why && <p title={clip.why}>{clip.why}</p>}
+        </div>}
+        <div className="rv-tools">
+          <span className="rv-left" data-testid="rv-left"><b>{left}</b> to go</span>
+          {fronts.length > 1 && <OptionSelect<string> size="sm" aria-label="Front" value={front} onValueChange={pickFront} options={frontOptions} className="rv-front" />}
+          {clip?.repro?.link && <a className="rv-mini" href={clip.repro.link} target="_blank" rel="noreferrer" title={`Open this fight in the game. ${facts}`}><ExternalLink size={13} aria-hidden="true" /> Fight</a>}
+          <button type="button" className="rv-mini" disabled={!history.length || busy} onClick={() => void undo()} title="Take back your last answer (Z)"><Undo2 size={13} aria-hidden="true" /> Undo</button>
         </div>
-        {clip.sides?.[1] ? <Side side={clip.sides[1]} end /> : <span />}
-      </div>
+      </header>
 
-      {(suspects.length > 0 || answered.length > 0 || mine.length > 0) && <div className="rv-notes">
-        {answered.map((n) => <div key={n.id} className="rv-note is-recheck">
-          <button type="button" className="rv-at" onClick={() => seek(n.t)}>{clock(n.t)}</button>
-          <div><p>You: {n.text || (n.files?.length ? "(pictures)" : "(voice note)")}</p>{n.reply && <p className="rv-reply">Fixed: {n.reply}{n.fixedIn ? ` (${n.fixedIn})` : ""}</p>}</div>
-          {db && <NoteSound db={db} clipId={clip.id} note={n} />}
-          {db && n.files?.length ? <NoteFiles db={db} clipId={clip.id} files={n.files} /> : null}
-        </div>)}
-        {suspects.map((s) => <div key={`s${s.index}`} className="rv-note is-suspect" data-testid="rv-suspect">
-          <button type="button" className="rv-at" onClick={() => seek(s.t)}>{clock(s.t)}</button>
-          <div><p><em>Claude suspects</em> {s.text}</p></div>
-          <button type="button" className="rv-mini is-bad" disabled={busy} onClick={() => confirmSuspect(s.index)} title="Yes, that is wrong"><ThumbsDown size={13} aria-hidden="true" /> Wrong</button>
-          <button type="button" className="rv-mini" disabled={busy} onClick={() => void waveOff(s.index)} title="No, that is fine"><ThumbsUp size={13} aria-hidden="true" /> Fine</button>
-        </div>)}
-        {mine.map((n) => <div key={n.id} className={`rv-note is-${n.state}`} data-testid="rv-note">
-          <button type="button" className="rv-at" onClick={() => seek(n.t)}>{clock(n.t)}</button>
-          <div><p>{n.text || (n.audio ? "Voice note saved. The words will be added from the audio." : "Pictures saved.")}</p></div>
-          {db && <NoteSound db={db} clipId={clip.id} note={n} />}
-          {db && n.files?.length ? <NoteFiles db={db} clipId={clip.id} files={n.files} /> : null}
-          {n.state === "open" && <button type="button" className="rv-mini" onClick={() => void removeNote(n)} title="Remove this note" aria-label="Remove this note"><X size={13} aria-hidden="true" /></button>}
-          {n.state === "fixed" && <CircleCheck size={15} className="rv-ok" aria-label="Fixed" />}
-        </div>)}
-      </div>}
+      {clip ? <>
+        <section className="rv-stage">
+          <video ref={video} key={`${clip.id}-${showBefore ? "before" : "now"}-${clip.round}`} src={showBefore && clip.before ? clip.before : clip.video} poster={clip.poster} autoPlay muted loop playsInline
+            onClick={togglePlay} onLoadedMetadata={(e) => setLength(e.currentTarget.duration || 0)} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} data-testid="rv-video" />
+          {recheck && <span className="rv-banner"><RotateCcw size={14} aria-hidden="true" /> Fixed · check again</span>}
+          {(clip.state === "good" || clip.state === "skipped") && <span className="rv-banner is-done">{STATE_WORDS[clip.state]}</span>}
+          {clip.before && <button type="button" className="rv-before" aria-pressed={showBefore} onClick={() => setShowBefore((b) => !b)}>{showBefore ? "Before the fix" : "After the fix"} <kbd>B</kbd></button>}
+          {(error || voiceProblem) && <p className="rv-error" role="alert">{error || voiceProblem}</p>}
+          {shown.length > 0 && <div className="rv-captions" data-testid="rv-captions">
+            {shown.slice(0, 3).map((m) => <div key={m.key} className={`rv-caption is-${m.kind}`} data-testid={m.kind === "suspect" ? "rv-suspect" : "rv-note"}>
+              {m.n ? <b className="rv-num">{m.n}</b> : <button type="button" className="rv-at" onClick={() => seek(m.t)}>{clock(m.t)}</button>}
+              <p title={m.kind === "recheck" && m.note?.reply ? `${m.text}
+Fixed: ${m.note.reply}` : m.text}>{m.kind === "suspect" ? <><em>Claude suspects</em> {m.text}</> : m.kind === "recheck" ? <>You: {m.text}{m.note?.reply && <span className="rv-reply"> Fixed: {m.note.reply}{m.note.fixedIn ? ` (${m.note.fixedIn})` : ""}</span>}</> : m.text}</p>
+              {m.kind === "suspect" && m.index !== undefined && <>
+                <button type="button" className="rv-mini is-bad" disabled={busy} onClick={() => { confirmSuspect(m.index!); setFocus(null); }} title="Yes, that is wrong"><ThumbsDown size={13} aria-hidden="true" /> Wrong</button>
+                <button type="button" className="rv-mini" disabled={busy} onClick={() => { void waveOff(m.index!); setFocus(null); }} title="No, that is fine"><ThumbsUp size={13} aria-hidden="true" /> Fine</button>
+              </>}
+              {m.note && db && <NoteSound db={db} clipId={clip.id} note={m.note} />}
+              {m.note?.files?.length && db ? <NoteFiles db={db} clipId={clip.id} files={m.note.files} /> : null}
+              {m.note?.state === "open" && <button type="button" className="rv-mini" onClick={() => void removeNote(m.note!)} title="Remove this note" aria-label="Remove this note"><X size={13} aria-hidden="true" /></button>}
+              {m.note?.state === "fixed" && <CircleCheck size={15} className="rv-ok" aria-label="Fixed" />}
+              {focus === m.key && <button type="button" className="rv-mini" onClick={() => setFocus(null)} aria-label="Close" title="Close (Esc)"><X size={13} aria-hidden="true" /></button>}
+            </div>)}
+          </div>}
+        </section>
 
-      {(error || voiceProblem) && <p className="rv-error" role="alert">{error || voiceProblem}</p>}
-      {actions}
-    </> : <section className="rv-done" data-testid="rv-done">
-      <CircleCheck size={54} aria-hidden="true" />
-      <h2>{clips.length ? "All caught up" : "No clips yet"}</h2>
-      {clips.length > 0 && <div className="rv-tally"><span className="is-good"><b>{counts.good}</b> look good</span><span className="is-noted"><b>{counts.noted}</b> with notes</span><span className="is-skip"><b>{counts.skipped}</b> skipped</span></div>}
-      <p>{clips.length ? "Your notes are read by the sessions working on the game. What they fix comes back here to check again." : "Clips appear here when a session films them."}</p>
-      {error && <p className="rv-error" role="alert">{error}</p>}
-    </section>}
+        <div className="rv-timeline">
+          <button type="button" className="rv-play" onClick={togglePlay} aria-label={paused ? "Play" : "Pause"}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
+          <div className="rv-track" role="slider" tabIndex={-1} aria-label="Position in the clip" aria-valuemin={0} aria-valuemax={Math.round(total)} aria-valuenow={Math.round(now)}
+            onPointerDown={(e) => { if ((e.target as HTMLElement).closest(".rv-mark")) return; const box = e.currentTarget.getBoundingClientRect(); const at = (x: number) => seek(((x - box.left) / box.width) * total); at(e.clientX); const move = (m: PointerEvent) => at(m.clientX); const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); }; window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); }}>
+            <i ref={(el) => { fill.current = el; }} />
+            {moments.map((m) => <button key={m.key} type="button" className={`rv-mark is-${m.kind === "note" ? m.note?.state ?? "open" : m.kind}`} style={mark(m.t)}
+              data-testid={m.kind === "suspect" ? "rv-marker" : "rv-note-mark"} aria-label={`${clock(m.t)}: ${m.text}`} title={`${clock(m.t)} ${m.text}`} onClick={() => jump(m)}>{m.n ?? ""}</button>)}
+            {panel !== "watch" && <span className="rv-mark is-pin" style={mark(pinned)} />}
+          </div>
+          <span className="rv-time" ref={timeLabel}>0:00 / {clock(total)}</span>
+        </div>
 
-    {strip.length > 0 && <nav className="rv-strip" aria-label="Clips">
-      {strip.map((c) => <button key={c.id} type="button" className={`is-${c.state}`} aria-current={c.id === currentId ? "true" : undefined} title={`${c.title} · ${STATE_WORDS[c.state]}`} onClick={() => openClip(c.id)}>
-        {c.poster ? <img src={c.poster} alt="" loading="lazy" /> : <span>{frontLabel(c.front)}</span>}
-        {c.sides && <span className="rv-strip-flags">{c.sides.map((s, i) => s.flag ? <img key={i} src={s.flag} alt="" /> : null)}</span>}
-        <i aria-hidden="true">{c.state === "good" ? <Check size={11} /> : c.state === "skipped" ? <SkipForward size={11} /> : c.state === "noted" ? <Mic size={11} /> : c.state === "recheck" ? <RotateCcw size={11} /> : null}</i>
-      </button>)}
-    </nav>}
+        <div className="rv-bar">
+          {clip.sides?.[0] && <SideMini side={clip.sides[0]} />}
+          {actions}
+          {clip.sides?.[1] && <SideMini side={clip.sides[1]} end />}
+        </div>
+      </> : <section className="rv-done" data-testid="rv-done">
+        <CircleCheck size={54} aria-hidden="true" />
+        <h2>{clips.length ? "All caught up" : "No clips yet"}</h2>
+        {clips.length > 0 && <div className="rv-tally"><span className="is-good"><b>{counts.good}</b> look good</span><span className="is-noted"><b>{counts.noted}</b> with notes</span><span className="is-skip"><b>{counts.skipped}</b> skipped</span></div>}
+        <p>{clips.length ? "Your notes are read by the sessions working on the game. What they fix comes back here to check again." : "Clips appear here when a session films them."}</p>
+        {error && <p className="rv-error" role="alert">{error}</p>}
+      </section>}
+    </div>
     {annotating && <ScreenshotAnnotator src={annotating.src} onSave={finishMarkup} onCancel={() => finishMarkup(null)} />}
   </main>;
 }

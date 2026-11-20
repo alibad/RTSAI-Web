@@ -1,8 +1,12 @@
-/* The Review inbox (ReviewInbox.tsx): one screen, the clip as large as the window allows, answers under it. */
-.rv-page { height: 100dvh; display: flex; flex-direction: column; background: #0c100c; }
+/* The Review inbox (ReviewInbox.tsx): one screen, never a scroll. The clip takes every pixel the title line, the
+   scrubber and the answer bar leave it; a short, wide window puts the title and answers in a column beside it. */
+.rv-page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background: #0c100c; }
+/* A very short window: the site's own bar gives its height to the clip. */
+@media (max-height: 560px) { .rv-page .site-nav, .rv-page .maker-bar { display: none; } }
+
 .rv { --rv-line: rgba(240, 238, 230, .14); --rv-panel: #141a15; --rv-text: #f0eee6; --rv-muted: #a4a898; --rv-faint: #8b9183; --rv-gold: #f1d28b;
   --rv-good: #86d67c; --rv-bad: #ef5b3f; --rv-amber: #f0b65a; --rv-voice: #ff7a5c;
-  flex: 1; min-height: 0; overflow-y: auto; width: min(1500px, 100%); margin: 0 auto; padding: 10px 18px 12px; display: flex; flex-direction: column; gap: 8px; color: var(--rv-text); }
+  flex: 1; min-height: 0; width: 100%; padding: 8px 14px 10px; display: flex; flex-direction: column; color: var(--rv-text); }
 .rv kbd { font: 600 10px/1 var(--font-mono), monospace; padding: 3px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: .6; }
 /* :where() keeps these at the weight of a bare element, so every button's own class decides its colour. (As ".rv button"
    they beat ".rv-go" and drew the Save button's text white on pale gold, 1.3:1: it looked switched off.) */
@@ -10,82 +14,89 @@
 :where(.rv) button:disabled { cursor: default; opacity: .45; }
 :where(.rv) button:focus-visible { outline: 2px solid var(--rv-text); outline-offset: 2px; }
 
-.rv-top { display: flex; align-items: center; gap: 14px; min-height: 34px; }
-.rv-top h1 { margin: 0; font-size: 17px; font-weight: 620; letter-spacing: -.01em; }
-.rv-fronts { display: flex; gap: 4px; flex-wrap: wrap; }
-.rv-fronts button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--rv-line); background: transparent; color: var(--rv-muted); font-size: 12.5px; transition: background .12s, color .12s, border-color .12s; }
-.rv-fronts button:hover { color: var(--rv-text); border-color: rgba(241, 210, 139, .5); }
-.rv-fronts button[aria-pressed="true"] { background: rgba(241, 210, 139, .14); border-color: rgba(241, 210, 139, .55); color: var(--rv-gold); }
-.rv-fronts b { min-width: 18px; padding: 1px 5px; border-radius: 999px; background: var(--rv-bad); color: #fff; font: 700 10px/1.4 var(--font-mono), monospace; text-align: center; }
-.rv-left { margin-left: auto; color: var(--rv-muted); font-size: 13px; }
-.rv-left b { color: var(--rv-text); font-size: 17px; font-weight: 650; }
-.rv-mini { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px; border-radius: 7px; border: 1px solid var(--rv-line); background: rgba(255, 255, 255, .03); color: var(--rv-muted); font-size: 12px; white-space: nowrap; transition: background .12s, color .12s, border-color .12s, transform .06s; }
+/* ---- the grid: title line, clip, scrubber, answers */
+.rv-grid { flex: 1; min-height: 0; display: grid; gap: 6px 14px; grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "head" "stage" "timeline" "bar"; }
+.rv-head { grid-area: head; display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 34px; }
+.rv-stage { grid-area: stage; }
+.rv-timeline { grid-area: timeline; }
+.rv-bar { grid-area: bar; }
+.rv-done { grid-row: 2 / -1; }
+
+/* ---- the title line: where you are, what this clip asks, the front, undo */
+.rv-nav { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 9px; border: 1px solid var(--rv-line); background: rgba(255, 255, 255, .03); }
+.rv-nav button { width: 30px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--rv-muted); }
+.rv-nav button:hover:not(:disabled) { background: rgba(255, 255, 255, .09); color: var(--rv-text); }
+.rv-nav span { min-width: 62px; text-align: center; color: var(--rv-muted); font-size: 12.5px; white-space: nowrap; }
+.rv-nav b { color: var(--rv-text); font-size: 14px; }
+.rv-name { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
+.rv-name h2 { margin: 0; flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15.5px; font-weight: 640; }
+.rv-name p { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rv-muted); font-size: 13px; }
+.rv-mode { flex: none; align-self: center; display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; background: rgba(239, 91, 63, .16); border: 1px solid rgba(239, 91, 63, .45); color: #ffb09d; font-size: 11px; font-weight: 640; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.rv-tools { flex: none; margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.rv-left { color: var(--rv-muted); font-size: 12.5px; white-space: nowrap; }
+.rv-left b { color: var(--rv-text); font-size: 15px; font-weight: 650; }
+.rv-front { min-width: 150px; }
+.rv-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5); }
+.rv-mini { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--rv-line); background: rgba(255, 255, 255, .03); color: var(--rv-muted); font-size: 12px; white-space: nowrap; text-decoration: none; transition: background .12s, color .12s, border-color .12s, transform .06s; }
 .rv-mini:hover:not(:disabled) { color: var(--rv-text); background: rgba(255, 255, 255, .08); }
 .rv-mini:active:not(:disabled) { transform: translateY(1px); }
 .rv-mini.is-bad:hover:not(:disabled) { color: #fff; background: rgba(239, 91, 63, .28); border-color: var(--rv-bad); }
 
-/* The clip takes every pixel the answers leave it. */
-.rv-stage { position: relative; flex: 1 1 0; min-height: 240px; border-radius: 10px; overflow: hidden; background: #050705; border: 1px solid var(--rv-line); }
-/* Out of the flow: the stage's size comes from the window, never from the clip's own size, and the clip is fitted whole. */
+/* ---- the clip: fitted whole, whatever the window; what it says sits over it */
+.rv-stage { position: relative; min-height: 0; border-radius: 10px; overflow: hidden; background: #050705; border: 1px solid var(--rv-line); }
 .rv-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; cursor: pointer; background: #050705; }
-.rv-banner { position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: rgba(240, 182, 90, .94); color: #1b1405; font-size: 12.5px; font-weight: 650; box-shadow: 0 4px 18px rgba(0, 0, 0, .5); }
+.rv-banner { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: rgba(240, 182, 90, .94); color: #1b1405; font-size: 12.5px; font-weight: 650; box-shadow: 0 4px 18px rgba(0, 0, 0, .5); }
 .rv-banner.is-done { background: rgba(20, 26, 21, .9); color: var(--rv-muted); border: 1px solid var(--rv-line); font-weight: 520; }
-.rv-before { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--rv-line); background: rgba(12, 16, 12, .86); font-size: 12px; }
+.rv-before { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--rv-line); background: rgba(12, 16, 12, .86); font-size: 12px; }
 .rv-before[aria-pressed="true"] { border-color: var(--rv-amber); color: var(--rv-amber); }
-
-.rv-timeline { display: flex; align-items: center; gap: 10px; }
-.rv-play { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rv-line); background: rgba(255, 255, 255, .04); }
-.rv-play:hover { background: rgba(255, 255, 255, .1); }
-.rv-track { position: relative; flex: 1; height: 22px; cursor: pointer; touch-action: none; }
-.rv-track::before { content: ""; position: absolute; inset: 9px 0; border-radius: 2px; background: rgba(240, 238, 230, .16); }
-.rv-track > i { position: absolute; left: 0; top: 9px; height: 4px; border-radius: 2px; background: var(--rv-gold); pointer-events: none; }
-.rv-mark { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; border: 2px solid #0c100c; background: var(--rv-bad); pointer-events: none; }
-.rv-mark.is-suspect { border-radius: 2px; transform: rotate(45deg) scale(.82); background: var(--rv-amber); }
-.rv-mark.is-recheck { background: var(--rv-amber); }
-.rv-mark.is-fixed { background: var(--rv-good); }
-.rv-mark.is-pin { background: #fff; box-shadow: 0 0 0 4px rgba(255, 122, 92, .5); }
-.rv-time { color: var(--rv-muted); font: 500 12px/1 var(--font-mono), monospace; min-width: 86px; text-align: right; }
-
-/* Who fights whom, as pictures: flag and unit icons each side, the kind of fight between them. */
-.rv-facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, auto) minmax(0, 1fr); align-items: center; gap: 16px; padding: 8px 12px; border-radius: 10px; background: var(--rv-panel); border: 1px solid var(--rv-line); }
-.rv-side { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.rv-side.is-end { flex-direction: row-reverse; }
-.rv-flag { display: grid; justify-items: center; gap: 4px; flex: none; }
-.rv-flag img, .rv-flag i { width: 54px; height: 36px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 2px 8px rgba(0, 0, 0, .4); }
-.rv-flag i { display: grid; place-items: center; background: #2a3322; color: var(--rv-gold); font: 700 13px/1 var(--font-mono), monospace; font-style: normal; text-transform: uppercase; }
-.rv-flag small { max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rv-muted); font-size: 11px; }
-.rv-units { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-.rv-side.is-end .rv-units { justify-content: flex-end; }
-.rv-unit { margin: 0; width: 66px; display: grid; justify-items: center; gap: 3px; }
-.rv-unit-art { position: relative; width: 60px; height: 48px; display: grid; place-items: center; border-radius: 4px; background: #0b0e0b; border: 1px solid var(--rv-line); color: var(--rv-muted); overflow: hidden; }
-.rv-unit-art img { width: 60px; height: 48px; object-fit: contain; image-rendering: pixelated; }
-.rv-unit-art b { position: absolute; right: 0; bottom: 0; padding: 1px 4px; border-top-left-radius: 4px; background: rgba(8, 10, 8, .88); color: var(--rv-gold); font: 700 10.5px/1.3 var(--font-mono), monospace; }
-.rv-unit figcaption { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; color: var(--rv-faint); font-size: 10px; }
-.rv-what { display: grid; justify-items: center; gap: 4px; text-align: center; max-width: 440px; }
-.rv-mode { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(239, 91, 63, .16); border: 1px solid rgba(239, 91, 63, .45); color: #ffb09d; font-size: 11.5px; font-weight: 620; letter-spacing: .05em; text-transform: uppercase; }
-.rv-what h2 { margin: 0; font-size: 15.5px; font-weight: 620; line-height: 1.25; }
-.rv-what p { margin: 0; color: var(--rv-muted); font-size: 12.5px; line-height: 1.35; }
-.rv-what small { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 12px; color: var(--rv-faint); font-size: 11px; }
-.rv-what small b { color: var(--rv-muted); font-weight: 560; }
-.rv-what small a { display: inline-flex; align-items: center; gap: 4px; color: var(--rv-gold); }
-
-.rv-notes { display: flex; flex-wrap: wrap; gap: 6px; max-height: 108px; overflow-y: auto; }
-.rv-note { display: flex; align-items: center; gap: 8px; max-width: 100%; padding: 5px 8px; border-radius: 9px; border: 1px solid rgba(239, 91, 63, .45); background: rgba(239, 91, 63, .1); font-size: 12.5px; }
-.rv-note.is-suspect { border-color: rgba(240, 182, 90, .5); background: rgba(240, 182, 90, .09); }
-.rv-note.is-recheck { border-color: rgba(240, 182, 90, .6); background: rgba(240, 182, 90, .12); }
-.rv-note.is-fixed { border-color: rgba(134, 214, 124, .4); background: rgba(134, 214, 124, .08); }
-.rv-note p { margin: 0; line-height: 1.35; }
-.rv-note em { font-style: normal; color: var(--rv-amber); font-weight: 600; margin-right: 4px; }
-.rv-note .rv-reply { color: var(--rv-good); }
-.rv-at { flex: none; padding: 2px 6px; border-radius: 5px; border: 0; background: rgba(0, 0, 0, .35); color: var(--rv-gold); font: 600 11px/1.4 var(--font-mono), monospace; }
-.rv-at:hover { background: rgba(0, 0, 0, .6); }
+.rv-error { margin: 0; padding: 7px 11px; border-radius: 8px; border: 1px solid rgba(239, 91, 63, .6); background: rgba(40, 14, 10, .94); color: #ffc4b6; font-size: 13px; }
+.rv-stage .rv-error { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); max-width: 80%; }
+.rv-captions { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); width: min(860px, calc(100% - 24px)); display: grid; gap: 6px; pointer-events: none; }
+.rv-caption { pointer-events: auto; display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 10px; background: rgba(8, 10, 8, .86); border: 1px solid rgba(240, 182, 90, .55); box-shadow: 0 6px 24px rgba(0, 0, 0, .55); font-size: 13.5px; backdrop-filter: blur(3px); }
+.rv-caption.is-note { border-color: rgba(239, 91, 63, .6); }
+.rv-caption.is-recheck { border-color: rgba(240, 182, 90, .8); }
+/* At most three lines over the clip; the whole sentence on hover. */
+.rv-caption p { margin: 0; flex: 1; min-width: 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.rv-caption em { font-style: normal; color: var(--rv-amber); font-weight: 650; margin-right: 4px; }
+.rv-caption .rv-reply { color: var(--rv-good); }
+.rv-num { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--rv-amber); color: #1b1405; font: 700 12px/1 var(--font-mono), monospace; }
+.rv-at { flex: none; padding: 2px 6px; border-radius: 5px; border: 0; background: rgba(255, 255, 255, .1); color: var(--rv-gold); font: 600 11px/1.4 var(--font-mono), monospace; }
+.rv-at:hover { background: rgba(255, 255, 255, .2); }
 .rv-note-audio { height: 28px; max-width: 220px; }
 .rv-ok { color: var(--rv-good); flex: none; }
-.rv-error { margin: 0; padding: 7px 11px; border-radius: 8px; border: 1px solid rgba(239, 91, 63, .6); background: rgba(239, 91, 63, .14); color: #ffc4b6; font-size: 13px; }
+.rv-note-files { display: inline-flex; gap: 4px; }
+.rv-note-files a { display: block; width: 52px; height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rv-line); }
+.rv-note-files img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rv-note-files video { height: 30px; max-width: 120px; border-radius: 4px; }
 
-/* The three answers: big, one key each. */
-.rv-answers { display: flex; justify-content: center; align-items: stretch; gap: 10px; flex-wrap: wrap; position: relative; }
-.rv-answer { min-width: 190px; height: 58px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--rv-line); background: var(--rv-panel); font-size: 16px; font-weight: 620;
+/* ---- the scrubber: the playhead, and each suspect (numbered) and note at its second */
+.rv-timeline { display: flex; align-items: center; gap: 10px; min-height: 30px; }
+.rv-play { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rv-line); background: rgba(255, 255, 255, .04); }
+.rv-play:hover { background: rgba(255, 255, 255, .1); }
+.rv-track { position: relative; flex: 1; height: 30px; cursor: pointer; touch-action: none; }
+.rv-track::before { content: ""; position: absolute; inset: 13px 0; border-radius: 2px; background: rgba(240, 238, 230, .16); }
+.rv-track > i { position: absolute; left: 0; top: 13px; height: 4px; border-radius: 2px; background: var(--rv-gold); pointer-events: none; }
+.rv-mark { position: absolute; top: 4px; width: 22px; height: 22px; margin-left: -11px; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 2px solid #0c100c; background: var(--rv-bad); color: #1b1405; font: 700 11px/1 var(--font-mono), monospace; transition: transform .1s; }
+.rv-mark:hover { transform: scale(1.18); z-index: 1; }
+.rv-mark.is-suspect { background: var(--rv-amber); }
+.rv-mark.is-recheck { background: var(--rv-amber); box-shadow: 0 0 0 2px rgba(240, 182, 90, .45); }
+.rv-mark.is-fixed { background: var(--rv-good); }
+.rv-mark.is-pin { top: 8px; width: 14px; height: 14px; margin-left: -7px; background: #fff; box-shadow: 0 0 0 4px rgba(255, 122, 92, .5); pointer-events: none; }
+.rv-time { flex: none; color: var(--rv-muted); font: 500 12px/1 var(--font-mono), monospace; min-width: 86px; text-align: right; }
+
+/* ---- the answer bar: side A, the answers, side B */
+/* Right padding: the site's floating Feedback button sits over that corner. */
+.rv-bar { display: flex; align-items: center; gap: 14px; min-width: 0; padding-right: 140px; }
+.rv-vs { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; }
+.rv-vs.is-end { flex-direction: row-reverse; }
+.rv-vs-flag { flex: none; width: 39px; height: 26px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 2px 8px rgba(0, 0, 0, .4); }
+i.rv-vs-flag { display: grid; place-items: center; background: #2a3322; color: var(--rv-gold); font: 700 12px/1 var(--font-mono), monospace; font-style: normal; text-transform: uppercase; }
+.rv-unit { position: relative; flex: none; width: 46px; height: 36px; display: grid; place-items: center; border-radius: 4px; background: #0b0e0b; border: 1px solid var(--rv-line); color: var(--rv-muted); overflow: hidden; }
+.rv-unit img { width: 46px; height: 36px; object-fit: contain; image-rendering: pixelated; }
+.rv-unit b { position: absolute; right: 0; bottom: 0; padding: 0 3px; border-top-left-radius: 4px; background: rgba(8, 10, 8, .88); color: var(--rv-gold); font: 700 10px/1.35 var(--font-mono), monospace; }
+.rv-answers { flex: none; display: flex; align-items: center; gap: 8px; }
+.rv-answer { min-width: 150px; height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 16px; border-radius: 11px; border: 1px solid var(--rv-line); background: var(--rv-panel); font-size: 15px; font-weight: 640;
   transition: transform .08s, background .14s, border-color .14s, box-shadow .14s; }
 .rv-answer:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0, 0, 0, .45); }
 .rv-answer:active:not(:disabled) { transform: translateY(1px) scale(.985); box-shadow: none; }
@@ -96,11 +107,14 @@
 .rv-answer.is-voice:hover:not(:disabled) { background: rgba(255, 122, 92, .2); }
 .rv-answer.is-skip { color: var(--rv-muted); }
 .rv-answer.is-skip:hover:not(:disabled) { color: var(--rv-text); background: rgba(255, 255, 255, .07); }
-.rv-type { align-self: center; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; background: none; color: var(--rv-faint); font-size: 12.5px; }
-.rv-type:hover { color: var(--rv-text); }
+.rv-type { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--rv-faint); font-size: 12.5px; }
+.rv-type:hover { color: var(--rv-text); background: rgba(255, 255, 255, .06); }
 
-.rv-talk { display: grid; gap: 8px; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255, 122, 92, .6); background: rgba(255, 122, 92, .08); }
+/* ---- a note being said or typed: it takes the bar */
+.rv-grid.is-talking .rv-vs { display: none; }
+.rv-talk { flex: 1; min-width: 0; display: grid; gap: 8px; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255, 122, 92, .6); background: rgba(255, 122, 92, .08); }
 .rv-talk-row { display: flex; align-items: center; gap: 12px; min-height: 42px; }
+.rv-talk-buttons { flex: none; display: flex; align-items: center; gap: 8px; }
 .rv-meter { --level: 0; flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--rv-voice); color: #1d0b06;
   box-shadow: 0 0 0 calc(3px + var(--level) * 16px) rgba(255, 122, 92, .3); transition: box-shadow .06s linear; }
 .rv-meter.is-still { background: rgba(255, 255, 255, .1); color: var(--rv-text); box-shadow: none; }
@@ -125,39 +139,18 @@
 /* Pictures in a note: the site's feedback tray (feedback-kit.css), small, in the inbox's colours. */
 .rv-pics { display: flex; align-items: center; gap: 8px; min-width: 0;
   --fbk-surface: rgba(0, 0, 0, .3); --fbk-ink: var(--rv-text); --fbk-muted: var(--rv-muted); --fbk-edge: var(--rv-line); --fbk-accent: var(--rv-gold); --fbk-accent-ink: #1b1608; --fbk-radius: 8px; }
-.rv-grab { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 13px; border-radius: 9px; border: 1px solid rgba(241, 210, 139, .6); background: rgba(241, 210, 139, .1); color: var(--rv-gold); font-size: 13.5px; font-weight: 600; }
+.rv-grab { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 13px; border-radius: 9px; border: 1px solid rgba(241, 210, 139, .6); background: rgba(241, 210, 139, .1); color: var(--rv-gold); font-size: 13.5px; font-weight: 600; }
 .rv-grab:hover:not(:disabled) { background: rgba(241, 210, 139, .2); }
 .rv-pics .fbk-shots { flex: none; flex-wrap: nowrap; gap: 6px; }
-.rv-pics .fbk-shot, .rv-pics .fbk-shot:only-child { width: 104px; height: 58px; aspect-ratio: auto; margin: 0; }
+.rv-pics .fbk-shot, .rv-pics .fbk-shot:only-child { width: 96px; height: 54px; aspect-ratio: auto; margin: 0; }
 .rv-pics .fbk-shot:only-child .fbk-shot-image img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
 .rv-pics .fbk-shot-hint { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 10px; }
 .rv-pics .fbk-remove { top: 3px; right: 3px; width: 22px; height: 22px; }
 .rv-pics .fbk-files { flex: none; flex-wrap: nowrap; }
-.rv-pics .fbk-drop { flex: 1; width: auto; min-width: 0; min-height: 40px; }
-.rv-note-files { display: inline-flex; gap: 4px; }
-.rv-note-files a { display: block; width: 52px; height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rv-line); }
-.rv-note-files img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.rv-note-files video { height: 30px; max-width: 120px; border-radius: 4px; }
+.rv-pics .fbk-drop { flex: 1; width: auto; min-width: 0; min-height: 38px; }
 
-/* Every clip of the front as a picture: where you are, and what you answered. */
-/* Right padding: the site's floating Feedback button sits over that corner. */
-.rv-strip { display: flex; gap: 5px; overflow-x: auto; padding: 3px 150px 4px 1px; scrollbar-width: thin; }
-.rv-strip button { position: relative; flex: none; width: 92px; height: 52px; padding: 0; border-radius: 6px; overflow: hidden; border: 2px solid transparent; background: #1a211b; opacity: .62; transition: opacity .12s, transform .08s, border-color .12s; }
-.rv-strip button:hover { opacity: 1; transform: translateY(-1px); }
-.rv-strip button[aria-current="true"] { opacity: 1; border-color: var(--rv-gold); }
-.rv-strip button.is-new, .rv-strip button.is-recheck { opacity: .92; }
-.rv-strip button > img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.rv-strip button > span:first-child { display: grid; place-items: center; height: 100%; color: var(--rv-faint); font-size: 11px; }
-.rv-strip-flags { position: absolute; left: 3px; bottom: 3px; display: flex; gap: 2px; }
-.rv-strip-flags img { width: 15px; height: 10px; object-fit: cover; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .7); }
-.rv-strip button > i { position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: #0c100c; }
-.rv-strip button.is-new > i { display: none; }
-.rv-strip button.is-good > i { background: var(--rv-good); }
-.rv-strip button.is-noted > i { background: var(--rv-voice); }
-.rv-strip button.is-skipped > i { background: #8d9285; }
-.rv-strip button.is-recheck > i { background: var(--rv-amber); }
-
-.rv-done { flex: 1; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; color: var(--rv-good); }
+/* ---- all caught up */
+.rv-done { display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; color: var(--rv-good); }
 .rv-done h2 { margin: 0; color: var(--rv-text); font-size: 30px; font-weight: 620; letter-spacing: -.02em; }
 .rv-done p { margin: 0; max-width: 460px; color: var(--rv-muted); font-size: 14px; line-height: 1.5; }
 .rv-tally { display: flex; gap: 10px; }
@@ -168,21 +161,41 @@
 .rv-card { display: grid; justify-items: start; gap: 10px; padding: 28px; border-radius: 14px; border: 1px solid var(--rv-line); background: var(--rv-panel); }
 .rv-card h1 { margin: 0; font-size: 22px; } .rv-card p { margin: 0; color: var(--rv-muted); }
 
-/* A short window: the clip keeps its room, the rest tightens. */
-@media (max-height: 820px) {
-  .rv { gap: 6px; padding-top: 6px; padding-bottom: 8px; }
-  .rv-facts { padding: 5px 10px; }
-  .rv-unit figcaption, .rv-flag small, .rv-what p { display: none; }
-  .rv-flag img, .rv-flag i { width: 42px; height: 28px; }
-  .rv-unit { width: 52px; } .rv-unit-art, .rv-unit-art img { width: 48px; height: 38px; }
-  .rv-answer { height: 46px; font-size: 15px; }
-  .rv-notes { max-height: 70px; }
-  .rv-strip button { width: 68px; height: 38px; }
+/* ---- a short, wide window (a laptop, a browser beside other windows): the clip at full height on the left, the
+   title and the answers in a column on the right. */
+@media (min-aspect-ratio: 2/1) and (min-width: 1000px) {
+  .rv-grid { grid-template-columns: minmax(0, 1fr) clamp(330px, 28vw, 420px); grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "stage head" "stage bar" "timeline bar"; }
+  .rv-done { grid-column: 1; grid-row: 1 / -1; }
+  .rv-head { flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 8px 10px; }
+  .rv-tools { margin-left: auto; }
+  .rv-name { order: 5; flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .rv-name h2, .rv-name p { max-width: none; white-space: normal; }
+  .rv-name h2 { flex: 1 1 auto; font-size: 16px; line-height: 1.25; }
+  .rv-name p { flex: 1 1 100%; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-height: 1.4; }
+  .rv-front { min-width: 0; flex: 1; }
+  .rv-bar { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 10px; min-height: 0; overflow-y: auto; padding-right: 0; }
+  .rv-vs, .rv-vs.is-end { flex: none; flex-direction: row; flex-wrap: wrap; overflow: visible; }
+  .rv-vs { order: -2; } .rv-vs.is-end { order: -1; }
+  .rv-answers { flex-direction: column; align-items: stretch; }
+  .rv-answer { min-width: 0; height: 44px; justify-content: flex-start; }
+  .rv-answer kbd { margin-left: auto; }
+  .rv-type { align-self: flex-start; }
+  .rv-talk-row { flex-wrap: wrap; }
+  .rv-talk-words { flex-basis: calc(100% - 56px); }
+  .rv-talk-buttons { flex-wrap: wrap; width: 100%; }
+  .rv-pics { flex-wrap: wrap; }
+  .rv-pics .fbk-drop { flex-basis: 100%; }
 }
+
+/* ---- a narrow window: the title line and the bar wrap */
 @media (max-width: 900px) {
   .rv { padding: 8px 10px; }
-  .rv-facts { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
-  .rv-side, .rv-side.is-end { flex-direction: row; }
-  .rv-answer { min-width: 0; flex: 1 1 140px; }
-  .rv-talk-row, .rv-pics { flex-wrap: wrap; }
+  .rv-head { flex-wrap: wrap; }
+  .rv-name { order: 5; flex-basis: 100%; }
+  .rv-bar { flex-wrap: wrap; justify-content: center; padding-right: 0; padding-bottom: 44px; }
+  .rv-vs { flex: 1 1 40%; }
+  .rv-answers { order: 3; flex: 1 1 100%; justify-content: center; flex-wrap: wrap; }
+  .rv-answer { min-width: 0; flex: 1 1 120px; }
+  .rv-talk-row { flex-wrap: wrap; }
 }
