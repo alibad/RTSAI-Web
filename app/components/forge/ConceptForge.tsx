@@ -38,6 +38,8 @@ type Concept = {
   id: string; kind: "infantry" | "vehicle" | "defence" | "building"; name: string; idea: string; description: string; role: string;
   factions: string[]; faction: string; stats: Record<string, number>; built?: string; weapons?: { kind: string }[];
   layers: Record<string, { count: number }>; art: ConceptArt | null;
+  /** Ships sail and aircraft fly (forge_build): they get their own filters. */
+  naval?: boolean; air?: boolean;
 };
 /** A mix in catalogue.json (forge_mix.py): n name, r role, k kind, f faction, ff fits, h hull donor, t turret donor,
  *  s [armour, firepower, speed, range], w weapon kinds, i idea, d description. */
@@ -49,10 +51,14 @@ type Index = { palettes: { factions: Record<string, Faction> }; concepts: Concep
 type GameUnits = { factions: { id: string; name: string; units: ViewerUnit[] }[]; effects: Record<string, PublicClip> };
 /** One picture on the wall: an original (at -1), a mix (its place in the catalogue, which is where its picture is) or
  *  a game unit (at -2, with the game's own cameo and its faction's name as the group). */
-type Entry = { id: string; name: string; role: string; kind: string; faction: string; weapons: string[]; at: number; h?: string; t?: string; cameo?: string | null; group?: string };
+type Entry = { id: string; name: string; role: string; kind: string; faction: string; weapons: string[]; at: number; h?: string; t?: string; cameo?: string | null; group?: string; move?: "sea" | "air" };
 type Source = "originals" | "mixes" | "game" | "story";
 
-const KINDS = [["all", "All"], ["infantry", "Soldiers"], ["vehicle", "Vehicles"], ["defence", "Defences"], ["building", "Buildings"]] as const;
+const KINDS = [["all", "All"], ["infantry", "Soldiers"], ["vehicle", "Vehicles"], ["ship", "Ships"], ["air", "Aircraft"], ["defence", "Defences"], ["building", "Buildings"]] as const;
+/** The kinds a mix never is (a mix is a turret on a land hull or a base). */
+const NOT_MIXES = new Set(["infantry", "building", "ship", "air"]);
+/** Whether an entry is of the chosen kind: Vehicles are the land ones, Ships and Aircraft have their own filters. */
+const ofKind = (e: Entry, kind: string) => kind === "all" || (kind === "ship" ? e.move === "sea" : kind === "air" ? e.move === "air" : e.kind === kind && !(kind === "vehicle" && e.move));
 /** The weapon filter: a short fixed list, each with its colour (the colour of that weapon's shot). */
 const WEAPONS = [["any", "Any weapon", "#8a8f80"], ["shell", "Guns", "#e0b84a"], ["bullet", "Machine guns, autocannon", "#e8e1c4"], ["rocket", "Rockets", "#ef7a3c"],
   ["missile", "Missiles", "#f4f4fa"], ["mortar", "Mortars, howitzers", "#b08654"], ["beam", "Beams", "#6fe3ff"], ["arc", "Arc", "#9db4ff"],
@@ -262,7 +268,8 @@ export function ConceptForge() {
   }, [sel, gameUnits]);
 
   // The wall: one source (or everything given to a faction), filtered; it grows as its end comes into view.
-  const originalEntries = useMemo(() => originals.map((c): Entry => ({ id: c.id, name: c.name, role: c.role, kind: c.kind, faction: c.faction, weapons: (c.weapons ?? []).map(w => w.kind), at: -1 })), [originals]);
+  const originalEntries = useMemo(() => originals.map((c): Entry => ({ id: c.id, name: c.name, role: c.role, kind: c.kind, faction: c.faction, weapons: (c.weapons ?? []).map(w => w.kind), at: -1,
+    move: c.naval ? "sea" : c.air ? "air" : undefined })), [originals]);
   const mixEntries = useMemo(() => mixes.map((m, i): Entry => ({ id: m.id, name: m.n, role: m.r, kind: m.k, faction: m.f, weapons: m.w, at: i, h: m.h, t: m.t })), [mixes]);
   const gameEntries = useMemo(() => (gameUnits?.factions ?? []).flatMap(f => f.units.map((u): Entry => (
     { id: `game:${f.id}:${u.id}`, name: u.name, role: u.role, kind: "game", faction: f.id, weapons: [], at: -2, cameo: u.cameo, group: f.name }))), [gameUnits]);
@@ -287,7 +294,7 @@ export function ConceptForge() {
     const q = query.trim().toLowerCase();
     const from = sentTo ? [...originalEntries, ...mixEntries].filter(e => routing?.[e.id]?.factions?.includes(sentTo))
       : source === "mixes" ? mixEntries : source === "originals" ? originalEntries : source === "story" ? storyEntries : gameEntries;
-    const list = from.filter(e => (ofGame || ofStory || ((kind === "all" || e.kind === kind) && (!weapon || (weapon === "none" ? !e.weapons.length : e.weapons.includes(weapon)))))
+    const list = from.filter(e => (ofGame || ofStory || (ofKind(e, kind) && (!weapon || (weapon === "none" ? !e.weapons.length : e.weapons.includes(weapon)))))
       && (!q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q)) && (!donor?.h || e.h === donor.h) && (!donor?.t || e.t === donor.t));
     return shuffle && !ofStory ? shuffled(list, shuffle) : list;
   }, [originalEntries, mixEntries, gameEntries, storyEntries, routing, sentTo, ofGame, ofStory, source, kind, weapon, query, donor, shuffle]);
@@ -432,7 +439,7 @@ export function ConceptForge() {
     : source === "story" ? (who ? `with ${who.name}` : `in ${pal.factions[told]?.name ?? told}'s story`) : "game units";
   const toSource = (id: Source) => {
     setSource(id); setSentTo(""); setDonor(null);
-    if (id === "mixes" && (kind === "infantry" || kind === "building")) setKind("all");
+    if (id === "mixes" && NOT_MIXES.has(kind)) setKind("all");
     if (sel && !listBeside()) show("");   // with the list beside the stage, the stage keeps its concept
   };
   /** Open a faction's war on the Story wall; the unit on the stage stays (it is in that chapter). */
@@ -461,7 +468,7 @@ export function ConceptForge() {
               <button key={f} className={told === f ? "on" : ""} onClick={() => { setStoryFaction(f); setPerson(""); }} title={stories[f].title}>
                 <Flag id={flagId(f)} size="s" />{pal.factions[f]?.name ?? f}<em>{Object.keys(stories[f].units ?? {}).length}</em></button>
             ))}</div> : null}
-            {!ofGame && !ofStory ? <div className="cf-chips">{KINDS.filter(([id]) => !(source === "mixes" && !sentTo && (id === "infantry" || id === "building"))).map(([id, label]) => (
+            {!ofGame && !ofStory ? <div className="cf-chips">{KINDS.filter(([id]) => !(source === "mixes" && !sentTo && NOT_MIXES.has(id))).map(([id, label]) => (
               <button key={id} className={kind === id ? "on" : ""} onClick={() => setKind(id)}>{label}</button>
             ))}</div> : null}
             {!ofGame && !ofStory ? <OptionSelect aria-label="Weapon" size="sm" className="cf-weapon" value={weapon || "any"} onValueChange={v => setWeapon(v === "any" ? "" : v)} options={WEAPON_OPTIONS} /> : null}
