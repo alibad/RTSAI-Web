@@ -103,8 +103,11 @@ function publish(folder, files, batch) {
   // Cloudflare Pages takes files up to 25 MiB.
   for (const f of unique) if (fs.statSync(path.join(folder, f)).size > 25 * 1024 * 1024) die(`${f} is over 25 MiB: encode it smaller (a 30-second clip at 1080p fits easily at CRF 24 to 26).`);
   if (emulator) {
-    const dir = opt("serve-dir", process.env.REVIEW_SERVE_DIR), url = opt("serve-url", process.env.REVIEW_SERVE_URL);
-    if (!dir || !url) die("With --emulator, pass --serve-dir <folder> and --serve-url <its address> (tools/review-preview.mjs prints both).");
+    // A running preview says where its clip folder is (tools/review-preview.mjs writes .cache/review-preview.json).
+    const pointer = path.join(repo, ".cache", "review-preview.json");
+    const preview = fs.existsSync(pointer) ? JSON.parse(fs.readFileSync(pointer, "utf8")) : {};
+    const dir = opt("serve-dir", process.env.REVIEW_SERVE_DIR ?? preview.serveDir), url = opt("serve-url", process.env.REVIEW_SERVE_URL ?? preview.serveUrl);
+    if (!dir || !url) die("No preview is running. Start one (node tools/review-preview.mjs --data <folder>), or pass --serve-dir <folder> and --serve-url <its address>.");
     for (const f of unique) { const to = path.join(dir, batch, f); fs.mkdirSync(path.dirname(to), { recursive: true }); fs.copyFileSync(path.join(folder, f), to); }
     return Object.fromEntries(unique.map((f) => [f, `${url.replace(/\/$/, "")}/${batch}/${f.split(path.sep).join("/")}`]));
   }
@@ -156,27 +159,52 @@ function printClipHead(c) {
 if (verb === "add") {
   const folder = path.resolve(positional[0] ?? die("usage: node tools/review.mjs add <folder with clips.json>"));
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "clips.json"), "utf8"));
-  const front = manifest.front ?? die("clips.json needs a front (battles, campaign, ai, multiplayer, ...)");
-  const by = opt("by", manifest.by ?? "a session");
+  const list = Array.isArray(manifest) ? manifest : manifest.clips ?? die("clips.json needs a list of clips.");
+  const top = Array.isArray(manifest) ? {} : manifest;
+  const by = opt("by", top.by ?? top.session ?? "a session");
   const replace = flag("replace");
-  for (const c of manifest.clips) {
+  // Two ways to write a clip are taken (docs/review-inbox.md): the full one (why, sides, mode, chips, repro, build,
+  // suspects with their second) and the short one the fronts agreed on (shows, facts, filmedAt, suspected).
+  const text = (v) => (typeof v === "string" ? v : v === undefined || v === null ? "" : Array.isArray(v) ? v.join(", ") : typeof v === "object" ? Object.entries(v).map(([k, x]) => `${k}: ${x}`).join(", ") : String(v));
+  const label = (k) => k.charAt(0).toUpperCase() + k.slice(1).replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  for (const c of list) {
     if (!/^[a-z0-9][a-z0-9-]{2,79}$/.test(c.id ?? "")) die(`Clip id "${c.id}" must be lower-case letters, digits and dashes.`);
     if (!c.title || !c.file) die(`Clip ${c.id} needs a title and a file.`);
+    c.front ??= top.front ?? die(`Clip ${c.id} needs a front (battles, campaign, ai, multiplayer, ...), its own or one for the whole file.`);
+    if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(c.front)) die(`Front "${c.front}" must be lower-case letters, digits and dashes.`);
     const existing = await get(`reviewClips/${c.id}`);
     if (existing && !replace) die(`Clip ${c.id} is already in the inbox (${existing.state}). Use "fixed" to send it back after a fix, or --replace to swap a broken recording.`);
     c.existing = existing;
+    c.why ??= text(c.shows);
+    // facts: a sentence, or named facts. "build" names the build; everything else becomes a small labelled chip.
+    const facts = c.facts && typeof c.facts === "object" && !Array.isArray(c.facts) ? { ...c.facts } : c.facts ? { facts: text(c.facts) } : {};
+    c.build ??= typeof facts.build === "object" && facts.build ? facts.build : facts.build ? { label: text(facts.build) } : top.build ?? { label: "" };
+    delete facts.build;
+    c.chips = [...(c.chips ?? []), ...Object.entries(facts).filter(([, v]) => text(v)).map(([k, v]) => ({ label: label(k), value: text(v).slice(0, 160) })), ...(c.filmedAt ? [{ label: "Filmed", value: text(c.filmedAt) }] : [])];
+    // suspected: sentences, or { t | at, text } with the second it shows.
+    c.suspects = [...(c.suspects ?? []), ...(Array.isArray(c.suspected) ? c.suspected : c.suspected ? [c.suspected] : []).map((x) => (typeof x === "string" ? { t: 0, text: x } : { t: Number(x.t ?? x.at ?? x.second ?? 0) || 0, text: text(x.text ?? x.what ?? x.problem) }))].filter((x) => x.text);
+    // A clip without a poster or a length gets them from the file (ffmpeg and ffprobe, when they are installed).
+    if (!isUrl(c.file) && fs.existsSync(path.join(folder, c.file))) {
+      const file = path.join(folder, c.file);
+      if (!c.seconds) { try { c.seconds = Math.round(Number(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${file}"`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })) * 10) / 10 || 0; } catch { /* no ffprobe: the page reads the length itself */ } }
+      if (!c.poster) {
+        const poster = `${c.file.replace(/\.[^.]+$/, "")}.poster.jpg`;
+        try { execSync(`ffmpeg -y -v error -ss ${Math.max(0.5, (c.seconds || 6) / 3).toFixed(1)} -i "${file}" -frames:v 1 -vf scale=640:-2 -q:v 4 "${path.join(folder, poster)}"`, { stdio: "ignore" }); c.poster = poster; } catch { /* no ffmpeg: the strip shows the front's name */ }
+      }
+    }
   }
   const local = (v) => (typeof v === "string" && v && !isUrl(v) ? [v] : []);
-  const files = manifest.clips.flatMap((c) => [...local(c.file), ...local(c.poster), ...(c.sides ?? []).flatMap((s) => [...local(s.flag), ...s.units.flatMap((u) => local(u.icon))])]);
-  const urls = publish(folder, files, `${front}/${stamp()}`);
+  const files = list.flatMap((c) => [...local(c.file), ...local(c.poster), ...(c.sides ?? []).flatMap((s) => [...local(s.flag), ...s.units.flatMap((u) => local(u.icon))])]);
+  const fronts = [...new Set(list.map((c) => c.front))];
+  const urls = publish(folder, files, `${fronts.length === 1 ? fronts[0] : "clips"}/${stamp()}`);
   const url = (v) => (typeof v === "string" && v ? (isUrl(v) ? v : urls[v]) : undefined);
   const now = new Date();
   let n = 0;
-  for (const c of manifest.clips) {
+  for (const c of list) {
     const facts = {
-      front, title: c.title, why: c.why ?? "", video: url(c.file), poster: url(c.poster), seconds: c.seconds ?? 0,
+      front: c.front, title: c.title, why: c.why ?? "", video: url(c.file), poster: url(c.poster), seconds: c.seconds ?? 0,
       sides: c.sides?.map((s) => ({ faction: s.faction, name: s.name, flag: url(s.flag), units: s.units.map((u) => ({ id: u.id, name: u.name, count: u.count ?? 1, cls: u.cls, icon: url(u.icon) })) })),
-      mode: c.mode, chips: c.chips, repro: c.repro, build: c.build ?? manifest.build ?? { label: "" }, suspects: c.suspects ?? [], by, updated: now,
+      mode: c.mode, chips: c.chips.length ? c.chips : undefined, repro: c.repro, build: c.build, suspects: c.suspects, by, updated: now,
     };
     // Each clip a millisecond after the last: the inbox shows them in the order of clips.json.
     if (c.existing) await patch(`reviewClips/${c.id}`, facts);
@@ -184,7 +212,7 @@ if (verb === "add") {
     n++;
     console.log(`${c.existing ? "replaced" : "added"}  ${c.id}  ${facts.video}`);
   }
-  console.log(`\n${n} clip(s) in the ${front} inbox${emulator ? " (local preview)" : ""}.`);
+  console.log(`\n${n} clip(s) in the inbox (${fronts.join(", ")})${emulator ? ", local preview" : ""}.`);
 } else if (verb === "feedback") {
   const front = opt("front");
   // Clips with something to act on: open notes, or suspects the owner waved off or left unanswered after answering.

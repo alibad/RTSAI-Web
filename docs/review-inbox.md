@@ -10,8 +10,9 @@ a time, each answered with one click or key. Any session working on the game can
     second, `B` before/after on a fixed clip.
   - Suspects a session attached show under the clip: **Wrong** turns one into a note, **Fine** waves it off.
   - Clips a session fixed come back first, marked **Fixed, check again**, with the owner's note and the session's reply.
-- **A front** is one line of work: `battles`, `campaign`, `ai`, `multiplayer`, `maps`, `art`, `sound`, `site`
-  (`lib/review/model.ts`; add one there when a new front starts). `/admin/review?front=battles` opens on one front.
+- **A front** is one line of work: `battles`, `campaign`, `ai-opponent`, `multiplayer`, `look-and-sound`,
+  `first-five-min`, `maker-tools`, `release-check`, and others (`lib/review/model.ts` gives each its name on the
+  page; a front that is not listed there still works). `/admin/review?front=battles` opens on one front.
 - **Owner only.** The page sits behind `AdminGate`, and the data behind a Firestore rule (`firestore.rules`, "Review
   inbox") that lets in only a verified sign-in with an owner email: the same list as `OWNER_EMAILS` in `lib/admin.ts`.
   Change both together.
@@ -72,6 +73,28 @@ The files (video, poster, flags, unit icons) go to the Cloudflare Pages project 
 clip. The project is created on the first upload. It is free; the addresses are unlisted but public, so never put
 anything secret in a clip.
 
+#### The short shape
+
+A front that only has a film and a few words about it can write less. Each clip may carry its own `front`, and the
+file may be just the list:
+
+```json
+{ "clips": [
+  { "id": "campaign-03-relay-briefing", "front": "campaign", "title": "Relay Under Siege: the briefing",
+    "file": "relay-briefing.mp4",
+    "shows": "The briefing film and the first radio call of chapter 3.",
+    "facts": { "who": "Lebanon against Israel", "what": "chapter 3, opening", "build": "live /play, 16 Nov (a6e9eea)" },
+    "filmedAt": "2026-11-20 15:10",
+    "suspected": ["The radio call has captions but no voice.", { "t": 42, "text": "The film is the old map film." }] }
+] }
+```
+
+- `shows` is the clip's `why`. `facts` may be a sentence or named facts: `build` names the build, the others show as
+  small labelled chips, as does `filmedAt`.
+- `suspected` takes sentences, or `{ "t": second, "text": ... }` when you know where it shows.
+- A clip without a `poster` or `seconds` gets them from the file (ffmpeg and ffprobe).
+- The two shapes mix: a short clip can still carry `sides`, `mode`, `repro` or `chips`.
+
 A clip that is already in the inbox is refused. `--replace` swaps a broken recording (same round, the owner's answer
 is kept). `node tools/review.mjs remove <clip>...` takes clips out again.
 
@@ -127,14 +150,20 @@ A 30-second voice note is about 120 KB. Nothing here adds a Vercel function, a B
 
 ```sh
 node tools/review-preview.mjs --data <folder>     # the real page and rules on the local Firebase emulators
-node tools/review.mjs add <clips folder> --emulator --serve-dir <folder>/clips --serve-url http://127.0.0.1:3473
+node tools/review.mjs add <clips folder> --emulator        # every verb takes --emulator
 node tools/review.mjs feedback --emulator
 node tools/review-inbox-browser-test.mjs --data <folder>   # the whole loop in a browser with a fake microphone
 ```
 
 The preview opens at `http://127.0.0.1:3472/admin/review` and signs the owner in by itself (emulator only). What is
-answered there stays in `<folder>/firestore` on this PC. It needs Java and the `firebase` CLI. Record in a normal
-Chrome window: the Claude app's built-in browser pane blocks the microphone.
+answered there is saved to `<folder>/firestore` on this PC every minute and when it stops. It needs Java and the
+`firebase` CLI. Record in a normal Chrome window: the Claude app's built-in browser pane blocks the microphone.
+
+- One preview at a time on a PC: the emulators use ports 8085, 9099 and 4400. While one runs, any session adds clips
+  to it with `--emulator` alone (the preview writes where it is to `.cache/review-preview.json`).
+- Its website is a frozen dev server (`RTSAI_DEV_FROZEN=1`, `vite.config.ts`): it does not watch files or hot-reload,
+  so edits other sessions make in this checkout cannot break the page under the owner. Restart it to pick up a change
+  to the page.
 
 The test adds four clips on the front `test`, answers them with keys only (Looks good, a suspect waved off and one
 confirmed, a voice note, a typed note, Skip, Undo), reads them back with `feedback`, fetches the voice note, sends a

@@ -20,8 +20,14 @@ export const REVIEW_FRONTS = [
   { id: "art", label: "Art" },
   { id: "sound", label: "Sound" },
   { id: "site", label: "Website" },
+  // The fronts of 20 November 2026, by the names their sessions use.
+  { id: "ai-opponent", label: "AI opponent" },
+  { id: "look-and-sound", label: "Look and sound" },
+  { id: "first-five-min", label: "First five minutes" },
+  { id: "maker-tools", label: "Maker tools" },
+  { id: "release-check", label: "Release check" },
 ] as const;
-export const frontLabel = (id: string) => REVIEW_FRONTS.find((f) => f.id === id)?.label ?? id.charAt(0).toUpperCase() + id.slice(1);
+export const frontLabel = (id: string) => REVIEW_FRONTS.find((f) => f.id === id)?.label ?? (id.charAt(0).toUpperCase() + id.slice(1)).replace(/-/g, " ");
 
 /**
  * new: waiting for the owner. good / skipped / noted: the owner's answer. recheck: a session says it fixed what a

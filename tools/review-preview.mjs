@@ -53,7 +53,8 @@ else {
   run("emulators", `firebase emulators:start --only auth,firestore --project ${project}${fs.existsSync(store) ? ` --import "${store}"` : ""} --export-on-exit "${store}"`);
   for (let i = 0; i < 90 && !(await up("http://127.0.0.1:8085/") && await up("http://127.0.0.1:9099/")); i++) await sleep(1000);
   if (!await up("http://127.0.0.1:8085/")) { log("the emulators did not start: see", path.join(data, "emulators.log")); process.exit(1); }
-  setInterval(() => void fetch(`http://127.0.0.1:4400/emulator/v1/projects/${project}:export`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: store, initiatedBy: "review-preview" }) }).catch(() => {}), 60000);
+  // Saved every minute as well as on exit: a crash or a hard stop must not lose what the owner answered.
+  setInterval(() => void fetch("http://127.0.0.1:4400/_admin/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: store, initiatedBy: "review-preview" }) }).catch(() => {}), 60000);
 }
 
 // ---- the owner's account in the Auth emulator: the email the rules and lib/admin.ts name, verified
@@ -65,13 +66,18 @@ await fetch(`${auth}/projects/${project}/accounts:update`, { method: "POST", hea
 
 // ---- the website's own page, pointed at the emulators
 run("site", `npx vinext dev -p ${port} -H 127.0.0.1`, {
+  // Frozen: no file watching, no hot reload (vite.config.ts). Other sessions' edits must not break the owner's page.
+  RTSAI_DEV_FROZEN: "1",
   NEXT_PUBLIC_FIREBASE_EMULATORS: "1", NEXT_PUBLIC_FIREBASE_PROJECT_ID: project, NEXT_PUBLIC_FIREBASE_API_KEY: "demo",
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: `${project}.firebaseapp.com`, NEXT_PUBLIC_FIREBASE_APP_ID: "demo", NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "",
 });
 for (let i = 0; i < 120 && !await up(`http://127.0.0.1:${port}/admin/review`); i++) await sleep(1000);
 
+const pointer = path.join(repo, ".cache", "review-preview.json");
+fs.mkdirSync(path.dirname(pointer), { recursive: true });
+fs.writeFileSync(pointer, JSON.stringify({ site: `http://127.0.0.1:${port}`, serveDir: clips, serveUrl: `http://127.0.0.1:${clipsPort}`, pid: process.pid }, null, 2));
 log(`Review inbox:  http://127.0.0.1:${port}/admin/review`);
-log(`Add clips:     node tools/review.mjs add <folder> --emulator --serve-dir "${clips}" --serve-url http://127.0.0.1:${clipsPort}`);
+log(`Add clips:     node tools/review.mjs add <folder> --emulator`);
 log(`Read answers:  node tools/review.mjs feedback --emulator`);
 
 let stopping = false;
@@ -79,7 +85,8 @@ async function stop() {
   if (stopping) return;
   stopping = true;
   log("saving and stopping");
-  await fetch(`http://127.0.0.1:4400/emulator/v1/projects/${project}:export`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: store, initiatedBy: "review-preview" }) }).catch(() => {});
+  await fetch("http://127.0.0.1:4400/_admin/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: store, initiatedBy: "review-preview" }) }).catch(() => {});
+  fs.rmSync(pointer, { force: true });
   for (const child of children) { try { if (process.platform === "win32") execSync(`taskkill /pid ${child.pid} /T /F`, { stdio: "ignore" }); else child.kill("SIGINT"); } catch { /* already gone */ } }
   process.exit(0);
 }

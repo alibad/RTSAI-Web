@@ -150,9 +150,14 @@ export default defineConfig(async ({ command }) => {
   process.env.WRANGLER_LOG_PATH ??= ".wrangler/logs";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
 
-  const server = isCodexSeatbeltSandbox
-    ? { watch: { useFsEvents: false, usePolling: true } }
-    : undefined;
+  // A frozen dev server (tools/review-preview.mjs, RTSAI_DEV_FROZEN=1) never watches files or hot-reloads: other
+  // sessions edit this checkout, and a hot reload of a shared module (the auth provider) breaks the page for
+  // whoever is using it. It serves the files as they were when it first read them, until it is restarted.
+  const server = process.env.RTSAI_DEV_FROZEN === "1"
+    ? { watch: null, hmr: false as const }
+    : isCodexSeatbeltSandbox
+      ? { watch: { useFsEvents: false, usePolling: true } }
+      : undefined;
 
   // Art Lab can use Vite's native Node dev server without a worker transport.
   // This opt-in is serve-only; production always retains its configured host.
