@@ -30,6 +30,10 @@ export function actionsFor(item: StageItem): ViewerAction[] {
   if (item.spec.voxel) return voxelAnimationParts(item.spec).length ? [{ id: "body", label: voxelCycleLabel(item.spec) }] : [];
   return spriteAnimations(item.sprite).map(a => ({ id: a.id, label: a.label }));
 }
+/** A building whose standing picture loops (a dish that sweeps, blades that turn, a beacon that blinks) plays from
+ *  the start: standing still is when it is most alive. */
+const livesAtRest = (item: StageItem, first: string) => (item.spec.category === "structure" || item.spec.category === "defense")
+  && (item.sprite?.sequences.find(s => s.name === first)?.length ?? 1) > 1;
 const turns = (item: StageItem) => Boolean(item.spec.voxel) || Boolean(item.sprite?.sequences.some(s => Math.abs(s.facings) > 1));
 
 /** A sprite's ground shadow while it flies: its silhouette in the shadow colour, cached per frame. */
@@ -129,7 +133,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   const fireAction = actions.find(a => a.id === "attack")?.id ?? actions.find(a => a.label === "Fire")?.id ?? null;
   const runAction = actions.find(a => a.id === "move")?.id ?? null;
   const [animation, setAnimation] = useState(firstAction);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(() => livesAtRest(item, firstAction));
   const [spin, setSpin] = useState(false);
   const [zoomOverride, setZoomOverride] = useState<number | null>(null);
   const [radius, setRadius] = useState<number | null>(null);
@@ -157,7 +161,7 @@ export function ViewerStage({ frames, item, color, onColor, tag, children, onAct
   // software GPU a fresh canvas layer per unit costs a frame of 150-200 ms to composite.
   const [shown, setShown] = useState(item);
   if (shown !== item) {
-    setShown(item); setAnimation(firstAction); setPlaying(false); setSpin(false); setZoomOverride(null); setRadius(null);
+    setShown(item); setAnimation(firstAction); setPlaying(livesAtRest(item, firstAction)); setSpin(false); setZoomOverride(null); setRadius(null);
     setAttack(null); setRunning(false); setRings(false);
   }
   useEffect(() => { view.current.time = 0; demo.current = null; lastFrame.current = null; }, [item]);
