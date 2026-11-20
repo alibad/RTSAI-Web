@@ -33,7 +33,7 @@ export function actionsFor(item: StageItem): ViewerAction[] {
 /** A building whose standing picture loops (a dish that sweeps, blades that turn, a beacon that blinks) plays from
  *  the start: standing still is when it is most alive. */
 const livesAtRest = (item: StageItem, first: string) => (item.spec.category === "structure" || item.spec.category === "defense")
-  && (item.sprite?.sequences.find(s => s.name === first)?.length ?? 1) > 1;
+  && Number(item.sprite?.sequences.find(s => s.name === first)?.length ?? 1) > 1;
 const turns = (item: StageItem) => Boolean(item.spec.voxel) || Boolean(item.sprite?.sequences.some(s => Math.abs(s.facings) > 1));
 
 /** A sprite's ground shadow while it flies: its silhouette in the shadow colour, cached per frame. */
