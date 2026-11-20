@@ -29,7 +29,7 @@ import { actionSounds, API, conceptItem, conceptSounds, conceptWeapons, forgeFil
 import { MakerBar, useSiteBeside } from "../MakerBar";
 import { OptionSelect } from "../ui/fields";
 import { Flag } from "../art/review/Chrome";
-import { storyOf, type Chapter, type Stories, type UnitStory } from "./stories";
+import { initials, storyOf, type Chapter, type Person, type Stories, type UnitStory } from "./stories";
 import "../art/viewer/viewer.css";
 import "./forge.css";
 
@@ -137,18 +137,27 @@ const seconds = (ticks: number) => `${(ticks * 0.04).toFixed(1).replace(/\.0$/, 
 
 /** A unit's own story beside the stage: its chapter (a click opens the faction's war there), the moment it is
  *  remembered for, who built it, its crew on the radio and the Directorate's file on it. */
-function StoryCard({ story, chapter, onChapter }: { story: UnitStory; chapter: Chapter | null; onChapter: () => void }) {
+function StoryCard({ story, chapter, onChapter, people, paint, onPerson }: { story: UnitStory; chapter: Chapter | null; onChapter: () => void;
+  people: Person[]; paint?: string; onPerson: (id: string) => void }) {
   return (
     <section className="cf-story">
       {chapter ? <button className="cf-chapterchip" onClick={onChapter} title="Read this chapter of the war, with every unit in it">
         <b>{chapter.title}</b>{chapter.campaign ? <em>{chapter.campaign}</em> : <em>{chapter.when}</em>}
       </button> : null}
+      {people.length ? <div className="cf-who" aria-label="People in this story">{people.map(p => (
+        <button key={p.id} onClick={() => onPerson(p.id)} title={`${p.role} Follow ${p.name} through the war.`}><Face name={p.name} paint={paint} />{p.name}</button>
+      ))}</div> : null}
       <p className="cf-tale">{story.story}</p>
       <p className="cf-origin">{story.origin}</p>
       {story.crew.length ? <ul className="cf-radio" aria-label="Its crew on the radio">{story.crew.map(l => <li key={l}>{l}</li>)}</ul> : null}
       {story.broker ? <blockquote className="cf-broker"><i aria-hidden="true" /><b>The Broker&apos;s file</b>{story.broker}</blockquote> : null}
     </section>
   );
+}
+
+/** A person's badge: their initials on their faction's colour. */
+function Face({ name, paint }: { name: string; paint?: string }) {
+  return <i className="cf-face" style={{ ["--fac" as string]: paint ?? "#6b6f63" }} aria-hidden="true">{initials(name)}</i>;
 }
 
 /** A repeatable shuffle (the same seed gives the same order, so paging through a shuffle works). */
@@ -175,6 +184,8 @@ export function ConceptForge() {
   const [stories, setStories] = useState<Stories>({});
   /** The faction whose war the Story wall tells (the first one with stories until one is picked). */
   const [storyFaction, setStoryFaction] = useState("");
+  /** The cast member whose units the Story wall shows (empty: the whole war). */
+  const [person, setPerson] = useState("");
   const shuffle = order[source];
   const setShuffle = (to: number | ((n: number) => number)) => setOrder(o => ({ ...o, [source]: typeof to === "function" ? to(o[source]) : to }));
   const [sentTo, setSentTo] = useState<string>("");
@@ -251,14 +262,15 @@ export function ConceptForge() {
   // it (in the order the story file lists them).
   const told = storyFaction && stories[storyFaction] ? storyFaction : Object.keys(stories)[0] ?? "";
   const tale = stories[told] as Stories[string] | undefined;
+  const who = tale?.cast?.find(p => p.id === person);
   const storyEntries = useMemo(() => {
     if (!tale) return [];
     const ours = new Map([...originalEntries, ...gameEntries.filter(e => e.faction === told)].map(e => [e.at === -2 ? e.id.split(":")[2] : e.id, e]));
     const place = new Map(tale.chapters.map((c, i) => [c.id, i]));
     return Object.entries(tale.units)
-      .flatMap(([id, s]): Entry[] => { const e = ours.get(id); return e && place.has(s.chapter) ? [{ ...e, group: s.chapter }] : []; })
+      .flatMap(([id, s]): Entry[] => { const e = ours.get(id); return e && place.has(s.chapter) && (!who || who.units.includes(id)) ? [{ ...e, group: s.chapter }] : []; })
       .sort((a, b) => place.get(a.group!)! - place.get(b.group!)!);
-  }, [tale, told, originalEntries, gameEntries]);
+  }, [tale, told, who, originalEntries, gameEntries]);
   const storyCount = useMemo(() => Object.values(stories).reduce((n, f) => n + Object.keys(f.units ?? {}).length, 0), [stories]);
   const routing = index?.routing;
   const ofGame = source === "game" && !sentTo;
@@ -271,7 +283,7 @@ export function ConceptForge() {
       && (!q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q)) && (!donor?.h || e.h === donor.h) && (!donor?.t || e.t === donor.t));
     return shuffle && !ofStory ? shuffled(list, shuffle) : list;
   }, [originalEntries, mixEntries, gameEntries, storyEntries, routing, sentTo, ofGame, ofStory, source, kind, weapon, query, donor, shuffle]);
-  const filterKey = `${source}|${kind}|${weapon}|${query}|${donor?.h ?? ""}|${donor?.t ?? ""}|${sentTo}|${shuffle}|${told}`;
+  const filterKey = `${source}|${kind}|${weapon}|${query}|${donor?.h ?? ""}|${donor?.t ?? ""}|${sentTo}|${shuffle}|${told}|${who?.id ?? ""}`;
   const limit = STEP + (more.key === filterKey ? more.n : 0);
   const shown = useMemo(() => entries.slice(0, limit), [entries, limit]);
   const hasMore = shown.length < entries.length;
@@ -409,14 +421,16 @@ export function ConceptForge() {
     ["mixes", "Mixes", mixes.length, "Every rendered turret on every hull or base it fits"], ["game", "Game units", gameEntries.length, "The units in the game today"],
     ...(storyCount ? [["story", "Story", storyCount, "Each faction's war in chapters, with the units that enter each one"] as [Source, string, number, string]] : [])];
   const what = sentTo ? `given to ${pal.factions[sentTo]?.name ?? sentTo}` : source === "mixes" ? "mixes" : source === "originals" ? "originals"
-    : source === "story" ? `in ${pal.factions[told]?.name ?? told}'s story` : "game units";
+    : source === "story" ? (who ? `with ${who.name}` : `in ${pal.factions[told]?.name ?? told}'s story`) : "game units";
   const toSource = (id: Source) => {
     setSource(id); setSentTo(""); setDonor(null);
     if (id === "mixes" && (kind === "infantry" || kind === "building")) setKind("all");
     if (sel && !listBeside()) show("");   // with the list beside the stage, the stage keeps its concept
   };
   /** Open a faction's war on the Story wall; the unit on the stage stays (it is in that chapter). */
-  const openChapter = (faction: string) => { setSource("story"); setSentTo(""); setDonor(null); setQuery(""); setStoryFaction(faction); };
+  const openChapter = (faction: string) => { setSource("story"); setSentTo(""); setDonor(null); setQuery(""); setStoryFaction(faction); setPerson(""); };
+  /** Follow one person through a faction's war: the Story wall shows only their units, under their path. */
+  const openPerson = (faction: string, id: string) => { openChapter(faction); setPerson(id); };
   const chapterOf = (id: string | undefined) => tale?.chapters.find(c => c.id === id);
   const part = mix?.k === "defence" || concept?.kind === "defence" ? "base" : "hull";
 
@@ -436,7 +450,7 @@ export function ConceptForge() {
           <div className="cf-filters">
             <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search" aria-label="Search by name or role" />
             {ofStory ? <div className="cf-chips cf-tellers" aria-label="Whose war">{Object.keys(stories).map(f => (
-              <button key={f} className={told === f ? "on" : ""} onClick={() => setStoryFaction(f)} title={stories[f].title}>
+              <button key={f} className={told === f ? "on" : ""} onClick={() => { setStoryFaction(f); setPerson(""); }} title={stories[f].title}>
                 <Flag id={flagId(f)} size="s" />{pal.factions[f]?.name ?? f}<em>{Object.keys(stories[f].units ?? {}).length}</em></button>
             ))}</div> : null}
             {!ofGame && !ofStory ? <div className="cf-chips">{KINDS.filter(([id]) => !(source === "mixes" && !sentTo && (id === "infantry" || id === "building"))).map(([id, label]) => (
@@ -457,6 +471,20 @@ export function ConceptForge() {
           </div>
           <div className="cf-scroll" ref={wallRef}>
             {ofStory && tale ? <header className="cf-arc"><Flag id={flagId(told)} size="l" /><div><h2>{tale.title}</h2><p>{tale.line}</p></div></header> : null}
+            {ofStory && tale?.cast?.length ? <div className="cf-cast" aria-label="The people in this war">{tale.cast.map(p => (
+              <button key={p.id} className={p.id === who?.id ? "on" : ""} onClick={() => setPerson(x => (x === p.id ? "" : p.id))}
+                title={p.id === who?.id ? "Show the whole war again" : `Follow ${p.name} through the war`}>
+                <Face name={p.name} paint={pal.factions[told]?.paint} /><b>{p.name}</b><span>{p.rank ? `${p.rank} · ` : ""}{p.role}</span>
+              </button>
+            ))}</div> : null}
+            {ofStory && who ? <section className="cf-person">
+              <Face name={who.name} paint={pal.factions[told]?.paint} />
+              <h3>{who.name}{who.rank ? <small>{who.rank}</small> : null}</h3>
+              <q>{who.line}</q>
+              <p>{who.bio}</p>
+              <ol className="cf-path">{who.arc.map(a => <li key={a.chapter}><b>{chapterOf(a.chapter)?.title ?? a.chapter}</b>{a.text}</li>)}</ol>
+              <button className="cf-allwar" onClick={() => setPerson("")}>The whole war ✕</button>
+            </section> : null}
             <div className="cf-grid">{shown.map((e, i) => {
               const rr = index.routing[e.id];
               const ch = ofStory && e.group !== shown[i - 1]?.group ? chapterOf(e.group) : undefined;
@@ -507,7 +535,8 @@ export function ConceptForge() {
             <aside className="cf-info">
               <p className="cf-idea">{gameUnit.unit.role}</p>
               <p className="cf-desc">{gameUnit.unit.description}</p>
-              {onStage ? <StoryCard story={onStage.story} chapter={onStage.chapter} onChapter={() => openChapter(onStage.faction)} /> : null}
+              {onStage ? <StoryCard story={onStage.story} chapter={onStage.chapter} onChapter={() => openChapter(onStage.faction)}
+                people={onStage.people} paint={pal.factions[onStage.faction]?.paint} onPerson={id => openPerson(onStage.faction, id)} /> : null}
               {gameUnit.unit.health ? <p className="cf-meta">{gameUnit.unit.health} HP · {gameUnit.unit.armor} armor</p> : null}
               <ul className="cf-weapons">{weapons.map(w => (
                 <li key={w.id}><b>{w.label}</b><span>{w.damage} damage{w.burst > 1 ? ` ×${w.burst}` : ""} · {w.range} cells · {seconds(w.reloadTicks)}{w.targets.includes("Air") ? " · hits aircraft" : ""}</span></li>
@@ -517,7 +546,8 @@ export function ConceptForge() {
             <aside className="cf-info">
               <p className="cf-idea">{info.idea}</p>
               {onStage && mix ? <p className="cf-refit">A field refit of the {byId.get(mix.h)?.name ?? mix.h}, the one its crews call <q>{onStage.story.callsign}</q>.</p> : null}
-              {onStage ? <StoryCard story={onStage.story} chapter={onStage.chapter} onChapter={() => openChapter(onStage.faction)} /> : null}
+              {onStage ? <StoryCard story={onStage.story} chapter={onStage.chapter} onChapter={() => openChapter(onStage.faction)}
+                people={onStage.people} paint={pal.factions[onStage.faction]?.paint} onPerson={id => openPerson(onStage.faction, id)} /> : null}
               <Bars stats={info.stats} />
               {art ? <p className="cf-meta">{art.health} HP · {art.armor} armor</p> : null}
               <ul className="cf-weapons">{weapons.map(w => (

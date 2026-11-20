@@ -29,11 +29,38 @@ export type UnitStory = {
   /** The Directorate's file on it: how the villain sees it. */
   broker: string;
 };
-export type FactionStory = { faction: string; title: string; line: string; chapters: Chapter[]; units: Record<string, UnitStory> };
+/** One of the people who carry a faction's war: a reader follows them from chapter to chapter and unit to unit. */
+export type Person = {
+  id: string; name: string;
+  /** Empty for people without one (a co-op foreman). */
+  rank?: string;
+  /** What they do, in one line. */
+  role: string;
+  /** Who they were before the war, what they want and fear. */
+  bio: string;
+  /** The thing they say that people quote back to them. */
+  line: string;
+  /** What they do in each chapter they are in, in chapter order. */
+  arc: { chapter: string; text: string }[];
+  /** The units (story keys in this file) they crew, built, command or are remembered in. */
+  units: string[];
+};
+export type FactionStory = { faction: string; title: string; line: string; chapters: Chapter[]; cast?: Person[]; units: Record<string, UnitStory> };
 export type Stories = Record<string, FactionStory>;
 
 /** A unit's story and its chapter: `id` is an original's id or a game unit's game id, looked up in `faction`'s file. */
 export function storyOf(stories: Stories, faction: string, id: string) {
   const fs = stories[faction], s = fs?.units[id];
-  return fs && s ? { story: s, chapter: fs.chapters.find(c => c.id === s.chapter) ?? null, faction } : null;
+  return fs && s ? { story: s, chapter: fs.chapters.find(c => c.id === s.chapter) ?? null, faction, people: castOf(fs, id) } : null;
+}
+
+/** The people of a faction's cast who are in a unit's story. */
+export function castOf(fs: FactionStory | undefined, id: string): Person[] {
+  return (fs?.cast ?? []).filter(p => p.units.includes(id));
+}
+
+/** Initials for a person's badge: the first letters of their first and last names. */
+export function initials(name: string) {
+  const w = name.trim().split(/\s+/).filter(Boolean);
+  return ((w[0]?.[0] ?? "") + (w.length > 1 ? w[w.length - 1][0] : "")).toUpperCase();
 }
