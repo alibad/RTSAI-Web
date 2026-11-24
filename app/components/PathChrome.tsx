@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Github } from "lucide-react";
 import Link from "next/link";
 import { AccountNav } from "./AccountNav";
-import { EaTopline, gameSource, modSource } from "./SiteChrome";
+import { gameSource, modSource } from "./SiteChrome";
 import { HqFamilyFooter, HqSunset } from "./hq-path/hq-path";
 import "./hq-path/hq-path.css";
 import "../home-path.css";
@@ -19,7 +19,6 @@ export function PathQuestbar() {
       {/* The kit CSS imports these fonts too; this link keeps them if a production bundle drops a non-leading @import. React hoists it into <head>. */}
       <link rel="stylesheet" href={familyFonts} precedence="default" />
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <EaTopline />
       <header className="hqp-questbar" data-hqp-t="tools">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <Link className="hqp-mark" href="/" aria-label="RTS AI home"><img src="/brand/rtsai-mark-64.png?v=command-red-2531" alt="" width={34} height={34} /><span>RTS <b>AI</b></span></Link>

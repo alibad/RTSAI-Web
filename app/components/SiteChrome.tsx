@@ -17,21 +17,12 @@ function Brand({ footer = false }: { footer?: boolean }) {
   );
 }
 
-/**
- * EA's C&C Franchise Modding Guidelines (Revision 2, 27 Feb 2025) require this statement "prominently at the top of
- * your website": the game draws the original countries with Westwood's art and sounds. The footers repeat it.
- */
-export function EaTopline() {
-  return <p className="ea-topline">Independent project. EA has not endorsed and does not support this product.</p>;
-}
-
 export function SiteHeader() {
   // The local app: the maker pages (Workshop, Viewer) carry the one maker bar in place of the public header.
   if (ADMIN_BUILD) return <><a className="skip-link" href="#main-content">Skip to main content</a><LocalMakerBar /></>;
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <EaTopline />
       <nav className="site-nav" aria-label="Primary navigation">
         <Brand />
         <div className="nav-links">
