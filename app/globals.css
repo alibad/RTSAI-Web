@@ -681,3 +681,6 @@ footer p { text-align: center; } footer > div { display: flex; justify-content: 
 .feedback-settings-row [data-slot=select-trigger] { width: 100%; height: auto; min-height: 38px; border: 1px solid #b9b5a8; border-radius: 0; background: #fff; color: var(--ink); padding: 0 9px; font-size: 10px; }
 .location-results.location-results-popup { position: static; top: auto; left: auto; z-index: auto; width: min(470px, calc(100vw - 26px)); padding: 0; gap: 0; border-radius: 0; color: var(--ink); }
 .feedback-settings.feedback-settings-popup { position: static; top: auto; right: auto; z-index: auto; display: block; width: min(410px, calc(100vw - 26px)); border-radius: 0; color: var(--ink); font-size: 13px; }
+
+/* EA's modding guidelines: the statement at the top of every page (SiteChrome EaTopline), above either header. */
+.ea-topline { margin: 0; padding: 7px 16px; background: #140d09; border-bottom: 1px solid rgba(255, 250, 241, .08); color: #d9c7b2; font: 12px/1.5 var(--hqp-mono, "JetBrains Mono", ui-monospace, monospace); letter-spacing: .03em; text-align: center; }
