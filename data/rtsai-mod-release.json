@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "repository": "alibad/RTSAI-Mod",
   "published": true,
-  "version": "0.4.0-alpha.5",
-  "tag": "v0.4.0-alpha.5",
-  "publishedAt": "2026-11-23T20:23:43Z",
-  "releaseUrl": "https://github.com/alibad/RTSAI-Mod/releases/tag/v0.4.0-alpha.5",
+  "version": "0.4.0-alpha.6",
+  "tag": "v0.4.0-alpha.6",
+  "publishedAt": "2026-11-24T13:28:50Z",
+  "releaseUrl": "https://github.com/alibad/RTSAI-Mod/releases/tag/v0.4.0-alpha.6",
   "signed": false,
   "ra2FactionIds": [
     "china",
@@ -19,28 +19,28 @@
   "aiModes": [],
   "assets": [
     {
-      "name": "RTSAI-0.4.0-alpha.5-win-x64-setup.exe",
+      "name": "RTSAI-0.4.0-alpha.6-win-x64-setup.exe",
       "kind": "installer",
       "platform": "windows-x64",
-      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.4.0-alpha.5/RTSAI-0.4.0-alpha.5-win-x64-setup.exe",
-      "sizeBytes": 308443157,
-      "sha256": "5a6d9e587560c16c935574fe7ccd2d7dac022f868a237ba0e61e6f710f0ab5ca"
+      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.4.0-alpha.6/RTSAI-0.4.0-alpha.6-win-x64-setup.exe",
+      "sizeBytes": 322265214,
+      "sha256": "48bf3cc155b124777f21ee2c1297288670ccab783a8babe78e660d5d1f25c88b"
     },
     {
-      "name": "RTSAI-0.4.0-alpha.5-win-x64-portable.zip",
+      "name": "RTSAI-0.4.0-alpha.6-win-x64-portable.zip",
       "kind": "portable",
       "platform": "windows-x64",
-      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.4.0-alpha.5/RTSAI-0.4.0-alpha.5-win-x64-portable.zip",
-      "sizeBytes": 393237576,
-      "sha256": "576a8724a21038d92c98439a1d13ae0c999b6324ad00050457fc74baa8203b33"
+      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.4.0-alpha.6/RTSAI-0.4.0-alpha.6-win-x64-portable.zip",
+      "sizeBytes": 410765888,
+      "sha256": "ad81e2a404c80597971b9cc2fb9f2f3b6f5015262bba0c785afd04967fcae54e"
     },
     {
       "name": "BUILD-INPUTS.json",
       "kind": "other",
       "platform": "any",
-      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.4.0-alpha.5/BUILD-INPUTS.json",
-      "sizeBytes": 902,
-      "sha256": "5a642a3b13c23d7d0e0e20c109542647f2f2735dbe0f639617724493a8fa4a82"
+      "url": "https://github.com/alibad/RTSAI-Mod/releases/download/v0.4.0-alpha.6/BUILD-INPUTS.json",
+      "sizeBytes": 1255,
+      "sha256": "3607f0043c0d0b9d3db6b55f5634a517b1fe39cbdce0e46bf29a5f6a748a0320"
     }
   ]
 }
