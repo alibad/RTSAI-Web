@@ -1,8 +1,10 @@
 /* The Review inbox (ReviewInbox.tsx): one screen, never a scroll. The clip takes every pixel the title line, the
    scrubber and the answer bar leave it; a short, wide window puts the title and answers in a column beside it. */
 .rv-page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background: #0c100c; }
-/* A very short window: the site's own bar gives its height to the clip. */
-@media (max-height: 560px) { .rv-page .site-nav, .rv-page .maker-bar { display: none; } }
+/* Only the inbox on this page (owner, 28 Nov 2026: the site's header, the EA line and the Feedback button felt broken
+   here). The page is the owner's own, behind their sign-in; every public page keeps the EA line. */
+body:has(.rv-page) { background: #0c100c; }
+body:has(.rv-page) .ea-top-notice, body:has(.rv-page) .feedback-launcher { display: none; }
 
 .rv { --rv-line: rgba(240, 238, 230, .14); --rv-panel: #141a15; --rv-text: #f0eee6; --rv-muted: #a4a898; --rv-faint: #8b9183; --rv-gold: #f1d28b;
   --rv-good: #86d67c; --rv-bad: #ef5b3f; --rv-amber: #f0b65a; --rv-voice: #ff7a5c;
@@ -74,6 +76,9 @@
 .rv-timeline { display: flex; align-items: center; gap: 10px; min-height: 30px; }
 .rv-play { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rv-line); background: rgba(255, 255, 255, .04); }
 .rv-play:hover { background: rgba(255, 255, 255, .1); }
+.rv-sound[aria-pressed="false"] { color: var(--rv-amber); border-color: rgba(240, 182, 90, .55); }
+.rv-sound-wait { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px; border-radius: 999px; border: 1px solid rgba(240, 182, 90, .7); background: rgba(12, 16, 12, .9); color: var(--rv-amber); font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 18px rgba(0, 0, 0, .5); }
+.rv-sound-wait:hover { background: rgba(40, 30, 12, .95); }
 .rv-track { position: relative; flex: 1; height: 30px; cursor: pointer; touch-action: none; }
 .rv-track::before { content: ""; position: absolute; inset: 13px 0; border-radius: 2px; background: rgba(240, 238, 230, .16); }
 .rv-track > i { position: absolute; left: 0; top: 13px; height: 4px; border-radius: 2px; background: var(--rv-gold); pointer-events: none; }

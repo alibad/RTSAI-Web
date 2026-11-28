@@ -15,6 +15,10 @@
  * the answers in one bar under the clip, between the two sides' flags and units. A short, wide window (a laptop,
  * a browser beside other windows) puts the title and answers in a column beside the clip instead.
  *
+ * Clips play with their sound (owner, 28 Nov 2026: the voice clips were silent, the page muted every clip). M or the
+ * speaker turns it off, and the choice is remembered. A browser may refuse sound before the first click or key on the
+ * page; the clip then plays silently and the first click or key turns the sound on.
+ *
  * A clip belongs to a front (battles, campaign, AI, ...): every session can add clips (tools/review.mjs add) and read
  * the answers (tools/review.mjs feedback). Data and its owner-only rule: lib/review/model.ts, firestore.rules.
  */
@@ -23,7 +27,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import type { Firestore } from "firebase/firestore";
 import {
   Anchor, ArrowRight, Building2, Camera, Check, ChevronLeft, ChevronRight, CircleCheck, Crosshair, ExternalLink, Footprints, Image as ImageIcon, Keyboard, Mic, MoveRight, Pause, Plane, Play,
-  Radar, RotateCcw, Shield, Ship, SkipForward, Swords, Target, ThumbsDown, ThumbsUp, Truck, Undo2, Volume2, X, Zap,
+  Radar, RotateCcw, Shield, Ship, SkipForward, Swords, Target, ThumbsDown, ThumbsUp, Truck, Undo2, Volume2, VolumeX, X, Zap,
 } from "lucide-react";
 import { useAuth } from "../AuthProvider";
 import { DropZone, FileChips, ShotStrip, usePastedFiles } from "../feedback/FeedbackMedia";
@@ -149,6 +153,10 @@ export function ReviewInbox() {
   const [focus, setFocus] = useState<string | null>(null);
   const [length, setLength] = useState(0);
   const [paused, setPaused] = useState(false);
+  // The clip's sound: on unless the owner turned it off; "waits" while the browser refuses sound before a first click.
+  const [sound, setSound] = useState(() => { try { return localStorage.getItem("rv-sound") !== "off"; } catch { return true; } });
+  const [soundWaits, setSoundWaits] = useState(false);
+  const soundOn = useRef(true);
   const video = useRef<HTMLVideoElement | null>(null);
   const fill = useRef<HTMLElement | null>(null);
   const timeLabel = useRef<HTMLSpanElement | null>(null);
@@ -238,6 +246,37 @@ export function ReviewInbox() {
   }, []);
   const seek = useCallback((t: number) => { const v = video.current; if (v) v.currentTime = Math.max(0, Math.min(v.duration || t, t)); }, []);
   const togglePlay = useCallback(() => { const v = video.current; if (!v) return; if (v.paused) void v.play().catch(() => {}); else v.pause(); }, []);
+
+  // ---- the clip's sound
+  useEffect(() => { soundOn.current = sound; const v = video.current; if (v) v.muted = !sound || soundWaits; }, [sound, soundWaits]);
+  // Each clip starts playing with its sound. Before the owner's first click or key a browser may refuse that: the clip
+  // then plays silently, and the first click or key anywhere (not the speaker or M, which do it themselves) brings it in.
+  const videoKey = clip ? `${clip.id}-${showBefore ? "before" : "now"}-${clip.round}` : "";
+  useEffect(() => {
+    const v = video.current;
+    if (!v || !videoKey) return;
+    v.muted = !soundOn.current;
+    v.play().catch((e: { name?: string }) => {
+      if (e?.name !== "NotAllowedError" || v.muted || video.current !== v) return;
+      v.muted = true; setSoundWaits(true); void v.play().catch(() => {});
+    });
+  }, [videoKey]);
+  useEffect(() => {
+    if (!soundWaits) return;
+    const wake = (e: Event) => {
+      if ((e.target as Element | null)?.closest?.(".rv-sound") || (e instanceof KeyboardEvent && e.key.toLowerCase() === "m")) return;
+      setSoundWaits(false);
+    };
+    window.addEventListener("pointerdown", wake, true);
+    window.addEventListener("keydown", wake, true);
+    return () => { window.removeEventListener("pointerdown", wake, true); window.removeEventListener("keydown", wake, true); };
+  }, [soundWaits]);
+  const toggleSound = useCallback(() => {
+    if (soundWaits) { setSoundWaits(false); setSound(true); return; }
+    const next = !sound;
+    setSound(next);
+    try { localStorage.setItem("rv-sound", next ? "on" : "off"); } catch { /* not remembered */ }
+  }, [sound, soundWaits]);
 
   // ---- answers
   const patchClip = useCallback((id: string, patch: Partial<ReviewClip>) => setClips((all) => (all ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c))), []);
@@ -430,6 +469,7 @@ export function ReviewInbox() {
       if (key === "n") { e.preventDefault(); step(1); return; }
       if (key === "p") { e.preventDefault(); step(-1); return; }
       if (key === "z") { e.preventDefault(); void undo(); return; }
+      if (key === "m") { e.preventDefault(); toggleSound(); return; }
       if (!clip) return;
       if (key === "v") { e.preventDefault(); void startVoice(); }
       else if (key === "t") { e.preventDefault(); startTyping(); }
@@ -446,7 +486,7 @@ export function ReviewInbox() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel, clip, hasOpen, annotating, pinned, numbered, answer, startVoice, startTyping, endVoice, cancelNote, grabFrame, goNext, undo, togglePlay, seek, step, jump]);
+  }, [panel, clip, hasOpen, annotating, pinned, numbered, answer, startVoice, startTyping, endVoice, cancelNote, grabFrame, goNext, undo, togglePlay, toggleSound, seek, step, jump]);
 
   // ---- what to draw
   if (!user && !authLoading) return <main id="main-content" className="rv rv-empty"><div className="rv-card">
@@ -544,10 +584,12 @@ export function ReviewInbox() {
 
       {clip ? <>
         <section className="rv-stage">
-          <video ref={video} key={`${clip.id}-${showBefore ? "before" : "now"}-${clip.round}`} src={showBefore && clip.before ? clip.before : clip.video} poster={clip.poster} autoPlay muted loop playsInline
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption -- a clip of the game for the owner to judge; a clip with speech carries its words burnt in. */}
+          <video ref={video} key={`${clip.id}-${showBefore ? "before" : "now"}-${clip.round}`} src={showBefore && clip.before ? clip.before : clip.video} poster={clip.poster} loop playsInline
             onClick={togglePlay} onLoadedMetadata={(e) => setLength(e.currentTarget.duration || 0)} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} data-testid="rv-video" />
           {recheck && <span className="rv-banner"><RotateCcw size={14} aria-hidden="true" /> Fixed · check again</span>}
           {(clip.state === "good" || clip.state === "skipped") && <span className="rv-banner is-done">{STATE_WORDS[clip.state]}</span>}
+          {soundWaits && <button type="button" className="rv-sound rv-sound-wait" onClick={toggleSound}><VolumeX size={15} aria-hidden="true" /> Click anywhere for sound</button>}
           {clip.before && <button type="button" className="rv-before" aria-pressed={showBefore} onClick={() => setShowBefore((b) => !b)}>{showBefore ? "Before the fix" : "After the fix"} <kbd>B</kbd></button>}
           {(error || voiceProblem) && <p className="rv-error" role="alert">{error || voiceProblem}</p>}
           {shown.length > 0 && <div className="rv-captions" data-testid="rv-captions">
@@ -570,6 +612,8 @@ Fixed: ${m.note.reply}` : m.text}>{m.kind === "suspect" ? <><em>Claude suspects<
 
         <div className="rv-timeline">
           <button type="button" className="rv-play" onClick={togglePlay} aria-label={paused ? "Play" : "Pause"}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
+          <button type="button" className="rv-play rv-sound" data-testid="rv-sound" onClick={toggleSound} aria-pressed={sound && !soundWaits}
+            aria-label={sound && !soundWaits ? "Sound on (M)" : "Sound off (M)"} title={sound && !soundWaits ? "Sound on: M turns it off" : "Sound off: M turns it on"}>{sound && !soundWaits ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
           <div className="rv-track" role="slider" tabIndex={-1} aria-label="Position in the clip" aria-valuemin={0} aria-valuemax={Math.round(total)} aria-valuenow={Math.round(now)}
             onPointerDown={(e) => { if ((e.target as HTMLElement).closest(".rv-mark")) return; const box = e.currentTarget.getBoundingClientRect(); const at = (x: number) => seek(((x - box.left) / box.width) * total); at(e.clientX); const move = (m: PointerEvent) => at(m.clientX); const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); }; window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); }}>
             <i ref={(el) => { fill.current = el; }} />
